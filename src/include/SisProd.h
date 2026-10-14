@@ -103,7 +103,6 @@ driftflux::coefficient::ClosureState closureStateOf(SProd &system);
 trendoutput::TrendState trendStateOf(const SProd &system);
 }  // namespace adapters
 
-
 /// A pressure-temperature table the fluids read through a double **: its rows, and a pointer to each.
 struct GridTable {
     vector<vector<double>> rows;
@@ -131,56 +130,32 @@ struct GridTable {
 /// input; the latent-heat table and the Livia bubble-point and solution-gas-ratio tables are
 /// built and owned by the system, and so are the dynamic tables of a compositional network.
 struct PropertyTables {
-    /**
-     * @brief Black-oil gas-compressibility-factor table.
-     */
+    /// Black-oil gas-compressibility-factor table.
     double **zdranP = nullptr;
-    /**
-     * @brief Pressure derivative of the black-oil compressibility-factor table.
-     */
+    /// Pressure derivative of the black-oil compressibility-factor table.
     double **dzdpP = nullptr;
-    /**
-     * @brief Temperature derivative of the black-oil compressibility-factor table.
-     */
+    /// Temperature derivative of the black-oil compressibility-factor table.
     double **dzdtP = nullptr;
-    /**
-     * @brief Black-oil gas specific-heat table.
-     */
+    /// Black-oil gas specific-heat table.
     double **cpg = nullptr;
-    /**
-     * @brief Black-oil produced-liquid specific-heat table.
-     */
+    /// Black-oil produced-liquid specific-heat table.
     double **cpl = nullptr;
-    /**
-     * @brief Temperature derivative of liquid density.
-     */
+    /// Temperature derivative of liquid density.
     double **drholdT = nullptr;
-    /**
-     * @brief Black-oil latent-heat table.
-     */
+    /// Black-oil latent-heat table.
     GridTable HLat;
-    /**
-     * @brief Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table
-     * is separate from the full PVTSim fluid-property model.
-     */
+    /// Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table is
+    /// separate from the full PVTSim fluid-property model.
     vector<double> PBPVTSim;
-    /**
-     * @brief Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This
-     * table is separate from the full PVTSim fluid-property model.
-     */
+    /// Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This table is
+    /// separate from the full PVTSim fluid-property model.
     vector<double> TBPVTSim;
-    /**
-     * @brief Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its
-     * expensive calculation during the simulation.
-     */
+    /// Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its expensive
+    /// calculation during the simulation.
     GridTable RSLivia;
-    /**
-     * @brief Dynamic fluid-property tables.
-     */
+    /// Dynamic fluid-property tables.
     vector<tabelaDinamica> tabDin;
-    /**
-     * @brief Number of dynamic property tables.
-     */
+    /// Number of dynamic property tables.
     int ntabDin = 0;
 };
 
@@ -189,123 +164,65 @@ struct PropertyTables {
 /// coupling, the completion-fluid interface, and the unloading controller's samples and
 /// settings.
 struct GasLiftLine {
-    /**
-     * @brief Global pressure-velocity coupling matrix for the gas line.
-     */
+    /// Global pressure-velocity coupling matrix for the gas line.
     BandMtx<double> matglobG;
-    /**
-     * @brief Right-hand side and solution vector for the gas-line pressure-velocity system.
-     */
+    /// Right-hand side and solution vector for the gas-line pressure-velocity system.
     Vcr<double> termolivreG;
-    /**
-     * @brief Production-line cell indices associated with gas-lift valves.
-     */
+    /// Production-line cell indices associated with gas-lift valves.
     vector<int> posicVGLP;
-    /**
-     * @brief Service-line cell indices associated with gas-lift valves.
-     */
+    /// Service-line cell indices associated with gas-lift valves.
     vector<int> posicVGLG;
-    /**
-     * @brief Service-line index where column-annulus thermal coupling begins.
-     */
+    /// Service-line index where column-annulus thermal coupling begins.
     int AnulaColunaIni = 0;
-    /**
-     * @brief Service-line index where column-annulus thermal coupling ends.
-     */
+    /// Service-line index where column-annulus thermal coupling ends.
     int AnulaColunaFim = 0;
-    /**
-     * @brief Production-column index aligned with AnulaColunaIni.
-     */
+    /// Production-column index aligned with AnulaColunaIni.
     int ColunaAnulaIni = 0;
-    /**
-     * @brief Production-column index aligned with AnulaColunaFim.
-     */
+    /// Production-column index aligned with AnulaColunaFim.
     int ColunaAnulaFim = 0;
-    /**
-     * @brief Indicates whether column-annulus thermal coupling is enabled.
-     */
+    /// Indicates whether column-annulus thermal coupling is enabled.
     int verificaAcop = 0;
-    /**
-     * @brief Gas-lift valves installed in the system.
-     */
+    /// Gas-lift valves installed in the system.
     vector<ChokeGas> chokeVGL;
-    /**
-     * @brief Time horizon used by the gas-lift unloading controller.
-     */
+    /// Time horizon used by the gas-lift unloading controller.
     double tempMedContDesc = 10.;
-    /**
-     * @brief Maximum number of flow samples retained by the unloading PI controller.
-     */
+    /// Maximum number of flow samples retained by the unloading PI controller.
     double maxVecContDesc = 1000;
-    /**
-     * @brief Average maximum completion-fluid mass flow through the gas-lift valves.
-     */
+    /// Average maximum completion-fluid mass flow through the gas-lift valves.
     double vazmedDesc = 0;
-    /**
-     * @brief Averaging interval used for gas-lift-valve mass flow.
-     */
+    /// Averaging interval used for gas-lift-valve mass flow.
     double tempmedDEsc = 0;
-    /**
-     * @brief Maximum valve mass-flow samples used by the unloading controller.
-     */
+    /// Maximum valve mass-flow samples used by the unloading controller.
     vector<double> vazmaxMedDesc;
-    /**
-     * @brief Time-step samples associated with the unloading-flow average.
-     */
+    /// Time-step samples associated with the unloading-flow average.
     vector<double> dtDesc;
-    /**
-     * @brief Separator pressure or pressure at the inlet of the downstream network section.
-     */
+    /// Separator pressure or pressure at the inlet of the downstream network section.
     double pGSup = 0;
-    /**
-     * @brief Number of control volumes in the gas service line.
-     */
+    /// Number of control volumes in the gas service line.
     int ncelGas = 0;
-    /**
-     * @brief Gas-injection pressure. Zero until an injection-pressure condition or a sensitivity
-     * analysis case sets it; the steady summary and the restart file record it either way.
-     */
+    /// Gas-injection pressure. Zero until an injection-pressure condition or a sensitivity analysis case sets it; the
+    /// steady summary and the restart file record it either way.
     double presiniG = 0.;
-    /**
-     * @brief Gas-injection temperature in the service line. Zero until an injection condition
-     * or a sensitivity analysis case sets it; the restart file records it either way.
-     */
+    /// Gas-injection temperature in the service line. Zero until an injection condition or a sensitivity analysis
+    /// case sets it; the restart file records it either way.
     double tempiniG = 0.;
-    /**
-     * @brief Gas-injection choke model.
-     */
+    /// Gas-injection choke model.
     ChokeGas chokeInj;
-    /**
-     * @brief Gas service-line control volumes, held by gasCells.
-     */
+    /// Gas service-line control volumes, held by gasCells.
     CelG *celulaG = nullptr;
-    /**
-     * @brief The gas service-line control volumes celulaG points at.
-     */
+    /// The gas service-line control volumes celulaG points at.
     vector<CelG> gasCells;
-    /**
-     * @brief Current service-line cell containing the completion-fluid/gas interface.
-     */
+    /// Current service-line cell containing the completion-fluid/gas interface.
     int celInter = 1e7;
-    /**
-     * @brief Maximum time step that keeps the unloading interface within one gas-line cell.
-     */
+    /// Maximum time step that keeps the unloading interface within one gas-line cell.
     double dtInter = 0.;
-    /**
-     * @brief Current completion-fluid/gas interface velocity.
-     */
+    /// Current completion-fluid/gas interface velocity.
     double velInter = 0.;
-    /**
-     * @brief Previous-time-level interface cell.
-     */
+    /// Previous-time-level interface cell.
     int celInterIni = 0;
-    /**
-     * @brief Previous-time-level interface-limited time step.
-     */
+    /// Previous-time-level interface-limited time step.
     double dtInterIni = 0.;
-    /**
-     * @brief Previous-time-level interface velocity.
-     */
+    /// Previous-time-level interface velocity.
     double velInterIni = 0.;
 };
 
@@ -315,299 +232,155 @@ struct GasLiftLine {
 /// counters, the transport switches, the pigs and the cells of the two-dimensional Poisson
 /// model.
 struct TransientRun {
-    /**
-     * @brief Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil
-     * ratio, and light/heavy mass fractions.
-     */
+    /// Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil ratio, and
+    /// light/heavy mass fractions.
     int trackRGO = 0;
-    /**
-     * @brief Enables transport equations for gas density and the gas-phase CO2 molar fraction.
-     */
+    /// Enables transport equations for gas density and the gas-phase CO2 molar fraction.
     int trackDeng = 0;
-    /**
-     * @brief Current Master1 valve state.
-     */
+    /// Current Master1 valve state.
     int EstadoMaster1 = 0;
-    /**
-     * @brief Counter used while changing the Master1 state.
-     */
+    /// Counter used while changing the Master1 state.
     int contaMaster1 = 0;
-    /**
-     * @brief Number of pigs scheduled for launch.
-     */
+    /// Number of pigs scheduled for launch.
     int npig = 0;
-    /**
-     * @brief Cell indices where pigs are received.
-     */
+    /// Cell indices where pigs are received.
     vector<int> receb;
-    /**
-     * @brief Global pressure-velocity coupling matrix for the multiphase production line.
-     */
+    /// Global pressure-velocity coupling matrix for the multiphase production line.
     BandMtx<double> matglobP;
-    /**
-     * @brief Number of scheduled Master1 opening events.
-     */
+    /// Number of scheduled Master1 opening events.
     int nabreM1 = 0;
-    /**
-     * @brief Number of scheduled Master1 closing events.
-     */
+    /// Number of scheduled Master1 closing events.
     int nfechaM1 = 0;
-    /**
-     * @brief Times at which Master1 closes.
-     */
+    /// Times at which Master1 closes.
     vector<double> fechaM1;
-    /**
-     * @brief Times at which Master1 opens.
-     */
+    /// Times at which Master1 opens.
     vector<double> abreM1;
-    /**
-     * @brief Number of events written to the event log.
-     */
+    /// Number of events written to the event log.
     int contaLog = 0;
-    /**
-     * @brief Smallest production-line control-volume length.
-     */
+    /// Smallest production-line control-volume length.
     double menorDx = 0.;
-    /**
-     * @brief Simulation time-step counter.
-     */
+    /// Simulation time-step counter.
     int kSP = 0;
-    /**
-     * @brief Controls event-log output frequency.
-     */
+    /// Controls event-log output frequency.
     int KontaImprime = 0;
-    /**
-     * @brief Index of the next scheduled simulation event.
-     */
+    /// Index of the next scheduled simulation event.
     int indevento = 0;
-    /**
-     * @brief History of recently accepted time steps.
-     */
+    /// History of recently accepted time steps.
     vector<double> dtSim;
-    /**
-     * @brief History of time steps proposed by the CFL criterion.
-     */
+    /// History of time steps proposed by the CFL criterion.
     vector<double> dtCFL;
-    /**
-     * @brief Average time step proposed by the CFL criterion.
-     */
+    /// Average time step proposed by the CFL criterion.
     double dtCFLMed = 1.;
-    /**
-     * @brief Average time step actually used by the simulation.
-     */
+    /// Average time step actually used by the simulation.
     double dtSimMed = 1.;
-    /**
-     * @brief Indicates that time-step growth must remain restricted.
-     */
+    /// Indicates that time-step growth must remain restricted.
     int restriDt = 0;
-    /**
-     * @brief Number of remaining steps under the current time-step restriction.
-     */
+    /// Number of remaining steps under the current time-step restriction.
     int kontarestriDt = 0;
-    /**
-     * @brief Accumulated CFL time steps used to compute dtCFLMed.
-     */
+    /// Accumulated CFL time steps used to compute dtCFLMed.
     double dtCFLTotal = 0.;
-    /**
-     * @brief Accumulated accepted time steps used to compute dtSimMed.
-     */
+    /// Accumulated accepted time steps used to compute dtSimMed.
     double dtSimTotal = 0.;
-    /**
-     * @brief Counts alternating liquid-flow oscillations near an active surface choke.
-     */
+    /// Counts alternating liquid-flow oscillations near an active surface choke.
     int kontaGolfada = 1000;
-    /**
-     * @brief Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It
-     * mitigates a pressure blind spot when the upstream side contains only liquid and increases if the
-     * problem persists.
-     */
+    /// Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It mitigates a
+    /// pressure blind spot when the upstream side contains only liquid and increases if the problem persists.
     double momentoDesesp = 0;
-    /**
-     * @brief The artificial gas the closing-valve control added in the current time step, kept until the step is
-     * accepted, when it goes to the run's diagnostics.
-     */
+    /// The artificial gas the closing-valve control added in the current time step, kept until the step is accepted,
+    /// when it goes to the run's diagnostics.
     vector<diagnostics::ArtificialGasAddition> artificialGasThisStep;
-    /**
-     * @brief Recent maximum pressure-change rates.
-     */
+    /// Recent maximum pressure-change rates.
     vector<double> taxaDpMax;
-    /**
-     * @brief Average maximum pressure-change rate.
-     */
+    /// Average maximum pressure-change rate.
     double DpMaxMed = 1.;
-    /**
-     * @brief Recent maximum temperature-change rates.
-     */
+    /// Recent maximum temperature-change rates.
     vector<double> taxaDTMax;
-    /**
-     * @brief Average maximum temperature-change rate.
-     */
+    /// Average maximum temperature-change rate.
     double DTMaxMed = 1.;
-    /**
-     * @brief Counter controlling compositional-property refreshes.
-     */
+    /// Counter controlling compositional-property refreshes.
     int kontaRenovaComp = 0;
-    /**
-     * @brief Production cells handled by the two-dimensional Poisson model.
-     */
+    /// Production cells handled by the two-dimensional Poisson model.
     vector<int> indCelPoisson2D;
-    /**
-     * @brief Number of cells handled by the two-dimensional Poisson model.
-     */
+    /// Number of cells handled by the two-dimensional Poisson model.
     int nCelulaPoisson2D = 0;
-    /**
-     * @brief Signals that the time step must be adjusted.
-     */
+    /// Signals that the time step must be adjusted.
     int alteraTempo = 0;
-    /**
-     * @brief Requests rollback and time-step reevaluation when at least one control volume produces a holdup or
-     * volume fraction outside the physical [0, 1] range.
-     */
+    /// Requests rollback and time-step reevaluation when at least one control volume produces a holdup or volume
+    /// fraction outside the physical [0, 1] range.
     int reinicia = 0;
-    /**
-     * @brief Recent Master1 ratio values for the active state.
-     */
+    /// Recent Master1 ratio values for the active state.
     double vRazMast1[10] = {};
-    /**
-     * @brief Recent Master1 ratio values for the inactive state.
-     */
+    /// Recent Master1 ratio values for the inactive state.
     double vRazMast0[10] = {};
-    /**
-     * @brief Critical Master1 ratio history used by the switching logic.
-     */
+    /// Critical Master1 ratio history used by the switching logic.
     double vRazMastCrit[10] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
-    /**
-     * @brief Previous-time-level value of pGSup.
-     */
+    /// Previous-time-level value of pGSup.
     double pGSupIni = 0.;
-    /**
-     * @brief Recorded in the restart file; nothing in the simulation reads it.
-     */
+    /// Recorded in the restart file; nothing in the simulation reads it.
     double massfonte = 0.;
-    /**
-     * @brief CFL safety factor, typically set to 0.8.
-     */
+    /// CFL safety factor, typically set to 0.8.
     double mult = 0;
-    /**
-     * @brief Time-averaged pressure in the final production-line control volume. Used to decide whether the
-     * surface choke behaves as a localized pressure loss or as a discharge-flow model.
-     */
+    /// Time-averaged pressure in the final production-line control volume. Used to decide whether the surface choke
+    /// behaves as a localized pressure loss or as a discharge-flow model.
     double presMedMov = 0;
-    /**
-     * @brief Time-averaged mixture volumetric flux in the final production-line control volume. Used by the
-     * surface-choke operating-mode logic.
-     */
+    /// Time-averaged mixture volumetric flux in the final production-line control volume. Used by the surface-choke
+    /// operating-mode logic.
     double jMedMov = 0;
-    /**
-     * @brief Time-averaged void fraction in the final production-line control volume, updated once the
-     * averaging window fills. Zero until then; only the restart file reads it.
-     */
+    /// Time-averaged void fraction in the final production-line control volume, updated once the averaging window
+    /// fills. Zero until then; only the restart file reads it.
     double alfMedMov = 0.;
-    /**
-     * @brief Start time of the moving-average window.
-     */
+    /// Start time of the moving-average window.
     double tMedMov = 0;
-    /**
-     * @brief Duration of the moving-average window.
-     */
+    /// Duration of the moving-average window.
     double ktMedMov = 0.;
-    /**
-     * @brief Accumulated pressure used to compute presMedMov.
-     */
+    /// Accumulated pressure used to compute presMedMov.
     double pTotal = 0.;
-    /**
-     * @brief Accumulated mixture flux used to compute jMedMov.
-     */
+    /// Accumulated mixture flux used to compute jMedMov.
     double jTotal = 0.;
-    /**
-     * @brief Accumulated void fraction used to compute alfMedMov.
-     */
+    /// Accumulated void fraction used to compute alfMedMov.
     double alfTotal = 0.;
-    /**
-     * @brief Pressure samples used by the moving-average calculation.
-     */
+    /// Pressure samples used by the moving-average calculation.
     vector<double> presVet;
-    /**
-     * @brief Mixture-flux samples used by the moving-average calculation.
-     */
+    /// Mixture-flux samples used by the moving-average calculation.
     vector<double> jVet;
-    /**
-     * @brief Void-fraction samples used by the moving-average calculation.
-     */
+    /// Void-fraction samples used by the moving-average calculation.
     vector<double> alfVet;
-    /**
-     * @brief Time samples associated with the moving-average window.
-     */
+    /// Time samples associated with the moving-average window.
     vector<double> tVet;
-    /**
-     * @brief Current surface-choke open/closed state.
-     */
+    /// Current surface-choke open/closed state.
     int aberto = 0;
-    /**
-     * @brief Previous-time-level surface-choke state.
-     */
+    /// Previous-time-level surface-choke state.
     int abertoini = 0;
-    /**
-     * @brief Counter that delays transitions out of active-choke mode.
-     */
+    /// Counter that delays transitions out of active-choke mode.
     int tempoaberto = 0;
-    /**
-     * @brief Previous-time-level value of tempoaberto.
-     */
+    /// Previous-time-level value of tempoaberto.
     int tempoabertoini = 0;
-    /**
-     * @brief Signals a surface-choke operating-mode transition.
-     */
+    /// Signals a surface-choke operating-mode transition.
     int mudaModoChk = 0;
-    /**
-     * @brief Selects the interphase mass-transfer model: 0 = complete, 1 = fully explicit, 2 = simplified, and 3
-     * = disabled.
-     */
+    /// Selects the interphase mass-transfer model: 0 = complete, 1 = fully explicit, 2 = simplified, and 3 =
+    /// disabled.
     int TransMassModel = 0;
-    /**
-     * @brief Number of pigs currently moving through the line.
-     */
+    /// Number of pigs currently moving through the line.
     int indpigP = 0;
-    /**
-     * @brief Previous-time-level value of indpigP.
-     */
+    /// Previous-time-level value of indpigP.
     int indpigPini = 0;
-    /**
-     * @brief Right-hand side and solution vector for the production-line pressure-velocity system.
-     */
+    /// Right-hand side and solution vector for the production-line pressure-velocity system.
     Vcr<double> termolivreP;
-    /**
-     * @brief Simulation end time.
-     */
+    /// Simulation end time.
     double tfinal = 0;
-    /**
-     * @brief Current complete-model activation state.
-     */
+    /// Current complete-model activation state.
     int modeloCompleto = 1;
-    /**
-     * @brief Auxiliary CFL time-step accumulator.
-     */
+    /// Auxiliary CFL time-step accumulator.
     double dtauxCFL = 0.;
-    /**
-     * @brief Auxiliary accepted-time-step accumulator.
-     */
+    /// Auxiliary accepted-time-step accumulator.
     double dtauxFinal = 0.;
-    /**
-     * @brief Intermediate production-liquid inflow estimate for a network section.
-     */
+    /// Intermediate production-liquid inflow estimate for a network section.
     double fontemassPRBuf = 0.;
-    /**
-     * @brief Intermediate complementary-liquid inflow estimate for a network section.
-     */
+    /// Intermediate complementary-liquid inflow estimate for a network section.
     double fontemassCRBuf = 0.;
-    /**
-     * @brief Intermediate gas inflow estimate for a network section.
-     */
+    /// Intermediate gas inflow estimate for a network section.
     double fontemassGRBuf = 0.;
-    /**
-     * @brief Minimum time step allowed by the current cycle. Zero until a
-     * transient cycle sets it.
-     */
+    /// Minimum time step allowed by the current cycle. Zero until a transient cycle sets it.
     double dtCicMin = 0.;
 };
 
@@ -666,119 +439,63 @@ struct TrendSet {
 /// times, the profile and single-cell output indices, the cells whose radial temperature
 /// profiles are written, and the count of output passes.
 struct TrendRecorder {
-    /**
-     * @brief Gas-line cells where radial temperature profiles are written.
-     */
+    /// Gas-line cells where radial temperature profiles are written.
     vector<int> ncelperftransg;
-    /**
-     * @brief Times at which gas-line trend buffers are reset.
-     */
+    /// Times at which gas-line trend buffers are reset.
     double *resettrendg = nullptr;
-    /**
-     * @brief Number of gas-line trend samples currently stored.
-     */
+    /// Number of gas-line trend samples currently stored.
     int *ntrendg = nullptr;
-    /**
-     * @brief Number of gas-line trend samples stored before the last flush.
-     */
+    /// Number of gas-line trend samples stored before the last flush.
     int *ntrendgB = nullptr;
-    /**
-     * @brief Buffered gas-line wall-temperature trend data.
-     */
+    /// Buffered gas-line wall-temperature trend data.
     double ***MatTrendTransG = nullptr;
-    /**
-     * @brief Times at which gas-line wall-temperature buffers are reset.
-     */
+    /// Times at which gas-line wall-temperature buffers are reset.
     double *resettrendtransg = nullptr;
-    /**
-     * @brief Number of gas-line wall-temperature samples currently stored.
-     */
+    /// Number of gas-line wall-temperature samples currently stored.
     int *ntrendtransg = nullptr;
-    /**
-     * @brief Number of gas-line wall-temperature samples stored before the last flush.
-     */
+    /// Number of gas-line wall-temperature samples stored before the last flush.
     int *ntrendtransgB = nullptr;
-    /**
-     * @brief Production-line cells where radial temperature profiles are written.
-     */
+    /// Production-line cells where radial temperature profiles are written.
     vector<int> ncelperftransp;
-    /**
-     * @brief Times at which production-line trend buffers are reset.
-     */
+    /// Times at which production-line trend buffers are reset.
     double *resettrend = nullptr;
-    /**
-     * @brief Number of production-line trend samples stored before the last flush.
-     */
+    /// Number of production-line trend samples stored before the last flush.
     int *ntrendB = nullptr;
-    /**
-     * @brief Buffered production-line wall-temperature trend data.
-     */
+    /// Buffered production-line wall-temperature trend data.
     double ***MatTrendTransP = nullptr;
-    /**
-     * @brief Times at which production-line wall-temperature buffers are reset.
-     */
+    /// Times at which production-line wall-temperature buffers are reset.
     double *resettrendtrans = nullptr;
-    /**
-     * @brief Number of production-line wall-temperature samples currently stored.
-     */
+    /// Number of production-line wall-temperature samples currently stored.
     int *ntrendtrans = nullptr;
-    /**
-     * @brief Number of production-line wall-temperature samples stored before the last flush.
-     */
+    /// Number of production-line wall-temperature samples stored before the last flush.
     int *ntrendtransB = nullptr;
-    /**
-     * @brief Current production-profile output index.
-     */
+    /// Current production-profile output index.
     int kontaTempoProf = 0;
-    /**
-     * @brief Current gas-line profile output index.
-     */
+    /// Current gas-line profile output index.
     int kontaTempoProfG = 0;
-    /**
-     * @brief Current production-wall-temperature profile output index.
-     */
+    /// Current production-wall-temperature profile output index.
     int kontaTempoTransProf = 0;
-    /**
-     * @brief Current gas-line wall-temperature profile output index.
-     */
+    /// Current gas-line wall-temperature profile output index.
     int kontaTempoTransProfG = 0;
-    /**
-     * @brief For each single-cell output, the index of its next output time.
-     */
+    /// For each single-cell output, the index of its next output time.
     vector<int> kontaTempoCelUni;
-    /**
-     * @brief The production-line trends, read through MatTrendP, resettrend, ntrend and ntrendB.
-     */
+    /// The production-line trends, read through MatTrendP, resettrend, ntrend and ntrendB.
     TrendSet productionTrendSet;
-    /**
-     * @brief The gas-line trends, read through MatTrendG, resettrendg, ntrendg and ntrendgB.
-     */
+    /// The gas-line trends, read through MatTrendG, resettrendg, ntrendg and ntrendgB.
     TrendSet gasTrendSet;
-    /**
-     * @brief The production-line wall-temperature trends, read through MatTrendTransP,
-     * resettrendtrans, ntrendtrans and ntrendtransB.
-     */
+    /// The production-line wall-temperature trends, read through MatTrendTransP, resettrendtrans, ntrendtrans and
+    /// ntrendtransB.
     TrendSet productionWallTrendSet;
-    /**
-     * @brief The gas-line wall-temperature trends, read through MatTrendTransG,
-     * resettrendtransg, ntrendtransg and ntrendtransgB.
-     */
+    /// The gas-line wall-temperature trends, read through MatTrendTransG, resettrendtransg, ntrendtransg and
+    /// ntrendtransgB.
     TrendSet gasWallTrendSet;
-    /**
-     * @brief Buffered gas-line trend data.
-     */
+    /// Buffered gas-line trend data.
     double ***MatTrendG = nullptr;
-    /**
-     * @brief Buffered production-line trend data.
-     */
+    /// Buffered production-line trend data.
     double ***MatTrendP = nullptr;
-    /**
-     * @brief Number of production-line trend samples currently stored.
-     */
+    /// Number of production-line trend samples currently stored.
     int *ntrend = nullptr;
-    /**
-     * @brief Trend-output cycle counter; a value of one triggers header output.
-     */
+    /// Trend-output cycle counter; a value of one triggers header output.
     double kimpT = 0.;
 };
 
@@ -786,115 +503,61 @@ struct TrendRecorder {
 /// previous time level, the reverse-flow state, and the coupling with the other branch of a
 /// parallel network.
 struct NetworkCoupling {
-    /**
-     * @brief Inlet pressure stored at the previous time level.
-     */
+    /// Inlet pressure stored at the previous time level.
     double presEini = -1;
-    /**
-     * @brief Inlet temperature stored at the previous time level.
-     */
+    /// Inlet temperature stored at the previous time level.
     double tempEini = -1;
-    /**
-     * @brief Inlet gas mass fraction stored at the previous time level.
-     */
+    /// Inlet gas mass fraction stored at the previous time level.
     double titEini = -1;
-    /**
-     * @brief Inlet void fraction stored at the previous time level.
-     */
+    /// Inlet void fraction stored at the previous time level.
     double alfEini = -1;
-    /**
-     * @brief Inlet complementary-liquid fraction stored at the previous time level.
-     */
+    /// Inlet complementary-liquid fraction stored at the previous time level.
     double betaEini = -1;
-    /**
-     * @brief Previous-time-level value of presfim.
-     */
+    /// Previous-time-level value of presfim.
     double presfimini = 0;
-    /**
-     * @brief Gas mass fraction imposed during reverse flow at the last control volume. Used only by transient
-     * network simulations.
-     */
+    /// Gas mass fraction imposed during reverse flow at the last control volume. Used only by transient network
+    /// simulations.
     double titRev = 1.;
-    /**
-     * @brief Previous-time-level value of titRev.
-     */
+    /// Previous-time-level value of titRev.
     double titRevini = 1.;
-    /**
-     * @brief Complementary-liquid fraction imposed during reverse flow at the last control volume. Used only by
-     * transient network simulations.
-     */
+    /// Complementary-liquid fraction imposed during reverse flow at the last control volume. Used only by transient
+    /// network simulations.
     double betaRev = 0.;
-    /**
-     * @brief Previous-time-level value of betaRev.
-     */
+    /// Previous-time-level value of betaRev.
     double betaRevini = 1.;
-    /**
-     * @brief Previous-time-level downstream or separator temperature.
-     */
+    /// Previous-time-level downstream or separator temperature.
     double tGSupIni = 0.;
-    /**
-     * @brief Temperature downstream of the surface choke, delivered to the next network section.
-     */
+    /// Temperature downstream of the surface choke, delivered to the next network section.
     double tempSup = 0;
-    /**
-     * @brief Previous-time-level value of masChkSup.
-     */
+    /// Previous-time-level value of masChkSup.
     int masChkSupini = 0;
-    /**
-     * @brief Previous-time-level value of mudaModoChk.
-     */
+    /// Previous-time-level value of mudaModoChk.
     int mudaModoChkini = 0;
-    /**
-     * @brief Secondary-line index where parallel-network coupling with the primary line begins.
-     */
+    /// Secondary-line index where parallel-network coupling with the primary line begins.
     int SecPrimIniRedeP = 0;
-    /**
-     * @brief Secondary-line index where parallel-network coupling with the primary line ends.
-     */
+    /// Secondary-line index where parallel-network coupling with the primary line ends.
     int SecPrimFimRedeP = 0;
-    /**
-     * @brief Primary-line index aligned with SecPrimIniRedeP.
-     */
+    /// Primary-line index aligned with SecPrimIniRedeP.
     int PrimSecIniRedeP = 0;
-    /**
-     * @brief Primary-line index aligned with SecPrimFimRedeP.
-     */
+    /// Primary-line index aligned with SecPrimFimRedeP.
     int PrimSecFimRedeP = 0;
-    /**
-     * @brief Indicates thermal coupling on the primary branch of a parallel network.
-     */
+    /// Indicates thermal coupling on the primary branch of a parallel network.
     int verificaAcopRedeP = 0;
-    /**
-     * @brief Indicates thermal coupling on the secondary branch of a parallel network.
-     */
+    /// Indicates thermal coupling on the secondary branch of a parallel network.
     int verificaAcopRedeS = 0;
-    /**
-     * @brief Initial source indices for parallel-network coupling.
-     */
+    /// Initial source indices for parallel-network coupling.
     vector<int> indFonteRedeParalelaIni;
-    /**
-     * @brief Initial production-liquid sources for the parallel network.
-     */
+    /// Initial production-liquid sources for the parallel network.
     vector<double> fonteMpRedeParalelaIni;
-    /**
-     * @brief Initial complementary-liquid sources for the parallel network.
-     */
+    /// Initial complementary-liquid sources for the parallel network.
     vector<double> fonteMcRedeParalelaIni;
-    /**
-     * @brief Initial gas sources for the parallel network.
-     */
+    /// Initial gas sources for the parallel network.
     vector<double> fonteMgRedeParalelaIni;
-    /**
-     * @brief Boundary-condition type applied to the secondary parallel-network branch.
-     */
+    /// Boundary-condition type applied to the secondary parallel-network branch.
     int redeParalelaCCsecundario = -1;
-    /**
-     * @brief Primary branch index in a parallel network.
-     */
+    /// Primary branch index in a parallel network.
     int redeParalelaP = -1;
-    /**
-     * @brief Secondary branch index in a parallel network.
-     */
+    /// Secondary branch index in a parallel network.
     int redeParalelaS = -1;
 };
 
@@ -903,73 +566,50 @@ struct NetworkCoupling {
 /// and its fluid and temperature, the number of production fluids and the slow thermal
 /// coupling parameter.
 struct SteadySearch {
-    /**
-     * @brief Control parameter for slowly varying thermal coupling.
-     */
+    /// Control parameter for slowly varying thermal coupling.
     double trocaTermicaLenta = 0.01;
-    /**
-     * @brief Number of production fluids.
-     */
+    /// Number of production fluids.
     int nfluP = 0;
-    /**
-     * @brief Initial holdup estimate used by the steady-state solver.
-     */
+    /// Initial holdup estimate used by the steady-state solver.
     double chuteHol = -1.;
-    /**
-     * @brief Controls the search for an initial steady-state estimate.
-     */
+    /// Controls the search for an initial steady-state estimate.
     int buscaIni = 0;
-    /**
-     * @brief Fluid state received from downstream during reverse network flow.
-     */
+    /// Fluid state received from downstream during reverse network flow.
     ProFlu fluiRevRede;
-    /**
-     * @brief Temperature associated with reverse network flow.
-     */
+    /// Temperature associated with reverse network flow.
     double tempRev = 0.;
-    /**
-     * @brief Indicates reverse flow in the steady-state network solution.
-     */
+    /// Indicates reverse flow in the steady-state network solution.
     int revPerm = 0;
-    /**
-     * @brief Current steady-state convergence monitor.
-     */
+    /// Current steady-state convergence monitor.
     double monitConvPerm = 1000.;
-    /**
-     * @brief Reference value for the steady-state convergence monitor.
-     */
+    /// Reference value for the steady-state convergence monitor.
     double monitConvPermBase = 1.;
 };
 
 /// The coupling with the three-dimensional thermal model: its Poisson solver and the index
 /// corrections of the coupled sections.
 struct Coupling3D {
-    /**
-     * @brief Index corrections used by coupled thermal sections.
-     */
+    /// Index corrections used by coupled thermal sections.
     vector<int> acertaIndAcop;
-    /**
-     * @brief Three-dimensional Poisson solver used by the thermal model.
-     */
+    /// Three-dimensional Poisson solver used by the thermal model.
     solverP3D poisson3D;
 };
 
 }  // namespace sisprod
 
-/**
- * @brief Models and solves a one-dimensional production system.
- *
- * The class owns the production and gas-service-line state, fluid-property
- * tables, boundary conditions, network-coupling data, transient buffers,
- * and steady-state/transient solution procedures.
- */
+/// Models and solves a one-dimensional production system.
+///
+/// The class owns the production and gas-service-line state, fluid-property tables, boundary conditions,
+/// network-coupling data, transient buffers, and steady-state/transient solution procedures.
 class SProd {
     friend sisprod::gaslift::GasLiftState sisprod::adapters::gasLiftStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::steady::SteadyStateState sisprod::adapters::steadyStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::steady::SteadyStateSearchState sisprod::adapters::searchStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::transient::TransientStepState sisprod::adapters::transientStateOf(SProd &, sisprod::SolveContext &);
-    friend sisprod::composition::CompositionState sisprod::adapters::compositionStateOf(SProd &, sisprod::SolveContext &);
-    friend sisprod::transient::TransientSolveState sisprod::adapters::transientSolveStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::composition::CompositionState
+    sisprod::adapters::compositionStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::transient::TransientSolveState
+    sisprod::adapters::transientSolveStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::thermal::ThermalState sisprod::adapters::thermalStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::sources::SourceState sisprod::adapters::sourceStateOf(SProd &);
     friend driftflux::coefficient::ClosureState sisprod::adapters::closureStateOf(SProd &);
@@ -983,186 +623,111 @@ class SProd {
     friend struct sisprod::composition::CompositionUpdaters;
 
   public:
-    /**
-     * @brief Enables latent-heat calculations for black-oil simulations.
-     */
+    /// Enables latent-heat calculations for black-oil simulations.
     int CalcLat = 0;
 
-    /**
-     * @brief Section index when this object belongs to a pipeline network.
-     */
+    /// Section index when this object belongs to a pipeline network.
     int indTramo = -1;
-    /**
-     * @brief Number of control volumes in the production line.
-     */
+    /// Number of control volumes in the production line.
     int ncel = 0;
 
-    /**
-     * @brief What the steady-state search carries from one iteration to the next.
-     */
+    /// What the steady-state search carries from one iteration to the next.
     sisprod::SteadySearch steadySearch;
 
-    /**
-     * @brief Current inlet pressure boundary condition.
-     */
+    /// Current inlet pressure boundary condition.
     double presE = -1;
-    /**
-     * @brief Current inlet temperature boundary condition.
-     */
+    /// Current inlet temperature boundary condition.
     double tempE = -1;
-    /**
-     * @brief Current inlet gas mass fraction.
-     */
+    /// Current inlet gas mass fraction.
     double titE = -1;
-    /**
-     * @brief Computed inlet void fraction.
-     */
+    /// Computed inlet void fraction.
     double alfE = -1;
-    /**
-     * @brief Computed inlet complementary-liquid fraction.
-     */
+    /// Computed inlet complementary-liquid fraction.
     double betaE = -1;
-    /**
-     * @brief What this system keeps as a branch of a network.
-     */
+    /// What this system keeps as a branch of a network.
     sisprod::NetworkCoupling networkCoupling;
 
-    /**
-     * @brief Pressure in the last production-line control volume. When the surface choke is open, this value is
-     * equal to the separator pressure.
-     */
+    /// Pressure in the last production-line control volume. When the surface choke is open, this value is equal to
+    /// the separator pressure.
     double presfim = 0;
-    /**
-     * @brief Separator temperature or temperature at the inlet of the downstream section.
-     */
+    /// Separator temperature or temperature at the inlet of the downstream section.
     double tGSup = 0.;
-    /**
-     * @brief Production-line inlet temperature when no inlet-pressure boundary condition is imposed.
-     */
+    /// Production-line inlet temperature when no inlet-pressure boundary condition is imposed.
     double temperatura = 0;
 
-    /**
-     * @brief Indicates whether the surface choke is active.
-     */
+    /// Indicates whether the surface choke is active.
     int masChkSup = 0;
-    /**
-     * @brief The fluid-property tables the fluids of this system's cells point at.
-     */
+    /// The fluid-property tables the fluids of this system's cells point at.
     sisprod::PropertyTables tables;
 
-    /**
-     * @brief Parsed user input and simulation configuration.
-     */
+    /// Parsed user input and simulation configuration.
     Ler arq;
   private:
-    /**
-     * @brief Drift-flux correlation chosen for each flow regime.
-     *
-     * Resolved from arq once, when the object is built, so the per cell path
-     * never reads configuration.
-     */
+    /// Drift-flux correlation chosen for each flow regime.
+    ///
+    /// Resolved from arq once, when the object is built, so the per cell path never reads configuration.
     driftflux::correlations::RegimeSelectors driftSelectors;
   public:
-    /**
-     * @brief Buffer used to write gas-line profiles.
-     */
+    /// Buffer used to write gas-line profiles.
     FullMtx<double> flutG;
-    /**
-     * @brief Buffer used to write production-line profiles.
-     */
+    /// Buffer used to write production-line profiles.
     FullMtx<double> flut;
-    /**
-     * @brief The gas-lift line: its cells, chokes and valves, its pressure-velocity system, and
-     * the unloading of its completion fluid.
-     */
+    /// The gas-lift line: its cells, chokes and valves, its pressure-velocity system, and the unloading of its
+    /// completion fluid.
     sisprod::GasLiftLine gasLift;
-    /**
-     * @brief The state of a transient run.
-     */
+    /// The state of a transient run.
     sisprod::TransientRun transient;
 
-    /**
-     * @brief Current time step.
-     */
+    /// Current time step.
     double dt = 0.;
 
-    /**
-     * @brief The trend and profile output this system writes.
-     */
+    /// The trend and profile output this system writes.
     sisprod::TrendRecorder trends;
 
-    /**
-     * @brief Event-log file name.
-     */
+    /// Event-log file name.
     string tmpLog;
   private:
 
-    /**
-     * @brief Number of iterations used to bracket the initial steady-state root.
-     */
+    /// Number of iterations used to bracket the initial steady-state root.
     int iterperm = 0;
   public:
-    /**
-     * @brief Steady-state mode flag: 1 while Num4Main solves a network branch at
-     * steady state. The source terms read it (sisprod::sources::SourceState).
-     */
+    /// Steady-state mode flag: 1 while Num4Main solves a network branch at steady state. The source terms read it
+    /// (sisprod::sources::SourceState).
     int modoPerm = 0;
 
-    /**
-     * @brief Surface-choke model.
-     */
+    /// Surface-choke model.
     choke chokeSup;
-    /**
-     * @brief Multiphase production-line control volumes, held by productionCells.
-     */
+    /// Multiphase production-line control volumes, held by productionCells.
     Cel *celula = nullptr;
 
   private:
-    /**
-     * @brief The production-line control volumes celula points at.
-     */
+    /// The production-line control volumes celula points at.
     vector<Cel> productionCells;
 
   public:
 
-    /**
-     * @brief Indicates that the section outlet is not connected to another network section.
-     */
+    /// Indicates that the section outlet is not connected to another network section.
     int noextremo = 1;
-    /**
-     * @brief Indicates that the section inlet is not connected to another network section.
-     */
+    /// Indicates that the section inlet is not connected to another network section.
     int noinicial = 1;
-    /**
-     * @brief Indicates that this section is a branch of a gas-lift ring network.
-     */
+    /// Indicates that this section is a branch of a gas-lift ring network.
     int derivaAnel = -1;
 
   private:
-    /**
-     * @brief Temporary-network flag; currently expected to remain zero.
-     */
+    /// Temporary-network flag; currently expected to remain zero.
     int redeTemporario = 0;
 
   public:
-    /**
-     * @brief Section-blocking state.
-     */
+    /// Section-blocking state.
     int bloq = 0;
 
-    /**
-     * @brief The coupling with the three-dimensional thermal model.
-     */
+    /// The coupling with the three-dimensional thermal model.
     sisprod::Coupling3D coupling3D;
-    /**
-     * @brief Shared one-dimensional simulation settings.
-     */
+    /// Shared one-dimensional simulation settings.
     varGlob1D *vg1dSP = nullptr;
 
   private:
-    /**
-     * @brief Indicates that the thermal source term is disabled.
-     */
+    /// Indicates that the thermal source term is disabled.
     int semTermo = 0;
 
     static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
@@ -1438,12 +1003,9 @@ class SProd {
 
   private:
 
-    /**
-     * @brief Caches the drift-flux correlation of each regime from arq.
-     *
-     * Called wherever arq is built or replaced, so driftSelectors never goes
-     * stale.
-     */
+    /// Caches the drift-flux correlation of each regime from arq.
+    ///
+    /// Called wherever arq is built or replaced, so driftSelectors never goes stale.
     void resolveDriftSelectors();
 };
 
