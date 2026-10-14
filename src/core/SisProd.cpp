@@ -25,21 +25,67 @@ void SProd::resolveDriftSelectors() {
 }
 
 void SProd::resetRunState() {
-    tables.zdranP = nullptr;
-    tables.dzdpP = nullptr;
-    tables.dzdtP = nullptr;
-    tables.cpg = nullptr;
-    tables.cpl = nullptr;
-    tables.drholdT = nullptr;
-    steadySearch.nfluP = 0;
+    tables = PropertyTables();
+    steadySearch = SteadySearch();
+
     CalcLat = 0;
-    transient.trackRGO = 0;
-    transient.trackDeng = 0;
-    gasLift.celulaG = nullptr;
     celula = nullptr;
+    presE = -1;
+    tempE = -1;
+    titE = -1;
+    betaE = -1;
+    alfE = -1;
+    tGSup = 0.;
+    semTermo = 0;
+
+    gasLift.celulaG = nullptr;
     gasLift.celInter = kNoInterfaceCell;
     gasLift.dtInter = 0.;
     gasLift.velInter = 0.;
+    gasLift.celInterIni = gasLift.celInter;
+    gasLift.dtInterIni = gasLift.dtInter;
+    gasLift.velInterIni = gasLift.velInter;
+    gasLift.tempMedContDesc = kUnloadingAveragingWindow;
+    gasLift.maxVecContDesc = kUnloadingSampleCapacity;
+    gasLift.vazmedDesc = 0;
+    gasLift.tempmedDEsc = 0;
+    gasLift.vazmaxMedDesc.clear();
+    gasLift.dtDesc.clear();
+
+    transient.trackRGO = 0;
+    transient.trackDeng = 0;
+    transient.fontemassPRBuf = 0.;
+    transient.fontemassCRBuf = 0.;
+    transient.fontemassGRBuf = 0.;
+    transient.dtCFLMed = 1.;
+    transient.dtSimMed = 1.;
+    transient.restriDt = 0;
+    transient.kontarestriDt = 0;
+    transient.dtauxCFL = 0.;
+    transient.dtauxFinal = 0.;
+    transient.kontaGolfada = kInitialSlugCount;
+    transient.mudaModoChk = 0;
+    transient.momentoDesesp = 0;
+    transient.modeloCompleto = 1;
+    transient.DpMaxMed = 1.;
+    transient.DTMaxMed = 1.;
+    for (int i = 0; i < kMasterRatioHistorySize; i++) {
+        transient.vRazMast0[i] = 0.;
+        transient.vRazMast1[i] = 0.;
+        transient.vRazMastCrit[i] = kDefaultMasterCriticalRatio;
+    }
+    transient.kontaRenovaComp = 0;
+    transient.nCelulaPoisson2D = 0;
+    transient.alteraTempo = 0;
+    transient.presVet.clear();
+    transient.jVet.clear();
+    transient.alfVet.clear();
+    transient.tVet.clear();
+    transient.dtSim.clear();
+    transient.dtCFL.clear();
+    transient.taxaDpMax.clear();
+    transient.taxaDTMax.clear();
+    transient.indCelPoisson2D.clear();
 
     trends.MatTrendG = nullptr;
     trends.resettrendg = nullptr;
@@ -57,99 +103,21 @@ void SProd::resetRunState() {
     trends.resettrendtrans = nullptr;
     trends.ntrendtrans = nullptr;
     trends.ntrendtransB = nullptr;
+    trends.kimpT = 0.;
 
-    transient.fontemassPRBuf = 0.;
-    transient.fontemassCRBuf = 0.;
-    transient.fontemassGRBuf = 0.;
-
-    presE = -1;
-    tempE = -1;
-    titE = -1;
-    betaE = -1;
-    alfE = -1;
     networkCoupling.presEini = -1;
     networkCoupling.tempEini = -1;
     networkCoupling.titEini = -1;
     networkCoupling.betaEini = -1;
     networkCoupling.alfEini = -1;
-
-    gasLift.tempMedContDesc = kUnloadingAveragingWindow;
-    gasLift.maxVecContDesc = kUnloadingSampleCapacity;
-    gasLift.vazmedDesc = 0;
-    gasLift.tempmedDEsc = 0;
-
-    tGSup = 0.;
     networkCoupling.tGSupIni = 0.;
-
-    transient.dtCFLMed = 1.;
-    transient.dtSimMed = 1.;
-    transient.restriDt = 0;
-    transient.kontarestriDt = 0;
-    transient.dtauxCFL = 0.;
-    transient.dtauxFinal = 0.;
-
-    trends.kimpT = 0.;
-
-    transient.kontaGolfada = kInitialSlugCount;
-
-    transient.mudaModoChk = 0;
     networkCoupling.mudaModoChkini = 0;
-
-    transient.momentoDesesp = 0;
-
-    transient.modeloCompleto = 1;
-
-    transient.DpMaxMed = 1.;
-    transient.DTMaxMed = 1.;
-
-    steadySearch.chuteHol = -1.;
-
-    steadySearch.buscaIni = 0;
-
-    for (int i = 0; i < kMasterRatioHistorySize; i++) {
-        transient.vRazMast0[i] = 0.;
-        transient.vRazMast1[i] = 0.;
-        transient.vRazMastCrit[i] = kDefaultMasterCriticalRatio;
-    }
-
-    transient.kontaRenovaComp = 0;
-
-    steadySearch.fluiRevRede = ProFlu();
-    steadySearch.tempRev = 0.;
-    steadySearch.revPerm = 0;
-    tables.ntabDin = 0;
-
-    transient.nCelulaPoisson2D = 0;
-    steadySearch.trocaTermicaLenta = kSlowHeatTransferThreshold;
-
-    semTermo = 0;
-
-    steadySearch.monitConvPerm = kInitialConvergenceMonitor;
-    steadySearch.monitConvPermBase = 1.;
-
-    transient.alteraTempo = 0;
-
-    gasLift.celInterIni = gasLift.celInter;
-    gasLift.dtInterIni = gasLift.dtInter;
-    gasLift.velInterIni = gasLift.velInter;
-
-    transient.presVet.clear();
-    transient.jVet.clear();
-    transient.alfVet.clear();
-    transient.tVet.clear();
-    transient.dtSim.clear();
-    transient.dtCFL.clear();
-    gasLift.vazmaxMedDesc.clear();
-    gasLift.dtDesc.clear();
-    transient.taxaDpMax.clear();
-    transient.taxaDTMax.clear();
-    tables.tabDin.clear();
-    coupling3D.acertaIndAcop.clear();
-    transient.indCelPoisson2D.clear();
     networkCoupling.indFonteRedeParalelaIni.clear();
     networkCoupling.fonteMpRedeParalelaIni.clear();
     networkCoupling.fonteMcRedeParalelaIni.clear();
     networkCoupling.fonteMgRedeParalelaIni.clear();
+
+    coupling3D.acertaIndAcop.clear();
 }
 
 void SProd::allocateSolutionBuffers() {

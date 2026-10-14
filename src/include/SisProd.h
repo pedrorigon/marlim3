@@ -776,9 +776,10 @@ class SProd {
           int nfontes = 0,
           int redeperm = 1);
   private:
-    /// Puts the run state back where a system built from an input starts: the table and trend pointers null, the
-    /// boundary conditions, the steady-state search, the time-step statistics and the counters at their initial
-    /// values, the previous-time-level interface state equal to the current one, and the histories empty.
+    /// Puts the run state back where a system built from an input starts: the property tables and the steady-state
+    /// search as declared, the trend pointers null, the boundary conditions, the time-step statistics and the counters
+    /// at their initial values, the previous-time-level interface state equal to the current one, and the histories
+    /// empty.
     void resetRunState();
     /// Sizes the profile buffers and the pressure-velocity systems of both lines for arq's cells, all zero.
     void allocateSolutionBuffers();
