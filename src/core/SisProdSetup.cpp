@@ -301,27 +301,27 @@ void SProd::generateSaturationTablesFromCorrelations() {
 /// extraSourceLengths, whose cell indices it records in extraSourceCells.
 void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount) {
     indTramo = -1;
-    transient.KontaImprime = 0;
-    transient.tempoaberto = 0.;
-    transient.tempoabertoini = 0.;
+    transient.printCounter = 0;
+    transient.activeChokeDelay = 0.;
+    transient.previousActiveChokeDelay = 0.;
     modoPerm = 0;
     steadyIteration = 0;
     masChkSup = 0;
     dt = arq.dtmax;
     gasLift.interfaceTimeStep = arq.dtmax;
-    transient.tfinal = arq.tfinal;
-    transient.TransMassModel = 0;
-    transient.indpigP = 0;
-    transient.indpigPini = transient.indpigP;
-    transient.reinicia = 0;
+    transient.finalTime = arq.tfinal;
+    transient.massTransferModel = 0;
+    transient.movingPigCount = 0;
+    transient.previousMovingPigCount = transient.movingPigCount;
+    transient.rollbackRequested = 0;
     networkCoupling.previousSurfaceChokeActive = 0;
     networkCoupling.reverseLiquidFraction = 0.;
-    transient.trackDeng = arq.trackDeng;
+    transient.trackGasGravity = arq.trackDeng;
     steadySearch.productionFluidCount = arq.nfluP;
     CalcLat = arq.latente;
     if (arq.flashCompleto == 1)
         arq.trackRGO = 1;
-    transient.trackRGO = arq.trackRGO;
+    transient.trackGasOilRatio = arq.trackRGO;
     const int injPoc = arq.pocinjec + arq.condpocinj.tipoFlui;
     arq.fluc.injPoc = injPoc;
     if (arq.flashCompleto == 1)
@@ -377,7 +377,7 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
     arq.fluc.DrhoDtInj = arq.DrhoDtInj;
 
     if (arq.modelcp > 0 || arq.modelJTL == 1 || arq.latente > 0 || (arq.pocinjec == 1 && (arq.condpocinj.tipoFlui == 2 || arq.condpocinj.tipoFlui == 3)))
-        transient.TransMassModel = arq.transmass;
+        transient.massTransferModel = arq.transmass;
     arq.geraduto();
     ncel = arq.ncelp - 1;
     temperatura = arq.celp[0].textern;
@@ -499,15 +499,15 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
     if (arq.nvalv > 0)
         arq.geraValv(celula);
     arq.gerapresfim(presfim, gasLift.separatorPressure);
-    transient.pGSupIni = gasLift.separatorPressure;
+    transient.previousSeparatorPressure = gasLift.separatorPressure;
     chokeSup = choke(1., 1.);
     gasLift.injectionChoke = ChokeGas();
     arq.gerachokesup(chokeSup);
-    transient.npig = arq.npig;
-    if (transient.npig > 0) {
-        transient.receb = vector<int>(transient.npig);
-        for (int i = 0; i < transient.npig; i++)
-            transient.receb[i] = arq.pig[i].receb;
+    transient.scheduledPigCount = arq.npig;
+    if (transient.scheduledPigCount > 0) {
+        transient.pigReceiverCells = vector<int>(transient.scheduledPigCount);
+        for (int i = 0; i < transient.scheduledPigCount; i++)
+            transient.pigReceiverCells[i] = arq.pig[i].receb;
     }
 }
 
@@ -622,13 +622,13 @@ void SProd::validateSetupAndApplyInitialState() {
         arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, gasLift.injectionChoke, celula, gasLift.cells,
                      gasLift.separatorPressure, temperatura, gasLift.injectionPressure, gasLift.injectionTemperature,
                      presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
-        transient.pGSupIni = gasLift.separatorPressure;
+        transient.previousSeparatorPressure = gasLift.separatorPressure;
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
-            transient.aberto = 1;
-            transient.abertoini = 1;
+            transient.surfaceChokeOpen = 1;
+            transient.previousSurfaceChokeOpen = 1;
         } else {
-            transient.aberto = 0;
-            transient.abertoini = 1;
+            transient.surfaceChokeOpen = 0;
+            transient.previousSurfaceChokeOpen = 1;
         }
     }
 
@@ -836,19 +836,19 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
 void SProd::allocateEventProfileAndTrendArrays() {
     for (int i = 0; i < ncel; i++) {
         if (celula[i].calor.difus2D == 1) {
-            transient.indCelPoisson2D.push_back(i);
-            transient.nCelulaPoisson2D++;
+            transient.poisson2DCells.push_back(i);
+            transient.poisson2DCellCount++;
         }
     }
 
-    transient.nabreM1 = arq.eventoabre;
-    transient.nfechaM1 = arq.eventofecha;
-    transient.abreM1 = vector<double>(transient.nabreM1);
-    transient.fechaM1 = vector<double>(transient.nfechaM1);
-    for (int i = 0; i < transient.nabreM1; i++)
-        transient.abreM1[i] = arq.Tevento[i];
-    for (int i = 0; i < transient.nfechaM1; i++)
-        transient.fechaM1[i] = arq.Teventof[i];
+    transient.masterValveOpenCount = arq.eventoabre;
+    transient.masterValveCloseCount = arq.eventofecha;
+    transient.masterValveOpenTimes = vector<double>(transient.masterValveOpenCount);
+    transient.masterValveCloseTimes = vector<double>(transient.masterValveCloseCount);
+    for (int i = 0; i < transient.masterValveOpenCount; i++)
+        transient.masterValveOpenTimes[i] = arq.Tevento[i];
+    for (int i = 0; i < transient.masterValveCloseCount; i++)
+        transient.masterValveCloseTimes[i] = arq.Teventof[i];
 
     int ntempGas = 0;
     if (arq.lingas > 0)
@@ -969,16 +969,17 @@ void SProd::resetCouplingAndOutputState() {
     tmpLog = saidaLog.str();
     // if it's not a simulation POCO_INJETOR
     if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
-        transient.contaLog = 0;
+        transient.eventLogCount = 0;
         int nevent = arq.logevento.size();
-        while (transient.contaLog < nevent && fabs(arq.logevento[transient.contaLog].instante - (*vg1dSP).lixo5) < dt) {
+        while (transient.eventLogCount < nevent &&
+               fabs(arq.logevento[transient.eventLogCount].instante - (*vg1dSP).lixo5) < dt) {
             time_t now = time(0);
             tm *ltm = localtime(&now); // Taken from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
             ofstream escreveIni(tmpLog.c_str(), ios_base::app);
             escreveIni << "Evento Externo = ";
-            escreveIni << arq.logevento[transient.contaLog].instante << " ; ";
-            escreveIni << arq.logevento[transient.contaLog].duracao << " ; ";
-            escreveIni << arq.logevento[transient.contaLog].descricao << " ; ";
+            escreveIni << arq.logevento[transient.eventLogCount].instante << " ; ";
+            escreveIni << arq.logevento[transient.eventLogCount].duracao << " ; ";
+            escreveIni << arq.logevento[transient.eventLogCount].descricao << " ; ";
             escreveIni << "datahora = ";
             escreveIni << ltm->tm_mday << "/";
             escreveIni << 1 + ltm->tm_mon << "/";
@@ -987,15 +988,15 @@ void SProd::resetCouplingAndOutputState() {
             escreveIni << 0 + ltm->tm_min << ":";
             escreveIni << 0 + ltm->tm_sec;
             escreveIni << endl;
-            transient.contaLog++;
+            transient.eventLogCount++;
             escreveIni.close();
         }
     }
 
-    transient.menorDx = 1e10;
+    transient.smallestCellLength = 1e10;
     for (int i = 0; i <= ncel; i++) {
-        if (celula[i].dx < transient.menorDx)
-            transient.menorDx = celula[i].dx;
+        if (celula[i].dx < transient.smallestCellLength)
+            transient.smallestCellLength = celula[i].dx;
         if (i > 0)
             celula[i].razdxTM = celula[i - 1].dx / (celula[i - 1].dx + celula[i].dx);
         if (i > 1)
@@ -1008,16 +1009,16 @@ void SProd::resetCouplingAndOutputState() {
     	}
     }
 
-    transient.kSP = 0;
-    transient.indevento = 1;
-    transient.mult = 0.8;
-    transient.presMedMov = 0.;
-    transient.jMedMov = 0.;
-    transient.tMedMov = 60.;
-    transient.ktMedMov = 0.;
-    transient.pTotal = 0.;
-    transient.jTotal = 0.;
-    transient.alfTotal = 0.;
+    transient.stepCount = 0;
+    transient.eventIndex = 1;
+    transient.cflSafetyFactor = 0.8;
+    transient.movingMeanPressure = 0.;
+    transient.movingMeanFlux = 0.;
+    transient.movingMeanStartTime = 60.;
+    transient.movingMeanWindow = 0.;
+    transient.accumulatedPressure = 0.;
+    transient.accumulatedFlux = 0.;
+    transient.accumulatedVoidFraction = 0.;
 }
 
 void SProd::montasistema(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount) {

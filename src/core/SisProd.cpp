@@ -52,40 +52,40 @@ void SProd::resetRunState() {
     gasLift.maximumUnloadingFlowSamples.clear();
     gasLift.unloadingTimeStepSamples.clear();
 
-    transient.trackRGO = 0;
-    transient.trackDeng = 0;
-    transient.fontemassPRBuf = 0.;
-    transient.fontemassCRBuf = 0.;
-    transient.fontemassGRBuf = 0.;
-    transient.dtCFLMed = 1.;
-    transient.dtSimMed = 1.;
-    transient.restriDt = 0;
-    transient.kontarestriDt = 0;
-    transient.dtauxCFL = 0.;
-    transient.dtauxFinal = 0.;
-    transient.kontaGolfada = kInitialSlugCount;
-    transient.mudaModoChk = 0;
-    transient.momentoDesesp = 0;
-    transient.modeloCompleto = 1;
-    transient.DpMaxMed = 1.;
-    transient.DTMaxMed = 1.;
+    transient.trackGasOilRatio = 0;
+    transient.trackGasGravity = 0;
+    transient.bufferedLiquidMassSource = 0.;
+    transient.bufferedComplementaryMassSource = 0.;
+    transient.bufferedGasMassSource = 0.;
+    transient.meanCflTimeStep = 1.;
+    transient.meanAcceptedTimeStep = 1.;
+    transient.timeStepRestricted = 0;
+    transient.restrictedStepsLeft = 0;
+    transient.auxiliaryCflTimeStep = 0.;
+    transient.auxiliaryAcceptedTimeStep = 0.;
+    transient.slugCount = kInitialSlugCount;
+    transient.chokeModeChanged = 0;
+    transient.artificialGasMultiplier = 0;
+    transient.fullModel = 1;
+    transient.meanMaximumPressureRate = 1.;
+    transient.meanMaximumTemperatureRate = 1.;
     for (int i = 0; i < kMasterRatioHistorySize; i++) {
-        transient.vRazMast0[i] = 0.;
-        transient.vRazMast1[i] = 0.;
-        transient.vRazMastCrit[i] = kDefaultMasterCriticalRatio;
+        transient.masterValveRatiosInactive[i] = 0.;
+        transient.masterValveRatiosActive[i] = 0.;
+        transient.masterValveCriticalRatios[i] = kDefaultMasterCriticalRatio;
     }
-    transient.kontaRenovaComp = 0;
-    transient.nCelulaPoisson2D = 0;
-    transient.alteraTempo = 0;
-    transient.presVet.clear();
-    transient.jVet.clear();
-    transient.alfVet.clear();
-    transient.tVet.clear();
-    transient.dtSim.clear();
-    transient.dtCFL.clear();
-    transient.taxaDpMax.clear();
-    transient.taxaDTMax.clear();
-    transient.indCelPoisson2D.clear();
+    transient.compositionalRefreshCounter = 0;
+    transient.poisson2DCellCount = 0;
+    transient.adjustTimeStep = 0;
+    transient.pressureSamples.clear();
+    transient.fluxSamples.clear();
+    transient.voidFractionSamples.clear();
+    transient.timeSamples.clear();
+    transient.acceptedTimeSteps.clear();
+    transient.cflTimeSteps.clear();
+    transient.maximumPressureRates.clear();
+    transient.maximumTemperatureRates.clear();
+    transient.poisson2DCells.clear();
 
     trends.gasTrendMatrices = nullptr;
     trends.gasTrendResetTimes = nullptr;
@@ -123,9 +123,9 @@ void SProd::resetRunState() {
 void SProd::allocateSolutionBuffers() {
     flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns);
     flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns);
-    transient.matglobP =
+    transient.systemMatrix =
         BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth, kProductionRightBandwidth);
-    transient.termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp);
+    transient.rightHandSide = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp);
     gasLift.systemMatrix = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth);
     gasLift.rightHandSide = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
 }
@@ -140,9 +140,9 @@ SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidatio
       gasLift{.systemMatrix =
                   BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth),
               .rightHandSide = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg)},
-      transient{.matglobP = BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth,
-                                            kProductionRightBandwidth),
-                .termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)},
+      transient{.systemMatrix = BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth,
+                                                kProductionRightBandwidth),
+                .rightHandSide = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)},
       bloq(blocking), vg1dSP(globals) {
     resolveDriftSelectors();
     resetRunState();
@@ -170,8 +170,8 @@ void SProd::releaseOwnedStorage() {
     releaseVector(gasLift.valveChokes);
     releaseVector(gasLift.productionValveCells);
     releaseVector(gasLift.gasValveCells);
-    releaseVector(transient.abreM1);
-    releaseVector(transient.fechaM1);
+    releaseVector(transient.masterValveOpenTimes);
+    releaseVector(transient.masterValveCloseTimes);
 
     releaseVector(trends.productionWallProfileCells);
     releaseVector(trends.gasWallProfileCells);
@@ -187,7 +187,7 @@ void SProd::releaseOwnedStorage() {
     tables.liviaSolutionGasRatioTable.release();
 
     releaseVector(productionCells);
-    releaseVector(transient.receb);
+    releaseVector(transient.pigReceiverCells);
     releaseVector(tables.dynamicTables);
 }
 
@@ -226,7 +226,7 @@ SProd::CarriedState SProd::carriedState() const {
             .bloq = bloq,
             .previousReverseLiquidFraction = networkCoupling.previousReverseLiquidFraction,
             .previousReverseQuality = networkCoupling.previousReverseQuality,
-            .dtCicMin = transient.dtCicMin};
+            .minimumCycleTimeStep = transient.minimumCycleTimeStep};
 }
 
 void SProd::applyCarriedState(const CarriedState &carried) {
@@ -236,7 +236,7 @@ void SProd::applyCarriedState(const CarriedState &carried) {
     bloq = carried.bloq;
     networkCoupling.previousReverseLiquidFraction = carried.previousReverseLiquidFraction;
     networkCoupling.previousReverseQuality = carried.previousReverseQuality;
-    transient.dtCicMin = carried.dtCicMin;
+    transient.minimumCycleTimeStep = carried.minimumCycleTimeStep;
 }
 
 void SProd::HidroDescargaG() {

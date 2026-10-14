@@ -200,159 +200,159 @@ struct GasLiftLine {
 struct TransientRun {
     /// Enables transport equations for primitive black-oil properties, including API gravity, BSW, gas-oil ratio, and
     /// light/heavy mass fractions.
-    int trackRGO = 0;
+    int trackGasOilRatio = 0;
     /// Enables transport equations for gas density and the gas-phase CO2 molar fraction.
-    int trackDeng = 0;
+    int trackGasGravity = 0;
     /// Current Master1 valve state.
-    int EstadoMaster1 = 0;
+    int masterValveState = 0;
     /// Counter used while changing the Master1 state.
-    int contaMaster1 = 0;
+    int masterValveCounter = 0;
     /// Number of pigs scheduled for launch.
-    int npig = 0;
+    int scheduledPigCount = 0;
     /// Cell indices where pigs are received.
-    std::vector<int> receb;
+    std::vector<int> pigReceiverCells;
     /// Global pressure-velocity coupling matrix for the multiphase production line, sized for one cell until the
     /// system is sized for its input.
-    BandMtx<double> matglobP{kProductionUnknownsPerCell, kProductionLeftBandwidth, kProductionRightBandwidth};
+    BandMtx<double> systemMatrix{kProductionUnknownsPerCell, kProductionLeftBandwidth, kProductionRightBandwidth};
     /// Number of scheduled Master1 opening events.
-    int nabreM1 = 0;
+    int masterValveOpenCount = 0;
     /// Number of scheduled Master1 closing events.
-    int nfechaM1 = 0;
+    int masterValveCloseCount = 0;
     /// Times at which Master1 closes.
-    std::vector<double> fechaM1;
+    std::vector<double> masterValveCloseTimes;
     /// Times at which Master1 opens.
-    std::vector<double> abreM1;
+    std::vector<double> masterValveOpenTimes;
     /// Number of events written to the event log.
-    int contaLog = 0;
+    int eventLogCount = 0;
     /// Smallest production-line control-volume length.
-    double menorDx = 0.;
+    double smallestCellLength = 0.;
     /// Simulation time-step counter.
-    int kSP = 0;
+    int stepCount = 0;
     /// Controls event-log output frequency.
-    int KontaImprime = 0;
+    int printCounter = 0;
     /// Index of the next scheduled simulation event.
-    int indevento = 0;
+    int eventIndex = 0;
     /// History of recently accepted time steps.
-    std::vector<double> dtSim;
+    std::vector<double> acceptedTimeSteps;
     /// History of time steps proposed by the CFL criterion.
-    std::vector<double> dtCFL;
+    std::vector<double> cflTimeSteps;
     /// Average time step proposed by the CFL criterion.
-    double dtCFLMed = 1.;
+    double meanCflTimeStep = 1.;
     /// Average time step actually used by the simulation.
-    double dtSimMed = 1.;
+    double meanAcceptedTimeStep = 1.;
     /// Indicates that time-step growth must remain restricted.
-    int restriDt = 0;
+    int timeStepRestricted = 0;
     /// Number of remaining steps under the current time-step restriction.
-    int kontarestriDt = 0;
-    /// Accumulated CFL time steps used to compute dtCFLMed.
-    double dtCFLTotal = 0.;
-    /// Accumulated accepted time steps used to compute dtSimMed.
-    double dtSimTotal = 0.;
+    int restrictedStepsLeft = 0;
+    /// Accumulated CFL time steps used to compute meanCflTimeStep.
+    double totalCflTimeStep = 0.;
+    /// Accumulated accepted time steps used to compute meanAcceptedTimeStep.
+    double totalAcceptedTimeStep = 0.;
     /// Counts alternating liquid-flow oscillations near an active surface choke.
-    int kontaGolfada = kInitialSlugCount;
+    int slugCount = kInitialSlugCount;
     /// Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It mitigates a
     /// pressure blind spot when the upstream side contains only liquid and increases if the problem persists.
-    double momentoDesesp = 0;
+    double artificialGasMultiplier = 0;
     /// The artificial gas the closing-valve control added in the current time step, kept until the step is accepted,
     /// when it goes to the run's diagnostics.
     std::vector<diagnostics::ArtificialGasAddition> artificialGasThisStep;
     /// Recent maximum pressure-change rates.
-    std::vector<double> taxaDpMax;
+    std::vector<double> maximumPressureRates;
     /// Average maximum pressure-change rate.
-    double DpMaxMed = 1.;
+    double meanMaximumPressureRate = 1.;
     /// Recent maximum temperature-change rates.
-    std::vector<double> taxaDTMax;
+    std::vector<double> maximumTemperatureRates;
     /// Average maximum temperature-change rate.
-    double DTMaxMed = 1.;
+    double meanMaximumTemperatureRate = 1.;
     /// Counter controlling compositional-property refreshes.
-    int kontaRenovaComp = 0;
+    int compositionalRefreshCounter = 0;
     /// Production cells handled by the two-dimensional Poisson model.
-    std::vector<int> indCelPoisson2D;
+    std::vector<int> poisson2DCells;
     /// Number of cells handled by the two-dimensional Poisson model.
-    int nCelulaPoisson2D = 0;
+    int poisson2DCellCount = 0;
     /// Signals that the time step must be adjusted.
-    int alteraTempo = 0;
+    int adjustTimeStep = 0;
     /// Requests rollback and time-step reevaluation when at least one control volume produces a holdup or volume
     /// fraction outside the physical [0, 1] range.
-    int reinicia = 0;
+    int rollbackRequested = 0;
     /// Recent Master1 ratio values for the active state.
-    double vRazMast1[kMasterRatioHistorySize] = {};
+    double masterValveRatiosActive[kMasterRatioHistorySize] = {};
     /// Recent Master1 ratio values for the inactive state.
-    double vRazMast0[kMasterRatioHistorySize] = {};
+    double masterValveRatiosInactive[kMasterRatioHistorySize] = {};
     /// Critical Master1 ratio history used by the switching logic.
-    double vRazMastCrit[kMasterRatioHistorySize] = {
+    double masterValveCriticalRatios[kMasterRatioHistorySize] = {
         kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
         kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
         kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
         kDefaultMasterCriticalRatio};
-    /// Previous-time-level value of pGSup.
-    double pGSupIni = 0.;
+    /// Previous-time-level value of gasLift.separatorPressure.
+    double previousSeparatorPressure = 0.;
     /// Recorded in the restart file; nothing in the simulation reads it.
-    double massfonte = 0.;
+    double restartSourceMass = 0.;
     /// CFL safety factor, typically set to 0.8.
-    double mult = 0;
+    double cflSafetyFactor = 0;
     /// Time-averaged pressure in the final production-line control volume. Used to decide whether the surface choke
     /// behaves as a localized pressure loss or as a discharge-flow model.
-    double presMedMov = 0;
+    double movingMeanPressure = 0;
     /// Time-averaged mixture volumetric flux in the final production-line control volume. Used by the surface-choke
     /// operating-mode logic.
-    double jMedMov = 0;
+    double movingMeanFlux = 0;
     /// Time-averaged void fraction in the final production-line control volume, updated once the averaging window
     /// fills. Zero until then; only the restart file reads it.
-    double alfMedMov = 0.;
+    double movingMeanVoidFraction = 0.;
     /// Start time of the moving-average window.
-    double tMedMov = 0;
+    double movingMeanStartTime = 0;
     /// Duration of the moving-average window.
-    double ktMedMov = 0.;
-    /// Accumulated pressure used to compute presMedMov.
-    double pTotal = 0.;
-    /// Accumulated mixture flux used to compute jMedMov.
-    double jTotal = 0.;
-    /// Accumulated void fraction used to compute alfMedMov.
-    double alfTotal = 0.;
+    double movingMeanWindow = 0.;
+    /// Accumulated pressure used to compute movingMeanPressure.
+    double accumulatedPressure = 0.;
+    /// Accumulated mixture flux used to compute movingMeanFlux.
+    double accumulatedFlux = 0.;
+    /// Accumulated void fraction used to compute movingMeanVoidFraction.
+    double accumulatedVoidFraction = 0.;
     /// Pressure samples used by the moving-average calculation.
-    std::vector<double> presVet;
+    std::vector<double> pressureSamples;
     /// Mixture-flux samples used by the moving-average calculation.
-    std::vector<double> jVet;
+    std::vector<double> fluxSamples;
     /// Void-fraction samples used by the moving-average calculation.
-    std::vector<double> alfVet;
+    std::vector<double> voidFractionSamples;
     /// Time samples associated with the moving-average window.
-    std::vector<double> tVet;
+    std::vector<double> timeSamples;
     /// Current surface-choke open/closed state.
-    int aberto = 0;
+    int surfaceChokeOpen = 0;
     /// Previous-time-level surface-choke state.
-    int abertoini = 0;
+    int previousSurfaceChokeOpen = 0;
     /// Counter that delays transitions out of active-choke mode.
-    int tempoaberto = 0;
-    /// Previous-time-level value of tempoaberto.
-    int tempoabertoini = 0;
+    int activeChokeDelay = 0;
+    /// Previous-time-level value of activeChokeDelay.
+    int previousActiveChokeDelay = 0;
     /// Signals a surface-choke operating-mode transition.
-    int mudaModoChk = 0;
+    int chokeModeChanged = 0;
     /// Selects the interphase mass-transfer model: 0 = complete, 1 = fully explicit, 2 = simplified, and 3 =
     /// disabled.
-    int TransMassModel = 0;
+    int massTransferModel = 0;
     /// Number of pigs currently moving through the line.
-    int indpigP = 0;
-    /// Previous-time-level value of indpigP.
-    int indpigPini = 0;
-    /// Right-hand side and solution vector for the production-line pressure-velocity system, sized like matglobP.
-    Vcr<double> termolivreP{kProductionUnknownsPerCell};
+    int movingPigCount = 0;
+    /// Previous-time-level value of movingPigCount.
+    int previousMovingPigCount = 0;
+    /// Right-hand side and solution vector for the production-line pressure-velocity system, sized like systemMatrix.
+    Vcr<double> rightHandSide{kProductionUnknownsPerCell};
     /// Simulation end time.
-    double tfinal = 0;
+    double finalTime = 0;
     /// Current complete-model activation state.
-    int modeloCompleto = 1;
+    int fullModel = 1;
     /// Auxiliary CFL time-step accumulator.
-    double dtauxCFL = 0.;
+    double auxiliaryCflTimeStep = 0.;
     /// Auxiliary accepted-time-step accumulator.
-    double dtauxFinal = 0.;
+    double auxiliaryAcceptedTimeStep = 0.;
     /// Intermediate production-liquid inflow estimate for a network section.
-    double fontemassPRBuf = 0.;
+    double bufferedLiquidMassSource = 0.;
     /// Intermediate complementary-liquid inflow estimate for a network section.
-    double fontemassCRBuf = 0.;
+    double bufferedComplementaryMassSource = 0.;
     /// Intermediate gas inflow estimate for a network section.
-    double fontemassGRBuf = 0.;
+    double bufferedGasMassSource = 0.;
     /// Minimum time step allowed by the current cycle. Zero until a transient cycle sets it.
-    double dtCicMin = 0.;
+    double minimumCycleTimeStep = 0.;
 };
 
 /// The storage of one family of trends: for each trend, its rows of samples, and its reset time
@@ -504,7 +504,7 @@ struct NetworkCoupling {
     double chokeOutletTemperature = 0;
     /// Previous-time-level value of masChkSup.
     int previousSurfaceChokeActive = 0;
-    /// Previous-time-level value of mudaModoChk.
+    /// Previous-time-level value of transient.chokeModeChanged.
     int previousChokeModeChanged = 0;
     /// Secondary-line index where parallel-network coupling with the primary line begins.
     int secondaryCouplingStart = 0;
@@ -605,7 +605,7 @@ class SProd {
         int bloq;
         double previousReverseLiquidFraction;
         double previousReverseQuality;
-        double dtCicMin;
+        double minimumCycleTimeStep;
     };
 
     /// Constructs and initializes a production-system simulation from the input and log files.
