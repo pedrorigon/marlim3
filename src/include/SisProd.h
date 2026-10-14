@@ -290,7 +290,7 @@ struct GasLiftLine {
     /**
      * @brief Previous-time-level interface cell.
      */
-    int celInterIni = 0.;
+    int celInterIni = 0;
     /**
      * @brief Previous-time-level interface-limited time step.
      */
@@ -363,15 +363,15 @@ struct TransientRun {
     /**
      * @brief Simulation time-step counter.
      */
-    int kSP = 0.;
+    int kSP = 0;
     /**
      * @brief Controls event-log output frequency.
      */
-    int KontaImprime = 0.;
+    int KontaImprime = 0;
     /**
      * @brief Index of the next scheduled simulation event.
      */
-    int indevento = 0.;
+    int indevento = 0;
     /**
      * @brief History of recently accepted time steps.
      */
@@ -1092,13 +1092,13 @@ class SProd {
     /**
      * @brief Number of iterations used to bracket the initial steady-state root.
      */
-    int iterperm = 0.;
+    int iterperm = 0;
   public:
     /**
      * @brief Steady-state mode flag: 1 while Num4Main solves a network branch at
      * steady state. The source terms read it (sisprod::sources::SourceState).
      */
-    int modoPerm = 0.;
+    int modoPerm = 0;
 
     /**
      * @brief Surface-choke model.
