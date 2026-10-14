@@ -490,24 +490,24 @@ double SProd::marchaProdPresPres1(double mchute) {
     return sisprod::steady::marchProductionPressureToPressure(context.steady(), mchute);
 }
 
-double SProd::buscaProdPresPresPerm(double chute, double maxvaz, int kontaiter) {
+double SProd::buscaProdPresPresPerm(double mchute, double maxvaz, int kontaiter) {
     sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionPressureToPressure(context.search(), chute, maxvaz, kontaiter);
+    return sisprod::steady::searchProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
 }
 
-double SProd::buscaProdPresPresPermRev(double chute, double maxvaz, int kontaiter) {
+double SProd::buscaProdPresPresPermRev(double mchute, double maxvaz, int kontaiter) {
     sisprod::SolveContext context(*this);
-    return sisprod::steady::searchReverseProductionPressureToPressure(context.search(), chute, maxvaz, kontaiter);
+    return sisprod::steady::searchReverseProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
 }
 
-double SProd::buscaProdPresPresPerm2(double chute, double maxvaz) {
+double SProd::buscaProdPresPresPerm2(double mchute, double maxvaz) {
     sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionPressureToPressureSecondary(context.search(), chute, maxvaz);
+    return sisprod::steady::searchProductionPressureToPressureSecondary(context.search(), mchute, maxvaz);
 }
 
-double SProd::buscaProdPresPresPerm3(double chute, double maxvaz) {
+double SProd::buscaProdPresPresPerm3(double mchute, double maxvaz) {
     sisprod::SolveContext context(*this);
-    return sisprod::steady::searchProductionPressureToPressureTertiary(context.search(), chute, maxvaz);
+    return sisprod::steady::searchProductionPressureToPressureTertiary(context.search(), mchute, maxvaz);
 }
 
 void SProd::calcTempFim() {
