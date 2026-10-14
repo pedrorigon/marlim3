@@ -819,6 +819,8 @@ class SProd {
     SProd(Ler &parsedInput, const CarriedState &carried);
 
   private:
+    /// Takes over the place in the network and the reverse-flow state in carried.
+    void applyCarriedState(const CarriedState &carried);
     /// Points every cell fluid, and every source fluid it carries, at the
     /// bubble-point tables read from the PVTSim file, and switches them to
     /// saturation model 4.

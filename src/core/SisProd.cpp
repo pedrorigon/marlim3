@@ -237,17 +237,7 @@ SProd &SProd::operator=(const SProd &sp) {
     allocateSolutionBuffers();
     vg1dSP = sp.vg1dSP;
     resetRunState();
-
-    noextremo = sp.noextremo;
-    noinicial = sp.noinicial;
-    derivaAnel = sp.derivaAnel;
-
-    networkCoupling.betaRevini = sp.networkCoupling.betaRevini;
-    networkCoupling.titRevini = sp.networkCoupling.titRevini;
-
-    bloq = sp.bloq;
-
-    transient.dtCicMin = sp.transient.dtCicMin;
+    applyCarriedState(sp.carriedState());
     networkCoupling.redeParalelaCCsecundario = sp.networkCoupling.redeParalelaCCsecundario;
     networkCoupling.redeParalelaP = sp.networkCoupling.redeParalelaP;
     networkCoupling.redeParalelaS = sp.networkCoupling.redeParalelaS;
@@ -265,21 +255,7 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
     allocateSolutionBuffers();
     vg1dSP = arq.vg1dSP;
     resetRunState();
-
-    noextremo = carried.noextremo;
-    noinicial = carried.noinicial;
-    derivaAnel = carried.derivaAnel;
-
-    networkCoupling.betaRevini = carried.betaRevini;
-    networkCoupling.titRevini = carried.titRevini;
-
-    bloq = carried.bloq;
-
-    transient.dtCicMin = carried.dtCicMin;
-
-    networkCoupling.redeParalelaCCsecundario = -1;
-    networkCoupling.redeParalelaP = -1;
-    networkCoupling.redeParalelaS = -1;
+    applyCarriedState(carried);
 
     montasistema();
 }
@@ -292,6 +268,16 @@ SProd::CarriedState SProd::carriedState() const {
             .betaRevini = networkCoupling.betaRevini,
             .titRevini = networkCoupling.titRevini,
             .dtCicMin = transient.dtCicMin};
+}
+
+void SProd::applyCarriedState(const CarriedState &carried) {
+    noextremo = carried.noextremo;
+    noinicial = carried.noinicial;
+    derivaAnel = carried.derivaAnel;
+    bloq = carried.bloq;
+    networkCoupling.betaRevini = carried.betaRevini;
+    networkCoupling.titRevini = carried.titRevini;
+    transient.dtCicMin = carried.dtCicMin;
 }
 
 void SProd::HidroDescargaG() {
