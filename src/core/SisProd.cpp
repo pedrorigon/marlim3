@@ -36,7 +36,7 @@ void SProd::resetRunState() {
     betaE = -1;
     alfE = -1;
     tGSup = 0.;
-    thermalSourceDisabled = 0;
+    thermalSourceDisabled = false;
 
     gasLift.cells = nullptr;
     gasLift.interfaceCell = kNoInterfaceCell;
@@ -59,12 +59,12 @@ void SProd::resetRunState() {
     transient.bufferedGasMassSource = 0.;
     transient.meanCflTimeStep = 1.;
     transient.meanAcceptedTimeStep = 1.;
-    transient.timeStepRestricted = 0;
+    transient.timeStepRestricted = false;
     transient.restrictedStepsLeft = 0;
     transient.auxiliaryCflTimeStep = 0.;
     transient.auxiliaryAcceptedTimeStep = 0.;
     transient.slugCount = kInitialSlugCount;
-    transient.chokeModeChanged = 0;
+    transient.chokeModeChanged = false;
     transient.artificialGasMultiplier = 0;
     transient.fullModel = 1;
     transient.meanMaximumPressureRate = 1.;
@@ -108,7 +108,7 @@ void SProd::resetRunState() {
     networkCoupling.previousInletLiquidFraction = -1;
     networkCoupling.previousInletVoidFraction = -1;
     networkCoupling.previousSeparatorTemperature = 0.;
-    networkCoupling.previousChokeModeChanged = 0;
+    networkCoupling.previousChokeModeChanged = false;
     networkCoupling.parallelSourceCells.clear();
     networkCoupling.parallelSourceProductionLiquid.clear();
     networkCoupling.parallelSourceComplementaryLiquid.clear();
