@@ -4,13 +4,9 @@
  *  Created on: 21 Dec 2016
  *      Author: Eduardo
  */
-#define _USE_MATH_DEFINES // for M_PI
 #include "SisProd.h"
-#include "DriftFluxClosure.h"
 #include "FA_Hidratos.h"
 #include "FA_Hidratos_Servico.h"
-#include "OutputI18n.h"
-#include "RootFindingSolvers.h"
 #include "SisProdConstants.h"
 #include "SisProdGasLift.h"
 #include "SisProdSources.h"
@@ -21,8 +17,6 @@
 #include "SisProdSolveContext.h"
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
-#include <chrono>
-#include <math.h>
 
 void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
