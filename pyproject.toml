@@ -88,6 +88,9 @@ tutorials = [
 # ──────────────────────────────────────────────────────────────────────────────
 # Tool configuration
 # ──────────────────────────────────────────────────────────────────────────────
+[tool.uv]
+required-version = "==0.13.1"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short --durations=0 -s"

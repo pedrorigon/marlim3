@@ -23,6 +23,40 @@ def test_desktop_paths_resolve_from_bundle_override(monkeypatch, tmp_path):
     assert paths.get_logo_path() == tmp_path / "assets" / "branding" / "logo.svg"
 
 
+def test_desktop_uses_prepared_environment_without_sync(monkeypatch):
+    monkeypatch.setenv("MARLIM_DEPENDENCIES_PREPARED", "1")
+    monkeypatch.setattr(build, "require_tool", lambda name: None)
+    run = Mock()
+    monkeypatch.setattr(build, "run", run)
+    build.sync_dependencies()
+    run.assert_not_called()
+
+
+def test_desktop_corporate_sync_uses_dependency_helper(monkeypatch):
+    monkeypatch.delenv("MARLIM_DEPENDENCIES_PREPARED", raising=False)
+    monkeypatch.setenv("MARLIM_DEPENDENCY_MODE", "corporate")
+    monkeypatch.setattr(build, "require_tool", lambda name: None)
+    run = Mock()
+    monkeypatch.setattr(build, "run", run)
+    build.sync_dependencies()
+    command = run.call_args.args[0]
+    assert command[0] == sys.executable
+    assert Path(command[1]) == build.ROOT / "scripts" / "dependencies.py"
+    assert command[2:] == [
+        "sync", "--mode", "corporate", "--no-dev",
+        "--group", "gui", "--group", "desktop",
+    ]
+
+
+def test_pyinstaller_does_not_resolve_dependencies_again(monkeypatch, tmp_path):
+    monkeypatch.setattr(build, "DIST_DIR", tmp_path / "dist")
+    monkeypatch.setattr(build, "require_tool", lambda name: None)
+    run = Mock()
+    monkeypatch.setattr(build, "run", run)
+    build.build_pyinstaller_bundle()
+    assert run.call_args.args[0][:3] == ["uv", "run", "--no-sync"]
+
+
 def test_configure_environment_sets_desktop_defaults(monkeypatch, tmp_path):
     for name in (
         "MARLIM3_EXEC",

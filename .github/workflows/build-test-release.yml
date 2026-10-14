@@ -20,6 +20,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  UV_LOCKED: "1"
+  UV_DEFAULT_INDEX: "https://pypi.org/simple"
   MARLIM3_SKIP_BUILD: "1"
   MARLIM3_SKIP_EXECUTABLE_RESOLUTION: "1"
   ARTIFACT_RETENTION_DAYS: "7"
@@ -51,10 +53,35 @@ jobs:
             echo "should_skip=${SKIP_FROM_CHECK:-false}" >> "$GITHUB_OUTPUT"
           fi
 
+  public-lock-check:
+    name: Public dependency lock policy
+    needs: pre_check
+    if: needs.pre_check.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v7.0.0
+        with:
+          version: "0.13.1"
+          enable-cache: false
+      - name: Validate public sources, hashes and lock consistency
+        run: python scripts/dependencies.py check
+      - name: Test dependency workflow
+        run: |
+          uv sync --locked --group dev
+          uv run --locked python -m pytest tests/test_dependency_workflow.py
+
   # Python-only package sanity. Does not depend on the native executable.
   python-checks:
     name: Python checks / package sanity
-    needs: pre_check
+    needs: [pre_check, public-lock-check]
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
@@ -72,6 +99,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and dev dependencies
@@ -91,7 +119,7 @@ jobs:
 
   docs-check:
     name: Documentation / schema references
-    needs: pre_check
+    needs: [pre_check, public-lock-check]
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
@@ -109,6 +137,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install documentation dependencies
@@ -321,6 +350,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and test dependencies
@@ -384,6 +414,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and test dependencies
@@ -454,6 +485,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and test dependencies
@@ -547,7 +579,7 @@ jobs:
               export MARLIM3_SKIP_BUILD=1
               export MARLIM3_SKIP_EXECUTABLE_RESOLUTION=1
               export MARLIM3_GLIBC_BASELINE=2.34
-              python -m pip install "uv==0.11.23"
+              python -m pip install "uv==0.13.1"
               uv python install 3.12
               managed_python="$(uv python find --managed-python 3.12)"
               uv sync --python "${managed_python}" \
@@ -599,6 +631,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install GUI and desktop build dependencies
@@ -661,6 +694,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install GUI and desktop build dependencies
@@ -909,6 +943,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Build package

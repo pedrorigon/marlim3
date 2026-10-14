@@ -11,6 +11,7 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -82,9 +83,25 @@ def build_engine(preset: str, engine_name: str) -> None:
 
 def sync_dependencies() -> None:
     require_tool("uv")
+    if os.environ.get("MARLIM_DEPENDENCIES_PREPARED") == "1":
+        return
     env = os.environ.copy()
     env["MARLIM3_SKIP_BUILD"] = "1"
     env["MARLIM3_SKIP_EXECUTABLE_RESOLUTION"] = "1"
+    if env.get("MARLIM_DEPENDENCY_MODE") == "corporate":
+        run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "dependencies.py"),
+                "sync",
+                "--mode", "corporate",
+                "--no-dev",
+                "--group", "gui",
+                "--group", "desktop",
+            ],
+            env=env,
+        )
+        return
     run(
         [
             "uv",
@@ -108,6 +125,7 @@ def build_pyinstaller_bundle() -> None:
         [
             "uv",
             "run",
+            "--no-sync",
             "--no-dev",
             "--group",
             "gui",

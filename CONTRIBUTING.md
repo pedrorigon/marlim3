@@ -82,6 +82,11 @@ cmake --build --preset gcc-release -j
 MARLIM3_SKIP_BUILD=1 uv sync --locked
 ```
 
+Dependency changes follow the [public lock workflow](docs/dev-guide/dependencies.md).
+GitHub Actions generates the accepted lock through PyPI; Petrobras developers
+use a locally configured JFrog mirror through the maintenance helper. Use
+`uv run --locked` for normal public development. Do not commit corporate lock URLs.
+
 ## Repository layout
 
 | Path | Contents |
