@@ -247,7 +247,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.betaE = 0.13;
     system.titE = 0.20;
     system.alfE = scenario.voidFraction;
-    system.steadySearch.trocaTermicaLenta = 1.e99;
+    system.steadySearch.slowHeatTransferThreshold = 1.e99;
     system.steadyIteration = 0;
     system.CalcLat = 0;
     system.arq.flashCompleto = 0;
@@ -324,7 +324,7 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
         return;
     }
 
-    system.steadySearch.trocaTermicaLenta = 0.;
+    system.steadySearch.slowHeatTransferThreshold = 0.;
     if (mode == PermMode::semTermo) {
         system.thermalSourceDisabled = 1;
     } else if (mode == PermMode::signedFlow) {

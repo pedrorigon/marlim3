@@ -3575,7 +3575,7 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
         } else {
             for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
                 noConv.flu.fracMol[jgrup] =
-                    malha[auxMaster].steadySearch.fluiRevRede.fracMol[jgrup];
+                    malha[auxMaster].steadySearch.reverseNetworkFluid.fracMol[jgrup];
             }
             if (malha[i].arq.tabelaDinamica == 0)
                 noConv.flu.atualizaPropCompStandard();
@@ -3611,14 +3611,14 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
     } else {
         for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
             noConv.flu.fracMol[jgrup] =
-                malha[i].steadySearch.fluiRevRede.fracMol[jgrup];
+                malha[i].steadySearch.reverseNetworkFluid.fracMol[jgrup];
         }
         if (malha[i].arq.tabelaDinamica == 0)
             noConv.flu.atualizaPropCompStandard();
-        noConv.LVisL = malha[i].steadySearch.fluiRevRede.LVisL;
-        noConv.LVisH = malha[i].steadySearch.fluiRevRede.LVisH;
-        noConv.bswmist = malha[i].steadySearch.fluiRevRede.BSW;
-        noConv.denagmist = malha[i].steadySearch.fluiRevRede.Denag;
+        noConv.LVisL = malha[i].steadySearch.reverseNetworkFluid.LVisL;
+        noConv.LVisH = malha[i].steadySearch.reverseNetworkFluid.LVisH;
+        noConv.bswmist = malha[i].steadySearch.reverseNetworkFluid.BSW;
+        noConv.denagmist = malha[i].steadySearch.reverseNetworkFluid.Denag;
         noConv.betmist = 0.;
         int ind = arqRede.malha[i].afluente[0];
         int fim = malha[ind].ncel - 1;
@@ -3978,15 +3978,15 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                         for (int iaflu = 0; iaflu < naflu; iaflu++) {
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
                             int celProp = 1 - verificaFonteDuplaReversa(malha, auxMaster);
-                            malha[indaflu].steadySearch.fluiRevRede = malha[auxMaster].celula[celProp].flui;
-                            malha[indaflu].steadySearch.tempRev = malha[auxMaster].celula[0].temp;
+                            malha[indaflu].steadySearch.reverseNetworkFluid = malha[auxMaster].celula[celProp].flui;
+                            malha[indaflu].steadySearch.reverseFlowTemperature = malha[auxMaster].celula[0].temp;
                             if ((*arqRede.vg1dSP).fluidoRede == 0)
                                 malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[celProp].acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
                             int aux = ordCol[icol];
                             if (arqRede.malha[aux].ncoleta == 0)
-                                malha[aux].steadySearch.fluiRevRede = malha[aux].arq.flup[0];
+                                malha[aux].steadySearch.reverseNetworkFluid = malha[aux].arq.flup[0];
                         }
 
                         int col2;
@@ -4321,7 +4321,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
 
                                             malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
                                             if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].celula[0].acsr.injl.QLiq < 0) {
-                                                malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                                malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                             }
 
                                         } else {
@@ -4336,7 +4336,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
 
                                             malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
                                             if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].celula[0].acsr.injg.QGas < 0) {
-                                                malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                                malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                             }
                                         }
                                     } else {
@@ -5444,7 +5444,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
         } else {
             for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
                 noConv.flu.fracMol[jgrup] =
-                    malha[i].steadySearch.fluiRevRede.fracMol[jgrup];
+                    malha[i].steadySearch.reverseNetworkFluid.fracMol[jgrup];
             }
             noConv.flu.atualizaPropCompStandard();
         }
@@ -5455,13 +5455,13 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
     } else {
         for (int jgrup = 0; jgrup < noConv.flu.npseudo; jgrup++) {
             noConv.flu.fracMol[jgrup] =
-                malha[i].steadySearch.fluiRevRede.fracMol[jgrup];
+                malha[i].steadySearch.reverseNetworkFluid.fracMol[jgrup];
         }
         noConv.flu.atualizaPropCompStandard();
-        noConv.LVisL = malha[i].steadySearch.fluiRevRede.LVisL;
-        noConv.LVisH = malha[i].steadySearch.fluiRevRede.LVisH;
-        noConv.bswmist = malha[i].steadySearch.fluiRevRede.BSW;
-        noConv.denagmist = malha[i].steadySearch.fluiRevRede.Denag;
+        noConv.LVisL = malha[i].steadySearch.reverseNetworkFluid.LVisL;
+        noConv.LVisH = malha[i].steadySearch.reverseNetworkFluid.LVisH;
+        noConv.bswmist = malha[i].steadySearch.reverseNetworkFluid.BSW;
+        noConv.denagmist = malha[i].steadySearch.reverseNetworkFluid.Denag;
         noConv.betmist = 0.;
         int ind = arqRede.malha[i].afluente[0];
         int fim = malha[ind].ncel - 1;
@@ -5625,15 +5625,15 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
 
                         for (int iaflu = 0; iaflu < naflu; iaflu++) {
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
-                            malha[indaflu].steadySearch.fluiRevRede = malha[auxMaster].celula[0].flui;
-                            malha[indaflu].steadySearch.tempRev = malha[auxMaster].celula[0].temp;
+                            malha[indaflu].steadySearch.reverseNetworkFluid = malha[auxMaster].celula[0].flui;
+                            malha[indaflu].steadySearch.reverseFlowTemperature = malha[auxMaster].celula[0].temp;
                             if ((*arqRede.vg1dSP).fluidoRede == 0)
                                 malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[0].acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
                             int aux = ordCol[icol];
                             if (arqRede.malha[aux].ncoleta == 0)
-                                malha[aux].steadySearch.fluiRevRede = malha[aux].arq.flup[0];
+                                malha[aux].steadySearch.reverseNetworkFluid = malha[aux].arq.flup[0];
                         }
 
                         int col2;
@@ -5767,14 +5767,14 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                                         malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
                                         malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
                                         if ((malha[aux].celula[0].acsr.injl.QLiq) < 0) {
-                                            malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                            malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                         }
 
                                     } else {
                                         malha[aux].celula[0].acsr.injg.FluidoPro = noConv.flu;
                                         malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
                                         if ((malha[aux].celula[0].acsr.injg.QGas) < 0) {
-                                            malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                            malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                         }
                                     }
                                 } else {
@@ -5801,10 +5801,10 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                                             preparaTabDin(malha[aux]);
                                         else {
                                             for (int kontaCel = 0; kontaCel <= malha[aux].ncel; kontaCel++) {
-                                                malha[aux].celula[kontaCel].flui = malha[aux].steadySearch.fluiRevRede;
+                                                malha[aux].celula[kontaCel].flui = malha[aux].steadySearch.reverseNetworkFluid;
                                             }
                                             preparaTabDin(malha[aux]);
-                                            malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                            malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                         }
                                         prepTab[aux] = 1;
                                     } else if (malha[aux].celula[0].acsr.tipo == 2 &&
@@ -5813,9 +5813,9 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                                             preparaTabDin(malha[aux]);
                                         else {
                                             for (int kontaCel = 0; kontaCel <= malha[aux].ncel; kontaCel++) {
-                                                malha[aux].celula[kontaCel].flui = malha[aux].steadySearch.fluiRevRede;
+                                                malha[aux].celula[kontaCel].flui = malha[aux].steadySearch.reverseNetworkFluid;
                                             }
-                                            malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                            malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                             preparaTabDin(malha[aux]);
                                         }
                                         prepTab[aux] = 1;
@@ -5825,9 +5825,9 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                                             preparaTabDin(malha[aux]);
                                         else {
                                             for (int kontaCel = 0; kontaCel <= malha[aux].ncel; kontaCel++) {
-                                                malha[aux].celula[kontaCel].flui = malha[aux].steadySearch.fluiRevRede;
+                                                malha[aux].celula[kontaCel].flui = malha[aux].steadySearch.reverseNetworkFluid;
                                             }
-                                            malha[aux].celula[0].acsr.injm.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                            malha[aux].celula[0].acsr.injm.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                             preparaTabDin(malha[aux]);
                                         }
                                         prepTab[aux] = 1;
@@ -6226,14 +6226,14 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
         else
             noConv.TRmist = 0.;
     } else {
-        noConv.RGOmist = malha[i].steadySearch.fluiRevRede.RGO;
-        noConv.apimist = malha[i].steadySearch.fluiRevRede.API;
-        noConv.LVisL = malha[i].steadySearch.fluiRevRede.LVisL;
-        noConv.LVisH = malha[i].steadySearch.fluiRevRede.LVisH;
-        noConv.dengmist = malha[i].steadySearch.fluiRevRede.Deng;
-        noConv.yco2mist = malha[i].steadySearch.fluiRevRede.yco2;
-        noConv.bswmist = malha[i].steadySearch.fluiRevRede.BSW;
-        noConv.denagmist = malha[i].steadySearch.fluiRevRede.Denag;
+        noConv.RGOmist = malha[i].steadySearch.reverseNetworkFluid.RGO;
+        noConv.apimist = malha[i].steadySearch.reverseNetworkFluid.API;
+        noConv.LVisL = malha[i].steadySearch.reverseNetworkFluid.LVisL;
+        noConv.LVisH = malha[i].steadySearch.reverseNetworkFluid.LVisH;
+        noConv.dengmist = malha[i].steadySearch.reverseNetworkFluid.Deng;
+        noConv.yco2mist = malha[i].steadySearch.reverseNetworkFluid.yco2;
+        noConv.bswmist = malha[i].steadySearch.reverseNetworkFluid.BSW;
+        noConv.denagmist = malha[i].steadySearch.reverseNetworkFluid.Denag;
         noConv.betmist = 0.;
         int ind = arqRede.malha[i].afluente[0];
         int fim = malha[ind].ncel - 1;
@@ -6625,15 +6625,15 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                         for (int iaflu = 0; iaflu < naflu; iaflu++) {
                             int celProp = 1 - verificaFonteDuplaReversa(malha, auxMaster);
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
-                            malha[indaflu].steadySearch.fluiRevRede = malha[auxMaster].celula[celProp].flui;
-                            malha[indaflu].steadySearch.tempRev = malha[auxMaster].celula[0].temp;
+                            malha[indaflu].steadySearch.reverseNetworkFluid = malha[auxMaster].celula[celProp].flui;
+                            malha[indaflu].steadySearch.reverseFlowTemperature = malha[auxMaster].celula[0].temp;
                             if ((*arqRede.vg1dSP).fluidoRede == 0)
                                 malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[celProp].acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
                             int aux = ordCol[icol];
                             if (arqRede.malha[aux].ncoleta == 0) {
-                                malha[aux].steadySearch.fluiRevRede = malha[aux].arq.flup[0];
+                                malha[aux].steadySearch.reverseNetworkFluid = malha[aux].arq.flup[0];
                             }
                         }
 
@@ -7045,7 +7045,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                 malha[aux].celula[0].acsr.injl.FluidoPro.RenovaFluido();
                                                 malha[aux].celula[0].acsr.injl.fluidocol.TR = noConv.TRmist;
                                             } else {
-                                                malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                                malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                                 malha[aux].celula[0].acsr.injl.FluidoPro.RenovaFluido();
                                             }
 
@@ -7069,7 +7069,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                 malha[aux].celula[0].acsr.injg.FluidoPro.RenovaFluido();
                                                 malha[aux].celula[0].acsr.injg.fluidocol.TR = noConv.TRmist;
                                             } else {
-                                                malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.fluiRevRede;
+                                                malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                                 malha[aux].celula[0].acsr.injg.FluidoPro.RenovaFluido();
                                             }
 
@@ -7293,8 +7293,8 @@ void alteraModoFluidoCompBlack(span<SProd> malha, int narq, Vcr<int> &calclat0, 
         tipoFluido0[j] = malha[j].arq.tipoFluido;
         (*malha[j].vg1dSP).blackOilTemp = 1;
         malha[j].arq.tipoFluido = 0;
-        malha[j].steadySearch.fluiRevRede.flashCompleto = 0;
-        malha[j].steadySearch.fluiRevRede.modoBlackTemp = 0;
+        malha[j].steadySearch.reverseNetworkFluid.flashCompleto = 0;
+        malha[j].steadySearch.reverseNetworkFluid.modoBlackTemp = 0;
         for (int i = 0; i <= malha[j].ncel; i++) {
             malha[j].celula[i].flui.flashCompleto = 0;
             malha[j].celula[i].flui.modoBlackTemp = 0;
@@ -7342,8 +7342,8 @@ void alteraModoFluidoBlackComp(span<SProd> malha, int narq, Vcr<int> calclat0, V
         malha[j].CalcLat = calclat0[j];
         malha[j].arq.tipoFluido = tipoFluido0[j];
         (*malha[j].vg1dSP).blackOilTemp = 0;
-        malha[j].steadySearch.fluiRevRede.flashCompleto = 2;
-        malha[j].steadySearch.fluiRevRede.modoBlackTemp = 0;
+        malha[j].steadySearch.reverseNetworkFluid.flashCompleto = 2;
+        malha[j].steadySearch.reverseNetworkFluid.modoBlackTemp = 0;
         for (int i = 0; i <= malha[j].ncel; i++) {
             malha[j].celula[i].flui.flashCompleto = 2;
             malha[j].celula[i].flui.modoBlackTemp = 0;
@@ -7384,7 +7384,7 @@ void alteraModoFluidoBlackComp(span<SProd> malha, int narq, Vcr<int> calclat0, V
         }
         malha[j].celula[0].flui.npseudo = malha[j].celula[1].flui.npseudo;
         malha[j].celula[malha[j].ncel].flui.npseudo = malha[j].celula[malha[j].ncel - 1].flui.npseudo;
-        malha[j].steadySearch.buscaIni = 0;
+        malha[j].steadySearch.initialEstimateSearch = 0;
     }
 }
 
@@ -7918,7 +7918,7 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
                 } else if (sistem1.celula[i].acsr.tipo == 10)
                     sistem1.celula[i].acsr.injm.FluidoPro.flashCompleto = 2;
             }
-            sistem1.steadySearch.buscaIni = 0;
+            sistem1.steadySearch.initialEstimateSearch = 0;
             // existem duas maneiras de fazer a solucao composicional, uma completa, todas as propriedades sao calculadas a
             // cada ciclo de convergencia, e uma abordagem que exige que, a cada ciclo iterativo, um novo flash seja calculado, celula a celula
             // uma outra abordagem e mais aproximada, lancando mao da solucao black-oil, pode-se ter uma estimativa dos patamares de pressao
@@ -9560,14 +9560,14 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
             temporario.arq.tabelaDinamica = 0;
         }
         for (int i = 0; i < narq; i++) {
-            malha[i].steadySearch.chuteHol = arqRede.chutHol; // o chutehol serve como uma estimativa inicial do holdup na rede para o calculo inicial
+            malha[i].steadySearch.holdupGuess = arqRede.chutHol; // o chutehol serve como uma estimativa inicial do holdup na rede para o calculo inicial
             // da variacao de pressao em cada tramo da rede devido aa hidrostatica
             if (arqRede.malha[i].ncoleta > 0) {
                 int icol = arqRede.malha[i].coleta[0];
-                malha[i].steadySearch.fluiRevRede = malha[icol].celula[0].flui; // computando o fluido do tramo coletor, caso no afluente
+                malha[i].steadySearch.reverseNetworkFluid = malha[icol].celula[0].flui; // computando o fluido do tramo coletor, caso no afluente
                 // ocorra reversao do escoamento pre defindio, o fluido que escoarah no tramo afluente vira do fluido que se encontra no coletor
                 if (malha[i].arq.flashCompleto == 2)
-                    malha[i].steadySearch.fluiRevRede.atualizaPropCompStandard();
+                    malha[i].steadySearch.reverseNetworkFluid.atualizaPropCompStandard();
             }
         }
     } else {
@@ -10302,14 +10302,14 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
             temporario.arq.tabelaDinamica = 0;
         }
         for (int i = 0; i < narq; i++) {
-            malha[i].steadySearch.chuteHol = arqRede.chutHol; // o chutehol serve como uma estimativa inicial do holdup na rede para o calculo inicial
+            malha[i].steadySearch.holdupGuess = arqRede.chutHol; // o chutehol serve como uma estimativa inicial do holdup na rede para o calculo inicial
             // da variacao de pressao em cada tramo da rede devido aa hidrostatica
             if (arqRede.malha[i].ncoleta > 0) {
                 int icol = arqRede.malha[i].coleta[0];
-                malha[i].steadySearch.fluiRevRede = malha[icol].celula[0].flui; // computando o fluido do tramo coletor, caso no afluente
+                malha[i].steadySearch.reverseNetworkFluid = malha[icol].celula[0].flui; // computando o fluido do tramo coletor, caso no afluente
                 // ocorra reversao do escoamento pre defindio, o fluido que escoarah no tramo afluente vira do fluido que se encontra no coletor
                 if (malha[i].arq.flashCompleto == 2)
-                    malha[i].steadySearch.fluiRevRede.atualizaPropCompStandard();
+                    malha[i].steadySearch.reverseNetworkFluid.atualizaPropCompStandard();
             }
         }
         int semPerm = 0;

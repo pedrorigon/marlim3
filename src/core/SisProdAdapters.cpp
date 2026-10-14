@@ -271,23 +271,23 @@ sisprod::steady::SteadyStateState steadyStateOf(SProd &system, SolveContext &con
         .gasValveCellIndices = system.gasLift.posicVGLG,
         .productionValveCellIndices = system.gasLift.posicVGLP,
         .steadyIteration = system.steadyIteration,
-        .searchOrigin = system.steadySearch.buscaIni,
-        .convergenceMonitor = system.steadySearch.monitConvPerm,
-        .baseConvergenceMonitor = system.steadySearch.monitConvPermBase,
+        .searchOrigin = system.steadySearch.initialEstimateSearch,
+        .convergenceMonitor = system.steadySearch.convergenceMonitor,
+        .baseConvergenceMonitor = system.steadySearch.convergenceMonitorReference,
         .annulusDrift = system.derivaAnel,
         .networkCoupled = system.gasLift.verificaAcop,
         .endNode = system.noextremo,
         .thermalSourceDisabled = system.thermalSourceDisabled,
-        .slowHeatTransferThreshold = system.steadySearch.trocaTermicaLenta,
+        .slowHeatTransferThreshold = system.steadySearch.slowHeatTransferThreshold,
         .gasSurfacePressure = system.gasLift.pGSup,
         .initialGasPressure = system.gasLift.presiniG,
         .initialGasTemperature = system.gasLift.tempiniG,
         .outletPressure = system.presfim,
         .timeStep = system.dt,
         .defaultInletTemperature = system.temperatura,
-        .casingTemperature = system.steadySearch.tempRev,
+        .casingTemperature = system.steadySearch.reverseFlowTemperature,
         .inletQuality = system.titE,
-        .productionFluidCount = system.steadySearch.nfluP,
+        .productionFluidCount = system.steadySearch.productionFluidCount,
         .updaters = {context},
     };
 }
@@ -300,9 +300,9 @@ sisprod::steady::SteadyStateState steadyStateOf(SProd &system, SolveContext &con
 sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system, SolveContext &context) {
     return sisprod::steady::SteadyStateSearchState{
         .march = steadyStateOf(system, context),
-        .holdupGuess = system.steadySearch.chuteHol,
-        .reverseNetworkFluid = system.steadySearch.fluiRevRede,
-        .reverseSteady = system.steadySearch.revPerm,
+        .holdupGuess = system.steadySearch.holdupGuess,
+        .reverseNetworkFluid = system.steadySearch.reverseNetworkFluid,
+        .reverseSteady = system.steadySearch.steadyReverseFlow,
     };
 }
 
@@ -544,7 +544,7 @@ sisprod::thermal::ThermalState thermalStateOf(SProd &system, SolveContext &conte
         .poisson2DCellIndices = system.transient.indCelPoisson2D,
         .poisson2DCellCount = system.transient.nCelulaPoisson2D,
         .steadyIteration = system.steadyIteration,
-        .slowHeatTransferThreshold = system.steadySearch.trocaTermicaLenta,
+        .slowHeatTransferThreshold = system.steadySearch.slowHeatTransferThreshold,
         .annulusTubingStart = system.gasLift.ColunaAnulaIni,
         .annulusTubingEnd = system.gasLift.ColunaAnulaFim,
         .tubingAnnulusStart = system.gasLift.AnulaColunaIni,

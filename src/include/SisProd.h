@@ -538,23 +538,23 @@ struct NetworkCoupling {
 /// coupling parameter.
 struct SteadySearch {
     /// Control parameter for slowly varying thermal coupling.
-    double trocaTermicaLenta = kSlowHeatTransferThreshold;
+    double slowHeatTransferThreshold = kSlowHeatTransferThreshold;
     /// Number of production fluids.
-    int nfluP = 0;
+    int productionFluidCount = 0;
     /// Initial holdup estimate used by the steady-state solver.
-    double chuteHol = -1.;
+    double holdupGuess = -1.;
     /// Controls the search for an initial steady-state estimate.
-    int buscaIni = 0;
+    int initialEstimateSearch = 0;
     /// Fluid state received from downstream during reverse network flow.
-    ProFlu fluiRevRede;
+    ProFlu reverseNetworkFluid;
     /// Temperature associated with reverse network flow.
-    double tempRev = 0.;
+    double reverseFlowTemperature = 0.;
     /// Indicates reverse flow in the steady-state network solution.
-    int revPerm = 0;
+    int steadyReverseFlow = 0;
     /// Current steady-state convergence monitor.
-    double monitConvPerm = kInitialConvergenceMonitor;
+    double convergenceMonitor = kInitialConvergenceMonitor;
     /// Reference value for the steady-state convergence monitor.
-    double monitConvPermBase = 1.;
+    double convergenceMonitorReference = 1.;
 };
 
 /// The coupling with the three-dimensional thermal model: its Poisson solver and the index
