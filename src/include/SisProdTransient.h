@@ -78,7 +78,7 @@ struct TransientStepState {
     int &interfaceCell;
     /// SProd::transient.contaMaster1 -- written.
     int &masterCounter;
-    /// SProd::tables.cpg -- written.
+    /// SProd::tables.gasSpecificHeatTable -- written.
     double **const &gasSpecificHeatTable;
     /// SProd::dt -- written.
     double &timeStep;

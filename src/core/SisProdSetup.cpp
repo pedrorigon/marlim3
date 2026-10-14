@@ -55,9 +55,9 @@ void forEachSourceFluid(Cel &cell, Apply &&apply) {
 /// model 4.
 void SProd::assignPvtSimBubbleTablesToCells() {
     auto assignTables = [&](ProFlu &fluid) {
-        fluid.PBPVTSim = tables.PBPVTSim.data();
-        fluid.TBPVTSim = tables.TBPVTSim.data();
-        fluid.npontosB = static_cast<int>(tables.TBPVTSim.size());
+        fluid.PBPVTSim = tables.pvtSimBubblePressures.data();
+        fluid.TBPVTSim = tables.pvtSimBubbleTemperatures.data();
+        fluid.npontosB = static_cast<int>(tables.pvtSimBubbleTemperatures.size());
         fluid.corrSat = 4;
         fluid.awaitingSaturationTable = false;
     };
@@ -126,37 +126,38 @@ void SProd::loadPvtSimSaturationTables() {
     // The file's own grid: its rows set the table sizes, apart from the input table's resolution.
     vector<double> PresPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
                                               [](double value) { return value / units::kPascalPerKgfPerCm2; });
-    tables.PBPVTSim = readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", dadosMR,
+    tables.pvtSimBubblePressures = readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", dadosMR,
                                     [](double value) { return value / units::kPascalPerPsi; });
-    tables.TBPVTSim = readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", dadosMR, [](double value) { return value; });
-    if (tables.PBPVTSim.size() != tables.TBPVTSim.size())
+    tables.pvtSimBubbleTemperatures =
+        readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", dadosMR, [](double value) { return value; });
+    if (tables.pvtSimBubblePressures.size() != tables.pvtSimBubbleTemperatures.size())
         logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                        "PVTSim bubble-point curve with different numbers of pressures and temperatures",
                                        "pvtsimArq", dadosMR);
-    if (!strictlyIncreasing(PresPVTSim) || !strictlyIncreasing(tables.TBPVTSim))
+    if (!strictlyIncreasing(PresPVTSim) || !strictlyIncreasing(tables.pvtSimBubbleTemperatures))
         logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                        "PVTSim pressure or bubble-temperature axis not strictly increasing", "pvtsimArq",
                                        dadosMR);
     const int pressureCount = static_cast<int>(PresPVTSim.size());
-    const int bubbleCount = static_cast<int>(tables.TBPVTSim.size());
+    const int bubbleCount = static_cast<int>(tables.pvtSimBubbleTemperatures.size());
     assignPvtSimBubbleTablesToCells();
 
     FullMtx<double> BolhaTemp(bubbleCount + 1, 2);
     for (int i = 0; i < bubbleCount; i++) {
-        BolhaTemp[i][0] = tables.TBPVTSim[i];
-        BolhaTemp[i][1] = tables.PBPVTSim[i];
+        BolhaTemp[i][0] = tables.pvtSimBubbleTemperatures[i];
+        BolhaTemp[i][1] = tables.pvtSimBubblePressures[i];
     }
     writeTable(pathPrefixoArqSaida + "perfilBolha", BolhaTemp);
 
     if (arq.tabRSPB == 1) {
-        tables.RSLivia.allocate(pressureCount + 1, bubbleCount + 1);
+        tables.liviaSolutionGasRatioTable.allocate(pressureCount + 1, bubbleCount + 1);
         for (int j = 1; j <= bubbleCount; j++)
-            tables.RSLivia[0][j] = tables.TBPVTSim[j - 1];
+            tables.liviaSolutionGasRatioTable[0][j] = tables.pvtSimBubbleTemperatures[j - 1];
         for (int i = 1; i <= pressureCount; i++) {
-            tables.RSLivia[i][0] = PresPVTSim[i - 1];
+            tables.liviaSolutionGasRatioTable[i][0] = PresPVTSim[i - 1];
             for (int j = 1; j <= bubbleCount; j++) {
-                if (tables.TBPVTSim[j - 1] > -10) {
-                    double TFa = 1.8 * tables.TBPVTSim[j - 1] + 32;
+                if (tables.pvtSimBubbleTemperatures[j - 1] > -10) {
+                    double TFa = 1.8 * tables.pvtSimBubbleTemperatures[j - 1] + 32;
 
                     constexpr double A0 = 6542.69213 * 1e-11;
                     constexpr double A1 = 2.60464618;
@@ -181,9 +182,9 @@ void SProd::loadPvtSimSaturationTables() {
                     double Deng = celula[0].flui.Deng;
                     double API = celula[0].flui.API;
                     double multCor = (D0 + D1 * yco2 * pow(TFa, D2));
-                    double pbtemp = tables.PBPVTSim[j - 1];
+                    double pbtemp = tables.pvtSimBubblePressures[j - 1];
 
-                    double pcor = tables.RSLivia[i][0] * units::kPsiPerKgfPerCm2 * multCor;
+                    double pcor = tables.liviaSolutionGasRatioTable[i][0] * units::kPsiPerKgfPerCm2 * multCor;
                     double pr = pcor / pbtemp;
 
                     double a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
@@ -194,24 +195,24 @@ void SProd::loadPvtSimSaturationTables() {
                     double rstemp = Rsr;
                     if (rstemp < 0.)
                         rstemp = 0.;
-                    else if (tables.RSLivia[i][0] * units::kPsiPerKgfPerCm2 > pbtemp)
+                    else if (tables.liviaSolutionGasRatioTable[i][0] * units::kPsiPerKgfPerCm2 > pbtemp)
                         rstemp = 1.;
                     else if (rstemp > 1.)
                         rstemp = 1.;
                     else
                         rstemp = Rsr;
-                    tables.RSLivia[i][j] = rstemp;
+                    tables.liviaSolutionGasRatioTable[i][j] = rstemp;
                 } else
-                    tables.RSLivia[i][j] = 0;
+                    tables.liviaSolutionGasRatioTable[i][j] = 0;
             }
         }
         FullMtx<double> RSTemp(pressureCount + 1, bubbleCount + 1);
         for (int j = 1; j <= bubbleCount; j++)
-            RSTemp[0][j] = tables.RSLivia[0][j];
+            RSTemp[0][j] = tables.liviaSolutionGasRatioTable[0][j];
         for (int i = 1; i <= pressureCount; i++) {
-            RSTemp[i][0] = tables.RSLivia[i][0];
+            RSTemp[i][0] = tables.liviaSolutionGasRatioTable[i][0];
             for (int j = 1; j <= bubbleCount; j++)
-                RSTemp[i][j] = tables.RSLivia[i][j];
+                RSTemp[i][j] = tables.liviaSolutionGasRatioTable[i][j];
         }
         // The table holds the reduced ratio Rs/Rsb, which has no unit to convert.
         writeTable(pathPrefixoArqSaida + "perfilRSLivia", RSTemp,
@@ -220,7 +221,7 @@ void SProd::loadPvtSimSaturationTables() {
                                    "Reduced solution gas-oil ratio Rs/Rsb (-); first column: pressure (kgf/cm2); first row: temperature (C)"));
 
         auto pointAtRatioTable = [&](ProFlu &fluid) {
-            fluid.TabRSLivia = tables.RSLivia.data();
+            fluid.TabRSLivia = tables.liviaSolutionGasRatioTable.data();
             fluid.rsTablePressureCount = pressureCount;
             fluid.rsTableTemperatureCount = bubbleCount;
             fluid.tabRSPB = 1;
@@ -244,27 +245,28 @@ void SProd::generateSaturationTablesFromCorrelations() {
     double dtteste = (arq.tabent.tmax - tteste) / ndiv;
     FullMtx<double> RSTemp(ndiv + 2, ndiv + 2);
     FullMtx<double> PBTemp(ndiv + 2, 2);
-    tables.TBPVTSim = vector<double>(ndiv + 1);
-    tables.PBPVTSim = vector<double>(ndiv + 1);
-    tables.RSLivia.allocate(ndiv + 2, ndiv + 2);
+    tables.pvtSimBubbleTemperatures = vector<double>(ndiv + 1);
+    tables.pvtSimBubblePressures = vector<double>(ndiv + 1);
+    tables.liviaSolutionGasRatioTable.allocate(ndiv + 2, ndiv + 2);
     double ttestepb = tteste;
     for (int i = 0; i <= ndiv; i++) {
-        tables.TBPVTSim[i] = ttestepb;
-        tables.PBPVTSim[i] = arq.flup[0].PB(pteste, ttestepb);
-        PBTemp[i][0] = tables.TBPVTSim[i];
-        PBTemp[i][1] = tables.PBPVTSim[i];
+        tables.pvtSimBubbleTemperatures[i] = ttestepb;
+        tables.pvtSimBubblePressures[i] = arq.flup[0].PB(pteste, ttestepb);
+        PBTemp[i][0] = tables.pvtSimBubbleTemperatures[i];
+        PBTemp[i][1] = tables.pvtSimBubblePressures[i];
         ttestepb += dtteste;
     }
 
     for (int i = 1; i <= ndiv + 1; i++) {
-        tables.RSLivia[i][0] = pteste;
-        RSTemp[i][0] = tables.RSLivia[i][0];
+        tables.liviaSolutionGasRatioTable[i][0] = pteste;
+        RSTemp[i][0] = tables.liviaSolutionGasRatioTable[i][0];
         ttestepb = tteste;
         for (int j = 1; j <= ndiv + 1; j++) {
-            tables.RSLivia[0][j] = ttestepb;
-            tables.RSLivia[i][j] = arq.flup[0].RS(pteste, ttestepb);
-            RSTemp[0][j] = tables.RSLivia[0][j];
-            RSTemp[i][j] = tables.RSLivia[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
+            tables.liviaSolutionGasRatioTable[0][j] = ttestepb;
+            tables.liviaSolutionGasRatioTable[i][j] = arq.flup[0].RS(pteste, ttestepb);
+            RSTemp[0][j] = tables.liviaSolutionGasRatioTable[0][j];
+            RSTemp[i][j] =
+                tables.liviaSolutionGasRatioTable[i][j] * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
             ttestepb += dtteste;
         }
         pteste += dpteste;
@@ -277,10 +279,10 @@ void SProd::generateSaturationTablesFromCorrelations() {
                                "Solution gas-oil ratio Rs (m3/m3); first column: pressure (kgf/cm2); first row: temperature (C)"));
 
     auto pointAtTables = [&](ProFlu &fluid) {
-        fluid.PBPVTSim = tables.PBPVTSim.data();
-        fluid.TBPVTSim = tables.TBPVTSim.data();
-        fluid.npontosB = static_cast<int>(tables.TBPVTSim.size());
-        fluid.TabRSLivia = tables.RSLivia.data();
+        fluid.PBPVTSim = tables.pvtSimBubblePressures.data();
+        fluid.TBPVTSim = tables.pvtSimBubbleTemperatures.data();
+        fluid.npontosB = static_cast<int>(tables.pvtSimBubbleTemperatures.size());
+        fluid.TabRSLivia = tables.liviaSolutionGasRatioTable.data();
         fluid.rsTablePressureCount = ndiv + 1;
         fluid.rsTableTemperatureCount = ndiv + 1;
         fluid.tabRSPB = 1;
@@ -344,27 +346,27 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
         arq.geraTabCp();
     if (arq.modelJTL == 1)
         arq.geraTabDrholDt();
-    tables.cpg = arq.cpg;
-    tables.cpl = arq.cpl;
-    tables.drholdT = arq.drholdT;
+    tables.gasSpecificHeatTable = arq.cpg;
+    tables.liquidSpecificHeatTable = arq.cpl;
+    tables.liquidDensityTemperatureDerivative = arq.drholdT;
 
-    tables.zdranP = arq.zdranP;
-    tables.dzdpP = arq.dzdpP;
-    tables.dzdtP = arq.dzdtP;
+    tables.gasCompressibilityTable = arq.zdranP;
+    tables.gasCompressibilityPressureDerivative = arq.dzdpP;
+    tables.gasCompressibilityTemperatureDerivative = arq.dzdtP;
     steadySearch.reverseNetworkFluid = arq.flup[0];
     if (arq.flashCompleto == 2)
         steadySearch.reverseNetworkFluid.atualizaPropCompStandard();
     for (int i = 0; i < arq.nfluP; i++) {
         arq.flup[i].npontos = arq.tabent.npont;
-        arq.flup[i].cpg = tables.cpg;
-        arq.flup[i].cpl = tables.cpl;
-        arq.flup[i].drholdT = tables.drholdT;
+        arq.flup[i].cpg = tables.gasSpecificHeatTable;
+        arq.flup[i].cpl = tables.liquidSpecificHeatTable;
+        arq.flup[i].drholdT = tables.liquidDensityTemperatureDerivative;
         arq.flup[i].nfluP = steadySearch.productionFluidCount;
     }
     arq.flug.npontos = arq.tabent.npont;
-    arq.flug.cpg = tables.cpg;
-    arq.flug.cpl = tables.cpl;
-    arq.flug.drholdT = tables.drholdT;
+    arq.flug.cpg = tables.gasSpecificHeatTable;
+    arq.flug.cpl = tables.liquidSpecificHeatTable;
+    arq.flug.drholdT = tables.liquidDensityTemperatureDerivative;
     arq.flug.nfluP = steadySearch.productionFluidCount;
 
     arq.fluc.npontos = arq.tabent.npont;
@@ -640,8 +642,8 @@ void SProd::validateSetupAndApplyInitialState() {
 /// that side.
 void SProd::buildDynamicTablesAndInclinations() {
     if (arq.tabelaDinamica == 1) {
-        tables.ntabDin = 1;
-        tables.tabDin.push_back(tabelaDinamica());
+        tables.dynamicTableCount = 1;
+        tables.dynamicTables.push_back(tabelaDinamica());
         for (int i = 1; i < ncel; i++) {
             if ((celula[i].acsr.tipo == kAccessoryGasInjection) ||
                 (celula[i].acsr.tipo == kAccessoryLiquidInjection) ||
@@ -649,12 +651,12 @@ void SProd::buildDynamicTablesAndInclinations() {
                 (celula[i].acsr.tipo == kAccessoryMultipleSource) || celula[i].acsr.tipo == kAccessoryLeak || celula[i].acsr.tipo == kAccessoryRadialPorous || celula[i].acsr.tipo == kAccessoryPorous2D) {
                 tabelaDinamica temp;
                 temp.celIni = i + 1;
-                tables.tabDin[tables.ntabDin - 1].celFim = i;
-                tables.tabDin.push_back(std::move(temp));
-                tables.ntabDin++;
+                tables.dynamicTables[tables.dynamicTableCount - 1].celFim = i;
+                tables.dynamicTables.push_back(std::move(temp));
+                tables.dynamicTableCount++;
             }
         }
-        tables.tabDin[tables.ntabDin - 1].celFim = ncel;
+        tables.dynamicTables[tables.dynamicTableCount - 1].celFim = ncel;
     }
 
     celula[0].angEsq = celula[0].duto.teta;
@@ -741,10 +743,10 @@ void SProd::configureLatentHeat() {
                 }
             }
             lendoPVTSim.close();
-            tables.HLat.allocate(ndiv + 2, ndiv + 2);
+            tables.latentHeatTable.allocate(ndiv + 2, ndiv + 2);
             for (int i = 0; i < ndiv + 2; i++) {
                 for (int j = 0; j < ndiv + 2; j++)
-                    tables.HLat[i][j] = HLatTemp[i][j];
+                    tables.latentHeatTable[i][j] = HLatTemp[i][j];
             }
             string tmp = pathPrefixoArqSaida + "perfilLatente.dat";
             writeTable(tmp, HLatTemp);

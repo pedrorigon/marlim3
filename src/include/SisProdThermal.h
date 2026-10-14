@@ -52,7 +52,7 @@ struct ThermalState {
     Cel *const &cells;
     CelG *const &gasCells;
     const Ler &input;
-    /// The latent heat table's row pointers -- SProd::tables.HLat.
+    /// The latent heat table's row pointers -- SProd::tables.latentHeatTable.
     const std::vector<double *> &latentHeatTable;
     varGlob1D *const &globals;
     const int &thermalSourceDisabled;

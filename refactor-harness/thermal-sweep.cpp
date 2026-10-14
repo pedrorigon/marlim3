@@ -437,17 +437,17 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
 
 void initializeLatentHeatTable(SProd &system) {
     system.arq.tabent.npont = 3;
-    system.tables.HLat.allocate(4, 4);
+    system.tables.latentHeatTable.allocate(4, 4);
 
     const double pressures[4] = {0., 20., 80., 140.};
     const double temperatures[4] = {0., 10., 70., 130.};
     for (int row = 0; row < 4; ++row) {
-        system.tables.HLat[row][0] = pressures[row];
-        system.tables.HLat[0][row] = temperatures[row];
+        system.tables.latentHeatTable[row][0] = pressures[row];
+        system.tables.latentHeatTable[0][row] = temperatures[row];
     }
     for (int row = 1; row < 4; ++row)
         for (int column = 1; column < 4; ++column)
-            system.tables.HLat[row][column] = 100. * row + 7. * column;
+            system.tables.latentHeatTable[row][column] = 100. * row + 7. * column;
 }
 
 double **allocateTable(int size) {

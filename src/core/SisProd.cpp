@@ -180,14 +180,14 @@ void SProd::releaseOwnedStorage() {
     trends.productionWallTrendSet.release();
     trends.gasWallTrendSet.release();
 
-    tables.HLat.release();
-    releaseVector(tables.PBPVTSim);
-    releaseVector(tables.TBPVTSim);
-    tables.RSLivia.release();
+    tables.latentHeatTable.release();
+    releaseVector(tables.pvtSimBubblePressures);
+    releaseVector(tables.pvtSimBubbleTemperatures);
+    tables.liviaSolutionGasRatioTable.release();
 
     releaseVector(productionCells);
     releaseVector(transient.receb);
-    releaseVector(tables.tabDin);
+    releaseVector(tables.dynamicTables);
 }
 
 SProd &SProd::operator=(const SProd &other) {

@@ -96,32 +96,32 @@ struct GridTable {
 /// built and owned by the system, and so are the dynamic tables of a compositional network.
 struct PropertyTables {
     /// Black-oil gas-compressibility-factor table.
-    double **zdranP = nullptr;
+    double **gasCompressibilityTable = nullptr;
     /// Pressure derivative of the black-oil compressibility-factor table.
-    double **dzdpP = nullptr;
+    double **gasCompressibilityPressureDerivative = nullptr;
     /// Temperature derivative of the black-oil compressibility-factor table.
-    double **dzdtP = nullptr;
+    double **gasCompressibilityTemperatureDerivative = nullptr;
     /// Black-oil gas specific-heat table.
-    double **cpg = nullptr;
+    double **gasSpecificHeatTable = nullptr;
     /// Black-oil produced-liquid specific-heat table.
-    double **cpl = nullptr;
+    double **liquidSpecificHeatTable = nullptr;
     /// Temperature derivative of liquid density.
-    double **drholdT = nullptr;
+    double **liquidDensityTemperatureDerivative = nullptr;
     /// Black-oil latent-heat table.
-    GridTable HLat;
+    GridTable latentHeatTable;
     /// Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table is
     /// separate from the full PVTSim fluid-property model.
-    std::vector<double> PBPVTSim;
+    std::vector<double> pvtSimBubblePressures;
     /// Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This table is
     /// separate from the full PVTSim fluid-property model.
-    std::vector<double> TBPVTSim;
+    std::vector<double> pvtSimBubbleTemperatures;
     /// Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its expensive
     /// calculation during the simulation.
-    GridTable RSLivia;
+    GridTable liviaSolutionGasRatioTable;
     /// Dynamic fluid-property tables.
-    std::vector<tabelaDinamica> tabDin;
+    std::vector<tabelaDinamica> dynamicTables;
     /// Number of dynamic property tables.
-    int ntabDin = 0;
+    int dynamicTableCount = 0;
 };
 
 /// The gas-lift line: its cells, the injection choke, the valves and the cells they join, its

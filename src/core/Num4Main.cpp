@@ -4845,44 +4845,44 @@ void preparaTabDin(SProd &sistem1) {
             sistem1.celula[i].acsr.fontechk.fluidoPamb.atualizaPropCompStandard();
         }
     }
-    for (int i = 0; i < sistem1.tables.ntabDin; i++) {
-        int i0 = sistem1.tables.tabDin[i].celIni;
-        int i1 = sistem1.tables.tabDin[i].celFim;
-        sistem1.tables.tabDin[i].pmax = sistem1.celula[i0].pres;
-        sistem1.tables.tabDin[i].pmin = sistem1.celula[i0].pres;
-        sistem1.tables.tabDin[i].tmax = sistem1.celula[i0].temp;
-        sistem1.tables.tabDin[i].tmin = sistem1.celula[i0].temp;
+    for (int i = 0; i < sistem1.tables.dynamicTableCount; i++) {
+        int i0 = sistem1.tables.dynamicTables[i].celIni;
+        int i1 = sistem1.tables.dynamicTables[i].celFim;
+        sistem1.tables.dynamicTables[i].pmax = sistem1.celula[i0].pres;
+        sistem1.tables.dynamicTables[i].pmin = sistem1.celula[i0].pres;
+        sistem1.tables.dynamicTables[i].tmax = sistem1.celula[i0].temp;
+        sistem1.tables.dynamicTables[i].tmin = sistem1.celula[i0].temp;
         for (int j = i0 + 1; j <= i1; j++) {
-            if (sistem1.celula[j].pres < sistem1.tables.tabDin[i].pmin)
-                sistem1.tables.tabDin[i].pmin = sistem1.celula[j].pres;
-            else if (sistem1.celula[j].pres > sistem1.tables.tabDin[i].pmax)
-                sistem1.tables.tabDin[i].pmax = sistem1.celula[j].pres;
-            if (sistem1.celula[j].temp < sistem1.tables.tabDin[i].tmin)
-                sistem1.tables.tabDin[i].tmin = sistem1.celula[j].temp;
-            else if (sistem1.celula[j].temp > sistem1.tables.tabDin[i].tmax)
-                sistem1.tables.tabDin[i].tmax = sistem1.celula[j].temp;
+            if (sistem1.celula[j].pres < sistem1.tables.dynamicTables[i].pmin)
+                sistem1.tables.dynamicTables[i].pmin = sistem1.celula[j].pres;
+            else if (sistem1.celula[j].pres > sistem1.tables.dynamicTables[i].pmax)
+                sistem1.tables.dynamicTables[i].pmax = sistem1.celula[j].pres;
+            if (sistem1.celula[j].temp < sistem1.tables.dynamicTables[i].tmin)
+                sistem1.tables.dynamicTables[i].tmin = sistem1.celula[j].temp;
+            else if (sistem1.celula[j].temp > sistem1.tables.dynamicTables[i].tmax)
+                sistem1.tables.dynamicTables[i].tmax = sistem1.celula[j].temp;
         }
-        sistem1.tables.tabDin[i].pmax *= 1.6;
-        sistem1.tables.tabDin[i].pmin *= 0.6;
-        sistem1.tables.tabDin[i].tmax = sistem1.tables.tabDin[i].tmax + 20;
-        sistem1.tables.tabDin[i].tmin = sistem1.tables.tabDin[i].tmin - 20;
-        if (sistem1.tables.tabDin[i].tmin < -30)
-            sistem1.tables.tabDin[i].tmin = -30;
-        sistem1.tables.tabDin[i].delP = 5.;
-        sistem1.tables.tabDin[i].delT = 5.;
-        sistem1.tables.tabDin[i].npontosT = floor((sistem1.tables.tabDin[i].tmax - sistem1.tables.tabDin[i].tmin) / (sistem1.tables.tabDin[i].delT)) + 1;
-        if (sistem1.tables.tabDin[i].npontosT <= 3)
-            sistem1.tables.tabDin[i].npontosT = 4;
-        sistem1.tables.tabDin[i].npontosP = floor((sistem1.tables.tabDin[i].pmax - sistem1.tables.tabDin[i].pmin) / (sistem1.tables.tabDin[i].delP)) + 1;
-        if (sistem1.tables.tabDin[i].npontosP <= 3)
-            sistem1.tables.tabDin[i].npontosP = 4;
-        sistem1.tables.tabDin[i].delP = (sistem1.tables.tabDin[i].pmax - sistem1.tables.tabDin[i].pmin) /
-                                 (sistem1.tables.tabDin[i].npontosP - 1);
-        sistem1.tables.tabDin[i].delT = (sistem1.tables.tabDin[i].tmax - sistem1.tables.tabDin[i].tmin) /
-                                 (sistem1.tables.tabDin[i].npontosT - 1);
+        sistem1.tables.dynamicTables[i].pmax *= 1.6;
+        sistem1.tables.dynamicTables[i].pmin *= 0.6;
+        sistem1.tables.dynamicTables[i].tmax = sistem1.tables.dynamicTables[i].tmax + 20;
+        sistem1.tables.dynamicTables[i].tmin = sistem1.tables.dynamicTables[i].tmin - 20;
+        if (sistem1.tables.dynamicTables[i].tmin < -30)
+            sistem1.tables.dynamicTables[i].tmin = -30;
+        sistem1.tables.dynamicTables[i].delP = 5.;
+        sistem1.tables.dynamicTables[i].delT = 5.;
+        sistem1.tables.dynamicTables[i].npontosT = floor((sistem1.tables.dynamicTables[i].tmax - sistem1.tables.dynamicTables[i].tmin) / (sistem1.tables.dynamicTables[i].delT)) + 1;
+        if (sistem1.tables.dynamicTables[i].npontosT <= 3)
+            sistem1.tables.dynamicTables[i].npontosT = 4;
+        sistem1.tables.dynamicTables[i].npontosP = floor((sistem1.tables.dynamicTables[i].pmax - sistem1.tables.dynamicTables[i].pmin) / (sistem1.tables.dynamicTables[i].delP)) + 1;
+        if (sistem1.tables.dynamicTables[i].npontosP <= 3)
+            sistem1.tables.dynamicTables[i].npontosP = 4;
+        sistem1.tables.dynamicTables[i].delP = (sistem1.tables.dynamicTables[i].pmax - sistem1.tables.dynamicTables[i].pmin) /
+                                 (sistem1.tables.dynamicTables[i].npontosP - 1);
+        sistem1.tables.dynamicTables[i].delT = (sistem1.tables.dynamicTables[i].tmax - sistem1.tables.dynamicTables[i].tmin) /
+                                 (sistem1.tables.dynamicTables[i].npontosT - 1);
     }
-    int i0 = sistem1.tables.tabDin[0].celIni;
-    int i1 = sistem1.tables.tabDin[0].celFim;
+    int i0 = sistem1.tables.dynamicTables[0].celIni;
+    int i1 = sistem1.tables.dynamicTables[0].celFim;
     sistem1.celula[i0].flui.atualizaPropCompStandard();
     double pmed = sistem1.celula[i0].presaux;
     double tmed = sistem1.celula[i0].temp;
@@ -4893,9 +4893,9 @@ void preparaTabDin(SProd &sistem1) {
         atualizaCel(sistem1, i);
     }
 
-    for (int j = 1; j < sistem1.tables.ntabDin; j++) {
-        int i0 = sistem1.tables.tabDin[j].celIni;
-        int i1 = sistem1.tables.tabDin[j].celFim;
+    for (int j = 1; j < sistem1.tables.dynamicTableCount; j++) {
+        int i0 = sistem1.tables.dynamicTables[j].celIni;
+        int i1 = sistem1.tables.dynamicTables[j].celFim;
         atualizaComp(sistem1, i0);
         sistem1.celula[i0].flui.atualizaPropCompStandard();
         tmed = (sistem1.celula[i0].dx * sistem1.celula[i0].temp + sistem1.celula[i0].dxL * sistem1.celula[i0].tempL) / (sistem1.celula[i0].dx + sistem1.celula[i0].dxL);
@@ -4909,218 +4909,218 @@ void preparaTabDin(SProd &sistem1) {
             atualizaCel(sistem1, i);
         }
     }
-    for (int i = 0; i < sistem1.tables.ntabDin; i++) {
-        sistem1.tables.tabDin[i].rholF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].rhogF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].DrholDpF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].DrhogDpF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].DrholDtF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].DrhogDtF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].valBO = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].tit = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].rs = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].cplF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].cpgF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].valZ = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].HlF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].HgF = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].valdZdT = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].valdZdP = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].viscO = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].viscG = new double *[sistem1.tables.tabDin[i].npontosP + 1];
-        sistem1.tables.tabDin[i].PBF = new double[sistem1.tables.tabDin[i].npontosT];
-        sistem1.tables.tabDin[i].TBF = new double[sistem1.tables.tabDin[i].npontosT];
-        for (int k = 0; k < sistem1.tables.tabDin[i].npontosP + 1; k++) {
-            sistem1.tables.tabDin[i].rholF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].rhogF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].DrholDpF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].DrhogDpF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].DrholDtF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].DrhogDtF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].valBO[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].tit[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].rs[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].cplF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].cpgF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].valZ[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].HlF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].HgF[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].valdZdT[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].valdZdP[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].viscO[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
-            sistem1.tables.tabDin[i].viscG[k] = new double[sistem1.tables.tabDin[i].npontosT + 1];
+    for (int i = 0; i < sistem1.tables.dynamicTableCount; i++) {
+        sistem1.tables.dynamicTables[i].rholF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].rhogF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].DrholDpF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].DrhogDpF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].DrholDtF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].DrhogDtF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].valBO = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].tit = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].rs = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].cplF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].cpgF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].valZ = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].HlF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].HgF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].valdZdT = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].valdZdP = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].viscO = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].viscG = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
+        sistem1.tables.dynamicTables[i].PBF = new double[sistem1.tables.dynamicTables[i].npontosT];
+        sistem1.tables.dynamicTables[i].TBF = new double[sistem1.tables.dynamicTables[i].npontosT];
+        for (int k = 0; k < sistem1.tables.dynamicTables[i].npontosP + 1; k++) {
+            sistem1.tables.dynamicTables[i].rholF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].rhogF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].DrholDpF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].DrhogDpF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].DrholDtF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].DrhogDtF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].valBO[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].tit[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].rs[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].cplF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].cpgF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].valZ[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].HlF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].HgF[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].valdZdT[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].valdZdP[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].viscO[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
+            sistem1.tables.dynamicTables[i].viscG[k] = new double[sistem1.tables.dynamicTables[i].npontosT + 1];
         }
-        for (int k = 0; k < sistem1.tables.tabDin[i].npontosP + 1; k++) {
-            for (int j = 0; j < sistem1.tables.tabDin[i].npontosT + 1; j++) {
-                sistem1.tables.tabDin[i].rholF[k][j] = 0;
-                sistem1.tables.tabDin[i].rhogF[k][j] = 0;
-                sistem1.tables.tabDin[i].DrholDpF[k][j] = 0;
-                sistem1.tables.tabDin[i].DrhogDpF[k][j] = 0;
-                sistem1.tables.tabDin[i].DrholDtF[k][j] = 0;
-                sistem1.tables.tabDin[i].DrhogDtF[k][j] = 0;
-                sistem1.tables.tabDin[i].valBO[k][j] = 0;
-                sistem1.tables.tabDin[i].tit[k][j] = 0;
-                sistem1.tables.tabDin[i].rs[k][j] = 0;
-                sistem1.tables.tabDin[i].cplF[k][j] = 0;
-                sistem1.tables.tabDin[i].cpgF[k][j] = 0;
-                sistem1.tables.tabDin[i].valZ[k][j] = 0;
-                sistem1.tables.tabDin[i].HlF[k][j] = 0;
-                sistem1.tables.tabDin[i].HgF[k][j] = 0;
-                sistem1.tables.tabDin[i].valdZdT[k][j] = 0;
-                sistem1.tables.tabDin[i].valdZdP[k][j] = 0;
-                sistem1.tables.tabDin[i].viscO[k][j] = 0;
-                sistem1.tables.tabDin[i].viscG[k][j] = 0;
+        for (int k = 0; k < sistem1.tables.dynamicTables[i].npontosP + 1; k++) {
+            for (int j = 0; j < sistem1.tables.dynamicTables[i].npontosT + 1; j++) {
+                sistem1.tables.dynamicTables[i].rholF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].rhogF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].DrholDpF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].DrhogDpF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].DrholDtF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].DrhogDtF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].valBO[k][j] = 0;
+                sistem1.tables.dynamicTables[i].tit[k][j] = 0;
+                sistem1.tables.dynamicTables[i].rs[k][j] = 0;
+                sistem1.tables.dynamicTables[i].cplF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].cpgF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].valZ[k][j] = 0;
+                sistem1.tables.dynamicTables[i].HlF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].HgF[k][j] = 0;
+                sistem1.tables.dynamicTables[i].valdZdT[k][j] = 0;
+                sistem1.tables.dynamicTables[i].valdZdP[k][j] = 0;
+                sistem1.tables.dynamicTables[i].viscO[k][j] = 0;
+                sistem1.tables.dynamicTables[i].viscG[k][j] = 0;
             }
         }
-        for (int k = 0; k < sistem1.tables.tabDin[i].npontosT; k++) {
-            sistem1.tables.tabDin[i].PBF[k] = 0;
-            sistem1.tables.tabDin[i].TBF[k] = 0;
+        for (int k = 0; k < sistem1.tables.dynamicTables[i].npontosT; k++) {
+            sistem1.tables.dynamicTables[i].PBF[k] = 0;
+            sistem1.tables.dynamicTables[i].TBF[k] = 0;
         }
-        sistem1.tables.tabDin[i].TBF[0] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].rholF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].rhogF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].DrholDpF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].DrhogDpF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].DrholDtF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].DrhogDtF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].valBO[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].tit[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].rs[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].cplF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].cpgF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].valZ[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].HlF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].HgF[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].valdZdT[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].valdZdP[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].viscO[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].viscG[0][1] = sistem1.tables.tabDin[i].tmin;
-        sistem1.tables.tabDin[i].rholF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].rhogF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].DrholDpF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].DrhogDpF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].DrholDtF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].DrhogDtF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].valBO[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].tit[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].rs[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].cplF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].cpgF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].valZ[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].HlF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].HgF[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].valdZdT[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].valdZdP[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].viscO[1][0] = sistem1.tables.tabDin[i].pmin;
-        sistem1.tables.tabDin[i].viscG[1][0] = sistem1.tables.tabDin[i].pmin;
-        for (int k = 1; k < sistem1.tables.tabDin[i].npontosT; k++) {
-            sistem1.tables.tabDin[i].TBF[k] = sistem1.tables.tabDin[i].TBF[k - 1] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].rholF[0][k + 1] = sistem1.tables.tabDin[i].rholF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].rhogF[0][k + 1] = sistem1.tables.tabDin[i].rhogF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].DrholDpF[0][k + 1] = sistem1.tables.tabDin[i].DrholDpF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].DrhogDpF[0][k + 1] = sistem1.tables.tabDin[i].DrhogDpF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].DrholDtF[0][k + 1] = sistem1.tables.tabDin[i].DrholDtF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].DrhogDtF[0][k + 1] = sistem1.tables.tabDin[i].DrhogDtF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].valBO[0][k + 1] = sistem1.tables.tabDin[i].valBO[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].tit[0][k + 1] = sistem1.tables.tabDin[i].tit[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].rs[0][k + 1] = sistem1.tables.tabDin[i].rs[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].cplF[0][k + 1] = sistem1.tables.tabDin[i].cplF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].cpgF[0][k + 1] = sistem1.tables.tabDin[i].cpgF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].valZ[0][k + 1] = sistem1.tables.tabDin[i].valZ[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].HlF[0][k + 1] = sistem1.tables.tabDin[i].HlF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].HgF[0][k + 1] = sistem1.tables.tabDin[i].HgF[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].valdZdT[0][k + 1] = sistem1.tables.tabDin[i].valdZdT[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].valdZdP[0][k + 1] = sistem1.tables.tabDin[i].valdZdP[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].viscO[0][k + 1] = sistem1.tables.tabDin[i].viscO[0][k] + sistem1.tables.tabDin[i].delT;
-            sistem1.tables.tabDin[i].viscG[0][k + 1] = sistem1.tables.tabDin[i].viscG[0][k] + sistem1.tables.tabDin[i].delT;
+        sistem1.tables.dynamicTables[i].TBF[0] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].rholF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].rhogF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].DrholDpF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].DrhogDpF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].DrholDtF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].DrhogDtF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].valBO[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].tit[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].rs[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].cplF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].cpgF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].valZ[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].HlF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].HgF[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].valdZdT[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].valdZdP[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].viscO[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].viscG[0][1] = sistem1.tables.dynamicTables[i].tmin;
+        sistem1.tables.dynamicTables[i].rholF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].rhogF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].DrholDpF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].DrhogDpF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].DrholDtF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].DrhogDtF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].valBO[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].tit[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].rs[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].cplF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].cpgF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].valZ[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].HlF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].HgF[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].valdZdT[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].valdZdP[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].viscO[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        sistem1.tables.dynamicTables[i].viscG[1][0] = sistem1.tables.dynamicTables[i].pmin;
+        for (int k = 1; k < sistem1.tables.dynamicTables[i].npontosT; k++) {
+            sistem1.tables.dynamicTables[i].TBF[k] = sistem1.tables.dynamicTables[i].TBF[k - 1] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].rholF[0][k + 1] = sistem1.tables.dynamicTables[i].rholF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].rhogF[0][k + 1] = sistem1.tables.dynamicTables[i].rhogF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].DrholDpF[0][k + 1] = sistem1.tables.dynamicTables[i].DrholDpF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].DrhogDpF[0][k + 1] = sistem1.tables.dynamicTables[i].DrhogDpF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].DrholDtF[0][k + 1] = sistem1.tables.dynamicTables[i].DrholDtF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].DrhogDtF[0][k + 1] = sistem1.tables.dynamicTables[i].DrhogDtF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].valBO[0][k + 1] = sistem1.tables.dynamicTables[i].valBO[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].tit[0][k + 1] = sistem1.tables.dynamicTables[i].tit[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].rs[0][k + 1] = sistem1.tables.dynamicTables[i].rs[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].cplF[0][k + 1] = sistem1.tables.dynamicTables[i].cplF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].cpgF[0][k + 1] = sistem1.tables.dynamicTables[i].cpgF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].valZ[0][k + 1] = sistem1.tables.dynamicTables[i].valZ[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].HlF[0][k + 1] = sistem1.tables.dynamicTables[i].HlF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].HgF[0][k + 1] = sistem1.tables.dynamicTables[i].HgF[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].valdZdT[0][k + 1] = sistem1.tables.dynamicTables[i].valdZdT[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].valdZdP[0][k + 1] = sistem1.tables.dynamicTables[i].valdZdP[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].viscO[0][k + 1] = sistem1.tables.dynamicTables[i].viscO[0][k] + sistem1.tables.dynamicTables[i].delT;
+            sistem1.tables.dynamicTables[i].viscG[0][k + 1] = sistem1.tables.dynamicTables[i].viscG[0][k] + sistem1.tables.dynamicTables[i].delT;
         }
-        for (int k = 1; k < sistem1.tables.tabDin[i].npontosP; k++) {
-            sistem1.tables.tabDin[i].rholF[k + 1][0] = sistem1.tables.tabDin[i].rholF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].rhogF[k + 1][0] = sistem1.tables.tabDin[i].rhogF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].DrholDpF[k + 1][0] = sistem1.tables.tabDin[i].DrholDpF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].DrhogDpF[k + 1][0] = sistem1.tables.tabDin[i].DrhogDpF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].DrholDtF[k + 1][0] = sistem1.tables.tabDin[i].DrholDtF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].DrhogDtF[k + 1][0] = sistem1.tables.tabDin[i].DrhogDtF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].valBO[k + 1][0] = sistem1.tables.tabDin[i].valBO[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].tit[k + 1][0] = sistem1.tables.tabDin[i].tit[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].rs[k + 1][0] = sistem1.tables.tabDin[i].rs[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].cplF[k + 1][0] = sistem1.tables.tabDin[i].cplF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].cpgF[k + 1][0] = sistem1.tables.tabDin[i].cpgF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].valZ[k + 1][0] = sistem1.tables.tabDin[i].valZ[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].HlF[k + 1][0] = sistem1.tables.tabDin[i].HlF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].HgF[k + 1][0] = sistem1.tables.tabDin[i].HgF[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].valdZdT[k + 1][0] = sistem1.tables.tabDin[i].valdZdT[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].valdZdP[k + 1][0] = sistem1.tables.tabDin[i].valdZdP[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].viscO[k + 1][0] = sistem1.tables.tabDin[i].viscO[k][0] + sistem1.tables.tabDin[i].delP;
-            sistem1.tables.tabDin[i].viscG[k + 1][0] = sistem1.tables.tabDin[i].viscG[k][0] + sistem1.tables.tabDin[i].delP;
+        for (int k = 1; k < sistem1.tables.dynamicTables[i].npontosP; k++) {
+            sistem1.tables.dynamicTables[i].rholF[k + 1][0] = sistem1.tables.dynamicTables[i].rholF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].rhogF[k + 1][0] = sistem1.tables.dynamicTables[i].rhogF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].DrholDpF[k + 1][0] = sistem1.tables.dynamicTables[i].DrholDpF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].DrhogDpF[k + 1][0] = sistem1.tables.dynamicTables[i].DrhogDpF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].DrholDtF[k + 1][0] = sistem1.tables.dynamicTables[i].DrholDtF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].DrhogDtF[k + 1][0] = sistem1.tables.dynamicTables[i].DrhogDtF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].valBO[k + 1][0] = sistem1.tables.dynamicTables[i].valBO[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].tit[k + 1][0] = sistem1.tables.dynamicTables[i].tit[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].rs[k + 1][0] = sistem1.tables.dynamicTables[i].rs[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].cplF[k + 1][0] = sistem1.tables.dynamicTables[i].cplF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].cpgF[k + 1][0] = sistem1.tables.dynamicTables[i].cpgF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].valZ[k + 1][0] = sistem1.tables.dynamicTables[i].valZ[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].HlF[k + 1][0] = sistem1.tables.dynamicTables[i].HlF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].HgF[k + 1][0] = sistem1.tables.dynamicTables[i].HgF[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].valdZdT[k + 1][0] = sistem1.tables.dynamicTables[i].valdZdT[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].valdZdP[k + 1][0] = sistem1.tables.dynamicTables[i].valdZdP[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].viscO[k + 1][0] = sistem1.tables.dynamicTables[i].viscO[k][0] + sistem1.tables.dynamicTables[i].delP;
+            sistem1.tables.dynamicTables[i].viscG[k + 1][0] = sistem1.tables.dynamicTables[i].viscG[k][0] + sistem1.tables.dynamicTables[i].delP;
         }
 #pragma omp parallel for num_threads((*sistem1.vg1dSP).ntrd)
-        for (int k = 1; k < sistem1.tables.tabDin[i].npontosP + 1; k++) {
+        for (int k = 1; k < sistem1.tables.dynamicTables[i].npontosP + 1; k++) {
             ProFlu fluF;
-            for (int j = 1; j < sistem1.tables.tabDin[i].npontosT + 1; j++) {
-                double pres = sistem1.tables.tabDin[i].rholF[k][0];
-                double temp = sistem1.tables.tabDin[i].rholF[0][j];
-                int indIni = sistem1.tables.tabDin[i].celIni;
+            for (int j = 1; j < sistem1.tables.dynamicTables[i].npontosT + 1; j++) {
+                double pres = sistem1.tables.dynamicTables[i].rholF[k][0];
+                double temp = sistem1.tables.dynamicTables[i].rholF[0][j];
+                int indIni = sistem1.tables.dynamicTables[i].celIni;
                 fluF = sistem1.celula[indIni].flui;
                 if (j == 1)
                     fluF.atualizaPropComp(pres, temp, -1, NULL, NULL, sistem1.arq.pocinjec);
                 else
                     fluF.atualizaPropComp(pres, temp, fluF.dCalculatedBeta, fluF.oCalculatedLiqComposition,
                                           fluF.oCalculatedVapComposition, sistem1.arq.pocinjec);
-                sistem1.tables.tabDin[i].rholF[k][j] = fluF.MasEspoleo(pres, temp);
-                sistem1.tables.tabDin[i].rhogF[k][j] = fluF.MasEspGas(pres, temp);
-                sistem1.tables.tabDin[i].DrhogDpF[k][j] = fluF.drhodp(pres, temp);
-                sistem1.tables.tabDin[i].DrholDtF[k][j] = fluF.DrholDT(pres, temp);
-                sistem1.tables.tabDin[i].DrhogDtF[k][j] = fluF.drhodt(pres, temp);
-                sistem1.tables.tabDin[i].valBO[k][j] = fluF.BOFunc(pres, temp);
-                sistem1.tables.tabDin[i].valZ[k][j] = fluF.Zdran(pres, temp);
-                sistem1.tables.tabDin[i].valdZdT[k][j] = fluF.DZDT(pres, temp);
-                sistem1.tables.tabDin[i].valdZdP[k][j] = fluF.DZDP(pres, temp);
-                sistem1.tables.tabDin[i].tit[k][j] = fluF.FracMass(pres, temp);
-                sistem1.tables.tabDin[i].rs[k][j] = fluF.RS(pres, temp);
-                sistem1.tables.tabDin[i].cplF[k][j] = fluF.CalorLiq(pres, temp);
-                sistem1.tables.tabDin[i].cpgF[k][j] = fluF.CalorGas(pres, temp);
-                sistem1.tables.tabDin[i].HlF[k][j] = fluF.EntalpLiq(pres, temp);
-                sistem1.tables.tabDin[i].HgF[k][j] = fluF.EntalpGas(pres, temp);
-                sistem1.tables.tabDin[i].viscO[k][j] = fluF.ViscOleo(pres, temp);
-                if (k == sistem1.tables.tabDin[i].npontosP)
-                    sistem1.tables.tabDin[i].PBF[j - 1] = fluF.PB(pres, temp);
+                sistem1.tables.dynamicTables[i].rholF[k][j] = fluF.MasEspoleo(pres, temp);
+                sistem1.tables.dynamicTables[i].rhogF[k][j] = fluF.MasEspGas(pres, temp);
+                sistem1.tables.dynamicTables[i].DrhogDpF[k][j] = fluF.drhodp(pres, temp);
+                sistem1.tables.dynamicTables[i].DrholDtF[k][j] = fluF.DrholDT(pres, temp);
+                sistem1.tables.dynamicTables[i].DrhogDtF[k][j] = fluF.drhodt(pres, temp);
+                sistem1.tables.dynamicTables[i].valBO[k][j] = fluF.BOFunc(pres, temp);
+                sistem1.tables.dynamicTables[i].valZ[k][j] = fluF.Zdran(pres, temp);
+                sistem1.tables.dynamicTables[i].valdZdT[k][j] = fluF.DZDT(pres, temp);
+                sistem1.tables.dynamicTables[i].valdZdP[k][j] = fluF.DZDP(pres, temp);
+                sistem1.tables.dynamicTables[i].tit[k][j] = fluF.FracMass(pres, temp);
+                sistem1.tables.dynamicTables[i].rs[k][j] = fluF.RS(pres, temp);
+                sistem1.tables.dynamicTables[i].cplF[k][j] = fluF.CalorLiq(pres, temp);
+                sistem1.tables.dynamicTables[i].cpgF[k][j] = fluF.CalorGas(pres, temp);
+                sistem1.tables.dynamicTables[i].HlF[k][j] = fluF.EntalpLiq(pres, temp);
+                sistem1.tables.dynamicTables[i].HgF[k][j] = fluF.EntalpGas(pres, temp);
+                sistem1.tables.dynamicTables[i].viscO[k][j] = fluF.ViscOleo(pres, temp);
+                if (k == sistem1.tables.dynamicTables[i].npontosP)
+                    sistem1.tables.dynamicTables[i].PBF[j - 1] = fluF.PB(pres, temp);
             }
         }
     }
 
-    for (int i = 0; i < sistem1.tables.ntabDin; i++) {
-        int i0 = sistem1.tables.tabDin[i].celIni;
-        int i1 = sistem1.tables.tabDin[i].celFim;
+    for (int i = 0; i < sistem1.tables.dynamicTableCount; i++) {
+        int i0 = sistem1.tables.dynamicTables[i].celIni;
+        int i1 = sistem1.tables.dynamicTables[i].celFim;
         for (int j = i0; j <= i1; j++) {
-            sistem1.celula[j].flui.tabDin.TBF = sistem1.tables.tabDin[i].TBF;
-            sistem1.celula[j].flui.tabDin.PBF = sistem1.tables.tabDin[i].PBF;
-            sistem1.celula[j].flui.tabDin.rholF = sistem1.tables.tabDin[i].rholF;
-            sistem1.celula[j].flui.tabDin.rhogF = sistem1.tables.tabDin[i].rhogF;
-            sistem1.celula[j].flui.tabDin.DrholDpF = sistem1.tables.tabDin[i].DrholDpF;
-            sistem1.celula[j].flui.tabDin.DrhogDpF = sistem1.tables.tabDin[i].DrhogDpF;
-            sistem1.celula[j].flui.tabDin.DrholDtF = sistem1.tables.tabDin[i].DrholDtF;
-            sistem1.celula[j].flui.tabDin.DrhogDtF = sistem1.tables.tabDin[i].DrhogDtF;
-            sistem1.celula[j].flui.tabDin.valBO = sistem1.tables.tabDin[i].valBO;
-            sistem1.celula[j].flui.tabDin.tit = sistem1.tables.tabDin[i].tit;
-            sistem1.celula[j].flui.tabDin.rs = sistem1.tables.tabDin[i].rs;
-            sistem1.celula[j].flui.tabDin.cplF = sistem1.tables.tabDin[i].cplF;
-            sistem1.celula[j].flui.tabDin.cpgF = sistem1.tables.tabDin[i].cpgF;
-            sistem1.celula[j].flui.tabDin.valZ = sistem1.tables.tabDin[i].valZ;
-            sistem1.celula[j].flui.tabDin.HlF = sistem1.tables.tabDin[i].HlF;
-            sistem1.celula[j].flui.tabDin.HgF = sistem1.tables.tabDin[i].HgF;
-            sistem1.celula[j].flui.tabDin.valdZdT = sistem1.tables.tabDin[i].valdZdT;
-            sistem1.celula[j].flui.tabDin.valdZdP = sistem1.tables.tabDin[i].valdZdP;
-            sistem1.celula[j].flui.tabDin.viscO = sistem1.tables.tabDin[i].viscO;
-            sistem1.celula[j].flui.tabDin.viscG = sistem1.tables.tabDin[i].viscG;
-            sistem1.celula[j].flui.tabDin.delP = sistem1.tables.tabDin[i].delP;
-            sistem1.celula[j].flui.tabDin.delT = sistem1.tables.tabDin[i].delT;
-            sistem1.celula[j].flui.tabDin.npontosP = sistem1.tables.tabDin[i].npontosP;
-            sistem1.celula[j].flui.tabDin.npontosT = sistem1.tables.tabDin[i].npontosT;
-            sistem1.celula[j].flui.tabDin.pmax = sistem1.tables.tabDin[i].pmax;
-            sistem1.celula[j].flui.tabDin.pmin = sistem1.tables.tabDin[i].pmin;
-            sistem1.celula[j].flui.tabDin.tmax = sistem1.tables.tabDin[i].tmax;
-            sistem1.celula[j].flui.tabDin.tmin = sistem1.tables.tabDin[i].tmin;
+            sistem1.celula[j].flui.tabDin.TBF = sistem1.tables.dynamicTables[i].TBF;
+            sistem1.celula[j].flui.tabDin.PBF = sistem1.tables.dynamicTables[i].PBF;
+            sistem1.celula[j].flui.tabDin.rholF = sistem1.tables.dynamicTables[i].rholF;
+            sistem1.celula[j].flui.tabDin.rhogF = sistem1.tables.dynamicTables[i].rhogF;
+            sistem1.celula[j].flui.tabDin.DrholDpF = sistem1.tables.dynamicTables[i].DrholDpF;
+            sistem1.celula[j].flui.tabDin.DrhogDpF = sistem1.tables.dynamicTables[i].DrhogDpF;
+            sistem1.celula[j].flui.tabDin.DrholDtF = sistem1.tables.dynamicTables[i].DrholDtF;
+            sistem1.celula[j].flui.tabDin.DrhogDtF = sistem1.tables.dynamicTables[i].DrhogDtF;
+            sistem1.celula[j].flui.tabDin.valBO = sistem1.tables.dynamicTables[i].valBO;
+            sistem1.celula[j].flui.tabDin.tit = sistem1.tables.dynamicTables[i].tit;
+            sistem1.celula[j].flui.tabDin.rs = sistem1.tables.dynamicTables[i].rs;
+            sistem1.celula[j].flui.tabDin.cplF = sistem1.tables.dynamicTables[i].cplF;
+            sistem1.celula[j].flui.tabDin.cpgF = sistem1.tables.dynamicTables[i].cpgF;
+            sistem1.celula[j].flui.tabDin.valZ = sistem1.tables.dynamicTables[i].valZ;
+            sistem1.celula[j].flui.tabDin.HlF = sistem1.tables.dynamicTables[i].HlF;
+            sistem1.celula[j].flui.tabDin.HgF = sistem1.tables.dynamicTables[i].HgF;
+            sistem1.celula[j].flui.tabDin.valdZdT = sistem1.tables.dynamicTables[i].valdZdT;
+            sistem1.celula[j].flui.tabDin.valdZdP = sistem1.tables.dynamicTables[i].valdZdP;
+            sistem1.celula[j].flui.tabDin.viscO = sistem1.tables.dynamicTables[i].viscO;
+            sistem1.celula[j].flui.tabDin.viscG = sistem1.tables.dynamicTables[i].viscG;
+            sistem1.celula[j].flui.tabDin.delP = sistem1.tables.dynamicTables[i].delP;
+            sistem1.celula[j].flui.tabDin.delT = sistem1.tables.dynamicTables[i].delT;
+            sistem1.celula[j].flui.tabDin.npontosP = sistem1.tables.dynamicTables[i].npontosP;
+            sistem1.celula[j].flui.tabDin.npontosT = sistem1.tables.dynamicTables[i].npontosT;
+            sistem1.celula[j].flui.tabDin.pmax = sistem1.tables.dynamicTables[i].pmax;
+            sistem1.celula[j].flui.tabDin.pmin = sistem1.tables.dynamicTables[i].pmin;
+            sistem1.celula[j].flui.tabDin.tmax = sistem1.tables.dynamicTables[i].tmax;
+            sistem1.celula[j].flui.tabDin.tmin = sistem1.tables.dynamicTables[i].tmin;
         }
     }
 
@@ -9128,9 +9128,9 @@ void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
                                     malha[i].celula[1].acsr.tipo = 0;
                                     malha[i].celula[0].acsr.tipo = 1;
                                     if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
-                                        malha[i].tables.tabDin[0].celFim = malha[i].tables.tabDin[1].celFim;
-                                        malha[i].tables.tabDin.erase(malha[i].tables.tabDin.begin() + 1);
-                                        malha[i].tables.ntabDin--;
+                                        malha[i].tables.dynamicTables[0].celFim = malha[i].tables.dynamicTables[1].celFim;
+                                        malha[i].tables.dynamicTables.erase(malha[i].tables.dynamicTables.begin() + 1);
+                                        malha[i].tables.dynamicTableCount--;
                                     }
                                 }
                             } else if (malha[i].celula[0].acsr.tipo == 2 && fabs(malha[i].celula[0].acsr.injl.QLiq) > 1e-15) {
@@ -9144,9 +9144,9 @@ void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
                                     malha[i].celula[1].acsr.tipo = 0;
                                     malha[i].celula[0].acsr.tipo = 2;
                                     if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
-                                        malha[i].tables.tabDin[0].celFim = malha[i].tables.tabDin[1].celFim;
-                                        malha[i].tables.tabDin.erase(malha[i].tables.tabDin.begin() + 1);
-                                        malha[i].tables.ntabDin--;
+                                        malha[i].tables.dynamicTables[0].celFim = malha[i].tables.dynamicTables[1].celFim;
+                                        malha[i].tables.dynamicTables.erase(malha[i].tables.dynamicTables.begin() + 1);
+                                        malha[i].tables.dynamicTableCount--;
                                     }
                                 }
                             } else if (malha[i].celula[0].acsr.tipo == 10 &&
@@ -9165,9 +9165,9 @@ void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
                                     malha[i].celula[0].acsr.tipo = 10;
                                     malha[i].celula[1].acsr.tipo = 0;
                                     if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
-                                        malha[i].tables.tabDin[0].celFim = malha[i].tables.tabDin[1].celFim;
-                                        malha[i].tables.tabDin.erase(malha[i].tables.tabDin.begin() + 1);
-                                        malha[i].tables.ntabDin--;
+                                        malha[i].tables.dynamicTables[0].celFim = malha[i].tables.dynamicTables[1].celFim;
+                                        malha[i].tables.dynamicTables.erase(malha[i].tables.dynamicTables.begin() + 1);
+                                        malha[i].tables.dynamicTableCount--;
                                     }
                                 }
                             } else if (malha[i].celula[0].acsr.tipo == 3) {
