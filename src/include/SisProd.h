@@ -950,9 +950,10 @@ class SProd {
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
   public:
-    /// Advances the complete transient production-system solution and handles output and logging.
-    void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0.,
-                    int nrede = -1, ProFlu fluiRev = ProFlu());
+    /// Advances the complete transient production-system solution and handles output and logging. fluiRev is the
+    /// fluid that flows back from the collector, null when the system has none.
+    void SolveTrans(double titRev = 1., double alfRev = 1., double betRev = 0., int nrede = -1,
+                    const ProFlu *fluiRev = nullptr);
 
     /// Appends the buffered rows of a production-line trend file.
     void ImprimeTrendP(int i, int nrede = -1);

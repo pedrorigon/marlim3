@@ -2123,7 +2123,8 @@ void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
 }  // namespace
 
 
-void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
+void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev, int nrede,
+                        const ProFlu *fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
     double velmaxdesc = 0;

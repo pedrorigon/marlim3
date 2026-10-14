@@ -381,7 +381,7 @@ void SProd::solveHydrateEnvelopes() {
     }
 }
 
-void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, ProFlu fluiRev) {
+void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, const ProFlu *fluiRev) {
     SolveContext context(*this);
     transient::solveTransientStep(context.transientSolve(), titRev, alfRev, betRev, nrede, fluiRev);
 }

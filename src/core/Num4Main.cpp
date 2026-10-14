@@ -3052,7 +3052,8 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                 }
                 if (arqRede.malha[i].ncoleta > 0) {
                     int col = arqRede.malha[i].coleta[0];
-                    malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i], nrede, malha[col].celula[0].flui);
+                    const ProFlu collectorFluid = malha[col].celula[0].flui;
+                    malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i], nrede, &collectorFluid);
                 } else
                     malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i], nrede);
                 for (int kontasnp = 0; kontasnp < malha[i].arq.nsnp; kontasnp++) {

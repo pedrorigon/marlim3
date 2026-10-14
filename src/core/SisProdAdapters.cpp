@@ -132,6 +132,16 @@ void sisprod::composition::CompositionUpdaters::correctGasSpecificGravity(int i)
     sisprod::steady::correctGasSpecificGravity(context.steady(), i);
 }
 
+namespace {
+
+/// The fluid that flows back into the last cell: the collector's, or a default fluid when the system has none.
+const ProFlu &reverseFlowFluid(const ProFlu *collectorFluid) {
+    static const ProFlu defaultFluid;
+    return collectorFluid != nullptr ? *collectorFluid : defaultFluid;
+}
+
+}  // namespace
+
 void sisprod::transient::TransientSolveUpdaters::solveHydrateEnvelopes() const {
     context.system().solveHydrateEnvelopes();
 }
@@ -171,14 +181,14 @@ void sisprod::transient::TransientSolveUpdaters::connectTubing() const {
 void sisprod::transient::TransientSolveUpdaters::marchTransientEnergy(int ciclo, int ciclomax) const {
     sisprod::thermal::advanceTransientEnergy(context.thermal(), ciclo, ciclomax);
 }
-void sisprod::transient::TransientSolveUpdaters::updateMolarFractions(const ProFlu &fluiRev) const {
-    sisprod::composition::transportPhaseMolarFractions(context.composition(), fluiRev);
+void sisprod::transient::TransientSolveUpdaters::updateMolarFractions(const ProFlu *fluiRev) const {
+    sisprod::composition::transportPhaseMolarFractions(context.composition(), reverseFlowFluid(fluiRev));
 }
 void sisprod::transient::TransientSolveUpdaters::updateDensities() const {
     sisprod::composition::cacheCellAndFaceDensities(context.composition());
 }
-void sisprod::transient::TransientSolveUpdaters::updateGasOilRatioAndCo2(const ProFlu &fluiRev) const {
-    sisprod::composition::transportBlackOilProperties(context.composition(), fluiRev);
+void sisprod::transient::TransientSolveUpdaters::updateGasOilRatioAndCo2(const ProFlu *fluiRev) const {
+    sisprod::composition::transportBlackOilProperties(context.composition(), reverseFlowFluid(fluiRev));
 }
 void sisprod::transient::TransientSolveUpdaters::updateTemperatures() const {
     sisprod::thermal::updateDistributedMassTransfer(context.thermal());

@@ -337,9 +337,9 @@ struct TransientSolveUpdaters {
     void evaluateParaffin() const;
     void connectTubing() const;
     void marchTransientEnergy(int ciclo, int ciclomax) const;
-    void updateMolarFractions(const ProFlu &fluiRev) const;
+    void updateMolarFractions(const ProFlu *fluiRev) const;
     void updateDensities() const;
-    void updateGasOilRatioAndCo2(const ProFlu &fluiRev) const;
+    void updateGasOilRatioAndCo2(const ProFlu *fluiRev) const;
     void updateTemperatures() const;
     void updateInitialFractions() const;
     void updateThermal(int aflu = 0) const;
@@ -472,7 +472,7 @@ struct TransientSolveState {
 /// mini-table, the t = 0 trend, computeTimeStep, the coupling loop (fraction
 /// evolution, pig, pressure-volume coupling), then the output phases.
 void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev,
-                        int nrede, ProFlu fluiRev);
+                        int nrede, const ProFlu *fluiRev);
 
 }  // namespace sisprod::transient
 
