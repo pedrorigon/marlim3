@@ -182,13 +182,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     montasistema(compfonte, posicfonte, nfontes);
 }
 
-SProd::SProd()
-    : arq(), flutG(1, kGasLineProfileFixedColumns), flut(1, kProductionProfileFixedColumns),
-      gasLift{.matglobG = BandMtx<double>(kGasLineUnknownsPerCell, kGasLineBandwidth, kGasLineBandwidth),
-              .termolivreG = Vcr<double>(kGasLineUnknownsPerCell)},
-      transient{.matglobP = BandMtx<double>(kProductionUnknownsPerCell, kProductionLeftBandwidth,
-                                            kProductionRightBandwidth),
-                .termolivreP = Vcr<double>(kProductionUnknownsPerCell)} {
+SProd::SProd() {
     resolveDriftSelectors();
 }
 
@@ -246,13 +240,10 @@ SProd &SProd::operator=(const SProd &sp) {
     return *this;
 }
 
-SProd::SProd(Ler &parsedInput, const CarriedState &carried) : SProd() {
-    releaseOwnedStorage();
-
+SProd::SProd(Ler &parsedInput, const CarriedState &carried) : vg1dSP(parsedInput.vg1dSP) {
     arq.copiaSemJson(parsedInput);
     resolveDriftSelectors();
     allocateSolutionBuffers();
-    vg1dSP = arq.vg1dSP;
     resetRunState();
     applyCarriedState(carried);
 

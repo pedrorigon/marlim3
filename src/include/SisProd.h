@@ -165,10 +165,11 @@ struct PropertyTables {
 /// coupling, the completion-fluid interface, and the unloading controller's samples and
 /// settings.
 struct GasLiftLine {
-    /// Global pressure-velocity coupling matrix for the gas line.
-    BandMtx<double> matglobG;
-    /// Right-hand side and solution vector for the gas-line pressure-velocity system.
-    Vcr<double> termolivreG;
+    /// Global pressure-velocity coupling matrix for the gas line, sized for one cell until the system is sized for its
+    /// input.
+    BandMtx<double> matglobG{kGasLineUnknownsPerCell, kGasLineBandwidth, kGasLineBandwidth};
+    /// Right-hand side and solution vector for the gas-line pressure-velocity system, sized like matglobG.
+    Vcr<double> termolivreG{kGasLineUnknownsPerCell};
     /// Production-line cell indices associated with gas-lift valves.
     vector<int> posicVGLP;
     /// Service-line cell indices associated with gas-lift valves.
@@ -246,8 +247,9 @@ struct TransientRun {
     int npig = 0;
     /// Cell indices where pigs are received.
     vector<int> receb;
-    /// Global pressure-velocity coupling matrix for the multiphase production line.
-    BandMtx<double> matglobP;
+    /// Global pressure-velocity coupling matrix for the multiphase production line, sized for one cell until the
+    /// system is sized for its input.
+    BandMtx<double> matglobP{kProductionUnknownsPerCell, kProductionLeftBandwidth, kProductionRightBandwidth};
     /// Number of scheduled Master1 opening events.
     int nabreM1 = 0;
     /// Number of scheduled Master1 closing events.
@@ -369,8 +371,8 @@ struct TransientRun {
     int indpigP = 0;
     /// Previous-time-level value of indpigP.
     int indpigPini = 0;
-    /// Right-hand side and solution vector for the production-line pressure-velocity system.
-    Vcr<double> termolivreP;
+    /// Right-hand side and solution vector for the production-line pressure-velocity system, sized like matglobP.
+    Vcr<double> termolivreP{kProductionUnknownsPerCell};
     /// Simulation end time.
     double tfinal = 0;
     /// Current complete-model activation state.
@@ -673,10 +675,10 @@ class SProd {
     /// Resolved from arq once, when the object is built, so the per cell path never reads configuration.
     driftflux::correlations::RegimeSelectors driftSelectors;
   public:
-    /// Buffer used to write gas-line profiles.
-    FullMtx<double> flutG;
-    /// Buffer used to write production-line profiles.
-    FullMtx<double> flut;
+    /// Buffer used to write gas-line profiles, one row until the system is sized for its input.
+    FullMtx<double> flutG{1, sisprod::kGasLineProfileFixedColumns};
+    /// Buffer used to write production-line profiles, one row until the system is sized for its input.
+    FullMtx<double> flut{1, sisprod::kProductionProfileFixedColumns};
     /// The gas-lift line: its cells, chokes and valves, its pressure-velocity system, and the unloading of its
     /// completion fluid.
     sisprod::GasLiftLine gasLift;
@@ -789,9 +791,8 @@ class SProd {
     SProd(const SProd &) = delete;
 
   private:
-    /// Gives back the memory of every array this object owns. operator= and the
-    /// constructor from a parsed input call it before rebuilding, so that the arrays
-    /// of the previous system are free before the input is read again.
+    /// Gives back the memory of every array this object owns. operator= calls it before rebuilding, so that the
+    /// arrays of the previous system are free before the input is read again.
     void releaseOwnedStorage();
   public:
     /// Rebuilds this system from sp's input file, read again from disk, and takes
