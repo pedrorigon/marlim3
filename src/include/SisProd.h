@@ -24,6 +24,7 @@
 #include "PropFlu.h"
 #include "PropFluCol.h"
 #include "RuntimeDiagnostics.h"
+#include "SisProdConstants.h"
 #include "TrocaCalor.h"
 #include "Vetor.h"
 #include "acessorios.h"
@@ -185,9 +186,9 @@ struct GasLiftLine {
     /// Gas-lift valves installed in the system.
     vector<ChokeGas> chokeVGL;
     /// Time horizon used by the gas-lift unloading controller.
-    double tempMedContDesc = 10.;
+    double tempMedContDesc = kUnloadingAveragingWindow;
     /// Maximum number of flow samples retained by the unloading PI controller.
-    double maxVecContDesc = 1000;
+    double maxVecContDesc = kUnloadingSampleCapacity;
     /// Average maximum completion-fluid mass flow through the gas-lift valves.
     double vazmedDesc = 0;
     /// Averaging interval used for gas-lift-valve mass flow.
@@ -213,7 +214,7 @@ struct GasLiftLine {
     /// The gas service-line control volumes celulaG points at.
     vector<CelG> gasCells;
     /// Current service-line cell containing the completion-fluid/gas interface.
-    int celInter = 1e7;
+    int celInter = kNoInterfaceCell;
     /// Maximum time step that keeps the unloading interface within one gas-line cell.
     double dtInter = 0.;
     /// Current completion-fluid/gas interface velocity.
@@ -282,7 +283,7 @@ struct TransientRun {
     /// Accumulated accepted time steps used to compute dtSimMed.
     double dtSimTotal = 0.;
     /// Counts alternating liquid-flow oscillations near an active surface choke.
-    int kontaGolfada = 1000;
+    int kontaGolfada = kInitialSlugCount;
     /// Multiplier applied to a small artificial upstream gas flow during difficult Master1 closures. It mitigates a
     /// pressure blind spot when the upstream side contains only liquid and increases if the problem persists.
     double momentoDesesp = 0;
@@ -309,11 +310,15 @@ struct TransientRun {
     /// fraction outside the physical [0, 1] range.
     int reinicia = 0;
     /// Recent Master1 ratio values for the active state.
-    double vRazMast1[10] = {};
+    double vRazMast1[kMasterRatioHistorySize] = {};
     /// Recent Master1 ratio values for the inactive state.
-    double vRazMast0[10] = {};
+    double vRazMast0[kMasterRatioHistorySize] = {};
     /// Critical Master1 ratio history used by the switching logic.
-    double vRazMastCrit[10] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+    double vRazMastCrit[kMasterRatioHistorySize] = {
+        kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
+        kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
+        kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
+        kDefaultMasterCriticalRatio};
     /// Previous-time-level value of pGSup.
     double pGSupIni = 0.;
     /// Recorded in the restart file; nothing in the simulation reads it.
@@ -395,7 +400,7 @@ struct TrendSet {
     vector<int> bufferedCounts;
 
     /// For each of the count trends, length(i) rows of rowWidth(i) values whose first
-    /// sentinelCount(i) hold the -10000 sentinel, and the reset timers and sample counts,
+    /// sentinelCount(i) hold kTrendSentinel, and the reset timers and sample counts,
     /// zeroed; points matrixPointer, resetTimerPointer, countPointer and bufferedCountPointer
     /// at them.
     template <typename Length, typename RowWidth, typename SentinelCount>
@@ -411,7 +416,7 @@ struct TrendSet {
             for (int j = 0; j < n; j++) {
                 rows[i][j] = values[i][j].data();
                 for (int k = 0; k < sentinelCount(i); k++)
-                    values[i][j][k] = -10000.;
+                    values[i][j][k] = kTrendSentinel;
             }
             matrices[i] = rows[i].data();
         }
@@ -567,7 +572,7 @@ struct NetworkCoupling {
 /// coupling parameter.
 struct SteadySearch {
     /// Control parameter for slowly varying thermal coupling.
-    double trocaTermicaLenta = 0.01;
+    double trocaTermicaLenta = kSlowHeatTransferThreshold;
     /// Number of production fluids.
     int nfluP = 0;
     /// Initial holdup estimate used by the steady-state solver.
@@ -581,7 +586,7 @@ struct SteadySearch {
     /// Indicates reverse flow in the steady-state network solution.
     int revPerm = 0;
     /// Current steady-state convergence monitor.
-    double monitConvPerm = 1000.;
+    double monitConvPerm = kInitialConvergenceMonitor;
     /// Reference value for the steady-state convergence monitor.
     double monitConvPermBase = 1.;
 };
@@ -868,7 +873,7 @@ class SProd {
     /// thermal-node indices, and -- unless the network is only provisional --
     /// allocates the trend matrices of the production line, the gas line and the
     /// transient trends, sized to the longest simulated time and filled with the
-    /// -10000 sentinel.
+    /// kTrendSentinel.
     void allocateEventProfileAndTrendArrays();
     /// Resets the column-annulus and network coupling flags, locates the
     /// column-annulus coupling range on the gas line, sets the steady and transient
