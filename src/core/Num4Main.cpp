@@ -62,6 +62,7 @@
 #include "solverPoroso.h"
 #include "variaveisGlobais1D.h"
 #include "versao.h"
+#include "RunInfo.h"
 #include "UnitConversions.h"
 #include <ctime>
 #include <fstream>

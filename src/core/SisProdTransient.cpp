@@ -9,21 +9,13 @@
 #include "celula3.h"
 #include "celulaGas.h"
 #include "variaveisGlobais1D.h"
+#include "RunInfo.h"
 #include "UnitConversions.h"
 
 #include <math.h>
 
 // For the TimeStepPolicy concept.
 #include <concepts>
-
-// The run's start date, which the progress report prints. Globals defined
-// elsewhere and declared extern in SisProd.h -- a header this module does not
-// include on purpose, so the four declarations it needs are repeated here, and
-// only those four.
-extern int diaIni;
-extern int horaIni;
-extern int minutoIni;
-extern int segundoIni;
 
 namespace sisprod::transient {
 

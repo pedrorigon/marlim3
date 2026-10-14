@@ -54,25 +54,6 @@
 
 using namespace std;
 
-/// Application or simulator version string.
-extern string versao;
-/// Global simulation start timestamp.
-extern time_t nowGlobIni;
-/// Broken-down local time corresponding to nowGlobIni.
-extern tm *ltmGlobIni;
-/// Day component of the simulation start time.
-extern int diaIni;
-/// Hour component of the simulation start time.
-extern int horaIni;
-/// Minute component of the simulation start time.
-extern int minutoIni;
-/// Second component of the simulation start time.
-extern int segundoIni;
-/// Global simulation end timestamp.
-extern time_t nowGlobFim;
-/// Broken-down local time corresponding to nowGlobFim.
-extern tm *ltmGlobFim;
-
 class SProd;
 namespace trendoutput { struct TrendState; }
 
