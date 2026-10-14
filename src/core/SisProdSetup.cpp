@@ -826,10 +826,9 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
 
 /// Lists the cells with two-dimensional heat diffusion, copies the master-valve
 /// opening and closing times, maps the transient profile positions to global
-/// thermal-node indices, and -- unless the network is only provisional --
-/// allocates the trend matrices of the production line, the gas line and the
-/// transient trends, sized to the longest simulated time and filled with the
-/// -10000 sentinel.
+/// thermal-node indices, and allocates the trend matrices of the production line,
+/// the gas line and the transient trends, sized to the longest simulated time and
+/// filled with kTrendSentinel.
 void SProd::allocateEventProfileAndTrendArrays() {
     for (int i = 0; i < ncel; i++) {
         if (celula[i].calor.difus2D == 1) {
