@@ -424,7 +424,7 @@ struct TransientSolveState {
     /// SProd::transient.printCounter -- written or read by the solve; not promised const.
     int &printCounter;
     /// SProd::trends.trendOutputCount -- written or read by the solve; not promised const.
-    double &printPassCount;
+    int &printPassCount;
     /// SProd::trends.productionWallProfileTimeIndex -- written or read by the solve; not promised const.
     int &productionCrossSectionProfileTimeCounter;
     /// SProd::trends.productionWallTrendBufferedCounts -- written or read by the solve; not promised const.

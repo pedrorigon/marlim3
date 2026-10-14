@@ -154,7 +154,7 @@ struct GasLiftLine {
     /// Time horizon used by the gas-lift unloading controller.
     double unloadingAveragingWindow = kUnloadingAveragingWindow;
     /// Maximum number of flow samples retained by the unloading PI controller.
-    double unloadingSampleCapacity = kUnloadingSampleCapacity;
+    int unloadingSampleCapacity = kUnloadingSampleCapacity;
     /// Average maximum completion-fluid mass flow through the gas-lift valves.
     double meanUnloadingFlowRate = 0;
     /// Averaging interval used for gas-lift-valve mass flow.
@@ -470,7 +470,7 @@ struct TrendRecorder {
     /// Number of production-line trend samples currently stored.
     int *productionTrendCounts = nullptr;
     /// Trend-output cycle counter; a value of one triggers header output.
-    double trendOutputCount = 0.;
+    int trendOutputCount = 0;
 };
 
 /// What a system keeps as a branch of a network: the inlet and outlet conditions of the

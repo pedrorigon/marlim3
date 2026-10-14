@@ -117,7 +117,7 @@ struct GasLiftState {
     std::vector<double> &maximumMeanUnloadingFlowRates;
     std::vector<double> &unloadingTimeSteps;
     const double &continuousMeanUnloadingTemperature;
-    const double &maximumContinuousUnloadingCount;
+    const int &maximumContinuousUnloadingCount;
 
     /// Discharge temperature, computed by the thermal module.
     GasLiftTemperatureUpdater temperatureUpdater;

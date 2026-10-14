@@ -804,7 +804,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
                     }
                 }
             }
-            if (state.unloadingTimeSteps.size() > state.maximumContinuousUnloadingCount || state.meanUnloadingTemperature > state.continuousMeanUnloadingTemperature) {
+            if (std::ssize(state.unloadingTimeSteps) > state.maximumContinuousUnloadingCount || state.meanUnloadingTemperature > state.continuousMeanUnloadingTemperature) {
                 state.meanUnloadingTemperature -= state.unloadingTimeSteps[0];
                 state.unloadingTimeSteps.erase(state.unloadingTimeSteps.begin());
                 state.meanUnloadingFlowRate -= state.maximumMeanUnloadingFlowRates[0];

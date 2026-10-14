@@ -461,7 +461,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     system.gasLift.meanUnloadingFlowRate = 0.22 + scenario.gasFlow;
     system.gasLift.unloadingAveragingInterval = scenario.temperature + 3.;
     system.gasLift.unloadingAveragingWindow = scenario.temperature + 2.;
-    system.gasLift.unloadingSampleCapacity = 3.;
+    system.gasLift.unloadingSampleCapacity = 3;
     system.gasLift.maximumUnloadingFlowSamples = {0.18, 0.20, 0.24};
     system.gasLift.unloadingTimeStepSamples = {0.5, 0.5, 0.5};
 

@@ -46,7 +46,7 @@ struct TrendState {
     const int &branchIndex;
     /// Count of output passes so far; captions go out on the first --
     /// SProd::trends.trendOutputCount.
-    const double &printPassCount;
+    const int &printPassCount;
 
     /// MatTrendP, ntrend, ntrendB.
     TrendSeries production;

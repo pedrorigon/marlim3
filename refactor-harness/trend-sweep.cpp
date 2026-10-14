@@ -333,7 +333,7 @@ int main(int argc, char **argv) {
         globals.sequenciaAP = 3 + configuration % 4;
 
         const int branchIndex = branch ? 5 : -1;
-        const double printPassCount = pass;
+        const int printPassCount = pass;
 
         const trendoutput::TrendState state{
             .input = input,

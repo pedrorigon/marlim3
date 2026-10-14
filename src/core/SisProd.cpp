@@ -101,7 +101,7 @@ void SProd::resetRunState() {
     trends.productionWallTrendResetTimes = nullptr;
     trends.productionWallTrendCounts = nullptr;
     trends.productionWallTrendBufferedCounts = nullptr;
-    trends.trendOutputCount = 0.;
+    trends.trendOutputCount = 0;
 
     networkCoupling.previousInletPressure = -1;
     networkCoupling.previousInletTemperature = -1;
