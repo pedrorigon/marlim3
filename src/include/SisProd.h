@@ -1172,7 +1172,7 @@ class SProd {
                                      "Um simulador que resolve uma parada de producao, comeca avancando pequenos incrementos de tempo",
                                      "                            Nada e permanente, exceto a mudanca                           ",
                                      "                  Uma jornada de mil quilometros comeca com um unico passo                ",
-									 "Seja paciente. Espere ate que a lama assente e a agua fique limpa. Permaneça imovel ate que a acao correta suja por si so"};
+                                     "Seja paciente. Espere ate que a lama assente e a agua fique limpa. Permaneça imovel ate que a acao correta suja por si so"};
     static constexpr const char *saidaSubTextoSis[16] = {
         "                         Galeno de Pergamo do Transiente Longo                          ",
         "                     J. California Cooper depois da simulacao divergir                  ",
@@ -1189,7 +1189,7 @@ class SProd {
         "                               Confucio das simulacoes sem fim                         ",
         "          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
         "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    ",
-	    "            Lao-Tse, vendo o incremento de tempo ficar cada vez menor                   "};
+        "            Lao-Tse, vendo o incremento de tempo ficar cada vez menor                   "};
   public:
 
     /// Constructs and initializes a production-system simulation from the input and log files.

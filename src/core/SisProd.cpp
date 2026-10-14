@@ -363,8 +363,7 @@ void SProd::renovaBufferCego() {
 
 void SProd::renovaTemp() {
     sisprod::SolveContext context(*this);
-    sisprod::thermal::updateDistributedMassTransfer(
-        context.thermal());
+    sisprod::thermal::updateDistributedMassTransfer(context.thermal());
 }
 
 void SProd::renovaterm(int aflu) {
@@ -411,10 +410,12 @@ void SProd::aberturaVal0() {
     sisprod::SolveContext context(*this);
     sisprod::transient::valveOpeningLow(context.transientStep());
 }
+
 void SProd::aberturaVal1() {
     sisprod::SolveContext context(*this);
     sisprod::transient::valveOpeningHigh(context.transientStep());
 }
+
 void SProd::restringeDTporValv() {
     sisprod::SolveContext context(*this);
     sisprod::transient::restrictTimeStepByValve(context.transientStep());
@@ -486,18 +487,22 @@ void SProd::ImprimeTrendPCab(int i, int nrede) {
     sisprod::SolveContext context(*this);
     trendoutput::writeProductionTrendHeader(context.trends(), i, nrede);
 }
+
 void SProd::ImprimeTrendP(int i, int nrede) {
     sisprod::SolveContext context(*this);
     trendoutput::writeProductionTrendRows(context.trends(), i, nrede);
 }
+
 void SProd::ImprimeTrendGCab(int i, int nrede) {
     sisprod::SolveContext context(*this);
     trendoutput::writeGasLineTrendHeader(context.trends(), i, nrede);
 }
+
 void SProd::ImprimeTrendG(int i, int nrede) {
     sisprod::SolveContext context(*this);
     trendoutput::writeGasLineTrendRows(context.trends(), i, nrede);
 }
+
 double SProd::marchaProdPerm1(double pchute) {
     sisprod::SolveContext context(*this);
     return sisprod::steady::marchProductionSteady(context.steady(), pchute);
