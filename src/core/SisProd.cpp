@@ -30,8 +30,6 @@ void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
 }
 
-/// The run state every construction and reassignment starts from, before each
-/// path sets what is its own and montasistema builds the system.
 void SProd::resetRunState() {
     tables.zdranP = 0;
     tables.dzdpP = 0;
@@ -175,8 +173,6 @@ void releaseVector(vector<T> &v) {
 
 }  // namespace
 
-/// Gives back the memory of every array this object owns, so that a rebuild starts
-/// with it free.
 void SProd::releaseOwnedStorage() {
     releaseVector(gasLift.gasCells);
     releaseVector(gasLift.chokeVGL);
@@ -469,11 +465,6 @@ void SProd::atualizaCC1() {
     sisprod::transient::refreshInletCondition(context.transientStep());
 }
 
-/// Runs the hydrate-envelope solvers for the production and gas lines.
-///
-/// Both solvers are constructed from the whole SProd object (*this).
-/// SolveTrans reaches it through a callback, so the hydrate phase runs first in
-/// the step.
 void SProd::solveHydrateEnvelopes() {
     if (arq.calculaEnvelope == 1 && (*vg1dSP).lixo5 <= arq.tfinal) {
         FA_Hidrato solverHidrato(*this);
