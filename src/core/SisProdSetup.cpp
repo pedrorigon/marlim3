@@ -854,17 +854,17 @@ void SProd::allocateEventProfileAndTrendArrays() {
         ntempGas = gasLift.ncelGas;
 
     if (arq.nperfistransp > 0) {
-        trends.ncelperftransp = vector<int>(arq.nperfistransp);
+        trends.productionWallProfileCells = vector<int>(arq.nperfistransp);
         for (int i = 0; i < arq.nperfistransp; i++) {
             int posiccel = arq.proftransp.posic[i];
-            trends.ncelperftransp[i] = celula[posiccel].calor.nglobal;
+            trends.productionWallProfileCells[i] = celula[posiccel].calor.nglobal;
         }
     }
     if (arq.nperfistransg > 0 && arq.lingas > 0) {
-        trends.ncelperftransg = vector<int>(arq.nperfistransg);
+        trends.gasWallProfileCells = vector<int>(arq.nperfistransg);
         for (int i = 0; i < arq.nperfistransg; i++) {
             int posiccel = arq.proftransg.posic[i];
-            trends.ncelperftransg[i] = gasLift.celulaG[posiccel].calor.nglobal;
+            trends.gasWallProfileCells[i] = gasLift.celulaG[posiccel].calor.nglobal;
         }
     }
 
@@ -874,26 +874,28 @@ void SProd::allocateEventProfileAndTrendArrays() {
         trends.productionTrendSet.allocate(
             arq.ntendp,
             [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); }, // round(arq.tfinal / arq.trendp[i].dt);
-            [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; }, trends.MatTrendP,
-            trends.resettrend, trends.ntrend, trends.ntrendB);
+            [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; },
+            trends.productionTrendMatrices, trends.productionTrendResetTimes, trends.productionTrendCounts,
+            trends.productionTrendBufferedCounts);
     }
     if (arq.ntendg > 0) {
         trends.gasTrendSet.allocate(
             arq.ntendg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt); },
-            [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; }, trends.MatTrendG,
-            trends.resettrendg, trends.ntrendg, trends.ntrendgB);
+            [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; },
+            trends.gasTrendMatrices, trends.gasTrendResetTimes, trends.gasTrendCounts, trends.gasTrendBufferedCounts);
     }
     if (arq.ntendtransp > 0) {
         trends.productionWallTrendSet.allocate(
             arq.ntendtransp, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt); },
-            [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransP, trends.resettrendtrans,
-            trends.ntrendtrans, trends.ntrendtransB);
+            [](int) { return 2; }, [](int) { return 2; }, trends.productionWallTrendMatrices,
+            trends.productionWallTrendResetTimes, trends.productionWallTrendCounts,
+            trends.productionWallTrendBufferedCounts);
     }
     if (arq.ntendtransg > 0) {
         trends.gasWallTrendSet.allocate(
             arq.ntendtransg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt); },
-            [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransG, trends.resettrendtransg,
-            trends.ntrendtransg, trends.ntrendtransgB);
+            [](int) { return 2; }, [](int) { return 2; }, trends.gasWallTrendMatrices, trends.gasWallTrendResetTimes,
+            trends.gasWallTrendCounts, trends.gasWallTrendBufferedCounts);
     }
 }
 
@@ -933,31 +935,31 @@ void SProd::resetCouplingAndOutputState() {
     		arq.imprimeProfileG(gasLift.celulaG, flutG, (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransp > 0) {
-    		arq.imprimeProfileTrans(celula, trends.ncelperftransp.data(), (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTrans(celula, trends.productionWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
     	}
     	if (arq.nperfistransg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileTransG(gasLift.celulaG, trends.ncelperftransg.data(), (*vg1dSP).lixo5, indTramo);
+    		arq.imprimeProfileTransG(gasLift.celulaG, trends.gasWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
     	}
     }
-    trends.kontaTempoProf = 0;
-    trends.kontaTempoProfG = 0;
+    trends.productionProfileTimeIndex = 0;
+    trends.gasProfileTimeIndex = 0;
     if (arq.nperfisp > 0) {
         if (arq.profp.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            trends.kontaTempoProf++;
+            trends.productionProfileTimeIndex++;
     }
     if (arq.nperfisg > 0 && arq.lingas > 0) {
         if (arq.profg.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            trends.kontaTempoProfG++;
+            trends.gasProfileTimeIndex++;
     }
-    trends.kontaTempoTransProf = 0;
-    trends.kontaTempoTransProfG = 0;
+    trends.productionWallProfileTimeIndex = 0;
+    trends.gasWallProfileTimeIndex = 0;
     if (arq.nperfistransp > 0) {
         if (arq.proftransp.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            trends.kontaTempoTransProf++;
+            trends.productionWallProfileTimeIndex++;
     }
     if (arq.nperfistransg > 0 && arq.lingas > 0) {
         if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
-            trends.kontaTempoTransProfG++;
+            trends.gasWallProfileTimeIndex++;
     }
 
     ostringstream saidaLog;
@@ -1000,7 +1002,7 @@ void SProd::resetCouplingAndOutputState() {
 
     if (arq.nCelUnit>0) {
     	for(int iCelU=0;iCelU<arq.nCelUnit;iCelU++){
-    		trends.kontaTempoCelUni.push_back(0);
+    		trends.singleCellOutputTimeIndices.push_back(0);
     	}
     }
 

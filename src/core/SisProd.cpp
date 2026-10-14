@@ -87,23 +87,23 @@ void SProd::resetRunState() {
     transient.taxaDTMax.clear();
     transient.indCelPoisson2D.clear();
 
-    trends.MatTrendG = nullptr;
-    trends.resettrendg = nullptr;
-    trends.ntrendg = nullptr;
-    trends.ntrendgB = nullptr;
-    trends.MatTrendTransG = nullptr;
-    trends.resettrendtransg = nullptr;
-    trends.ntrendtransg = nullptr;
-    trends.ntrendtransgB = nullptr;
-    trends.MatTrendP = nullptr;
-    trends.resettrend = nullptr;
-    trends.ntrend = nullptr;
-    trends.ntrendB = nullptr;
-    trends.MatTrendTransP = nullptr;
-    trends.resettrendtrans = nullptr;
-    trends.ntrendtrans = nullptr;
-    trends.ntrendtransB = nullptr;
-    trends.kimpT = 0.;
+    trends.gasTrendMatrices = nullptr;
+    trends.gasTrendResetTimes = nullptr;
+    trends.gasTrendCounts = nullptr;
+    trends.gasTrendBufferedCounts = nullptr;
+    trends.gasWallTrendMatrices = nullptr;
+    trends.gasWallTrendResetTimes = nullptr;
+    trends.gasWallTrendCounts = nullptr;
+    trends.gasWallTrendBufferedCounts = nullptr;
+    trends.productionTrendMatrices = nullptr;
+    trends.productionTrendResetTimes = nullptr;
+    trends.productionTrendCounts = nullptr;
+    trends.productionTrendBufferedCounts = nullptr;
+    trends.productionWallTrendMatrices = nullptr;
+    trends.productionWallTrendResetTimes = nullptr;
+    trends.productionWallTrendCounts = nullptr;
+    trends.productionWallTrendBufferedCounts = nullptr;
+    trends.trendOutputCount = 0.;
 
     networkCoupling.previousInletPressure = -1;
     networkCoupling.previousInletTemperature = -1;
@@ -172,8 +172,8 @@ void SProd::releaseOwnedStorage() {
     releaseVector(transient.abreM1);
     releaseVector(transient.fechaM1);
 
-    releaseVector(trends.ncelperftransp);
-    releaseVector(trends.ncelperftransg);
+    releaseVector(trends.productionWallProfileCells);
+    releaseVector(trends.gasWallProfileCells);
 
     trends.productionTrendSet.release();
     trends.gasTrendSet.release();

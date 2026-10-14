@@ -411,63 +411,65 @@ struct TrendSet {
 /// profiles are written, and the count of output passes.
 struct TrendRecorder {
     /// Gas-line cells where radial temperature profiles are written.
-    std::vector<int> ncelperftransg;
+    std::vector<int> gasWallProfileCells;
     /// Times at which gas-line trend buffers are reset.
-    double *resettrendg = nullptr;
+    double *gasTrendResetTimes = nullptr;
     /// Number of gas-line trend samples currently stored.
-    int *ntrendg = nullptr;
+    int *gasTrendCounts = nullptr;
     /// Number of gas-line trend samples stored before the last flush.
-    int *ntrendgB = nullptr;
+    int *gasTrendBufferedCounts = nullptr;
     /// Buffered gas-line wall-temperature trend data.
-    double ***MatTrendTransG = nullptr;
+    double ***gasWallTrendMatrices = nullptr;
     /// Times at which gas-line wall-temperature buffers are reset.
-    double *resettrendtransg = nullptr;
+    double *gasWallTrendResetTimes = nullptr;
     /// Number of gas-line wall-temperature samples currently stored.
-    int *ntrendtransg = nullptr;
+    int *gasWallTrendCounts = nullptr;
     /// Number of gas-line wall-temperature samples stored before the last flush.
-    int *ntrendtransgB = nullptr;
+    int *gasWallTrendBufferedCounts = nullptr;
     /// Production-line cells where radial temperature profiles are written.
-    std::vector<int> ncelperftransp;
+    std::vector<int> productionWallProfileCells;
     /// Times at which production-line trend buffers are reset.
-    double *resettrend = nullptr;
+    double *productionTrendResetTimes = nullptr;
     /// Number of production-line trend samples stored before the last flush.
-    int *ntrendB = nullptr;
+    int *productionTrendBufferedCounts = nullptr;
     /// Buffered production-line wall-temperature trend data.
-    double ***MatTrendTransP = nullptr;
+    double ***productionWallTrendMatrices = nullptr;
     /// Times at which production-line wall-temperature buffers are reset.
-    double *resettrendtrans = nullptr;
+    double *productionWallTrendResetTimes = nullptr;
     /// Number of production-line wall-temperature samples currently stored.
-    int *ntrendtrans = nullptr;
+    int *productionWallTrendCounts = nullptr;
     /// Number of production-line wall-temperature samples stored before the last flush.
-    int *ntrendtransB = nullptr;
+    int *productionWallTrendBufferedCounts = nullptr;
     /// Current production-profile output index.
-    int kontaTempoProf = 0;
+    int productionProfileTimeIndex = 0;
     /// Current gas-line profile output index.
-    int kontaTempoProfG = 0;
+    int gasProfileTimeIndex = 0;
     /// Current production-wall-temperature profile output index.
-    int kontaTempoTransProf = 0;
+    int productionWallProfileTimeIndex = 0;
     /// Current gas-line wall-temperature profile output index.
-    int kontaTempoTransProfG = 0;
+    int gasWallProfileTimeIndex = 0;
     /// For each single-cell output, the index of its next output time.
-    std::vector<int> kontaTempoCelUni;
-    /// The production-line trends, read through MatTrendP, resettrend, ntrend and ntrendB.
+    std::vector<int> singleCellOutputTimeIndices;
+    /// The production-line trends, read through productionTrendMatrices, productionTrendResetTimes,
+    /// productionTrendCounts and productionTrendBufferedCounts.
     TrendSet productionTrendSet;
-    /// The gas-line trends, read through MatTrendG, resettrendg, ntrendg and ntrendgB.
+    /// The gas-line trends, read through gasTrendMatrices, gasTrendResetTimes, gasTrendCounts and
+    /// gasTrendBufferedCounts.
     TrendSet gasTrendSet;
-    /// The production-line wall-temperature trends, read through MatTrendTransP, resettrendtrans, ntrendtrans and
-    /// ntrendtransB.
+    /// The production-line wall-temperature trends, read through productionWallTrendMatrices,
+    /// productionWallTrendResetTimes, productionWallTrendCounts and productionWallTrendBufferedCounts.
     TrendSet productionWallTrendSet;
-    /// The gas-line wall-temperature trends, read through MatTrendTransG, resettrendtransg, ntrendtransg and
-    /// ntrendtransgB.
+    /// The gas-line wall-temperature trends, read through gasWallTrendMatrices, gasWallTrendResetTimes,
+    /// gasWallTrendCounts and gasWallTrendBufferedCounts.
     TrendSet gasWallTrendSet;
     /// Buffered gas-line trend data.
-    double ***MatTrendG = nullptr;
+    double ***gasTrendMatrices = nullptr;
     /// Buffered production-line trend data.
-    double ***MatTrendP = nullptr;
+    double ***productionTrendMatrices = nullptr;
     /// Number of production-line trend samples currently stored.
-    int *ntrend = nullptr;
+    int *productionTrendCounts = nullptr;
     /// Trend-output cycle counter; a value of one triggers header output.
-    double kimpT = 0.;
+    double trendOutputCount = 0.;
 };
 
 /// What a system keeps as a branch of a network: the inlet and outlet conditions of the

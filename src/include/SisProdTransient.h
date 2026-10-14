@@ -178,7 +178,7 @@ struct TransientStepState {
     const int &lastCell;
     /// SProd::gasLift.ncelGas -- read only.
     const int &gasCellCount;
-    /// SProd::trends.ncelperftransp -- read only.
+    /// SProd::trends.productionWallProfileCells -- read only.
     std::vector<int> &productionCrossSectionCount;
     /// SProd::transient.nfechaM1 -- read only.
     const int &masterCloseCount;
@@ -371,27 +371,27 @@ struct TransientSolveState {
     int &compositionalRefreshCounter;
     /// SProd::transient.jVet -- written or read by the solve; not promised const.
     std::vector<double> &fluxHistory;
-    /// SProd::trends.ncelperftransg -- written or read by the solve; not promised const.
+    /// SProd::trends.gasWallProfileCells -- written or read by the solve; not promised const.
     std::vector<int> &gasCrossSectionCellCounts;
-    /// SProd::trends.kontaTempoTransProfG -- written or read by the solve; not promised const.
+    /// SProd::trends.gasWallProfileTimeIndex -- written or read by the solve; not promised const.
     int &gasCrossSectionProfileTimeCounter;
-    /// SProd::trends.ntrendtransgB -- written or read by the solve; not promised const.
+    /// SProd::trends.gasWallTrendBufferedCounts -- written or read by the solve; not promised const.
     int* &gasCrossSectionTrendBufferedCounts;
-    /// SProd::trends.ntrendtransg -- written or read by the solve; not promised const.
+    /// SProd::trends.gasWallTrendCounts -- written or read by the solve; not promised const.
     int* &gasCrossSectionTrendCounts;
-    /// SProd::trends.MatTrendTransG -- written or read by the solve; not promised const.
+    /// SProd::trends.gasWallTrendMatrices -- written or read by the solve; not promised const.
     double*** &gasCrossSectionTrendMatrix;
-    /// SProd::trends.resettrendtransg -- written or read by the solve; not promised const.
+    /// SProd::trends.gasWallTrendResetTimes -- written or read by the solve; not promised const.
     double* &gasCrossSectionTrendResetTimers;
-    /// SProd::trends.kontaTempoProfG -- written or read by the solve; not promised const.
+    /// SProd::trends.gasProfileTimeIndex -- written or read by the solve; not promised const.
     int &gasProfileTimeCounter;
-    /// SProd::trends.ntrendgB -- written or read by the solve; not promised const.
+    /// SProd::trends.gasTrendBufferedCounts -- written or read by the solve; not promised const.
     int* &gasTrendBufferedCounts;
-    /// SProd::trends.ntrendg -- written or read by the solve; not promised const.
+    /// SProd::trends.gasTrendCounts -- written or read by the solve; not promised const.
     int* &gasTrendCounts;
-    /// SProd::trends.MatTrendG -- written or read by the solve; not promised const.
+    /// SProd::trends.gasTrendMatrices -- written or read by the solve; not promised const.
     double*** &gasTrendMatrix;
-    /// SProd::trends.resettrendg -- written or read by the solve; not promised const.
+    /// SProd::trends.gasTrendResetTimes -- written or read by the solve; not promised const.
     double* &gasTrendResetTimers;
     /// SProd::gasLift.presiniG -- written or read by the solve; not promised const.
     double &initialGasPressure;
@@ -423,27 +423,27 @@ struct TransientSolveState {
     std::vector<double> &pressureHistory;
     /// SProd::transient.KontaImprime -- written or read by the solve; not promised const.
     int &printCounter;
-    /// SProd::trends.kimpT -- written or read by the solve; not promised const.
+    /// SProd::trends.trendOutputCount -- written or read by the solve; not promised const.
     double &printPassCount;
-    /// SProd::trends.kontaTempoTransProf -- written or read by the solve; not promised const.
+    /// SProd::trends.productionWallProfileTimeIndex -- written or read by the solve; not promised const.
     int &productionCrossSectionProfileTimeCounter;
-    /// SProd::trends.ntrendtransB -- written or read by the solve; not promised const.
+    /// SProd::trends.productionWallTrendBufferedCounts -- written or read by the solve; not promised const.
     int* &productionCrossSectionTrendBufferedCounts;
-    /// SProd::trends.ntrendtrans -- written or read by the solve; not promised const.
+    /// SProd::trends.productionWallTrendCounts -- written or read by the solve; not promised const.
     int* &productionCrossSectionTrendCounts;
-    /// SProd::trends.MatTrendTransP -- written or read by the solve; not promised const.
+    /// SProd::trends.productionWallTrendMatrices -- written or read by the solve; not promised const.
     double*** &productionCrossSectionTrendMatrix;
-    /// SProd::trends.resettrendtrans -- written or read by the solve; not promised const.
+    /// SProd::trends.productionWallTrendResetTimes -- written or read by the solve; not promised const.
     double* &productionCrossSectionTrendResetTimers;
-    /// SProd::trends.kontaTempoProf -- written or read by the solve; not promised const.
+    /// SProd::trends.productionProfileTimeIndex -- written or read by the solve; not promised const.
     int &productionProfileTimeCounter;
-    /// SProd::trends.ntrendB -- written or read by the solve; not promised const.
+    /// SProd::trends.productionTrendBufferedCounts -- written or read by the solve; not promised const.
     int* &productionTrendBufferedCounts;
-    /// SProd::trends.ntrend -- written or read by the solve; not promised const.
+    /// SProd::trends.productionTrendCounts -- written or read by the solve; not promised const.
     int* &productionTrendCounts;
-    /// SProd::trends.MatTrendP -- written or read by the solve; not promised const.
+    /// SProd::trends.productionTrendMatrices -- written or read by the solve; not promised const.
     double*** &productionTrendMatrix;
-    /// SProd::trends.resettrend -- written or read by the solve; not promised const.
+    /// SProd::trends.productionTrendResetTimes -- written or read by the solve; not promised const.
     double* &productionTrendResetTimers;
     /// SProd::noinicial -- written or read by the solve; not promised const.
     int &startNode;
@@ -459,7 +459,7 @@ struct TransientSolveState {
     int &trackGasGravity;
     /// SProd::transient.trackRGO -- written or read by the solve; not promised const.
     int &trackGasOilRatio;
-    /// SProd::trends.kontaTempoCelUni -- written or read by the solve; not promised const.
+    /// SProd::trends.singleCellOutputTimeIndices -- written or read by the solve; not promised const.
     std::vector<int> &unitCellTimeCounters;
     /// SProd::transient.alfVet -- written or read by the solve; not promised const.
     std::vector<double> &voidFractionHistory;
