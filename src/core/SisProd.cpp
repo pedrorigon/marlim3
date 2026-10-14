@@ -23,38 +23,38 @@ void SProd::resolveDriftSelectors() {
 }
 
 void SProd::resetRunState() {
-    tables.zdranP = 0;
-    tables.dzdpP = 0;
-    tables.dzdtP = 0;
-    tables.cpg = 0;
-    tables.cpl = 0;
-    tables.drholdT = 0;
+    tables.zdranP = nullptr;
+    tables.dzdpP = nullptr;
+    tables.dzdtP = nullptr;
+    tables.cpg = nullptr;
+    tables.cpl = nullptr;
+    tables.drholdT = nullptr;
     steadySearch.nfluP = 0;
     CalcLat = 0;
     transient.trackRGO = 0;
     transient.trackDeng = 0;
-    gasLift.celulaG = 0;
-    celula = 0;
+    gasLift.celulaG = nullptr;
+    celula = nullptr;
     gasLift.celInter = 1e7;
     gasLift.dtInter = 0.;
     gasLift.velInter = 0.;
 
-    trends.MatTrendG = 0;
-    trends.resettrendg = 0;
-    trends.ntrendg = 0;
-    trends.ntrendgB = 0;
-    trends.MatTrendTransG = 0;
-    trends.resettrendtransg = 0;
-    trends.ntrendtransg = 0;
-    trends.ntrendtransgB = 0;
-    trends.MatTrendP = 0;
-    trends.resettrend = 0;
-    trends.ntrend = 0;
-    trends.ntrendB = 0;
-    trends.MatTrendTransP = 0;
-    trends.resettrendtrans = 0;
-    trends.ntrendtrans = 0;
-    trends.ntrendtransB = 0;
+    trends.MatTrendG = nullptr;
+    trends.resettrendg = nullptr;
+    trends.ntrendg = nullptr;
+    trends.ntrendgB = nullptr;
+    trends.MatTrendTransG = nullptr;
+    trends.resettrendtransg = nullptr;
+    trends.ntrendtransg = nullptr;
+    trends.ntrendtransgB = nullptr;
+    trends.MatTrendP = nullptr;
+    trends.resettrend = nullptr;
+    trends.ntrend = nullptr;
+    trends.ntrendB = nullptr;
+    trends.MatTrendTransP = nullptr;
+    trends.resettrendtrans = nullptr;
+    trends.ntrendtrans = nullptr;
+    trends.ntrendtransB = nullptr;
 
     transient.fontemassPRBuf = 0.;
     transient.fontemassCRBuf = 0.;

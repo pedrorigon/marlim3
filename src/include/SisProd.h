@@ -1194,11 +1194,11 @@ class SProd {
 
     /// Constructs and initializes a production-system simulation from the input and log files.
     SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
-          tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP = 0, int TD = -1, int vbloq = 0,
+          tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP = nullptr, int TD = -1, int vbloq = 0,
           int temporario = 0,
           int reverso = 0,
-          double *compfonte = 0,
-          int *posicfonte = 0,
+          double *compfonte = nullptr,
+          int *posicfonte = nullptr,
           int nfontes = 0,
           int redeperm = 1);
   private:
@@ -1304,8 +1304,8 @@ class SProd {
     /// moving-average and running-total state the transient loop starts from.
     void resetCouplingAndOutputState();
     /// Builds the production section after input parsing.
-    void montasistema(double *compfonte = 0,
-                      int *posicfonte = 0,
+    void montasistema(double *compfonte = nullptr,
+                      int *posicfonte = nullptr,
                       int nfontes = 0);
 
     /// Initializes the gas service line for gas-lift unloading.
