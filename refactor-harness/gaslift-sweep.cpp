@@ -255,7 +255,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     }
 
     system.ncel = kCells - 2;
-    system.semTermo = 0;
+    system.thermalSourceDisabled = 0;
     system.presfim = scenario.pressure - 5.;
     system.gasLift.pGSup = scenario.pressure;
     system.networkCoupling.tempSup = -901.;
@@ -275,7 +275,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.titE = 0.20;
     system.alfE = scenario.voidFraction;
     system.steadySearch.trocaTermicaLenta = 1.e99;
-    system.iterperm = 0;
+    system.steadyIteration = 0;
     system.CalcLat = 0;
     system.arq.flashCompleto = 0;
     system.arq.latente = 0;

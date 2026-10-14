@@ -815,7 +815,7 @@ class SProd {
 
   private:
     /// Number of iterations used to bracket the initial steady-state root.
-    int iterperm = 0;
+    int steadyIteration = 0;
 
   public:
     /// Steady-state mode flag: 1 while Num4Main solves a network branch at steady state. The source terms read it
@@ -849,7 +849,7 @@ class SProd {
 
   private:
     /// Indicates that the thermal source term is disabled.
-    int semTermo = 0;
+    int thermalSourceDisabled = 0;
 
     static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
                                      "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",

@@ -36,7 +36,7 @@ void SProd::resetRunState() {
     betaE = -1;
     alfE = -1;
     tGSup = 0.;
-    semTermo = 0;
+    thermalSourceDisabled = 0;
 
     gasLift.celulaG = nullptr;
     gasLift.celInter = kNoInterfaceCell;

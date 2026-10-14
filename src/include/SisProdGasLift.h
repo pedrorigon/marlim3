@@ -80,11 +80,11 @@ struct GasLiftState {
     const int &tubingAnnulusStart;
     const int &tubingAnnulusEnd;
 
-    /// Steady-state iteration counter -- SProd::iterperm.
+    /// Steady-state iteration counter -- SProd::steadyIteration.
     const int &steadyIteration;
     /// Network coupling flag -- SProd::gasLift.verificaAcop.
     const int &networkCoupled;
-    /// Thermal source switch -- SProd::semTermo.
+    /// Thermal source switch -- SProd::thermalSourceDisabled.
     const int &thermalSourceDisabled;
 
     /// Previous-step gas pressure and temperature -- SProd::gasLift.presiniG and

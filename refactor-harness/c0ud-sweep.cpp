@@ -122,7 +122,7 @@ struct Scenario {
     int transic;        // transition counter: 0, 1, 19 or 20
     int selDisp, selAnn, selStrat;   // driftSelectors
     int acelera;        // arq.AceleraConvergPerm
-    int iterperm;       // SProd::iterperm
+    int iterperm;       // SProd::steadyIteration
     double presRatio;   // scales pressures, moving rgm relative to rlm
     double flowScale;   // scales every mass flow, moving the flow regime
                         // between stratified, slug and annular
@@ -469,7 +469,7 @@ void resetCells(SProd &sp, Cel *cells, const Scenario &s, int ind) {
     }
 
     sp.ncel = kCells - 1;
-    sp.iterperm = s.iterperm;
+    sp.steadyIteration = s.iterperm;
     sp.tGSup = 25.;
     sp.alfE = s.alf * 0.95;
     sp.betaE = 0.13;

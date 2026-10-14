@@ -228,7 +228,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     }
 
     system.ncel = kCells - 2;
-    system.semTermo = 0;
+    system.thermalSourceDisabled = 0;
     system.presfim = scenario.pressure - 5.;
     system.gasLift.pGSup = scenario.pressure;
     system.networkCoupling.tempSup = -901.;
@@ -248,7 +248,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.titE = 0.20;
     system.alfE = scenario.voidFraction;
     system.steadySearch.trocaTermicaLenta = 1.e99;
-    system.iterperm = 0;
+    system.steadyIteration = 0;
     system.CalcLat = 0;
     system.arq.flashCompleto = 0;
     system.arq.latente = 0;
@@ -320,20 +320,20 @@ void printPermState(const char *method, const char *scenario, const Cel &current
 void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
                        int cellIndex, PermMode mode) {
     if (mode == PermMode::cold) {
-        system.semTermo = 1;
+        system.thermalSourceDisabled = 1;
         return;
     }
 
     system.steadySearch.trocaTermicaLenta = 0.;
     if (mode == PermMode::semTermo) {
-        system.semTermo = 1;
+        system.thermalSourceDisabled = 1;
     } else if (mode == PermMode::signedFlow) {
         for (int index = cellIndex; index <= cellIndex + 1; ++index) {
             cells[index].QG = -fabs(cells[index].QG);
             cells[index].QL = -fabs(cells[index].QL);
         }
     } else if (mode == PermMode::interfaceState) {
-        system.iterperm = 1;
+        system.steadyIteration = 1;
         cells[cellIndex].tempL -= 9.;
         cells[cellIndex].tempR += 13.;
     } else if (mode == PermMode::pressureAccessory) {
@@ -367,7 +367,7 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
                mode == PermMode::latentDisabled ||
                mode == PermMode::latentNan) {
         system.CalcLat = 1;
-        system.iterperm = 1;
+        system.steadyIteration = 1;
         system.arq.latente = mode == PermMode::latentDisabled ? 0 : 1;
         cells[cellIndex].flui.dVaporMassFraction = 0.4;
         double source = mode == PermMode::latentPositive ||
@@ -402,7 +402,7 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
         system.gasLift.ColunaAnulaFim = 0;
         system.gasLift.AnulaColunaIni = 4;
         if (mode == PermMode::annulusLater) {
-            system.iterperm = 1;
+            system.steadyIteration = 1;
             cells[cellIndex - 1].dTdLCor = 1.e5;
             cells[cellIndex].dTdLCor = 1.e5;
             cells[cellIndex + 1].dTdLCor = 1.e5;

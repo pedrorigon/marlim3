@@ -303,7 +303,7 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
     transient.tempoaberto = 0.;
     transient.tempoabertoini = 0.;
     modoPerm = 0;
-    iterperm = 0;
+    steadyIteration = 0;
     masChkSup = 0;
     dt = arq.dtmax;
     gasLift.dtInter = arq.dtmax;

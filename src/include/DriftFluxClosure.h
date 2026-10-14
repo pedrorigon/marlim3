@@ -147,7 +147,7 @@ struct ClosureState {
     const double &inletPressure;
     /// Inlet temperature -- SProd::tempE.
     const double &inletTemperature;
-    /// Steady-state iteration counter -- SProd::iterperm.
+    /// Steady-state iteration counter -- SProd::steadyIteration.
     const int &steadyIteration;
 };
 

@@ -97,7 +97,7 @@ struct SteadyStateState {
     const std::vector<int> &gasValveCellIndices;
     const std::vector<int> &productionValveCellIndices;
 
-    /// Steady-state iteration counter -- SProd::iterperm. Written.
+    /// Steady-state iteration counter -- SProd::steadyIteration. Written.
     int &steadyIteration;
     /// Which boundary the search started from -- SProd::steadySearch.buscaIni. Written.
     int &searchOrigin;
@@ -112,7 +112,7 @@ struct SteadyStateState {
     const int &networkCoupled;
     /// End-node flag -- SProd::noextremo. Read only.
     const int &endNode;
-    /// Thermal source switch -- SProd::semTermo. Read only.
+    /// Thermal source switch -- SProd::thermalSourceDisabled. Read only.
     const int &thermalSourceDisabled;
     /// Slow-heat-transfer switch -- SProd::steadySearch.trocaTermicaLenta. Written.
     double &slowHeatTransferThreshold;
