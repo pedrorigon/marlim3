@@ -43,11 +43,11 @@ C0UdEstratificado
 # check that reaches CalcC0UdBuf, CalcC0UdIni and CalcC0UdIniBuf, none of which
 # the corpus executes. verify-c0ud.sh then covers behaviour across 7315 rows,
 # calibrated against 14 injected defects.
-CalcC0Ud
-CalcC0UdBuf
-CalcC0UdIni
-CalcC0UdIniBuf
-CalcC0UdPerm
+CalcC0Ud -> instantaneous
+CalcC0UdBuf -> buffered
+CalcC0UdIni -> initialization
+CalcC0UdIniBuf -> bufferedInitialization
+CalcC0UdPerm -> steadyState
 
 # resolveDriftSelectors() is called from the three places arq is built.
 SProd
@@ -162,8 +162,8 @@ marchaEnergTrans
 #
 # RenovaTempPermRev has ZERO coverage in the demo corpus, so L2 never enters
 # its body: the token proof plus the dedicated harness are its authority.
-RenovaTempPerm
-RenovaTempPermRev
+RenovaTempPerm -> advanceSteadyTemperature
+RenovaTempPermRev -> advanceReverseSteadyTemperature
 
 # T069 moved five thermal helpers. thermal-move.py inverts the ThermalState
 # substitution and compares 1213, 649, 299, 69 and 269 tokens exactly, with the
@@ -176,8 +176,8 @@ RenovaTempPermRev
 # committed: the reference table went from 73 to 80 rows, and the sweep built
 # against the pre-move commit and against the moved code yields identical
 # tables.
-tempDescarga
-atualizaPeriTempProd
+tempDescarga -> computeDischargeTemperature
+atualizaPeriTempProd -> updateProductionTemperaturePeriphery
 calcTempFim
 
 # ---------------------------------------------------------------- estagio 6
@@ -204,13 +204,13 @@ calcTempFim
 # All this declaration suppresses is "the body at this address differs from the
 # baseline body" -- which is the point of having moved it.
 HidroDescargaG
-areaValvCali
-BuscaPresInjDesc
+areaValvCali -> calibratedValveArea
+BuscaPresInjDesc -> searchUnloadingInjectionPressure
 solveLinGas
-delpGasPerm
-delpInjPerm
-RenovaPresGasPerm
-RenovaTempGasPerm
+delpGasPerm -> steadyGasPressureDrop
+delpInjPerm -> steadyInjectionPressureDrop
+RenovaPresGasPerm -> updateSteadyGasPressure
+RenovaTempGasPerm -> updateSteadyGasTemperature
 
 # --- stage 7: steady march -------------------------------------------------
 # Every name here is a body that moved to SisProdSteadyState.cpp and left a

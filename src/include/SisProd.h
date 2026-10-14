@@ -1312,24 +1312,6 @@ class SProd {
     void HidroDescargaG();
     /// Initializes the production line for gas-lift unloading.
     void HidroDescargaP();
-
-    /// Controls injection and upstream-choke pressures from gas-lift-valve flow rates.
-    double BuscaPresInjDesc();
-
-    /// Calculates gas-lift-valve opening area from calibration and operating conditions.
-    double areaValvCali(double PCal, double TCal, double PVO, double PT,
-                        double dextern, double areagarg, double Rvalv, double Temp);
-    /// Updates gas-line temperature in the completion-fluid region during unloading.
-    void tempDescarga(int i);
-
-    /// Selects and evaluates the slip correlation at a production-line face.
-    void CalcC0Ud(int ind, double &c0, double &ud);
-    /// Evaluates slip parameters for the intermediate network state.
-    void CalcC0UdBuf(int ind, double &c0, double &ud);
-    /// Evaluates slip parameters at the inlet of an internal network section.
-    void CalcC0UdIni(int ind, double &c0, double &ud);
-    /// Evaluates slip parameters at the inlet of an internal network section.
-    void CalcC0UdIniBuf(int ind, double &c0, double &ud);
   public:
 
     /// Loads pressure-velocity results into cell and face state variables.
@@ -1425,26 +1407,6 @@ class SProd {
     /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
     double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
 
-  private:
-    /// Calculates steady-state slip parameters at a downstream face.
-    void CalcC0UdPerm(int ind, double &c0, double &ud);
-    /// Marches steady-state temperature from cell i-1 to cell i.
-    void RenovaTempPerm(int i, int RK);
-    /// Marches steady-state temperature in the reverse direction.
-    void RenovaTempPermRev(int i, int RK);
-    /// Synchronizes neighboring face temperatures after updating a cell-center temperature.
-    void atualizaPeriTempProd(int i);
-
-    /// Marches steady-state pressure along the gas service line.
-    void RenovaPresGasPerm(int i);
-    /// Estimates gas-line pressure variation without advancing the full pressure march.
-    double delpGasPerm(int i);
-    /// Estimates pressure variation in an injection-well system.
-    double delpInjPerm(int i);
-    /// Marches steady-state gas-line temperature from cell i-1 to cell i.
-    void RenovaTempGasPerm(int i);
-
-  public:
     /// Solves injection cases CC1 and CC3.
     double buscaInjPfundoPerm1(double chute = -1.);
     /// Solves injection case CC0.
