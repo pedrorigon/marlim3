@@ -131,7 +131,7 @@ void SProd::resetRunState() {
 }
 
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
-             tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso,
+             tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int reverso,
              double *compfonte, int *posicfonte, int nfontes, int redeperm)
     : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
       flutG(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns),
@@ -146,7 +146,6 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     gasLift.celInterIni = gasLift.celInter;
     gasLift.dtInterIni = gasLift.dtInter;
     gasLift.velInterIni = gasLift.velInter;
-    redeTemporario = temporario;
     networkCoupling.betaRevini = 0;
     bloq = vbloq;
     vg1dSP = Vvg1dSP;

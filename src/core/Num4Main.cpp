@@ -9282,7 +9282,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                 (*arqRede.vg1dSP).tipoFluidoRedeGlob = 1; // tipoFluidoRede==1 implica em que a rede será uma rede dominada pela fase líquida
             // construtor do tramo temporario com as caracteristicas basicas do tramo i da rede
             SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, bloqR, 0, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
+                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, bloqR, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
 
             if (arqRede.malha[i].ncoleta > 0)
                 temporario.noextremo = 0; // caso o tramo não esteja no fim da rede, tomando como referencia o sentido
@@ -10038,7 +10038,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                 (*arqRede.vg1dSP).tipoFluidoRedeGlob = 1; // tipoFluidoRede==1 implica em que a rede será uma rede dominada pela fase líquida
             // construtor do tramo temporario com as caracteristicas basicas do tramo i da rede
             SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, bloqR, 0, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
+                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, bloqR, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
 
             if (arqRede.malha[i].ncoleta > 0)
                 temporario.noextremo = 0; // caso o tramo não esteja no fim da rede, tomando como referencia o sentido
@@ -11414,7 +11414,7 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
     int tD = arqRede.tabelaDinamica;
     for (int i = 0; i < narq; i++) {
         SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                         tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
+                         tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
         malha[i] = temporario;
         malha[i].indTramo = i;
     }
@@ -11772,7 +11772,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
     for (int i = 0; i < narq; i++) {
         if (arqRede.malha[i].tipoanel == 0) {
             SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
+                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
             compfonte[konta] = arqRede.malha[i].compfonte;
             indfonte[konta] = i;
             indtramo[i] = konta;
@@ -11817,7 +11817,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
     for (int i = 0; i < dreno.size(); i++)
         compdreno[i] = dreno[i].posicmani;
     SProd temporario(pathArqEntrada + arqRede.impfiles[indAnel], nomeArquivoLog,
-                     tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, compdreno, posicdreno, dreno.size(), arqRede.malha[indAnel].perm);
+                     tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, compdreno, posicdreno, dreno.size(), arqRede.malha[indAnel].perm);
     for (int i = 0; i < dreno.size(); i++)
         for (int j = 0; j < dreno[i].nmani; j++)
             posicfonte[dreno[i].mani[j]] = posicdreno[i];

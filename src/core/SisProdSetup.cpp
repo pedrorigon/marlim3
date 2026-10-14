@@ -867,32 +867,30 @@ void SProd::allocateEventProfileAndTrendArrays() {
 
     if ((*vg1dSP).chaverede == 0)
         (*vg1dSP).TmaxR = arq.tfinal;
-    if (redeTemporario == 0) {
-        if (arq.ntendp > 0) {
-            trends.productionTrendSet.allocate(
-                arq.ntendp,
-                [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); }, // round(arq.tfinal / arq.trendp[i].dt);
-                [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; }, trends.MatTrendP,
-                trends.resettrend, trends.ntrend, trends.ntrendB);
-        }
-        if (arq.ntendg > 0) {
-            trends.gasTrendSet.allocate(
-                arq.ntendg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt); },
-                [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; }, trends.MatTrendG,
-                trends.resettrendg, trends.ntrendg, trends.ntrendgB);
-        }
-        if (arq.ntendtransp > 0) {
-            trends.productionWallTrendSet.allocate(
-                arq.ntendtransp, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt); },
-                [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransP, trends.resettrendtrans,
-                trends.ntrendtrans, trends.ntrendtransB);
-        }
-        if (arq.ntendtransg > 0) {
-            trends.gasWallTrendSet.allocate(
-                arq.ntendtransg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt); },
-                [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransG, trends.resettrendtransg,
-                trends.ntrendtransg, trends.ntrendtransgB);
-        }
+    if (arq.ntendp > 0) {
+        trends.productionTrendSet.allocate(
+            arq.ntendp,
+            [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); }, // round(arq.tfinal / arq.trendp[i].dt);
+            [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; }, trends.MatTrendP,
+            trends.resettrend, trends.ntrend, trends.ntrendB);
+    }
+    if (arq.ntendg > 0) {
+        trends.gasTrendSet.allocate(
+            arq.ntendg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt); },
+            [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; }, trends.MatTrendG,
+            trends.resettrendg, trends.ntrendg, trends.ntrendgB);
+    }
+    if (arq.ntendtransp > 0) {
+        trends.productionWallTrendSet.allocate(
+            arq.ntendtransp, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt); },
+            [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransP, trends.resettrendtrans,
+            trends.ntrendtrans, trends.ntrendtransB);
+    }
+    if (arq.ntendtransg > 0) {
+        trends.gasWallTrendSet.allocate(
+            arq.ntendtransg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt); },
+            [](int) { return 2; }, [](int) { return 2; }, trends.MatTrendTransG, trends.resettrendtransg,
+            trends.ntrendtransg, trends.ntrendtransgB);
     }
 }
 

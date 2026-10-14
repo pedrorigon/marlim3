@@ -718,11 +718,6 @@ class SProd {
     /// Indicates that this section is a branch of a gas-lift ring network.
     int derivaAnel = -1;
 
-  private:
-    /// Temporary-network flag; currently expected to remain zero.
-    int redeTemporario = 0;
-
-  public:
     /// Section-blocking state.
     int bloq = 0;
 
@@ -773,7 +768,6 @@ class SProd {
     /// Constructs and initializes a production-system simulation from the input and log files.
     SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
           tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP = nullptr, int TD = -1, int vbloq = 0,
-          int temporario = 0,
           int reverso = 0,
           double *compfonte = nullptr,
           int *posicfonte = nullptr,
@@ -868,11 +862,9 @@ class SProd {
     /// off, or evaluates them at local pressure and temperature when it is on; then
     /// makes the first cell's fluid the fluid of its source.
     void applyDensityCorrectionsAndInletFluid();
-    /// Lists the cells with two-dimensional heat diffusion, copies the master-valve
-    /// opening and closing times, maps the transient profile positions to global
-    /// thermal-node indices, and -- unless the network is only provisional --
-    /// allocates the trend matrices of the production line, the gas line and the
-    /// transient trends, sized to the longest simulated time and filled with the
+    /// Lists the cells with two-dimensional heat diffusion, copies the master-valve opening and closing times, maps
+    /// the transient profile positions to global thermal-node indices, and allocates the trend matrices of the
+    /// production line, the gas line and the transient trends, sized to the longest simulated time and filled with
     /// kTrendSentinel.
     void allocateEventProfileAndTrendArrays();
     /// Resets the column-annulus and network coupling flags, locates the
