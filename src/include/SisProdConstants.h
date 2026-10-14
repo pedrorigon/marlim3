@@ -105,6 +105,64 @@ decltype(auto) withGasInletCondition(int tipoCC, Visitor &&visitor) {
     return visitor(InjectionFlowRateCondition{});
 }
 
+// ------------------------------------------------ solution and run state ----
+
+/// Unknowns per production-line cell in the pressure-velocity system, and the
+/// diagonals of its band matrix to the left and to the right of the main one.
+inline constexpr int kProductionUnknownsPerCell = 2;
+inline constexpr int kProductionLeftBandwidth = 3;
+inline constexpr int kProductionRightBandwidth = 2;
+
+/// Unknowns per gas-line cell in the gas line's pressure-velocity system, and the
+/// diagonals of its band matrix on each side of the main one.
+inline constexpr int kGasLineUnknownsPerCell = 3;
+inline constexpr int kGasLineBandwidth = 5;
+
+/// Columns of a profile row besides the variables the input asks for.
+inline constexpr int kProductionProfileFixedColumns = 6;
+inline constexpr int kGasLineProfileFixedColumns = 7;
+
+/// The value the first columns of a trend row hold until the row is written.
+inline constexpr double kTrendSentinel = -10000.;
+
+/// The interface cell a gas line starts from: beyond any cell, so that no cell
+/// holds the completion-fluid interface.
+inline constexpr int kNoInterfaceCell = 10000000;
+
+/// Length of the Master1 ratio histories, and the critical ratio they start from.
+inline constexpr int kMasterRatioHistorySize = 10;
+inline constexpr double kDefaultMasterCriticalRatio = 0.5;
+
+/// The averaging window of the unloading controller, in seconds, and the number
+/// of samples it keeps.
+inline constexpr double kUnloadingAveragingWindow = 10.;
+inline constexpr int kUnloadingSampleCapacity = 1000;
+
+/// The starting value of the surface choke's slug counter.
+inline constexpr int kInitialSlugCount = 1000;
+
+/// The steady-state convergence monitor before the first iteration, and the
+/// default control parameter of the slowly varying thermal coupling.
+inline constexpr double kInitialConvergenceMonitor = 1000.;
+inline constexpr double kSlowHeatTransferThreshold = 0.01;
+
+static_assert(kProductionUnknownsPerCell == 2);
+static_assert(kProductionLeftBandwidth == 3);
+static_assert(kProductionRightBandwidth == 2);
+static_assert(kGasLineUnknownsPerCell == 3);
+static_assert(kGasLineBandwidth == 5);
+static_assert(kProductionProfileFixedColumns == 6);
+static_assert(kGasLineProfileFixedColumns == 7);
+static_assert(kTrendSentinel == -10000.);
+static_assert(kNoInterfaceCell == 10000000);
+static_assert(kMasterRatioHistorySize == 10);
+static_assert(kDefaultMasterCriticalRatio == 0.5);
+static_assert(kUnloadingAveragingWindow == 10.);
+static_assert(kUnloadingSampleCapacity == 1000);
+static_assert(kInitialSlugCount == 1000);
+static_assert(kInitialConvergenceMonitor == 1000.);
+static_assert(kSlowHeatTransferThreshold == 0.01);
+
 static_assert(kAccessoryNone == 0);
 static_assert(kAccessoryGasInjection == 1);
 static_assert(kAccessoryLiquidInjection == 2);
