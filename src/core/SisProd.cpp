@@ -165,19 +165,18 @@ void SProd::allocateSolutionBuffers() {
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
              tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int reverso,
              double *compfonte, int *posicfonte, int nfontes, int redeperm)
-    : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
+    : networkCoupling{.betaRevini = 0},
+      arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
       flutG(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns),
       flut(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns),
       gasLift{.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth),
               .termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg)},
       transient{.matglobP = BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth,
                                             kProductionRightBandwidth),
-                .termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)} {
+                .termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)},
+      bloq(vbloq), vg1dSP(Vvg1dSP) {
     resolveDriftSelectors();
     resetRunState();
-    networkCoupling.betaRevini = 0;
-    bloq = vbloq;
-    vg1dSP = Vvg1dSP;
     if (TD >= 0)
         arq.tabelaDinamica = TD;
     montasistema(compfonte, posicfonte, nfontes);
