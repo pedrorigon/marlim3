@@ -52,8 +52,6 @@
 #include <algorithm>
 #include <utility>
 
-using namespace std;
-
 class SProd;
 namespace trendoutput { struct TrendState; }
 
@@ -87,20 +85,20 @@ trendoutput::TrendState trendStateOf(const SProd &system);
 
 /// A pressure-temperature table the fluids read through a double **: its rows, and a pointer to each.
 struct GridTable {
-    vector<vector<double>> rows;
-    vector<double *> rowPointers;
+    std::vector<std::vector<double>> rows;
+    std::vector<double *> rowPointers;
 
     /// rowCount rows of columnCount values each.
     void allocate(int rowCount, int columnCount) {
-        rows.assign(rowCount, vector<double>(columnCount));
+        rows.assign(rowCount, std::vector<double>(columnCount));
         rowPointers.resize(rowCount);
         for (int i = 0; i < rowCount; i++)
             rowPointers[i] = rows[i].data();
     }
     /// Destroys the rows and gives their memory back.
     void release() {
-        vector<vector<double>>().swap(rows);
-        vector<double *>().swap(rowPointers);
+        std::vector<std::vector<double>>().swap(rows);
+        std::vector<double *>().swap(rowPointers);
     }
     /// What the fluids are given: the row pointers, null when there is no table.
     double **data() { return rowPointers.data(); }
@@ -128,15 +126,15 @@ struct PropertyTables {
     GridTable HLat;
     /// Bubble-pressure values imported from PVTSim for the Livia solution-gas-ratio correlation. This table is
     /// separate from the full PVTSim fluid-property model.
-    vector<double> PBPVTSim;
+    std::vector<double> PBPVTSim;
     /// Bubble-temperature values imported from PVTSim for the Livia solution-gas-ratio correlation. This table is
     /// separate from the full PVTSim fluid-property model.
-    vector<double> TBPVTSim;
+    std::vector<double> TBPVTSim;
     /// Precomputed solution-gas-ratio table for the Livia correlation, used to avoid repeating its expensive
     /// calculation during the simulation.
     GridTable RSLivia;
     /// Dynamic fluid-property tables.
-    vector<tabelaDinamica> tabDin;
+    std::vector<tabelaDinamica> tabDin;
     /// Number of dynamic property tables.
     int ntabDin = 0;
 };
@@ -152,9 +150,9 @@ struct GasLiftLine {
     /// Right-hand side and solution vector for the gas-line pressure-velocity system, sized like matglobG.
     Vcr<double> termolivreG{kGasLineUnknownsPerCell};
     /// Production-line cell indices associated with gas-lift valves.
-    vector<int> posicVGLP;
+    std::vector<int> posicVGLP;
     /// Service-line cell indices associated with gas-lift valves.
-    vector<int> posicVGLG;
+    std::vector<int> posicVGLG;
     /// Service-line index where column-annulus thermal coupling begins.
     int AnulaColunaIni = 0;
     /// Service-line index where column-annulus thermal coupling ends.
@@ -166,7 +164,7 @@ struct GasLiftLine {
     /// Indicates whether column-annulus thermal coupling is enabled.
     int verificaAcop = 0;
     /// Gas-lift valves installed in the system.
-    vector<ChokeGas> chokeVGL;
+    std::vector<ChokeGas> chokeVGL;
     /// Time horizon used by the gas-lift unloading controller.
     double tempMedContDesc = kUnloadingAveragingWindow;
     /// Maximum number of flow samples retained by the unloading PI controller.
@@ -176,9 +174,9 @@ struct GasLiftLine {
     /// Averaging interval used for gas-lift-valve mass flow.
     double tempmedDEsc = 0;
     /// Maximum valve mass-flow samples used by the unloading controller.
-    vector<double> vazmaxMedDesc;
+    std::vector<double> vazmaxMedDesc;
     /// Time-step samples associated with the unloading-flow average.
-    vector<double> dtDesc;
+    std::vector<double> dtDesc;
     /// Separator pressure or pressure at the inlet of the downstream network section.
     double pGSup = 0;
     /// Number of control volumes in the gas service line.
@@ -194,7 +192,7 @@ struct GasLiftLine {
     /// Gas service-line control volumes, held by gasCells.
     CelG *celulaG = nullptr;
     /// The gas service-line control volumes celulaG points at.
-    vector<CelG> gasCells;
+    std::vector<CelG> gasCells;
     /// Current service-line cell containing the completion-fluid/gas interface.
     int celInter = kNoInterfaceCell;
     /// Maximum time step that keeps the unloading interface within one gas-line cell.
@@ -227,7 +225,7 @@ struct TransientRun {
     /// Number of pigs scheduled for launch.
     int npig = 0;
     /// Cell indices where pigs are received.
-    vector<int> receb;
+    std::vector<int> receb;
     /// Global pressure-velocity coupling matrix for the multiphase production line, sized for one cell until the
     /// system is sized for its input.
     BandMtx<double> matglobP{kProductionUnknownsPerCell, kProductionLeftBandwidth, kProductionRightBandwidth};
@@ -236,9 +234,9 @@ struct TransientRun {
     /// Number of scheduled Master1 closing events.
     int nfechaM1 = 0;
     /// Times at which Master1 closes.
-    vector<double> fechaM1;
+    std::vector<double> fechaM1;
     /// Times at which Master1 opens.
-    vector<double> abreM1;
+    std::vector<double> abreM1;
     /// Number of events written to the event log.
     int contaLog = 0;
     /// Smallest production-line control-volume length.
@@ -250,9 +248,9 @@ struct TransientRun {
     /// Index of the next scheduled simulation event.
     int indevento = 0;
     /// History of recently accepted time steps.
-    vector<double> dtSim;
+    std::vector<double> dtSim;
     /// History of time steps proposed by the CFL criterion.
-    vector<double> dtCFL;
+    std::vector<double> dtCFL;
     /// Average time step proposed by the CFL criterion.
     double dtCFLMed = 1.;
     /// Average time step actually used by the simulation.
@@ -272,19 +270,19 @@ struct TransientRun {
     double momentoDesesp = 0;
     /// The artificial gas the closing-valve control added in the current time step, kept until the step is accepted,
     /// when it goes to the run's diagnostics.
-    vector<diagnostics::ArtificialGasAddition> artificialGasThisStep;
+    std::vector<diagnostics::ArtificialGasAddition> artificialGasThisStep;
     /// Recent maximum pressure-change rates.
-    vector<double> taxaDpMax;
+    std::vector<double> taxaDpMax;
     /// Average maximum pressure-change rate.
     double DpMaxMed = 1.;
     /// Recent maximum temperature-change rates.
-    vector<double> taxaDTMax;
+    std::vector<double> taxaDTMax;
     /// Average maximum temperature-change rate.
     double DTMaxMed = 1.;
     /// Counter controlling compositional-property refreshes.
     int kontaRenovaComp = 0;
     /// Production cells handled by the two-dimensional Poisson model.
-    vector<int> indCelPoisson2D;
+    std::vector<int> indCelPoisson2D;
     /// Number of cells handled by the two-dimensional Poisson model.
     int nCelulaPoisson2D = 0;
     /// Signals that the time step must be adjusted.
@@ -328,13 +326,13 @@ struct TransientRun {
     /// Accumulated void fraction used to compute alfMedMov.
     double alfTotal = 0.;
     /// Pressure samples used by the moving-average calculation.
-    vector<double> presVet;
+    std::vector<double> presVet;
     /// Mixture-flux samples used by the moving-average calculation.
-    vector<double> jVet;
+    std::vector<double> jVet;
     /// Void-fraction samples used by the moving-average calculation.
-    vector<double> alfVet;
+    std::vector<double> alfVet;
     /// Time samples associated with the moving-average window.
-    vector<double> tVet;
+    std::vector<double> tVet;
     /// Current surface-choke open/closed state.
     int aberto = 0;
     /// Previous-time-level surface-choke state.
@@ -375,12 +373,12 @@ struct TransientRun {
 /// The storage of one family of trends: for each trend, its rows of samples, and its reset time
 /// and sample counts. The solve reads it through the pointers allocate() points at it.
 struct TrendSet {
-    vector<vector<vector<double>>> values;
-    vector<vector<double *>> rows;
-    vector<double **> matrices;
-    vector<double> resetTimers;
-    vector<int> counts;
-    vector<int> bufferedCounts;
+    std::vector<std::vector<std::vector<double>>> values;
+    std::vector<std::vector<double *>> rows;
+    std::vector<double **> matrices;
+    std::vector<double> resetTimers;
+    std::vector<int> counts;
+    std::vector<int> bufferedCounts;
 
     /// For each of the count trends, length(i) rows of rowWidth(i) values whose first
     /// sentinelCount(i) hold kTrendSentinel, and the reset timers and sample counts,
@@ -394,7 +392,7 @@ struct TrendSet {
         matrices.resize(count);
         for (int i = 0; i < count; i++) {
             const int n = length(i);
-            values[i].assign(n, vector<double>(rowWidth(i)));
+            values[i].assign(n, std::vector<double>(rowWidth(i)));
             rows[i].resize(n);
             for (int j = 0; j < n; j++) {
                 rows[i][j] = values[i][j].data();
@@ -413,12 +411,12 @@ struct TrendSet {
     }
     /// Destroys the rows and the counts and gives their memory back.
     void release() {
-        vector<vector<vector<double>>>().swap(values);
-        vector<vector<double *>>().swap(rows);
-        vector<double **>().swap(matrices);
-        vector<double>().swap(resetTimers);
-        vector<int>().swap(counts);
-        vector<int>().swap(bufferedCounts);
+        std::vector<std::vector<std::vector<double>>>().swap(values);
+        std::vector<std::vector<double *>>().swap(rows);
+        std::vector<double **>().swap(matrices);
+        std::vector<double>().swap(resetTimers);
+        std::vector<int>().swap(counts);
+        std::vector<int>().swap(bufferedCounts);
     }
 };
 
@@ -428,7 +426,7 @@ struct TrendSet {
 /// profiles are written, and the count of output passes.
 struct TrendRecorder {
     /// Gas-line cells where radial temperature profiles are written.
-    vector<int> ncelperftransg;
+    std::vector<int> ncelperftransg;
     /// Times at which gas-line trend buffers are reset.
     double *resettrendg = nullptr;
     /// Number of gas-line trend samples currently stored.
@@ -444,7 +442,7 @@ struct TrendRecorder {
     /// Number of gas-line wall-temperature samples stored before the last flush.
     int *ntrendtransgB = nullptr;
     /// Production-line cells where radial temperature profiles are written.
-    vector<int> ncelperftransp;
+    std::vector<int> ncelperftransp;
     /// Times at which production-line trend buffers are reset.
     double *resettrend = nullptr;
     /// Number of production-line trend samples stored before the last flush.
@@ -466,7 +464,7 @@ struct TrendRecorder {
     /// Current gas-line wall-temperature profile output index.
     int kontaTempoTransProfG = 0;
     /// For each single-cell output, the index of its next output time.
-    vector<int> kontaTempoCelUni;
+    std::vector<int> kontaTempoCelUni;
     /// The production-line trends, read through MatTrendP, resettrend, ntrend and ntrendB.
     TrendSet productionTrendSet;
     /// The gas-line trends, read through MatTrendG, resettrendg, ntrendg and ntrendgB.
@@ -534,13 +532,13 @@ struct NetworkCoupling {
     /// Indicates thermal coupling on the secondary branch of a parallel network.
     int verificaAcopRedeS = 0;
     /// Initial source indices for parallel-network coupling.
-    vector<int> indFonteRedeParalelaIni;
+    std::vector<int> indFonteRedeParalelaIni;
     /// Initial production-liquid sources for the parallel network.
-    vector<double> fonteMpRedeParalelaIni;
+    std::vector<double> fonteMpRedeParalelaIni;
     /// Initial complementary-liquid sources for the parallel network.
-    vector<double> fonteMcRedeParalelaIni;
+    std::vector<double> fonteMcRedeParalelaIni;
     /// Initial gas sources for the parallel network.
-    vector<double> fonteMgRedeParalelaIni;
+    std::vector<double> fonteMgRedeParalelaIni;
     /// Boundary-condition type applied to the secondary parallel-network branch.
     int redeParalelaCCsecundario = -1;
     /// Primary branch index in a parallel network.
@@ -578,7 +576,7 @@ struct SteadySearch {
 /// corrections of the coupled sections.
 struct Coupling3D {
     /// Index corrections used by coupled thermal sections.
-    vector<int> acertaIndAcop;
+    std::vector<int> acertaIndAcop;
     /// Three-dimensional Poisson solver used by the thermal model.
     solverP3D poisson3D;
 };
@@ -673,7 +671,7 @@ class SProd {
     sisprod::TrendRecorder trends;
 
     /// Event-log file name.
-    string tmpLog;
+    std::string tmpLog;
   private:
 
     /// Number of iterations used to bracket the initial steady-state root.
@@ -690,7 +688,7 @@ class SProd {
 
   private:
     /// The production-line control volumes celula points at.
-    vector<Cel> productionCells;
+    std::vector<Cel> productionCells;
 
   public:
 
@@ -749,7 +747,7 @@ class SProd {
   public:
 
     /// Constructs and initializes a production-system simulation from the input and log files.
-    SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
+    SProd(std::string nomeArquivoEntrada, std::string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
           tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP = nullptr, int TD = -1, int vbloq = 0,
           int reverso = 0,
           double *compfonte = nullptr,
