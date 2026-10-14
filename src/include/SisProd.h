@@ -72,10 +72,6 @@ extern time_t nowGlobFim;
 /// Broken-down local time corresponding to nowGlobFim.
 extern tm *ltmGlobFim;
 
-// The state adapters and the modules' updaters read members of SProd that no
-// consumer reads. They are friends, so those members can stay private. Their
-// types are only declared here: the files that define them include the module
-// headers, and consumers never need them.
 class SProd;
 namespace sisprod { class SolveContext; }
 namespace sisprod::composition { struct CompositionState; struct CompositionUpdaters; }
@@ -477,8 +473,7 @@ struct TransientRun {
      */
     double pGSupIni = 0.;
     /**
-     * @brief Kept for the restart file, which records it; nothing in the
-     * simulation reads it.
+     * @brief Recorded in the restart file; nothing in the simulation reads it.
      */
     double massfonte = 0.;
     /**
@@ -961,8 +956,6 @@ struct Coupling3D {
  * and steady-state/transient solution procedures.
  */
 class SProd {
-    // See the note above the class: the adapters and updaters are friends so the
-    // members only they read can be private.
     friend sisprod::gaslift::GasLiftState sisprod::adapters::gasLiftStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::steady::SteadyStateState sisprod::adapters::steadyStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::steady::SteadyStateSearchState sisprod::adapters::searchStateOf(SProd &, sisprod::SolveContext &);
@@ -1058,7 +1051,7 @@ class SProd {
      * @brief Drift-flux correlation chosen for each flow regime.
      *
      * Resolved from arq once, when the object is built, so the per cell path
-     * never reads configuration. Kept beside arq because that is its source.
+     * never reads configuration.
      */
     driftflux::correlations::RegimeSelectors driftSelectors;
   public:
@@ -1430,9 +1423,6 @@ class SProd {
     double buscaProdPresPresPerm2(double mchute, double maxvaz = 0.);
     /// Brackets and solves the mass-flow root for the closed-choke case, chosen
     /// by Num4Main when arq.chokep.abertura[0] <= 1e-15.
-    ///
-    /// It reaches marchaProdPresPres2, not marchaProdPresPres3 -- via zriddr(.., 2,
-    /// 1) and multMarcha -- which is correct by the reduction described above.
     double buscaProdPresPresPerm3(double mchute, double maxvaz = 0.);
 
   private:

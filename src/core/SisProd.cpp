@@ -24,8 +24,6 @@
 #include <chrono>
 #include <math.h>
 
-// The state adapters live in sisprod::adapters, where SisProd.h declares them
-// so that SProd can name them as friends.
 using sisprod::kGravity;
 
 void SProd::resolveDriftSelectors() {
@@ -373,8 +371,6 @@ void SProd::renovaTemp() {
         context.thermal());
 }
 
-/*** change 4 ***/
-
 void SProd::renovaterm(int aflu) {
     sisprod::SolveContext context(*this);
     sisprod::thermal::updateFlowPartitionTerms(context.thermal(), aflu);
@@ -495,8 +491,6 @@ void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, P
     sisprod::transient::solveTransientStep(context.transientSolve(), titRev, alfRev, betRev, nrede, fluiRev);
 }
 
-// The trend writers live in SisProdTrendOutput.cpp; Num4Main.cpp calls four
-// of them through these.
 void SProd::ImprimeTrendPCab(int i, int nrede) {
     sisprod::SolveContext context(*this);
     trendoutput::writeProductionTrendHeader(context.trends(), i, nrede);
