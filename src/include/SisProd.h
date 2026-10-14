@@ -146,7 +146,7 @@ struct GasLiftLine {
     /// Production-column index aligned with annulusCouplingEnd.
     int tubingCouplingEnd = 0;
     /// Indicates whether column-annulus thermal coupling is enabled.
-    int annulusThermalCoupling = 0;
+    bool annulusThermalCoupling = false;
     /// Gas-lift valves installed in the system.
     std::vector<ChokeGas> valveChokes;
     /// Time horizon used by the gas-lift unloading controller.
@@ -234,7 +234,7 @@ struct TransientRun {
     /// Average time step actually used by the simulation.
     double meanAcceptedTimeStep = 1.;
     /// Indicates that time-step growth must remain restricted.
-    int timeStepRestricted = 0;
+    bool timeStepRestricted = false;
     /// Number of remaining steps under the current time-step restriction.
     int restrictedStepsLeft = 0;
     /// Accumulated CFL time steps used to compute meanCflTimeStep.
@@ -318,7 +318,7 @@ struct TransientRun {
     /// Previous-time-level value of activeChokeDelay.
     int previousActiveChokeDelay = 0;
     /// Signals a surface-choke operating-mode transition.
-    int chokeModeChanged = 0;
+    bool chokeModeChanged = false;
     /// Selects the interphase mass-transfer model: 0 = complete, 1 = fully explicit, 2 = simplified, and 3 =
     /// disabled.
     int massTransferModel = 0;
@@ -496,7 +496,7 @@ struct NetworkCoupling {
     /// Previous-time-level value of masChkSup.
     int previousSurfaceChokeActive = 0;
     /// Previous-time-level value of transient.chokeModeChanged.
-    int previousChokeModeChanged = 0;
+    bool previousChokeModeChanged = false;
     /// Secondary-line index where parallel-network coupling with the primary line begins.
     int secondaryCouplingStart = 0;
     /// Secondary-line index where parallel-network coupling with the primary line ends.
@@ -506,9 +506,9 @@ struct NetworkCoupling {
     /// Primary-line index aligned with secondaryCouplingEnd.
     int primaryCouplingEnd = 0;
     /// Indicates thermal coupling on the primary branch of a parallel network.
-    int primaryThermalCoupling = 0;
+    bool primaryThermalCoupling = false;
     /// Indicates thermal coupling on the secondary branch of a parallel network.
-    int secondaryThermalCoupling = 0;
+    bool secondaryThermalCoupling = false;
     /// Initial source indices for parallel-network coupling.
     std::vector<int> parallelSourceCells;
     /// Initial production-liquid sources for the parallel network.
@@ -537,13 +537,13 @@ struct SteadySearch {
     /// Initial holdup estimate used by the steady-state solver.
     double holdupGuess = -1.;
     /// Controls the search for an initial steady-state estimate.
-    int initialEstimateSearch = 0;
+    bool initialEstimateSearch = false;
     /// Fluid state received from downstream during reverse network flow.
     ProFlu reverseNetworkFluid;
     /// Temperature associated with reverse network flow.
     double reverseFlowTemperature = 0.;
     /// Indicates reverse flow in the steady-state network solution.
-    int steadyReverseFlow = 0;
+    bool steadyReverseFlow = false;
     /// Current steady-state convergence monitor.
     double convergenceMonitor = kInitialConvergenceMonitor;
     /// Reference value for the steady-state convergence monitor.
@@ -813,7 +813,7 @@ class SProd {
   public:
     /// Steady-state mode flag: 1 while Num4Main solves a network branch at steady state. The source terms read it
     /// (sisprod::sources::SourceState).
-    int modoPerm = 0;
+    bool modoPerm = false;
 
     /// Surface-choke model.
     choke chokeSup;
@@ -842,7 +842,7 @@ class SProd {
 
   private:
     /// Indicates that the thermal source term is disabled.
-    int thermalSourceDisabled = 0;
+    bool thermalSourceDisabled = false;
 
     static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
                                      "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",

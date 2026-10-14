@@ -111,7 +111,7 @@ struct TransientStepState {
     /// SProd::transient.artificialGasMultiplier -- written.
     double &desperationMoment;
     /// SProd::transient.chokeModeChanged -- written.
-    int &chokeModeChanged;
+    bool &chokeModeChanged;
     /// SProd::transient.cflSafetyFactor -- written.
     double &multiplier;
     /// SProd::presfim -- written.
@@ -119,7 +119,7 @@ struct TransientStepState {
     /// SProd::transient.rollbackRequested -- written.
     int &restart;
     /// SProd::transient.timeStepRestricted -- written.
-    int &timeStepRestricted;
+    bool &timeStepRestricted;
     /// SProd::transient.activeChokeDelay -- written.
     int &openTime;
     /// SProd::transient.rightHandSide -- written.
@@ -416,7 +416,7 @@ struct TransientSolveState {
     /// SProd::transient.movingMeanVoidFraction -- written or read by the solve; not promised const.
     double &movingMeanVoidFraction;
     /// SProd::gasLift.annulusThermalCoupling -- written or read by the solve; not promised const.
-    int &networkCoupled;
+    bool &networkCoupled;
     /// SProd::coupling3D.poissonSolver3D -- written or read by the solve; not promised const.
     solverP3D &poissonSolver3D;
     /// SProd::transient.pressureSamples -- written or read by the solve; not promised const.

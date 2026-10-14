@@ -83,9 +83,9 @@ struct GasLiftState {
     /// Steady-state iteration counter -- SProd::steadyIteration.
     const int &steadyIteration;
     /// Network coupling flag -- SProd::gasLift.annulusThermalCoupling.
-    const int &networkCoupled;
+    const bool &networkCoupled;
     /// Thermal source switch -- SProd::thermalSourceDisabled.
-    const int &thermalSourceDisabled;
+    const bool &thermalSourceDisabled;
 
     /// Previous-step gas pressure and temperature -- SProd::gasLift.injectionPressure and
     /// SProd::gasLift.injectionTemperature. The pressure is written.

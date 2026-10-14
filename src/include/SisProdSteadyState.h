@@ -100,7 +100,7 @@ struct SteadyStateState {
     /// Steady-state iteration counter -- SProd::steadyIteration. Written.
     int &steadyIteration;
     /// Which boundary the search started from -- SProd::steadySearch.initialEstimateSearch. Written.
-    int &searchOrigin;
+    bool &searchOrigin;
     /// Convergence monitors -- SProd::steadySearch.convergenceMonitor and convergenceMonitorReference.
     /// Both written.
     double &convergenceMonitor;
@@ -109,11 +109,11 @@ struct SteadyStateState {
     /// Annulus drift flag -- SProd::derivaAnel. Read only.
     const int &annulusDrift;
     /// Network coupling flag -- SProd::gasLift.annulusThermalCoupling. Read only.
-    const int &networkCoupled;
+    const bool &networkCoupled;
     /// End-node flag -- SProd::noextremo. Read only.
     const int &endNode;
     /// Thermal source switch -- SProd::thermalSourceDisabled. Read only.
-    const int &thermalSourceDisabled;
+    const bool &thermalSourceDisabled;
     /// Slow-heat-transfer switch -- SProd::steadySearch.slowHeatTransferThreshold. Written.
     double &slowHeatTransferThreshold;
 

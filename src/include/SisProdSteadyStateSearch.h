@@ -31,7 +31,7 @@ struct SteadyStateSearchState {
     /// Reverse-flow network fluid -- SProd::steadySearch.reverseNetworkFluid. Read only.
     const ProFlu &reverseNetworkFluid;
     /// Whether this steady solve runs in reverse -- SProd::steadySearch.steadyReverseFlow. Written.
-    int &reverseSteady;
+    bool &reverseSteady;
 };
 
 // ------------------------------------------------------ dispatch table ----

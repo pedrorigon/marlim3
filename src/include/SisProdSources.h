@@ -28,7 +28,7 @@ struct SourceState {
     const int &lastCell;
     /// Steady-state mode -- SProd::modoPerm. In it the porous media advance
     /// pseudo-transiently and the master valve adds no flow.
-    const int &steadyMode;
+    const bool &steadyMode;
     /// Secondary branch index in a parallel network -- SProd::networkCoupling.parallelSecondaryBranch.
     const int &parallelSecondaryBranch;
     /// Boundary-condition type of the secondary parallel-network branch --

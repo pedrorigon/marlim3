@@ -55,8 +55,8 @@ struct ThermalState {
     /// The latent heat table's row pointers -- SProd::tables.latentHeatTable.
     const std::vector<double *> &latentHeatTable;
     varGlob1D *const &globals;
-    const int &thermalSourceDisabled;
-    const int &productionNetworkCoupled;
+    const bool &thermalSourceDisabled;
+    const bool &productionNetworkCoupled;
     const int &primarySectionStart;
     const int &primarySectionEnd;
     const std::vector<int> &coupledCellIndices;
@@ -88,7 +88,7 @@ struct ThermalState {
     const int &annulusTubingStart;
     const int &annulusTubingEnd;
     const int &tubingAnnulusStart;
-    const int &productionNetworkHeatCoupled;
+    const bool &productionNetworkHeatCoupled;
     const int &primaryNetworkSectionEnd;
     const int &primaryNetworkSectionStart;
     const int &gasCellCount;
@@ -97,7 +97,7 @@ struct ThermalState {
     const double &outletPressure;
     /// Written, not just read -- computeOutletTemperature assigns it.
     double &surfaceTemperature;
-    const int &networkCoupled;
+    const bool &networkCoupled;
     const int &tubingAnnulusEnd;
 };
 
