@@ -152,23 +152,20 @@ struct ClosureState {
 };
 
 /// Slip parameters at a production-line face, from the instantaneous state.
-/// Called by SProd::CalcC0Ud.
 void instantaneous(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters for the intermediate network state, from the buffered
-/// fields. Called by SProd::CalcC0UdBuf.
+/// fields.
 void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters at the inlet of an internal network section.
-/// Called by SProd::CalcC0UdIni.
 void initialization(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Slip parameters at the inlet of an internal network section, from the
-/// buffered fields. Called by SProd::CalcC0UdIniBuf.
+/// buffered fields.
 void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 /// Steady-state slip parameters at a downstream face.
-/// Called by SProd::CalcC0UdPerm.
 void steadyState(const ClosureState &state, int cellIndex, double &c0, double &ud);
 
 }  // namespace coefficient

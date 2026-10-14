@@ -372,7 +372,7 @@ namespace {
  * the same translation unit as their only callers: no indirect call survives.
  */
 
-/// Instantaneous state -- SProd::CalcC0Ud and SProd::CalcC0UdIni.
+/// Instantaneous state -- instantaneous and initialization.
 struct InstantaneousSource {
     /// Value whose SIGN the variant tests. Not the flow rate: these variants
     /// branch on QG but divide MC - Mliqini by the density.
@@ -385,7 +385,7 @@ struct InstantaneousSource {
     static double liquidFlowRate(const Cel *cells, int index) { return cells[index].Mliqini; }
 };
 
-/// Buffered network state -- SProd::CalcC0UdBuf and SProd::CalcC0UdIniBuf.
+/// Buffered network state -- buffered and bufferedInitialization.
 struct BufferedSource {
     /// Value whose SIGN the variant tests. Here it is the same expression as the
     /// flow rate, unlike the instantaneous source; both hooks are kept so the
@@ -401,7 +401,7 @@ struct BufferedSource {
     static double liquidFlowRate(const Cel *cells, int index) { return cells[index].MliqiniBuf; }
 };
 
-/// Steady state -- SProd::CalcC0UdPerm. It takes the magnitude of both rates and
+/// Steady state -- steadyState. It takes the magnitude of both rates and
 /// never tests their sign, so it has no gasForSign.
 struct SteadyStateSource {
     /// Gas mass flow, magnitude only -- the steady-state variant never branches
