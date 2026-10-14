@@ -296,8 +296,8 @@ void SProd::generateSaturationTablesFromCorrelations() {
 /// has the IPR its boundary condition needs, builds the Cp and JTL tables, hands
 /// the fluid constants to every fluid, generates the pipe and the production
 /// cells, and places every source -- including the extra gas sources at
-/// compfonte, whose cell indices it records in posicfonte.
-void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes) {
+/// extraSourceLengths, whose cell indices it records in extraSourceCells.
+void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount) {
     indTramo = -1;
     transient.KontaImprime = 0;
     transient.tempoaberto = 0.;
@@ -389,9 +389,9 @@ void SProd::buildProductionCells(double *compfonte, int *posicfonte, int nfontes
         arq.gerafgasVGL(celula);
     if (arq.ninjgas > 0)
         arq.gerafgasFonte(celula);
-    for (int i = arq.ninjgas; i < arq.ninjgas + nfontes; i++) {
-        int iposp = arq.buscaIndiceMeioP(compfonte[i - arq.ninjgas]);
-        posicfonte[i - arq.ninjgas] = iposp;
+    for (int i = arq.ninjgas; i < arq.ninjgas + extraSourceCount; i++) {
+        int iposp = arq.buscaIndiceMeioP(extraSourceLengths[i - arq.ninjgas]);
+        extraSourceCells[i - arq.ninjgas] = iposp;
         InjGas injgasMRT(0, 0, arq.flug);
         celula[iposp].acsr.tipo = kAccessoryGasInjection;
         celula[iposp].acsr.injg = injgasMRT;
@@ -426,7 +426,7 @@ void attachEmptySources(Cel &cell, Cel &inlet) {
 /// pressure-drop requirements, heat sources, the master valve and the other
 /// valves -- and sets up the outlet pressure, the surface and injection chokes and
 /// the pigs.
-void SProd::configureInletSourcesAndAccessories(int nfontes) {
+void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
     if (celula[0].acsr.tipo != kAccessoryNone && arq.ConContEntrada == 1) {
         // RN-302: The inlet has both a pressure boundary condition and a mass source. Report a warning.
         logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -434,10 +434,11 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
                    "", "");
     }
     if ((arq.perm == 1 || (*vg1dSP).chaverede > 0) && celula[0].acsr.tipo == kAccessoryNone) {
-        if ((arq.ConContEntrada == 0 && nfontes == 0 && (*vg1dSP).chaverede == 0)) {
+        if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*vg1dSP).chaverede == 0)) {
             NumError("O simulador pede calculo de permanente com condicao de vazao na entrada, mas sem nenhuma fonte na entrada");
         }
-        if ((arq.ConContEntrada == 0 && nfontes == 0 && (*vg1dSP).chaverede > 0) || arq.CCPres.tit[0] < (1 - (*vg1dSP).localtiny)) {
+        if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*vg1dSP).chaverede > 0) ||
+            arq.CCPres.tit[0] < (1 - (*vg1dSP).localtiny)) {
             if (arq.tipoFluido == 1)
                 celula[0].acsr.tipo = kAccessoryGasInjection;
             else if (arq.tipoFluido == 0)
@@ -445,7 +446,7 @@ void SProd::configureInletSourcesAndAccessories(int nfontes) {
             else
                 celula[0].acsr.tipo = kAccessoryMultipleSource;
             attachEmptySources(celula[0], celula[0]);
-        } else if (nfontes == 0 || arq.ConContEntrada == 1) {
+        } else if (extraSourceCount == 0 || arq.ConContEntrada == 1) {
             attachEmptySources(celula[0], celula[0]);
             celula[0].acsr.injg.seco = 0;
             if (arq.tipoFluido == 1)
@@ -1013,10 +1014,10 @@ void SProd::resetCouplingAndOutputState() {
     transient.alfTotal = 0.;
 }
 
-void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
+void SProd::montasistema(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount) {
     try {
-        buildProductionCells(compfonte, posicfonte, nfontes);
-        configureInletSourcesAndAccessories(nfontes);
+        buildProductionCells(extraSourceLengths, extraSourceCells, extraSourceCount);
+        configureInletSourcesAndAccessories(extraSourceCount);
         buildGasLiftLine();
         validateSetupAndApplyInitialState();
         buildDynamicTablesAndInclinations();

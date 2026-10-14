@@ -130,11 +130,11 @@ void SProd::allocateSolutionBuffers() {
     gasLift.termolivreG = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
 }
 
-SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
-             tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int reverso,
-             double *compfonte, int *posicfonte, int nfontes, int redeperm)
+SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidation,
+             tipoSimulacao_t simulationType, varGlob1D *globals, int dynamicTable, int blocking, int reversedGeometry,
+             double *extraSourceLengths, int *extraSourceCells, int extraSourceCount, int steadyBranch)
     : networkCoupling{.betaRevini = 0},
-      arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm),
+      arq(inputFile, logFile, jsonValidation, simulationType, reversedGeometry, globals, steadyBranch),
       flutG(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns),
       flut(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns),
       gasLift{.matglobG = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth),
@@ -142,12 +142,12 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
       transient{.matglobP = BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth,
                                             kProductionRightBandwidth),
                 .termolivreP = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)},
-      bloq(vbloq), vg1dSP(Vvg1dSP) {
+      bloq(blocking), vg1dSP(globals) {
     resolveDriftSelectors();
     resetRunState();
-    if (TD >= 0)
-        arq.tabelaDinamica = TD;
-    montasistema(compfonte, posicfonte, nfontes);
+    if (dynamicTable >= 0)
+        arq.tabelaDinamica = dynamicTable;
+    montasistema(extraSourceLengths, extraSourceCells, extraSourceCount);
 }
 
 SProd::SProd() {
@@ -190,18 +190,18 @@ void SProd::releaseOwnedStorage() {
     releaseVector(tables.tabDin);
 }
 
-SProd &SProd::operator=(const SProd &sp) {
+SProd &SProd::operator=(const SProd &other) {
     releaseOwnedStorage();
 
-    arq = sp.arq;
-    vg1dSP = sp.vg1dSP;
+    arq = other.arq;
+    vg1dSP = other.vg1dSP;
     resolveDriftSelectors();
     allocateSolutionBuffers();
     resetRunState();
-    applyCarriedState(sp.carriedState());
-    networkCoupling.redeParalelaCCsecundario = sp.networkCoupling.redeParalelaCCsecundario;
-    networkCoupling.redeParalelaP = sp.networkCoupling.redeParalelaP;
-    networkCoupling.redeParalelaS = sp.networkCoupling.redeParalelaS;
+    applyCarriedState(other.carriedState());
+    networkCoupling.redeParalelaCCsecundario = other.networkCoupling.redeParalelaCCsecundario;
+    networkCoupling.redeParalelaP = other.networkCoupling.redeParalelaP;
+    networkCoupling.redeParalelaS = other.networkCoupling.redeParalelaS;
 
     montasistema();
 
@@ -248,9 +248,9 @@ void SProd::HidroDescargaP() {
     gaslift::computeProductionUnloadingHydrostatics(context.gasLift());
 }
 
-void SProd::renova(int expli) {
+void SProd::renova(int explicitScheme) {
     SolveContext context(*this);
-    transient::updateCells(context.transientStep(), expli);
+    transient::updateCells(context.transientStep(), explicitScheme);
 }
 
 void SProd::renovaBuffer() {
@@ -268,9 +268,9 @@ void SProd::renovaTemp() {
     thermal::updateDistributedMassTransfer(context.thermal());
 }
 
-void SProd::renovaterm(int aflu) {
+void SProd::renovaterm(int inflowMode) {
     SolveContext context(*this);
-    thermal::updateFlowPartitionTerms(context.thermal(), aflu);
+    thermal::updateFlowPartitionTerms(context.thermal(), inflowMode);
 }
 
 void SProd::renovatermAfluFim() {
@@ -283,19 +283,21 @@ void SProd::renovatermColIni() {
     thermal::updateInletFlowPartitionTerms(context.thermal());
 }
 
-void SProd::calcCCpres(double titRev, double alfRev, double betRev) {
+void SProd::calcCCpres(double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction) {
     SolveContext context(*this);
-    transient::applyOutletPressureCondition(context.transientStep(), titRev, alfRev, betRev);
+    transient::applyOutletPressureCondition(context.transientStep(), reverseQuality, reverseVoidFraction,
+                                            reverseLiquidFraction);
 }
 
-void SProd::calcCCBuffer(double titRev, double alfRev, double betRev) {
+void SProd::calcCCBuffer(double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction) {
     SolveContext context(*this);
-    transient::applyOutletBufferCondition(context.transientStep(), titRev, alfRev, betRev);
+    transient::applyOutletBufferCondition(context.transientStep(), reverseQuality, reverseVoidFraction,
+                                          reverseLiquidFraction);
 }
 
-void SProd::determinaDT(int vexpli) {
+void SProd::determinaDT(int explicitScheme) {
     SolveContext context(*this);
-    transient::computeTimeStep(context.transientStep(), vexpli);
+    transient::computeTimeStep(context.transientStep(), explicitScheme);
 }
 
 void SProd::atenuaDtMax() {
@@ -303,9 +305,9 @@ void SProd::atenuaDtMax() {
     transient::dampMaximumTimeStep(context.transientStep());
 }
 
-void SProd::avaliaVariaDpDt(int vexpli) {
+void SProd::avaliaVariaDpDt(int explicitScheme) {
     SolveContext context(*this);
-    transient::evaluatePressureRateOfChange(context.transientStep(), vexpli);
+    transient::evaluatePressureRateOfChange(context.transientStep(), explicitScheme);
 }
 
 void SProd::aberturaVal0() {
@@ -328,9 +330,9 @@ void SProd::solveLinGas() {
     gaslift::solveGasLine(context.gasLift());
 }
 
-void SProd::EvoluiFrac(double alfrev, double betrev, int ciclo) {
+void SProd::EvoluiFrac(double reverseVoidFraction, double reverseLiquidFraction, int cycle) {
     SolveContext context(*this);
-    transient::evolveFractions(context.transientStep(), alfrev, betrev, ciclo);
+    transient::evolveFractions(context.transientStep(), reverseVoidFraction, reverseLiquidFraction, cycle);
 }
 
 void SProd::ReiniEvolFrac0() {
@@ -348,14 +350,14 @@ void SProd::AtualizaPig() {
     transient::updatePig(context.transientStep());
 }
 
-void SProd::SolveAcopPV(int vexpli, int ciclo) {
+void SProd::SolveAcopPV(int explicitScheme, int cycle) {
     SolveContext context(*this);
-    transient::solvePressureVolumeCoupling(context.transientStep(), vexpli, ciclo);
+    transient::solvePressureVolumeCoupling(context.transientStep(), explicitScheme, cycle);
 }
 
-void SProd::marchaEnergTrans(int ciclo, int ciclomax) {
+void SProd::marchaEnergTrans(int cycle, int maximumCycle) {
     SolveContext context(*this);
-    thermal::advanceTransientEnergy(context.thermal(), ciclo, ciclomax);
+    thermal::advanceTransientEnergy(context.thermal(), cycle, maximumCycle);
 }
 
 void SProd::atualizaMiniTab() {
@@ -381,79 +383,83 @@ void SProd::solveHydrateEnvelopes() {
     }
 }
 
-void SProd::SolveTrans(double titRev, double alfRev, double betRev, int nrede, const ProFlu *fluiRev) {
+void SProd::SolveTrans(double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction, int network,
+                       const ProFlu *collectorFluid) {
     SolveContext context(*this);
-    transient::solveTransientStep(context.transientSolve(), titRev, alfRev, betRev, nrede, fluiRev);
+    transient::solveTransientStep(context.transientSolve(), reverseQuality, reverseVoidFraction, reverseLiquidFraction,
+                                  network, collectorFluid);
 }
 
-void SProd::ImprimeTrendPCab(int i, int nrede) {
+void SProd::ImprimeTrendPCab(int trend, int network) {
     SolveContext context(*this);
-    trendoutput::writeProductionTrendHeader(context.trends(), i, nrede);
+    trendoutput::writeProductionTrendHeader(context.trends(), trend, network);
 }
 
-void SProd::ImprimeTrendP(int i, int nrede) {
+void SProd::ImprimeTrendP(int trend, int network) {
     SolveContext context(*this);
-    trendoutput::writeProductionTrendRows(context.trends(), i, nrede);
+    trendoutput::writeProductionTrendRows(context.trends(), trend, network);
 }
 
-void SProd::ImprimeTrendGCab(int i, int nrede) {
+void SProd::ImprimeTrendGCab(int trend, int network) {
     SolveContext context(*this);
-    trendoutput::writeGasLineTrendHeader(context.trends(), i, nrede);
+    trendoutput::writeGasLineTrendHeader(context.trends(), trend, network);
 }
 
-void SProd::ImprimeTrendG(int i, int nrede) {
+void SProd::ImprimeTrendG(int trend, int network) {
     SolveContext context(*this);
-    trendoutput::writeGasLineTrendRows(context.trends(), i, nrede);
+    trendoutput::writeGasLineTrendRows(context.trends(), trend, network);
 }
 
-double SProd::marchaProdPerm1(double pchute) {
+double SProd::marchaProdPerm1(double pressureGuess) {
     SolveContext context(*this);
-    return steady::marchProductionSteady(context.steady(), pchute);
+    return steady::marchProductionSteady(context.steady(), pressureGuess);
 }
 
-double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
+double SProd::buscaProdPfundoPerm(double guess, int attemptCount) {
     SolveContext context(*this);
-    return steady::searchProductionBottomHolePressure(context.search(), chute, kontaTenta);
+    return steady::searchProductionBottomHolePressure(context.search(), guess, attemptCount);
 }
 
-double SProd::buscaProdPfundoPermRev(double chute) {
+double SProd::buscaProdPfundoPermRev(double guess) {
     SolveContext context(*this);
-    return steady::searchReverseProductionBottomHolePressure(context.search(), chute);
+    return steady::searchReverseProductionBottomHolePressure(context.search(), guess);
 }
 
-double SProd::buscaProdPfundoPerm2(double chute, int kontaTenta) {
+double SProd::buscaProdPfundoPerm2(double guess, int attemptCount) {
     SolveContext context(*this);
-    return steady::searchProductionBottomHolePressureSecondary(context.search(), chute, kontaTenta);
+    return steady::searchProductionBottomHolePressureSecondary(context.search(), guess, attemptCount);
 }
 
-double SProd::buscaProdPfundoPerm3(double pentrada) {
+double SProd::buscaProdPfundoPerm3(double inletPressure) {
     SolveContext context(*this);
-    return steady::searchProductionBottomHolePressureTertiary(context.search(), pentrada);
+    return steady::searchProductionBottomHolePressureTertiary(context.search(), inletPressure);
 }
 
-double SProd::marchaProdPresPres1(double mchute) {
+double SProd::marchaProdPresPres1(double massFlowRateGuess) {
     SolveContext context(*this);
-    return steady::marchProductionPressureToPressure(context.steady(), mchute);
+    return steady::marchProductionPressureToPressure(context.steady(), massFlowRateGuess);
 }
 
-double SProd::buscaProdPresPresPerm(double mchute, double maxvaz, int kontaiter) {
+double SProd::buscaProdPresPresPerm(double massFlowRateGuess, double maximumFlowRate, int iterationCount) {
     SolveContext context(*this);
-    return steady::searchProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
+    return steady::searchProductionPressureToPressure(context.search(), massFlowRateGuess, maximumFlowRate,
+                                                      iterationCount);
 }
 
-double SProd::buscaProdPresPresPermRev(double mchute, double maxvaz, int kontaiter) {
+double SProd::buscaProdPresPresPermRev(double massFlowRateGuess, double maximumFlowRate, int iterationCount) {
     SolveContext context(*this);
-    return steady::searchReverseProductionPressureToPressure(context.search(), mchute, maxvaz, kontaiter);
+    return steady::searchReverseProductionPressureToPressure(context.search(), massFlowRateGuess, maximumFlowRate,
+                                                             iterationCount);
 }
 
-double SProd::buscaProdPresPresPerm2(double mchute, double maxvaz) {
+double SProd::buscaProdPresPresPerm2(double massFlowRateGuess, double maximumFlowRate) {
     SolveContext context(*this);
-    return steady::searchProductionPressureToPressureSecondary(context.search(), mchute, maxvaz);
+    return steady::searchProductionPressureToPressureSecondary(context.search(), massFlowRateGuess, maximumFlowRate);
 }
 
-double SProd::buscaProdPresPresPerm3(double mchute, double maxvaz) {
+double SProd::buscaProdPresPresPerm3(double massFlowRateGuess, double maximumFlowRate) {
     SolveContext context(*this);
-    return steady::searchProductionPressureToPressureTertiary(context.search(), mchute, maxvaz);
+    return steady::searchProductionPressureToPressureTertiary(context.search(), massFlowRateGuess, maximumFlowRate);
 }
 
 void SProd::calcTempFim() {
@@ -461,19 +467,19 @@ void SProd::calcTempFim() {
     thermal::computeOutletTemperature(context.thermal());
 }
 
-double SProd::buscaInjPfundoPerm1(double chute) {
+double SProd::buscaInjPfundoPerm1(double guess) {
     SolveContext context(*this);
-    return steady::searchInjectionBottomHolePressure1(context.search(), chute);
+    return steady::searchInjectionBottomHolePressure1(context.search(), guess);
 }
 
-double SProd::buscaInjPfundoPerm2(double chute) {
+double SProd::buscaInjPfundoPerm2(double guess) {
     SolveContext context(*this);
-    return steady::searchInjectionBottomHolePressure2(context.search(), chute);
+    return steady::searchInjectionBottomHolePressure2(context.search(), guess);
 }
 
-double SProd::buscaInjPfundoPerm3(double chute) {
+double SProd::buscaInjPfundoPerm3(double guess) {
     SolveContext context(*this);
-    return steady::searchInjectionBottomHolePressure3(context.search(), chute);
+    return steady::searchInjectionBottomHolePressure3(context.search(), guess);
 }
 
 double SProd::buscaInjPfundoPerm4() {
@@ -481,23 +487,23 @@ double SProd::buscaInjPfundoPerm4() {
     return steady::searchInjectionBottomHolePressure4(context.search());
 }
 
-double SProd::buscaInjPfundoPerm5(double chute) {
+double SProd::buscaInjPfundoPerm5(double guess) {
     SolveContext context(*this);
-    return steady::searchInjectionBottomHolePressure5(context.search(), chute);
+    return steady::searchInjectionBottomHolePressure5(context.search(), guess);
 }
 
-double SProd::hidroreverso(double hol, double vaz, double vazG) {
+double SProd::hidroreverso(double liquidHoldup, double liquidFlowRate, double gasFlowRate) {
     SolveContext context(*this);
-    return steady::reverseHydrostatic(context.steady(), hol, vaz, vazG);
+    return steady::reverseHydrostatic(context.steady(), liquidHoldup, liquidFlowRate, gasFlowRate);
 }
 
-double SProd::hidroreversoInj(double hol, double vaz) {
+double SProd::hidroreversoInj(double liquidHoldup, double liquidFlowRate) {
     SolveContext context(*this);
-    return steady::reverseInjectionHydrostatic(context.steady(), hol, vaz);
+    return steady::reverseInjectionHydrostatic(context.steady(), liquidHoldup, liquidFlowRate);
 }
 
-double SProd::hidroTramoSecundario(double titulo) {
+double SProd::hidroTramoSecundario(double quality) {
     SolveContext context(*this);
-    return steady::secondaryBranchHydrostatic(context.steady(), titulo);
+    return steady::secondaryBranchHydrostatic(context.steady(), quality);
 }
 
