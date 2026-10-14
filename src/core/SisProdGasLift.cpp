@@ -10,6 +10,7 @@
 #include "UnitConversions.h"
 
 #include <math.h>
+#include <numbers>
 
 namespace sisprod::gaslift {
 
@@ -466,13 +467,13 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
         (externalDiameterInches > kLargeBoreValveInches ? kLargeBoreSpringRate : kSmallBoreSpringRate) * bellowsArea;
     double stemTravel = ((valveOpeningPressure - bellowsPressure) * bellowsArea - (valveOpeningPressure - tubingPressure) * throatArea) / bellowsSpringRate;
 
-    double throatDiameter = sqrt(throatArea * 4. / M_PI);
+    double throatDiameter = sqrt(throatArea * 4. / std::numbers::pi);
     double throatRadius = throatDiameter / 2.0;
-    double bellowsRadius = sqrt(bellowsArea / M_PI);
+    double bellowsRadius = sqrt(bellowsArea / std::numbers::pi);
     // The seat offset: the distance from the stem axis to where the bellows
     // meets the seat.
     const double seatOffset = sqrt(bellowsRadius * bellowsRadius - throatRadius * throatRadius);
-    double openingArea = M_PI * throatRadius * stemTravel * (stemTravel + 2.0 * seatOffset);
+    double openingArea = std::numbers::pi * throatRadius * stemTravel * (stemTravel + 2.0 * seatOffset);
     openingArea = openingArea / sqrt((stemTravel + seatOffset) * (stemTravel + seatOffset) + throatRadius * throatRadius);
     if (openingArea > throatArea)
         openingArea = throatArea;
@@ -1071,7 +1072,7 @@ void initializeTubingConnectionSteady(const GasLiftState &state) {
 double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     double dx = 0.5 * state.gasCells[cellIndex].dx0;
     double diameter = state.gasCells[cellIndex].duto.a;
-    double area = 0.25 * M_PI * diameter * diameter;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
     double perimeter = state.gasCells[cellIndex].duto.peri;
     double gasDensity = state.gasCells[cellIndex].flui.MasEspGas(state.gasCells[cellIndex].pres, state.gasCells[cellIndex].temp);
 
@@ -1098,7 +1099,7 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
 
     dx = 0.5 * state.gasCells[cellIndex].dxL;
     diameter = state.gasCells[cellIndex].dutoL.a;
-    area = 0.25 * M_PI * diameter * diameter;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
     perimeter = state.gasCells[cellIndex].dutoL.peri;
     gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
 
@@ -1133,7 +1134,7 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
 double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     double dx = 0.5 * state.cells[cellIndex].dx;
     double diameter = state.cells[cellIndex].duto.a;
-    double area = 0.25 * M_PI * diameter * diameter;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
     double perimeter = state.cells[cellIndex].duto.peri;
     double meanTemperature;
     meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
@@ -1156,7 +1157,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
 
     dx = 0.5 * state.cells[cellIndex].dxL;
     diameter = state.cells[cellIndex].dutoL.a;
-    area = 0.25 * M_PI * diameter * diameter;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
     perimeter = state.cells[cellIndex].dutoL.peri;
     meanTemperature = state.cells[cellIndex - 1].temp;
     injectedFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
@@ -1180,7 +1181,7 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
 
     double dx = 0.5 * state.gasCells[cellIndex].dxL;
     double diameter = state.gasCells[cellIndex].dutoL.a;
-    double area = 0.25 * M_PI * diameter * diameter;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
     double perimeter = state.gasCells[cellIndex].dutoL.peri;
     double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
 
@@ -1206,7 +1207,7 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
 
     dx = 0.5 * state.gasCells[cellIndex].dx0;
     diameter = state.gasCells[cellIndex].duto.a;
-    area = 0.25 * M_PI * diameter * diameter;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
     perimeter = state.gasCells[cellIndex].duto.peri;
     gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
     double areaVariation = 1 / pow(state.gasCells[cellIndex].dutoL.area, 2.) - 1 / pow(state.gasCells[cellIndex].duto.area, 2.);

@@ -13,6 +13,7 @@
 #include "UnitConversions.h"
 
 #include <math.h>
+#include <numbers>
 
 // For the TimeStepPolicy concept.
 #include <concepts>
@@ -47,7 +48,7 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
 
     double dx = 0.5 * state.cells[i].dx;
     double diameter = state.cells[i].duto.a;
-    double area = 0.25 * M_PI * diameter * diameter;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
     double perimeter = state.cells[i].duto.peri;
     double alfmed = state.cells[i].alf;
     double rhog = state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp);
@@ -82,7 +83,7 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
     state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
     dx = 0.5 * state.cells[i].dxL;
     diameter = state.cells[i - 1].duto.a;
-    area = 0.25 * M_PI * diameter * diameter;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
     perimeter = state.cells[i - 1].duto.peri;
     alfmed = state.cells[i - 1].alf;
     rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -233,7 +234,7 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
 
     double dx = 0.5 * state.cells[i].dx;
     double diameter = state.cells[i].duto.a;
-    double area = 0.25 * M_PI * diameter * diameter;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
     double perimeter = state.cells[i].duto.peri;
     double alfmed = state.cells[i].alf;
     double rhog = state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp);
@@ -262,7 +263,7 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
     dx = 0.5 * state.cells[i].dxL;
     diameter = state.cells[i - 1].duto.a;
-    area = 0.25 * M_PI * diameter * diameter;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
     perimeter = state.cells[i - 1].duto.peri;
     alfmed = state.cells[i - 1].alf;
     rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);

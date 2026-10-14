@@ -2,12 +2,12 @@
 /// sources, the gas-lift line, the tables and the output bookkeeping, in the
 /// order montasistema runs them. These are SProd's own methods; SisProd.cpp
 /// holds its lifecycle.
-#define _USE_MATH_DEFINES // for M_PI
 #include "SisProd.h"
 #include "OutputI18n.h"
 #include "SisProdConstants.h"
 #include "UnitConversions.h"
 #include <math.h>
+#include <numbers>
 
 using enum sisprod::AccessoryKind;
 
@@ -541,7 +541,7 @@ void SProd::buildGasLiftLine() {
                 arq.valvgl[i].frec = 0.;
                 arq.valvgl[i].cd = 1.;
             }
-            double throatArea = M_PI * diaG * diaG / 4.;
+            double throatArea = std::numbers::pi * diaG * diaG / 4.;
             gasLift.chokeVGL[i] = ChokeGas(arq.flug, throatArea,
                                    arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
                                    tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,

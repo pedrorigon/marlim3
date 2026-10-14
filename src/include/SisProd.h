@@ -7,7 +7,6 @@
 
 #ifndef SISPROD_H_
 #define SISPROD_H_
-#define _USE_MATH_DEFINES // Enables M_PI on supported platforms
 
 #include "Acidentes2.h"
 #include "DriftFluxClosure.h"

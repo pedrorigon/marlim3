@@ -8,6 +8,8 @@ cleanup, so the comparison stays about the move. The rules are the ones that rew
 (estagio-13/ferramentas/unidades.py, branch mode); on code already rewritten they change nothing.
 
 The base patches 20 to 23 apply the same rules to the corrected base, with the exact values as literals.
+
+The last rule is not a unit: stage 15 replaced M_PI by std::numbers::pi in the SisProd modules (the same double).
 """
 import re
 
@@ -88,6 +90,8 @@ _RULES = [
     (_lit('6.29'), lambda m: _name('kBarrelPerCubicMetre'), _near_cubic_foot),
     (_lit('35.31467'), lambda m: _name('kCubicFootPerCubicMetre'), None),
     (_lit('0.1589876', '0.158987'), lambda m: _name('kCubicMetrePerBarrel'), None),
+    # stage 15: the SisProd modules spell pi as std::numbers::pi, the same double as M_PI
+    (r'(?<![\w:])M_PI\b', lambda m: 'std::numbers::pi', None),
 ]
 _COMPILED = [(re.compile(pattern), replace, check) for pattern, replace, check in _RULES]
 _PARENTHESISED = re.compile(r'\(\s*(units::k\w+)\s*\)')

@@ -10,6 +10,7 @@
 #include "UnitConversions.h"
 
 #include <math.h>
+#include <numbers>
 
 namespace sisprod::steady {
 
@@ -3217,7 +3218,7 @@ double steadyPressureAtLastCell(const SteadyStateState &state) {
 
     double dx = 0.5 * state.cells[state.lastCell].dx;
     double diameter = state.cells[state.lastCell].duto.a;
-    double area = 0.25 * M_PI * diameter * diameter;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
     double perimeter = state.cells[state.lastCell].duto.peri;
     double alfmed = state.cells[state.lastCell].alf;
     double betmed = state.cells[state.lastCell].bet;
@@ -3252,7 +3253,7 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
     if (state.input.tipoModeloDrift == 1) {
         double dx = 0.5 * state.cells[i].dxL;
         double diameter = state.cells[i].dutoL.a;
-        double area = 0.25 * M_PI * diameter * diameter;
+        double area = 0.25 * std::numbers::pi * diameter * diameter;
         double perimeter = state.cells[i].dutoL.peri;
         if (rungeKuttaStage == 0) {
             double alfmed = state.cells[i - 1].alf;
@@ -3371,7 +3372,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
 
     dx = 0.5 * state.cells[i].dx;
     diameter = state.cells[i].duto.a;
-    area = 0.25 * M_PI * diameter * diameter;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
     perimeter = state.cells[i].duto.peri;
 
     if (state.input.tipoModeloDrift == 1) {
@@ -3619,7 +3620,7 @@ void refreshProperties(const SteadyStateState &state) {
 void refreshSteadyThermalVelocities(const SteadyStateState &state) {
     for (int i = 0; i <= state.lastCell; i++) {
         double diameter = state.cells[i].duto.a;
-        double area = 0.25 * M_PI * diameter * diameter;
+        double area = 0.25 * std::numbers::pi * diameter * diameter;
         double alfmed = state.cells[i].alf;
         double betmed = state.cells[i].bet;
         double rhol = (1. - betmed) * state.cells[i].rpC + betmed * state.cells[i].rcC;

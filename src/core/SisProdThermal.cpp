@@ -8,6 +8,7 @@
 #include "UnitConversions.h"
 
 #include <math.h>
+#include <numbers>
 
 namespace sisprod::thermal {
 
@@ -191,7 +192,7 @@ double computeMixtureEnthalpy(const ThermalState &state, int cellIndex) {
 
     double cellLength = cell.dx;
     double diameter = cell.duto.a;
-    double flowArea = 0.25 * M_PI * diameter * diameter;
+    double flowArea = 0.25 * std::numbers::pi * diameter * diameter;
     double betmed = cell.bet;
     double previousMeanVoidFraction = cell.alfini;
     double betmed0 = cell.betini;
@@ -362,7 +363,7 @@ namespace {
     const bool cellHasGas = cell.alf > globals.localtiny;
     const bool cellHasLiquid = cell.alf < 1. - globals.localtiny;
     double diameter = cell.duto.a;
-    double flowArea = 0.25 * M_PI * diameter * diameter;
+    double flowArea = 0.25 * std::numbers::pi * diameter * diameter;
     double meanVoidFraction = cell.alf;
     double betmed = cell.bet;
     double meanSuperficialGasVelocity;
@@ -527,7 +528,7 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
 
         double kineticCellLength = cell.dx;
         double cellDiameter = cell.duto.a;
-        double cellFlowArea = 0.25 * M_PI * cellDiameter * cellDiameter;
+        double cellFlowArea = 0.25 * std::numbers::pi * cellDiameter * cellDiameter;
 
         double rpcin = rightCell.rpCi;
         double rccin = rightCell.rcCi;
@@ -966,7 +967,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     double cellLength = cell.dx;
     double meanCellLength = 0.5 * (cell.dx + leftCell.dx);
     double diameter = cell.duto.a;
-    double flowArea = 0.25 * M_PI * diameter * diameter;
+    double flowArea = 0.25 * std::numbers::pi * diameter * diameter;
     double meanVoidFraction = cell.alf;
     double betmed = cell.bet;
     double meanSuperficialGasVelocity;
@@ -1047,7 +1048,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
 
         double kineticCellLength = leftCell.dx;
         double leftCellDiameter = leftCell.duto.a;
-        double leftCellFlowArea = 0.25 * M_PI * leftCellDiameter * leftCellDiameter;
+        double leftCellFlowArea = 0.25 * std::numbers::pi * leftCellDiameter * leftCellDiameter;
 
         double leftFaceVoidFraction;
         if (cell.QL > 0)
@@ -1780,7 +1781,7 @@ void updateDistributedMassTransfer(const ThermalState &state) {
                 leftMeanTemperature = leftCell.temp;
 
             double diameter = cell.duto.a;
-            double flowArea = 0.25 * M_PI * diameter * diameter;
+            double flowArea = 0.25 * std::numbers::pi * diameter * diameter;
             double meanSuperficialGasVelocity = (cell.QG) / (flowArea);
             double meanSuperficialLiquidVelocity = cell.QL / (flowArea);
             [[maybe_unused]] double mixtureSuperficialVelocity = meanSuperficialGasVelocity + meanSuperficialLiquidVelocity;
@@ -1996,7 +1997,7 @@ void selectAndApplyInteriorFlowRegime(
         else {
             if ((fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0)
                 bif[cellIndex] = 1;
-            else if ((fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * M_PI / 2. && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7)) && superficialGasVelocity > 0)
+            else if ((fabs(superficialLiquidVelocity) < globals.localtiny * 1e-5 && cell.duto.teta >= 0.95 * std::numbers::pi / 2. && ((leftCell.alfPigD <= 1.0 * leftCell.alfL) || leftCell.alfPigD < 0.7)) && superficialGasVelocity > 0)
                 bif[cellIndex] = 1;
         }
     }
@@ -2007,8 +2008,8 @@ void selectAndApplyInteriorFlowRegime(
         double ud;
         const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : leftCell.alfPigD;
         const double meanDiameter = cell.MC >= 0 ? cell.dutoL.a : cell.duto.a;
-        if (fabs(cell.QG / (0.25 * M_PI * meanDiameter * meanDiameter * meanVoidFraction)) > 100. ||
-            fabs(cell.QL / (0.25 * M_PI * meanDiameter * meanDiameter * (1. - meanVoidFraction))) > 100.) {
+        if (fabs(cell.QG / (0.25 * std::numbers::pi * meanDiameter * meanDiameter * meanVoidFraction)) > 100. ||
+            fabs(cell.QL / (0.25 * std::numbers::pi * meanDiameter * meanDiameter * (1. - meanVoidFraction))) > 100.) {
             c0 = 1.;
             ud = 0.;
         } else
@@ -3231,7 +3232,7 @@ double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
     if (cell.acsr.tipo == kAccessoryNone && leftCell.acsr.tipo == kAccessoryNone && cellIndex > 2) {
         double kineticCellLength = leftCell.dx;
         double upstreamDiameter = leftCell.duto.a;
-        double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
+        double upstreamFlowArea = 0.25 * std::numbers::pi * upstreamDiameter * upstreamDiameter;
 
         if (leftCell.alf > 1e-3)
             meanGasVelocity = meanSuperficialGasVelocity / leftCell.alf;
@@ -3299,7 +3300,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
     double meanCellLength = 0.5 * (cell.dx + leftCell.dx);
     double meanTemperatureGradientCorrection = (cell.dx * cell.dTdLCor + leftCell.dx * leftCell.dTdLCor) / (cell.dx + leftCell.dx);
     double diameter = leftCell.duto.a;
-    double flowArea = 0.25 * M_PI * diameter * diameter;
+    double flowArea = 0.25 * std::numbers::pi * diameter * diameter;
     double meanVoidFraction;
     double betmed;
     double meanPressure;
@@ -3564,7 +3565,7 @@ double computeReverseSteadyKineticTerm(
     if (cell.acsr.tipo == kAccessoryNone && rightCell.acsr.tipo == kAccessoryNone && cellIndex < state.lastCell) {
         double kineticCellLength = rightCell.dx;
         double upstreamDiameter = rightCell.duto.a;
-        double upstreamFlowArea = 0.25 * M_PI * upstreamDiameter * upstreamDiameter;
+        double upstreamFlowArea = 0.25 * std::numbers::pi * upstreamDiameter * upstreamDiameter;
 
         if (rightCell.alf > 1e-3)
             meanGasVelocity = meanSuperficialGasVelocity / rightCell.alf;
@@ -3673,7 +3674,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
     double meanCellLength = 0.5 * (cell.dx + rightCell.dx);
     double meanTemperatureGradientCorrection = (cell.dx * cell.dTdLCor + rightCell.dx * rightCell.dTdLCor) / (cell.dx + rightCell.dx);
     double diameter = rightCell.duto.a;
-    double flowArea = 0.25 * M_PI * diameter * diameter;
+    double flowArea = 0.25 * std::numbers::pi * diameter * diameter;
     double meanVoidFraction;
     double betmed;
     double meanPressure;
