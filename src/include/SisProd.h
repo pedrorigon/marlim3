@@ -1462,11 +1462,6 @@ class SProd {
     double hidroreversoInj(double hol, double vaz = 0);
     /// Estimates secondary-branch pressures in a parallel production network.
     double hidroTramoSecundario(double titulo);
-  private:
-
-    /// Marches the steady secondary branch of a parallel network.
-    double marchaTramoSecVaz(double pchute, double chutemass = -1);
-  public:
 
     /// Calculates temperature downstream from the surface choke for network coupling.
     void calcTempFim();
