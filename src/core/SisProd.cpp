@@ -198,10 +198,7 @@ void SProd::releaseOwnedStorage() {
 
     releaseVector(productionCells);
     releaseVector(transient.receb);
-
-    if (arq.tabelaDinamica == 1) {
-        tables.tabDin.clear();
-    }
+    releaseVector(tables.tabDin);
 }
 
 SProd &SProd::operator=(const SProd &sp) {
