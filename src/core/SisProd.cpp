@@ -117,7 +117,7 @@ void SProd::resetRunState() {
     networkCoupling.fonteMcRedeParalelaIni.clear();
     networkCoupling.fonteMgRedeParalelaIni.clear();
 
-    coupling3D.acertaIndAcop.clear();
+    coupling3D.coupledIndexCorrections.clear();
 }
 
 void SProd::allocateSolutionBuffers() {

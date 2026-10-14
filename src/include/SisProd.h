@@ -561,9 +561,9 @@ struct SteadySearch {
 /// corrections of the coupled sections.
 struct Coupling3D {
     /// Index corrections used by coupled thermal sections.
-    std::vector<int> acertaIndAcop;
+    std::vector<int> coupledIndexCorrections;
     /// Three-dimensional Poisson solver used by the thermal model.
-    solverP3D poisson3D;
+    solverP3D poissonSolver3D;
 };
 
 }  // namespace sisprod
