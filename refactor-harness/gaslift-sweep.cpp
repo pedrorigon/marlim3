@@ -688,11 +688,11 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // resetCells' seeding, so the decay ramp was never executed at all.
     seed();
     system.celula[system.ncel - 1].MC = -1.;
-    printValue("BuscaPresInjDesc-decay", scenario.name, system.BuscaPresInjDesc());
+    printValue("BuscaPresInjDesc-decay", scenario.name, sisprod::gaslift::searchUnloadingInjectionPressure(sisprod::SolveContext(system).gasLift()));
     printInterface("BuscaPresInjDesc-decay-state", scenario.name, system);
 
     seed();
-    printValue("BuscaPresInjDesc", scenario.name, system.BuscaPresInjDesc());
+    printValue("BuscaPresInjDesc", scenario.name, sisprod::gaslift::searchUnloadingInjectionPressure(sisprod::SolveContext(system).gasLift()));
     printInterface("BuscaPresInjDesc-state", scenario.name, system);
     printValve("BuscaPresInjDesc-valve", scenario.name, system.gasLift.chokeVGL[0]);
 
@@ -756,11 +756,11 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // swamping it, so the cap has something to do; the other three pin the
     // saturated and closed behaviour, which is coverage of its own.
     printValue("areaValvCali", scenario.name,
-               system.areaValvCali(scenario.pressure, scenario.temperature,
+               sisprod::gaslift::calibratedValveArea(scenario.pressure, scenario.temperature,
                                    scenario.pressure, scenario.pressure * 0.95,
                                    0.02, 1.0e-4, 0.05, scenario.temperature + 20.));
     printValue("areaValvCali-closed", scenario.name,
-               system.areaValvCali(scenario.pressure * 3., scenario.temperature,
+               sisprod::gaslift::calibratedValveArea(scenario.pressure * 3., scenario.temperature,
                                    scenario.pressure * 0.2, scenario.pressure * 0.1,
                                    0.05, 1.2e-4, 0.12, scenario.temperature));
 
@@ -790,21 +790,21 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    printValue("delpGasPerm", scenario.name, system.delpGasPerm(2));
+    printValue("delpGasPerm", scenario.name, sisprod::gaslift::steadyGasPressureDrop(sisprod::SolveContext(system).gasLift(), 2));
 
     resetCells(system, cells, scenario);
-    printValue("delpInjPerm", scenario.name, system.delpInjPerm(2));
+    printValue("delpInjPerm", scenario.name, sisprod::gaslift::steadyInjectionPressureDrop(sisprod::SolveContext(system).gasLift(), 2));
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    system.RenovaPresGasPerm(2);
+    sisprod::gaslift::updateSteadyGasPressure(sisprod::SolveContext(system).gasLift(), 2);
     printGas("RenovaPresGasPerm", scenario.name, system.gasLift.celulaG[2]);
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    system.RenovaTempGasPerm(2);
+    sisprod::gaslift::updateSteadyGasTemperature(sisprod::SolveContext(system).gasLift(), 2);
     printGas("RenovaTempGasPerm", scenario.name, system.gasLift.celulaG[2]);
 }
 

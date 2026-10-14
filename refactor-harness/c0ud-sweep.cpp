@@ -56,6 +56,7 @@
  */
 #include "Leitura.h"
 #include "SisProd.h"
+#include "SisProdSolveContext.h"
 #include "estruturas.h"
 #include "variaveisGlobais1D.h"
 
@@ -532,19 +533,19 @@ int main(int argc, char **argv) {
             double c0, ud;
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            sp.CalcC0Ud(ind, c0, ud);        record("CalcC0Ud", s, ind, c0, ud, cells);
+            driftflux::coefficient::instantaneous(sisprod::SolveContext(sp).closure(), ind, c0, ud);        record("CalcC0Ud", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            sp.CalcC0UdBuf(ind, c0, ud);     record("CalcC0UdBuf", s, ind, c0, ud, cells);
+            driftflux::coefficient::buffered(sisprod::SolveContext(sp).closure(), ind, c0, ud);     record("CalcC0UdBuf", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            sp.CalcC0UdIni(ind, c0, ud);     record("CalcC0UdIni", s, ind, c0, ud, cells);
+            driftflux::coefficient::initialization(sisprod::SolveContext(sp).closure(), ind, c0, ud);     record("CalcC0UdIni", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            sp.CalcC0UdIniBuf(ind, c0, ud);  record("CalcC0UdIniBuf", s, ind, c0, ud, cells);
+            driftflux::coefficient::bufferedInitialization(sisprod::SolveContext(sp).closure(), ind, c0, ud);  record("CalcC0UdIniBuf", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            sp.CalcC0UdPerm(ind, c0, ud);    record("CalcC0UdPerm", s, ind, c0, ud, cells);
+            driftflux::coefficient::steadyState(sisprod::SolveContext(sp).closure(), ind, c0, ud);    record("CalcC0UdPerm", s, ind, c0, ud, cells);
         }
     }
     return 0;

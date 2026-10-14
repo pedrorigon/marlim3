@@ -414,7 +414,7 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
                  const char *caseName, int cellIndex, int RK, PermMode mode) {
     resetCells(system, cells, scenario);
     configurePermCase(system, cells, scenario, cellIndex, mode);
-    system.RenovaTempPerm(cellIndex, RK);
+    sisprod::thermal::advanceSteadyTemperature(sisprod::SolveContext(system).thermal(), cellIndex, RK);
     const CelG *forwardGas = system.arq.lingas == 1
                                  ? &system.gasLift.celulaG[system.gasLift.ColunaAnulaIni +
                                                   system.gasLift.AnulaColunaIni -
@@ -425,7 +425,7 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
 
     resetCells(system, cells, scenario);
     configurePermCase(system, cells, scenario, cellIndex, mode);
-    system.RenovaTempPermRev(cellIndex, RK);
+    sisprod::thermal::advanceReverseSteadyTemperature(sisprod::SolveContext(system).thermal(), cellIndex, RK);
     const CelG *reverseGas = system.arq.lingas == 1
                                  ? &system.gasLift.celulaG[system.gasLift.ColunaAnulaIni +
                                                   system.gasLift.AnulaColunaIni -
@@ -520,7 +520,7 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
     system.gasLift.celulaG[gasIndex].razInter = currentRatio;
     system.gasLift.celulaG[gasIndex - 1].razInter = previousRatio;
 
-    system.tempDescarga(gasIndex);
+    sisprod::thermal::computeDischargeTemperature(sisprod::SolveContext(system).thermal(), gasIndex);
 
     const CelG &source = system.gasLift.celulaG[gasIndex - 1];
     const Cel &production = cells[gasIndex - 1];
@@ -542,7 +542,7 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     printf("%-20s %-15s value=%a\n", "calcHmix", scenario.name, mixtureEnthalpy);
 
     resetCells(system, cells, scenario);
-    system.atualizaPeriTempProd(2);
+    sisprod::thermal::updateProductionTemperaturePeriphery(sisprod::SolveContext(system).thermal(), 2);
     printf("%-20s %-15s prevR=%a nextL=%a currentIni=%a\n",
            "atualizaPeriTempProd", scenario.name,
            cells[1].tempR, cells[3].tempL, cells[2].tempini);
