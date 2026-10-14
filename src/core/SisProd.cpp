@@ -24,8 +24,6 @@
 #include <chrono>
 #include <math.h>
 
-using sisprod::kGravity;
-
 void SProd::resolveDriftSelectors() {
     driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
 }
