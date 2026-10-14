@@ -121,8 +121,6 @@ struct PropertyTables {
     GridTable liviaSolutionGasRatioTable;
     /// Dynamic fluid-property tables.
     std::vector<tabelaDinamica> dynamicTables;
-    /// Number of dynamic property tables.
-    int dynamicTableCount = 0;
 };
 
 /// The gas-lift line: its cells, the injection choke, the valves and the cells they join, its
@@ -208,17 +206,11 @@ struct TransientRun {
     int masterValveState = 0;
     /// Counter used while changing the Master1 state.
     int masterValveCounter = 0;
-    /// Number of pigs scheduled for launch.
-    int scheduledPigCount = 0;
     /// Cell indices where pigs are received.
     std::vector<int> pigReceiverCells;
     /// Global pressure-velocity coupling matrix for the multiphase production line, sized for one cell until the
     /// system is sized for its input.
     BandMtx<double> systemMatrix{kProductionUnknownsPerCell, kProductionLeftBandwidth, kProductionRightBandwidth};
-    /// Number of scheduled Master1 opening events.
-    int masterValveOpenCount = 0;
-    /// Number of scheduled Master1 closing events.
-    int masterValveCloseCount = 0;
     /// Times at which Master1 closes.
     std::vector<double> masterValveCloseTimes;
     /// Times at which Master1 opens.
@@ -269,8 +261,6 @@ struct TransientRun {
     int compositionalRefreshCounter = 0;
     /// Production cells handled by the two-dimensional Poisson model.
     std::vector<int> poisson2DCells;
-    /// Number of cells handled by the two-dimensional Poisson model.
-    int poisson2DCellCount = 0;
     /// Signals that the time step must be adjusted.
     int adjustTimeStep = 0;
     /// Requests rollback and time-step reevaluation when at least one control volume produces a holdup or volume

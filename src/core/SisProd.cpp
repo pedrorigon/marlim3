@@ -73,7 +73,6 @@ void SProd::resetRunState() {
     transient.masterValveRatiosActive.fill(0.);
     transient.masterValveCriticalRatios.fill(kDefaultMasterCriticalRatio);
     transient.compositionalRefreshCounter = 0;
-    transient.poisson2DCellCount = 0;
     transient.adjustTimeStep = 0;
     transient.pressureSamples.clear();
     transient.fluxSamples.clear();

@@ -82,7 +82,7 @@ struct ThermalState {
     const double &timeStep;
     const double &minimumCycleTimeStep;
     const std::vector<int> &poisson2DCellIndices;
-    const int &poisson2DCellCount;
+    int poisson2DCellCount;
     const int &steadyIteration;
     const double &slowHeatTransferThreshold;
     const int &annulusTubingStart;

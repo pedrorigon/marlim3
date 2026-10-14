@@ -50,7 +50,7 @@ struct CompositionState {
     int &surfaceChokeMassFlag;            // masChkSup
     int &movingPigCount;                  // indpigP
     int &previousMovingPigCount;          // indpigPini
-    int &scheduledPigCount;               // npig
+    int scheduledPigCount;                // receb.size()
     std::vector<int> &pigReceiverCells;   // receb
 
     CompositionUpdaters updaters;

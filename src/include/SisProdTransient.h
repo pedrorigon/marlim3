@@ -172,16 +172,16 @@ struct TransientStepState {
     BandMtx<double> &productionMatrix;
     /// SProd::transient.smallestCellLength -- read only.
     const double &smallestCellLength;
-    /// SProd::transient.masterValveOpenCount -- read only.
-    const int &masterOpenCount;
+    /// The number of scheduled Master1 opening events, SProd::transient.masterValveOpenTimes.size().
+    int masterOpenCount;
     /// SProd::ncel -- read only.
     const int &lastCell;
     /// SProd::gasLift.cellCount -- read only.
     const int &gasCellCount;
     /// SProd::trends.productionWallProfileCells -- read only.
     std::vector<int> &productionCrossSectionCount;
-    /// SProd::transient.masterValveCloseCount -- read only.
-    const int &masterCloseCount;
+    /// The number of scheduled Master1 closing events, SProd::transient.masterValveCloseTimes.size().
+    int masterCloseCount;
     /// SProd::noextremo -- read only.
     const int &endNode;
     /// SProd::gasLift.separatorPressure -- read only.

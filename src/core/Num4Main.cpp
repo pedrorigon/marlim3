@@ -4845,7 +4845,7 @@ void preparaTabDin(SProd &sistem1) {
             sistem1.celula[i].acsr.fontechk.fluidoPamb.atualizaPropCompStandard();
         }
     }
-    for (int i = 0; i < sistem1.tables.dynamicTableCount; i++) {
+    for (int i = 0; i < static_cast<int>(sistem1.tables.dynamicTables.size()); i++) {
         int i0 = sistem1.tables.dynamicTables[i].celIni;
         int i1 = sistem1.tables.dynamicTables[i].celFim;
         sistem1.tables.dynamicTables[i].pmax = sistem1.celula[i0].pres;
@@ -4893,7 +4893,7 @@ void preparaTabDin(SProd &sistem1) {
         atualizaCel(sistem1, i);
     }
 
-    for (int j = 1; j < sistem1.tables.dynamicTableCount; j++) {
+    for (int j = 1; j < static_cast<int>(sistem1.tables.dynamicTables.size()); j++) {
         int i0 = sistem1.tables.dynamicTables[j].celIni;
         int i1 = sistem1.tables.dynamicTables[j].celFim;
         atualizaComp(sistem1, i0);
@@ -4909,7 +4909,7 @@ void preparaTabDin(SProd &sistem1) {
             atualizaCel(sistem1, i);
         }
     }
-    for (int i = 0; i < sistem1.tables.dynamicTableCount; i++) {
+    for (int i = 0; i < static_cast<int>(sistem1.tables.dynamicTables.size()); i++) {
         sistem1.tables.dynamicTables[i].rholF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
         sistem1.tables.dynamicTables[i].rhogF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
         sistem1.tables.dynamicTables[i].DrholDpF = new double *[sistem1.tables.dynamicTables[i].npontosP + 1];
@@ -5089,7 +5089,7 @@ void preparaTabDin(SProd &sistem1) {
         }
     }
 
-    for (int i = 0; i < sistem1.tables.dynamicTableCount; i++) {
+    for (int i = 0; i < static_cast<int>(sistem1.tables.dynamicTables.size()); i++) {
         int i0 = sistem1.tables.dynamicTables[i].celIni;
         int i1 = sistem1.tables.dynamicTables[i].celFim;
         for (int j = i0; j <= i1; j++) {
@@ -9130,7 +9130,6 @@ void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
                                     if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
                                         malha[i].tables.dynamicTables[0].celFim = malha[i].tables.dynamicTables[1].celFim;
                                         malha[i].tables.dynamicTables.erase(malha[i].tables.dynamicTables.begin() + 1);
-                                        malha[i].tables.dynamicTableCount--;
                                     }
                                 }
                             } else if (malha[i].celula[0].acsr.tipo == 2 && fabs(malha[i].celula[0].acsr.injl.QLiq) > 1e-15) {
@@ -9146,7 +9145,6 @@ void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
                                     if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
                                         malha[i].tables.dynamicTables[0].celFim = malha[i].tables.dynamicTables[1].celFim;
                                         malha[i].tables.dynamicTables.erase(malha[i].tables.dynamicTables.begin() + 1);
-                                        malha[i].tables.dynamicTableCount--;
                                     }
                                 }
                             } else if (malha[i].celula[0].acsr.tipo == 10 &&
@@ -9167,7 +9165,6 @@ void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
                                     if (malha[i].arq.flashCompleto == 2 && malha[i].arq.tabelaDinamica == 1) {
                                         malha[i].tables.dynamicTables[0].celFim = malha[i].tables.dynamicTables[1].celFim;
                                         malha[i].tables.dynamicTables.erase(malha[i].tables.dynamicTables.begin() + 1);
-                                        malha[i].tables.dynamicTableCount--;
                                     }
                                 }
                             } else if (malha[i].celula[0].acsr.tipo == 3) {

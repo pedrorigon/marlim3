@@ -503,10 +503,9 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
     chokeSup = choke(1., 1.);
     gasLift.injectionChoke = ChokeGas();
     arq.gerachokesup(chokeSup);
-    transient.scheduledPigCount = arq.npig;
-    if (transient.scheduledPigCount > 0) {
-        transient.pigReceiverCells = vector<int>(transient.scheduledPigCount);
-        for (int i = 0; i < transient.scheduledPigCount; i++)
+    if (arq.npig > 0) {
+        transient.pigReceiverCells = vector<int>(arq.npig);
+        for (int i = 0; i < arq.npig; i++)
             transient.pigReceiverCells[i] = arq.pig[i].receb;
     }
 }
@@ -643,7 +642,6 @@ void SProd::validateSetupAndApplyInitialState() {
 /// that side.
 void SProd::buildDynamicTablesAndInclinations() {
     if (arq.tabelaDinamica == 1) {
-        tables.dynamicTableCount = 1;
         tables.dynamicTables.push_back(tabelaDinamica());
         for (int i = 1; i < ncel; i++) {
             if ((celula[i].acsr.tipo == kAccessoryGasInjection) ||
@@ -652,12 +650,11 @@ void SProd::buildDynamicTablesAndInclinations() {
                 (celula[i].acsr.tipo == kAccessoryMultipleSource) || celula[i].acsr.tipo == kAccessoryLeak || celula[i].acsr.tipo == kAccessoryRadialPorous || celula[i].acsr.tipo == kAccessoryPorous2D) {
                 tabelaDinamica temp;
                 temp.celIni = i + 1;
-                tables.dynamicTables[tables.dynamicTableCount - 1].celFim = i;
+                tables.dynamicTables.back().celFim = i;
                 tables.dynamicTables.push_back(std::move(temp));
-                tables.dynamicTableCount++;
             }
         }
-        tables.dynamicTables[tables.dynamicTableCount - 1].celFim = ncel;
+        tables.dynamicTables.back().celFim = ncel;
     }
 
     celula[0].angEsq = celula[0].duto.teta;
@@ -837,17 +834,14 @@ void SProd::allocateEventProfileAndTrendArrays() {
     for (int i = 0; i < ncel; i++) {
         if (celula[i].calor.difus2D == 1) {
             transient.poisson2DCells.push_back(i);
-            transient.poisson2DCellCount++;
         }
     }
 
-    transient.masterValveOpenCount = arq.eventoabre;
-    transient.masterValveCloseCount = arq.eventofecha;
-    transient.masterValveOpenTimes = vector<double>(transient.masterValveOpenCount);
-    transient.masterValveCloseTimes = vector<double>(transient.masterValveCloseCount);
-    for (int i = 0; i < transient.masterValveOpenCount; i++)
+    transient.masterValveOpenTimes = vector<double>(arq.eventoabre);
+    transient.masterValveCloseTimes = vector<double>(arq.eventofecha);
+    for (int i = 0; i < arq.eventoabre; i++)
         transient.masterValveOpenTimes[i] = arq.Tevento[i];
-    for (int i = 0; i < transient.masterValveCloseCount; i++)
+    for (int i = 0; i < arq.eventofecha; i++)
         transient.masterValveCloseTimes[i] = arq.Teventof[i];
 
     int ntempGas = 0;
