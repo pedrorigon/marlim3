@@ -35,7 +35,8 @@ def engine():
 
 
 def run_ap(engine, directory, mode, parallel=False, rates=(1000, 2000, 3000),
-           pressures=(10, 20), table=True, choke=None):
+           pressures=(10, 20), table=True, choke=None, threads=2,
+           inlet_condition=0, series_length=1):
     directory.mkdir(parents=True, exist_ok=True)
     model = json.loads((ROOT / "demos/pt-br/atritoTuboLiso.mr3").read_text(encoding="utf-8"))
     model["configuracaoInicial"].update({
@@ -44,6 +45,21 @@ def run_ap(engine, directory, mode, parallel=False, rates=(1000, 2000, 3000),
         "arquivoAP": "leituraAP.json",
     })
     model["fonteLiquido"][0]["temperatura"] = [80.0]
+    if inlet_condition:
+        boundary = {
+            "ativo": True,
+            "tempo": [10 * index for index in range(series_length)],
+            "pressao": [30 + index for index in range(series_length)],
+            "temperatura": [80 - index for index in range(series_length)],
+            "razaoBeta": [0.0] * series_length,
+        }
+        if inlet_condition == 1:
+            boundary["titulo"] = [0.0] * series_length
+            boundary["indFluido"] = 0
+            model["configuracaoInicial"]["condicaoPressao"] = boundary
+        else:
+            boundary["VazMass"] = [20 + index for index in range(series_length)]
+            model["configuracaoInicial"]["condicaoVazPres"] = boundary
     if choke is not None:
         model["chokeSup"] = {"tempo": [0], "abertura": [choke], "coeficienteDescarga": 0.84}
         model["tendP"] = [{
@@ -53,7 +69,7 @@ def run_ap(engine, directory, mode, parallel=False, rates=(1000, 2000, 3000),
     analysis = {
         "tipoAP": int(table),
         "vfp": mode,
-        "nthread": 2,
+        "nthread": threads,
         "imprimePerfil": choke is not None and not table,
         "psep": {"pressao": list(pressures)},
         "RGO-fluido0": {"RGO": [0]},
@@ -66,7 +82,13 @@ def run_ap(engine, directory, mode, parallel=False, rates=(1000, 2000, 3000),
         [str(engine), "--input", "model.mr3", "--dir", str(directory)], cwd=directory,
         capture_output=True, text=True, errors="replace", timeout=120,
     )
-    assert process.returncode == 0, process.stdout[-4000:] + process.stderr[-4000:]
+    (directory / "stdout.txt").write_text(process.stdout, encoding="utf-8")
+    (directory / "stderr.txt").write_text(process.stderr, encoding="utf-8")
+    log = directory / "simulacao.log"
+    details = process.stdout[-4000:] + process.stderr[-4000:]
+    if log.is_file():
+        details += "\n" + log.read_text(encoding="utf-8", errors="replace")[-4000:]
+    assert process.returncode == 0, details
     return directory
 
 
@@ -167,3 +189,51 @@ def test_failed_vfp_case_preserves_position(engine, tmp_path, mode):
     assert pressures[0] != -1e10
     assert temperatures[0] != -1e10
     assert pressures[1] == temperatures[1] == -1e10
+
+
+@pytest.mark.parametrize("mode", range(4))
+@pytest.mark.parametrize("threads", [1, 4])
+def test_parallel_vfp_preserves_serial_results_for_thread_counts(
+    engine, tmp_path, mode, threads,
+):
+    serial = run_ap(engine, tmp_path / "serial", mode)
+    parallel = run_ap(
+        engine, tmp_path / "parallel", mode, parallel=True, threads=threads,
+    )
+    rows = 2 if mode in (1, 3) else 3
+    for filename in TABLE_FILES[mode]:
+        for serial_row, parallel_row in zip(
+            table_rows(serial / filename, rows),
+            table_rows(parallel / filename, rows),
+            strict=True,
+        ):
+            assert serial_row == pytest.approx(parallel_row, rel=1e-4)
+
+
+@pytest.mark.parametrize("condition", [1, 2], ids=["pressure", "flow-pressure"])
+@pytest.mark.parametrize("series_length", [1, 3])
+@pytest.mark.parametrize("threads", [1, 2, 4])
+def test_parallel_inlet_boundary_series_preserves_serial_results(
+    engine, tmp_path, condition, series_length, threads,
+):
+    options = {
+        "mode": 3,
+        "inlet_condition": condition,
+        "series_length": series_length,
+    }
+    serial = run_ap(engine, tmp_path / "serial", **options)
+    parallel = run_ap(
+        engine, tmp_path / "parallel", parallel=True, threads=threads, **options,
+    )
+    for filename in TABLE_FILES[3]:
+        serial_rows = table_rows(serial / filename, 2)
+        parallel_rows = table_rows(parallel / filename, 2)
+        for serial_row, parallel_row in zip(serial_rows, parallel_rows, strict=True):
+            assert all(math.isfinite(value) for value in parallel_row)
+            assert all(20 < value < 100 for value in parallel_row[-3:])
+            assert parallel_row == pytest.approx(serial_row, rel=1e-4)
+    assert all(
+        value == 30
+        for row in table_rows(parallel / TABLE_FILES[3][0], 2)
+        for value in row[-3:]
+    )

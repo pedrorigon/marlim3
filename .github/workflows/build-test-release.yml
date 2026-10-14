@@ -149,8 +149,9 @@ jobs:
               export PATH="/opt/python/cp312-cp312/bin:${PATH}"
               cd /workspace
               rm -rf build
-              cmake --preset gcc-release
-              cmake --build --preset gcc-release -j$(nproc)
+              cmake --preset gcc-release -DMARLIM_BUILD_TESTS=ON
+              cmake --build --preset gcc-release --target Marlim3 test_inlet_boundary_initialization -j$(nproc)
+              ctest --test-dir build --output-on-failure -R "^inlet_boundary_initialization$"
             '
           sudo chown -R "$(id -u):$(id -g)" build src/include/versao.h
 
@@ -211,8 +212,9 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf build
-          cmake --preset mingw-release
-          cmake --build --preset mingw-release -j$(nproc)
+          cmake --preset mingw-release -DMARLIM_BUILD_TESTS=ON
+          cmake --build --preset mingw-release --target Marlim3 test_inlet_boundary_initialization -j$(nproc)
+          ctest --test-dir build --output-on-failure -R "^inlet_boundary_initialization$"
 
       - name: Inspect executable
         shell: msys2 {0}
@@ -264,8 +266,9 @@ jobs:
           set -euo pipefail
           test "$(uname -m)" = "arm64"
           rm -rf build
-          cmake --preset gcc-release
-          cmake --build --preset gcc-release -j"$(sysctl -n hw.ncpu)"
+          cmake --preset gcc-release -DMARLIM_BUILD_TESTS=ON
+          cmake --build --preset gcc-release --target Marlim3 test_inlet_boundary_initialization -j"$(sysctl -n hw.ncpu)"
+          ctest --test-dir build --output-on-failure -R "^inlet_boundary_initialization$"
 
       - name: Inspect executable
         run: |
@@ -363,7 +366,26 @@ jobs:
           [ "$EXPECTED" = "$ACTUAL" ]
 
       - name: Run tests
-        run: uv run pytest tests/ -v --tb=short
+        env:
+          MARLIM_TEST_ARTIFACTS: ${{ runner.temp }}/pytest
+        run: uv run pytest tests/ -v --tb=short --basetemp "$MARLIM_TEST_ARTIFACTS"
+
+      - name: Upload simulation failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: simulation-diagnostics-linux
+          path: |
+            ${{ runner.temp }}/pytest/**/*.log
+            ${{ runner.temp }}/pytest/**/*.imx
+            ${{ runner.temp }}/pytest/**/*.ecp
+            ${{ runner.temp }}/pytest/**/*.dat
+            ${{ runner.temp }}/pytest/**/model.mr3
+            ${{ runner.temp }}/pytest/**/leituraAP.json
+            ${{ runner.temp }}/pytest/**/stdout.txt
+            ${{ runner.temp }}/pytest/**/stderr.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
   test-windows:
     name: Test – Windows x64
@@ -433,7 +455,26 @@ jobs:
 
       - name: Run tests
         shell: pwsh
-        run: uv run pytest tests/ -v --tb=short
+        env:
+          MARLIM_TEST_ARTIFACTS: ${{ runner.temp }}/pytest
+        run: uv run pytest tests/ -v --tb=short --basetemp "$env:MARLIM_TEST_ARTIFACTS"
+
+      - name: Upload simulation failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: simulation-diagnostics-windows
+          path: |
+            ${{ runner.temp }}/pytest/**/*.log
+            ${{ runner.temp }}/pytest/**/*.imx
+            ${{ runner.temp }}/pytest/**/*.ecp
+            ${{ runner.temp }}/pytest/**/*.dat
+            ${{ runner.temp }}/pytest/**/model.mr3
+            ${{ runner.temp }}/pytest/**/leituraAP.json
+            ${{ runner.temp }}/pytest/**/stdout.txt
+            ${{ runner.temp }}/pytest/**/stderr.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
   test-macos:
     name: Test – macOS ARM64
@@ -497,7 +538,26 @@ jobs:
           [ "$EXPECTED" = "$ACTUAL" ]
 
       - name: Run tests
-        run: uv run pytest tests/ -v --tb=short
+        env:
+          MARLIM_TEST_ARTIFACTS: ${{ runner.temp }}/pytest
+        run: uv run pytest tests/ -v --tb=short --basetemp "$MARLIM_TEST_ARTIFACTS"
+
+      - name: Upload simulation failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: simulation-diagnostics-macos
+          path: |
+            ${{ runner.temp }}/pytest/**/*.log
+            ${{ runner.temp }}/pytest/**/*.imx
+            ${{ runner.temp }}/pytest/**/*.ecp
+            ${{ runner.temp }}/pytest/**/*.dat
+            ${{ runner.temp }}/pytest/**/model.mr3
+            ${{ runner.temp }}/pytest/**/leituraAP.json
+            ${{ runner.temp }}/pytest/**/stdout.txt
+            ${{ runner.temp }}/pytest/**/stderr.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
   desktop-linux:
     name: Desktop App – Linux x64
