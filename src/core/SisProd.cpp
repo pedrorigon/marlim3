@@ -194,9 +194,9 @@ SProd &SProd::operator=(const SProd &sp) {
     releaseOwnedStorage();
 
     arq = sp.arq;
+    vg1dSP = sp.vg1dSP;
     resolveDriftSelectors();
     allocateSolutionBuffers();
-    vg1dSP = sp.vg1dSP;
     resetRunState();
     applyCarriedState(sp.carriedState());
     networkCoupling.redeParalelaCCsecundario = sp.networkCoupling.redeParalelaCCsecundario;
