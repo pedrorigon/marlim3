@@ -34,20 +34,16 @@ SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidatio
                                                 kProductionRightBandwidth),
                 .rightHandSide = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)},
       bloq(blocking), vg1dSP(globals) {
-    resolveDriftSelectors();
     resetRunState();
     if (dynamicTable >= 0)
         arq.tabelaDinamica = dynamicTable;
     montasistema(extraSourceLengths, extraSourceCells, extraSourceCount);
 }
 
-SProd::SProd() {
-    resolveDriftSelectors();
-}
+SProd::SProd() {}
 
 SProd::SProd(Ler &parsedInput, const CarriedState &carried) : vg1dSP(parsedInput.vg1dSP) {
     arq.copiaSemJson(parsedInput);
-    resolveDriftSelectors();
     allocateSolutionBuffers();
     resetRunState();
     applyCarriedState(carried);
@@ -60,7 +56,6 @@ SProd &SProd::operator=(const SProd &other) {
 
     arq = other.arq;
     vg1dSP = other.vg1dSP;
-    resolveDriftSelectors();
     allocateSolutionBuffers();
     resetRunState();
     applyCarriedState(other.carriedState());
@@ -499,8 +494,4 @@ void SProd::solveHydrateEnvelopes() {
         FA_Hidrato_Servico solverHidratoG(*this);
         solverHidratoG.solverHidratoG();
     }
-}
-
-void SProd::resolveDriftSelectors() {
-    driftSelectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat};
 }

@@ -238,9 +238,9 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.arq.escorregaPerm = 1;
     system.arq.escorregamentoCelulaContorno = 1;
     system.arq.mapaArranjo = 0;
-    system.driftSelectors.dispersed = 1;
-    system.driftSelectors.annularChurn = 1;
-    system.driftSelectors.stratified = 1;
+    system.arq.CorreDisper = 1;
+    system.arq.CorreAnular = 1;
+    system.arq.CorreEstrat = 1;
     system.tGSup = scenario.temperature - 5.;
     system.presE = scenario.pressure;
     system.tempE = scenario.temperature;

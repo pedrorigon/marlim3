@@ -780,13 +780,6 @@ class SProd {
     /// Parsed user input and simulation configuration.
     Ler arq;
 
-  private:
-    /// Drift-flux correlation chosen for each flow regime.
-    ///
-    /// Resolved from arq once, when the object is built, so the per cell path never reads configuration.
-    driftflux::correlations::RegimeSelectors driftSelectors;
-
-  public:
     /// Buffer used to write gas-line profiles, one row until the system is sized for its input.
     FullMtx<double> flutG{1, sisprod::kGasLineProfileFixedColumns};
     /// Buffer used to write production-line profiles, one row until the system is sized for its input.
@@ -962,11 +955,6 @@ class SProd {
 
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
-
-    /// Caches the drift-flux correlation of each regime from arq.
-    ///
-    /// Called wherever arq is built or replaced, so driftSelectors never goes stale.
-    void resolveDriftSelectors();
 };
 
 #endif /* SISPROD_H_ */

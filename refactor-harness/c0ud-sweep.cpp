@@ -120,7 +120,7 @@ struct Scenario {
     double vtemper;     // sign selects the tmed branch
     int arranjo;        // stored flow pattern: 0, 1, -1 or -2
     int transic;        // transition counter: 0, 1, 19 or 20
-    int selDisp, selAnn, selStrat;   // driftSelectors
+    int selDisp, selAnn, selStrat;   // arq.CorreDisper, CorreAnular, CorreEstrat
     int acelera;        // arq.AceleraConvergPerm
     int iterperm;       // SProd::steadyIteration
     double presRatio;   // scales pressures, moving rgm relative to rlm
@@ -475,9 +475,9 @@ void resetCells(SProd &sp, Cel *cells, const Scenario &s, int ind) {
     sp.betaE = 0.13;
     sp.presE = 61. * s.presRatio;
     sp.tempE = 53.;
-    sp.driftSelectors.dispersed = s.selDisp;
-    sp.driftSelectors.annularChurn = s.selAnn;
-    sp.driftSelectors.stratified = s.selStrat;
+    sp.arq.CorreDisper = s.selDisp;
+    sp.arq.CorreAnular = s.selAnn;
+    sp.arq.CorreEstrat = s.selStrat;
     sp.arq.escorregaTran = s.slip;
     sp.arq.escorregaPerm = s.slipPerm;
     sp.arq.AceleraConvergPerm = s.acelera;

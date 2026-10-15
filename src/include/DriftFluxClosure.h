@@ -59,8 +59,8 @@ void FrancaLahey(double liquidDensity, double gasDensity, double surfaceTension,
 ///   4  BhagwatGhajarMod  accepted by all three
 ///   5  angle blend       accepted by all three
 
-/// The correlation each flow regime selects, read from configuration once per
-/// run rather than on every cell.
+/// The correlation each flow regime selects, read from the input once for each
+/// closure state rather than on every cell.
 ///
 /// The three fields are constant for a whole simulation: the engine parses them
 /// from the input file and never writes them again. Holding them together says
@@ -133,9 +133,9 @@ struct ClosureState {
     /// Input deck -- SProd::arq. Read for mapaArranjo, escorregaTran,
     /// escorregaPerm and AceleraConvergPerm.
     const Ler &input;
-    /// Correlation choice per regime, resolved once per run -- see
-    /// RegimeSelectors above and SProd::driftSelectors.
-    const correlations::RegimeSelectors &selectors;
+    /// Correlation choice per regime -- SProd::arq's CorreDisper, CorreAnular
+    /// and CorreEstrat. Held by value: the input never changes them once read.
+    correlations::RegimeSelectors selectors;
 
     /// Gas temperature at the surface -- SProd::tGSup.
     const double &gasSurfaceTemperature;

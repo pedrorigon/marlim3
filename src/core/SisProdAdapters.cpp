@@ -481,7 +481,7 @@ driftflux::coefficient::ClosureState closureStateOf(SProd &system) {
         .lastCell = system.ncel,
         .globals = system.vg1dSP,
         .input = system.arq,
-        .selectors = system.driftSelectors,
+        .selectors = {system.arq.CorreDisper, system.arq.CorreAnular, system.arq.CorreEstrat},
         .gasSurfaceTemperature = system.tGSup,
         .inletVoidFraction = system.alfE,
         .inletComplementaryFraction = system.betaE,

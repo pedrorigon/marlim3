@@ -49,7 +49,8 @@ CalcC0UdIni -> initialization
 CalcC0UdIniBuf -> bufferedInitialization
 CalcC0UdPerm -> steadyState
 
-# resolveDriftSelectors() is called from the three places arq is built.
+# The constructors, the assignment and the parsed-input copy, rebuilt on the
+# construction helpers of SProd.
 SProd
 operator=
 copiaSemJson
