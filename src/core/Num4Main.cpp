@@ -8617,7 +8617,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
     varGlob1D vg1dTramo[analisePara.nVariaveis];
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) {
         string nomeArquivoLogAP = nomeArquivoLog;
-        sistem2[iSeq] = SProd(sistem1.arq.impfile, nomeArquivoLogAP, validacaoJson, sistem1.arq.tipoSimulacao, &vg1dTramo[iSeq]);
+        sistem2[iSeq].loadSection(SProd(sistem1.arq.impfile, nomeArquivoLogAP, validacaoJson, sistem1.arq.tipoSimulacao, &vg1dTramo[iSeq]));
     }
 #pragma omp parallel for num_threads(analisePara.nthrdAP)
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) { // laco onde e calculado o permanente de cada combinacao
@@ -9295,7 +9295,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
             else
                 temporario.noinicial = 1; // caso o tramo esteja no inicio da rede, tomando como referencia o sentido
             // de escoamento assumido para a rede
-            malha[i] = temporario; // carregando o tramo temporario no tramo i da malha
+            malha[i].loadSection(temporario); // carregando o tramo temporario no tramo i da malha
             malha[i].indTramo = i;
             if (malha[i].arq.tabelaDinamica == 1) {
                 // caso a opcao de tabela dinamica esteja ligada, como, para o modelo composicional, sempre, primeiramente, se faz um
@@ -9574,7 +9574,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                          tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD);
         temporario.noextremo = 1;
         temporario.noinicial = 1;
-        malha[i] = temporario;
+        malha[i].loadSection(temporario);
         malha[i].indTramo = i;
 
         if (malha[i].arq.tabelaDinamica == 1) {
@@ -10051,7 +10051,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
             else
                 temporario.noinicial = 1; // caso o tramo esteja no inicio da rede, tomando como referencia o sentido
             // de escoamento assumido para a rede
-            malha[i] = temporario; // carregando o tramo temporario no tramo i da malha
+            malha[i].loadSection(temporario); // carregando o tramo temporario no tramo i da malha
             malha[i].indTramo = i;
             if (malha[i].arq.tabelaDinamica == 1) {
                 // caso a opcao de tabela dinamica esteja ligada, como, para o modelo composicional, sempre, primeiramente, se faz um
@@ -10566,7 +10566,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                          tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD);
         temporario.noextremo = 1;
         temporario.noinicial = 1;
-        malha[i] = temporario;
+        malha[i].loadSection(temporario);
         malha[i].indTramo = i;
 
         if (malha[i].arq.tabelaDinamica == 1) {
@@ -11414,7 +11414,7 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
     for (int i = 0; i < narq; i++) {
         SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
                          tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
-        malha[i] = temporario;
+        malha[i].loadSection(temporario);
         malha[i].indTramo = i;
     }
     for (int i = 0; i < nfontes; i++) {
@@ -11779,7 +11779,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
             temporario.noextremo = 1;
             temporario.noinicial = 1;
             temporario.derivaAnel = 1;
-            malha[i] = temporario;
+            malha[i].loadSection(temporario);
             malha[i].indTramo = i;
             if (dreno.size() == 0) {
                 fonteposic temp;
@@ -11823,7 +11823,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
     temporario.noextremo = 1;
     temporario.noinicial = 1;
     temporario.derivaAnel = 0;
-    malha[indAnel] = temporario;
+    malha[indAnel].loadSection(temporario);
     for (int i = 0; i < dreno.size(); i++) {
         int iposp = posicdreno[i];
         InjGas injgasMRT(0, 0, malha[indAnel].arq.flug);
@@ -12385,7 +12385,7 @@ void RedeInj(span<SProd> malha, Rede &arqRede, int narq, string nomeArquivoLog, 
             temporario.noinicial = 1; // caso o tramo esteja no inicio da rede, tomando como referencia o sentido
         // de escoamento assumido para a rede
 
-        malha[i] = temporario;
+        malha[i].loadSection(temporario);
         malha[i].indTramo = i;
         if (malha[i].celula[0].acsr.tipo == 2)
             (*arqRede.vg1dSP).somavaz += malha[i].celula[0].acsr.injl.QLiq / 86400.;

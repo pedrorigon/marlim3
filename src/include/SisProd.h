@@ -81,11 +81,6 @@ struct GridTable {
         for (int i = 0; i < rowCount; i++)
             rowPointers[i] = rows[i].data();
     }
-    /// Destroys the rows and gives their memory back.
-    void release() {
-        std::vector<std::vector<double>>().swap(rows);
-        std::vector<double *>().swap(rowPointers);
-    }
     /// What the fluids are given: the row pointers, null when there is no table.
     double **data() { return rowPointers.data(); }
     double *operator[](int i) { return rowPointers[i]; }
@@ -385,15 +380,6 @@ struct TrendSet {
         countPointer = counts.data();
         bufferedCountPointer = bufferedCounts.data();
     }
-    /// Destroys the rows and the counts and gives their memory back.
-    void release() {
-        std::vector<std::vector<std::vector<double>>>().swap(values);
-        std::vector<std::vector<double *>>().swap(rows);
-        std::vector<double **>().swap(matrices);
-        std::vector<double>().swap(resetTimers);
-        std::vector<int>().swap(counts);
-        std::vector<int>().swap(bufferedCounts);
-    }
 };
 
 /// The trend and profile output a system writes: the trend matrices of every family
@@ -615,21 +601,21 @@ class SProd {
           int blocking = 0, int reversedGeometry = 0, double *extraSourceLengths = nullptr,
           int *extraSourceCells = nullptr, int extraSourceCount = 0, int steadyBranch = 1);
 
-    /// Creates an empty production-system object.
+    /// Creates an empty system, which loadSection fills.
     SProd();
 
     /// Builds a system from an already parsed input, without reading the JSON file
     /// again, with the place in the network and the reverse-flow state in carried.
     SProd(Ler &parsedInput, const CarriedState &carried);
 
-    /// Not copyable: the object owns raw arrays, which operator= rebuilds
-    /// instead of sharing.
+    /// Not copyable nor assignable: the object owns raw arrays.
     SProd(const SProd &) = delete;
+    SProd &operator=(const SProd &) = delete;
 
-    /// Rebuilds this system from other's input file, read again from disk, and takes
-    /// over other's place in the network and reverse-flow state. Not a copy: the run
-    /// state starts afresh and the system is assembled again.
-    SProd &operator=(const SProd &other);
+    /// Fills this empty system with other's section: reads other's input file again, takes over other's place in
+    /// the network, its reverse-flow state and its role in a parallel network, and assembles the system. Throws
+    /// std::logic_error when this system was already assembled.
+    void loadSection(const SProd &other);
 
     /// The state another system built from this one's input takes over.
     CarriedState carriedState() const;
@@ -883,16 +869,8 @@ class SProd {
     /// sources at extraSourceLengths, whose cell indices it records in extraSourceCells.
     void assemble(const CarriedState &carried, double *extraSourceLengths = nullptr, int *extraSourceCells = nullptr,
                   int extraSourceCount = 0);
-    /// Puts the run state back where a system built from an input starts: the trend pointers null, the boundary
-    /// conditions, the time-step statistics and the counters at their initial values, the previous-time-level
-    /// interface state equal to the current one, and the histories empty.
-    void resetRunState();
     /// Sizes the profile buffers and the pressure-velocity systems of both lines for arq's cells, all zero.
     void allocateSolutionBuffers();
-
-    /// Gives back the memory of every array this object owns. operator= calls it before rebuilding, so that the
-    /// arrays of the previous system are free before the input is read again.
-    void releaseOwnedStorage();
 
     /// Takes over the place in the network and the reverse-flow state in carried.
     void applyCarriedState(const CarriedState &carried);

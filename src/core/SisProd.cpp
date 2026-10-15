@@ -17,6 +17,7 @@
 #include "SisProdSolveContext.h"
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
+#include <stdexcept>
 
 using namespace sisprod;
 
@@ -39,14 +40,13 @@ SProd::SProd(Ler &parsedInput, const CarriedState &carried) : vg1dSP(parsedInput
     assemble(carried);
 }
 
-SProd &SProd::operator=(const SProd &other) {
-    releaseOwnedStorage();
-    resetRunState();
+void SProd::loadSection(const SProd &other) {
+    if (celula != nullptr)
+        throw std::logic_error("SProd::loadSection: this system was already assembled");
     arq = other.arq;
     vg1dSP = other.vg1dSP;
     networkCoupling.takeParallelRole(other.networkCoupling);
     assemble(other.carriedState());
-    return *this;
 }
 
 SProd::CarriedState SProd::carriedState() const {
@@ -314,96 +314,6 @@ void SProd::assemble(const CarriedState &carried, double *extraSourceLengths, in
     montasistema(extraSourceLengths, extraSourceCells, extraSourceCount);
 }
 
-void SProd::resetRunState() {
-    CalcLat = 0;
-    celula = nullptr;
-    presE = -1;
-    tempE = -1;
-    titE = -1;
-    betaE = -1;
-    alfE = -1;
-    tGSup = 0.;
-    thermalSourceDisabled = false;
-
-    gasLift.cells = nullptr;
-    gasLift.interfaceCell = kNoInterfaceCell;
-    gasLift.interfaceTimeStep = 0.;
-    gasLift.interfaceVelocity = 0.;
-    gasLift.previousInterfaceCell = gasLift.interfaceCell;
-    gasLift.previousInterfaceTimeStep = gasLift.interfaceTimeStep;
-    gasLift.previousInterfaceVelocity = gasLift.interfaceVelocity;
-    gasLift.unloadingAveragingWindow = kUnloadingAveragingWindow;
-    gasLift.unloadingSampleCapacity = kUnloadingSampleCapacity;
-    gasLift.meanUnloadingFlowRate = 0;
-    gasLift.unloadingAveragingInterval = 0;
-    gasLift.maximumUnloadingFlowSamples.clear();
-    gasLift.unloadingTimeStepSamples.clear();
-
-    transient.trackGasOilRatio = 0;
-    transient.trackGasGravity = 0;
-    transient.bufferedLiquidMassSource = 0.;
-    transient.bufferedComplementaryMassSource = 0.;
-    transient.bufferedGasMassSource = 0.;
-    transient.meanCflTimeStep = 1.;
-    transient.meanAcceptedTimeStep = 1.;
-    transient.timeStepRestricted = false;
-    transient.restrictedStepsLeft = 0;
-    transient.auxiliaryCflTimeStep = 0.;
-    transient.auxiliaryAcceptedTimeStep = 0.;
-    transient.slugCount = kInitialSlugCount;
-    transient.chokeModeChanged = false;
-    transient.artificialGasMultiplier = 0;
-    transient.fullModel = 1;
-    transient.meanMaximumPressureRate = 1.;
-    transient.meanMaximumTemperatureRate = 1.;
-    transient.masterValveRatiosInactive.fill(0.);
-    transient.masterValveRatiosActive.fill(0.);
-    transient.masterValveCriticalRatios.fill(kDefaultMasterCriticalRatio);
-    transient.compositionalRefreshCounter = 0;
-    transient.adjustTimeStep = 0;
-    transient.pressureSamples.clear();
-    transient.fluxSamples.clear();
-    transient.voidFractionSamples.clear();
-    transient.timeSamples.clear();
-    transient.acceptedTimeSteps.clear();
-    transient.cflTimeSteps.clear();
-    transient.maximumPressureRates.clear();
-    transient.maximumTemperatureRates.clear();
-    transient.poisson2DCells.clear();
-
-    trends.gasTrendMatrices = nullptr;
-    trends.gasTrendResetTimes = nullptr;
-    trends.gasTrendCounts = nullptr;
-    trends.gasTrendBufferedCounts = nullptr;
-    trends.gasWallTrendMatrices = nullptr;
-    trends.gasWallTrendResetTimes = nullptr;
-    trends.gasWallTrendCounts = nullptr;
-    trends.gasWallTrendBufferedCounts = nullptr;
-    trends.productionTrendMatrices = nullptr;
-    trends.productionTrendResetTimes = nullptr;
-    trends.productionTrendCounts = nullptr;
-    trends.productionTrendBufferedCounts = nullptr;
-    trends.productionWallTrendMatrices = nullptr;
-    trends.productionWallTrendResetTimes = nullptr;
-    trends.productionWallTrendCounts = nullptr;
-    trends.productionWallTrendBufferedCounts = nullptr;
-    trends.trendOutputCount = 0;
-
-    networkCoupling.previousInletPressure = -1;
-    networkCoupling.previousInletTemperature = -1;
-    networkCoupling.previousInletQuality = -1;
-    networkCoupling.previousInletLiquidFraction = -1;
-    networkCoupling.previousInletVoidFraction = -1;
-    networkCoupling.previousSeparatorTemperature = 0.;
-    networkCoupling.previousChokeModeChanged = false;
-    networkCoupling.parallelSourceCells.clear();
-    networkCoupling.parallelSourceProductionLiquid.clear();
-    networkCoupling.parallelSourceComplementaryLiquid.clear();
-    networkCoupling.parallelSourceGas.clear();
-
-    coupling3D.coupledIndexCorrections.clear();
-}
-
 void SProd::allocateSolutionBuffers() {
     flut = FullMtx<double>(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns);
     flutG = FullMtx<double>(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns);
@@ -412,42 +322,6 @@ void SProd::allocateSolutionBuffers() {
     transient.rightHandSide = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp);
     gasLift.systemMatrix = BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth);
     gasLift.rightHandSide = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg);
-}
-
-namespace {
-
-/// Destroys the elements of v and gives its memory back.
-template <typename T>
-void releaseVector(vector<T> &v) {
-    vector<T>().swap(v);
-}
-
-}  // namespace
-
-void SProd::releaseOwnedStorage() {
-    releaseVector(gasLift.gasCells);
-    releaseVector(gasLift.valveChokes);
-    releaseVector(gasLift.productionValveCells);
-    releaseVector(gasLift.gasValveCells);
-    releaseVector(transient.masterValveOpenTimes);
-    releaseVector(transient.masterValveCloseTimes);
-
-    releaseVector(trends.productionWallProfileCells);
-    releaseVector(trends.gasWallProfileCells);
-
-    trends.productionTrendSet.release();
-    trends.gasTrendSet.release();
-    trends.productionWallTrendSet.release();
-    trends.gasWallTrendSet.release();
-
-    tables.latentHeatTable.release();
-    releaseVector(tables.pvtSimBubblePressures);
-    releaseVector(tables.pvtSimBubbleTemperatures);
-    tables.liviaSolutionGasRatioTable.release();
-
-    releaseVector(productionCells);
-    releaseVector(transient.pigReceiverCells);
-    releaseVector(tables.dynamicTables);
 }
 
 void SProd::applyCarriedState(const CarriedState &carried) {

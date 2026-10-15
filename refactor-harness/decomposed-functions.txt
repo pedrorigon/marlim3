@@ -49,10 +49,9 @@ CalcC0UdIni -> initialization
 CalcC0UdIniBuf -> bufferedInitialization
 CalcC0UdPerm -> steadyState
 
-# The constructors, the assignment and the parsed-input copy, rebuilt on the
-# construction helpers of SProd.
+# The constructors and the parsed-input copy, rebuilt on the construction
+# helpers of SProd.
 SProd
-operator=
 copiaSemJson
 
 # --- stage 4: trend output ------------------------------------------------
@@ -441,3 +440,9 @@ renovaMasEsp -> REMOVED
 renovaRGOdgYco2 -> REMOVED
 subtempoGas -> REMOVED
 TempDescGL -> REMOVED
+
+# --- stage 16: loadSection --------------------------------------------------
+# The assignment filled a default-constructed section of a network from another
+# system's input, and that was its only use; SProd::loadSection does it now, and
+# the assignment is deleted.
+operator= -> REMOVED
