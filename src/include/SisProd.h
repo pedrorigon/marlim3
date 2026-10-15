@@ -792,11 +792,6 @@ class SProd {
     /// Event-log file name.
     std::string tmpLog;
 
-  private:
-    /// Number of iterations used to bracket the initial steady-state root.
-    int steadyIteration = 0;
-
-  public:
     /// Steady-state mode flag: 1 while Num4Main solves a network branch at steady state. The source terms read it
     /// (sisprod::sources::SourceState).
     bool modoPerm = false;
@@ -806,11 +801,6 @@ class SProd {
     /// Multiphase production-line control volumes, held by productionCells.
     Cel *celula = nullptr;
 
-  private:
-    /// The production-line control volumes celula points at.
-    std::vector<Cel> productionCells;
-
-  public:
     /// Indicates that the section outlet is not connected to another network section.
     int noextremo = 1;
     /// Indicates that the section inlet is not connected to another network section.
@@ -827,43 +817,6 @@ class SProd {
     varGlob1D *vg1dSP = nullptr;
 
   private:
-    /// Indicates that the thermal source term is disabled.
-    bool thermalSourceDisabled = false;
-
-    static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
-                                     "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
-                                     "      So nos curamos de um sofrimento depois de o haver suportado ate o fim.    ",
-                                     "                   Infeliz e o espirito ansioso pelo futuro.                    ",
-                                     "                                    Memento Mori                                ",
-                                     " Somente um progresso calmo e constante, livre de precipitacao, conduz ao objetivo.",
-                                     "             Paciencia, nove mulheres nao conseguem gerar uma crianca em um mes. ",
-                                     "                  A necessidade e a mae da inovacao, mas a paciencia e o pai    ",
-                                     "O sucesso nao e uma linha reta, e um jogo de resistencia, e cada tropeco e apenas um degrau a mais para a vitoria!",
-                                     "                        Quem vive de navegar, o vento e quem lhe comanda                ",
-                                     "    Uma vez me perguntaram o que achava da passagem do tempo, e eu disse: sou contra    ",
-                                     "                 Nao importa o quanto voce va devagar, desde que nao pare                ",
-                                     "Um simulador que resolve uma parada de producao, comeca avancando pequenos incrementos de tempo",
-                                     "                            Nada e permanente, exceto a mudanca                           ",
-                                     "                  Uma jornada de mil quilometros comeca com um unico passo                ",
-                                     "Seja paciente. Espere ate que a lama assente e a agua fique limpa. Permaneça imovel ate que a acao correta suja por si so"};
-    static constexpr const char *saidaSubTextoSis[16] = {
-        "                         Galeno de Pergamo do Transiente Longo                          ",
-        "                     J. California Cooper depois da simulacao divergir                  ",
-        "                                Marcel Proust no CrossFit                               ",
-        "                              Seneca do Mindfulness                                     ",
-        "                                   Zuleica da Funeraria                                 ",
-        "                                       China In Box                                     ",
-        "                                      Tiao do Linkedin                                  ",
-        "                                      Marcao da Oficina                                 ",
-        "                                    Mario Pascal do Insta                               ",
-        "                          Seu Pereira na feira de artesanatos numericos                 ",
-        "                        Luis Fernando Verissimo das Simulacoes Permanentes              ",
-        "                             Confucio vendo a simulacao emperrar                       ",
-        "                               Confucio das simulacoes sem fim                         ",
-        "          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
-        "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    ",
-        "            Lao-Tse, vendo o incremento de tempo ficar cada vez menor                   "};
-
     /// Assembles the system from arq: the property tables and the steady-state search as declared, the solution
     /// buffers sized for arq's cells, carried's place in the network, and the production section with the extra gas
     /// sources at extraSourceLengths, whose cell indices it records in extraSourceCells.
@@ -945,6 +898,49 @@ class SProd {
     bool hydrateEnvelopeDue() const;
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
+
+    /// Number of iterations used to bracket the initial steady-state root.
+    int steadyIteration = 0;
+
+    /// The production-line control volumes celula points at.
+    std::vector<Cel> productionCells;
+
+    /// Indicates that the thermal source term is disabled.
+    bool thermalSourceDisabled = false;
+
+    static constexpr const char *saidaTextoSis[16] = {"                          Post Coitum Omine Animal Triste Est                   ",
+                                     "           'Ouca-me. O fim quase nunca esta longe, em nenhum momento!'          ",
+                                     "      So nos curamos de um sofrimento depois de o haver suportado ate o fim.    ",
+                                     "                   Infeliz e o espirito ansioso pelo futuro.                    ",
+                                     "                                    Memento Mori                                ",
+                                     " Somente um progresso calmo e constante, livre de precipitacao, conduz ao objetivo.",
+                                     "             Paciencia, nove mulheres nao conseguem gerar uma crianca em um mes. ",
+                                     "                  A necessidade e a mae da inovacao, mas a paciencia e o pai    ",
+                                     "O sucesso nao e uma linha reta, e um jogo de resistencia, e cada tropeco e apenas um degrau a mais para a vitoria!",
+                                     "                        Quem vive de navegar, o vento e quem lhe comanda                ",
+                                     "    Uma vez me perguntaram o que achava da passagem do tempo, e eu disse: sou contra    ",
+                                     "                 Nao importa o quanto voce va devagar, desde que nao pare                ",
+                                     "Um simulador que resolve uma parada de producao, comeca avancando pequenos incrementos de tempo",
+                                     "                            Nada e permanente, exceto a mudanca                           ",
+                                     "                  Uma jornada de mil quilometros comeca com um unico passo                ",
+                                     "Seja paciente. Espere ate que a lama assente e a agua fique limpa. Permaneça imovel ate que a acao correta suja por si so"};
+    static constexpr const char *saidaSubTextoSis[16] = {
+        "                         Galeno de Pergamo do Transiente Longo                          ",
+        "                     J. California Cooper depois da simulacao divergir                  ",
+        "                                Marcel Proust no CrossFit                               ",
+        "                              Seneca do Mindfulness                                     ",
+        "                                   Zuleica da Funeraria                                 ",
+        "                                       China In Box                                     ",
+        "                                      Tiao do Linkedin                                  ",
+        "                                      Marcao da Oficina                                 ",
+        "                                    Mario Pascal do Insta                               ",
+        "                          Seu Pereira na feira de artesanatos numericos                 ",
+        "                        Luis Fernando Verissimo das Simulacoes Permanentes              ",
+        "                             Confucio vendo a simulacao emperrar                       ",
+        "                               Confucio das simulacoes sem fim                         ",
+        "          Heraclito de Efeso vendo tudo mudar a cada incremento de tempo                ",
+        "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    ",
+        "            Lao-Tse, vendo o incremento de tempo ficar cada vez menor                   "};
 };
 
 #endif /* SISPROD_H_ */
