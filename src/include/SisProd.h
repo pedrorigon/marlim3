@@ -33,7 +33,7 @@
 #include "solver3DPoisson.h"
 #include "variaveisGlobais1D.h"
 #include <ctime>
-#include <math.h>
+#include <cmath>
 #include <array>
 #include <string>
 #include <vector>
