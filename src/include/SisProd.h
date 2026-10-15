@@ -588,15 +588,16 @@ class SProd {
 
   public:
     /// What a system built from an already parsed input takes from the system that
-    /// input came from: its place in the network and its reverse-flow state.
+    /// input came from: its place in the network and its reverse-flow state. Each field
+    /// starts at the declared value of the member it carries.
     struct CarriedState {
-        int noextremo;
-        int noinicial;
-        int derivaAnel;
-        int bloq;
-        double previousReverseLiquidFraction;
-        double previousReverseQuality;
-        double minimumCycleTimeStep;
+        int noextremo = 1;
+        int noinicial = 1;
+        int derivaAnel = -1;
+        int bloq = 0;
+        double previousReverseLiquidFraction = 1.;
+        double previousReverseQuality = 1.;
+        double minimumCycleTimeStep = 0.;
     };
 
     /// Constructs and initializes a production-system simulation from the input and log files.
