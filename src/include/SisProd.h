@@ -940,6 +940,9 @@ class SProd {
     /// Initializes the production line for gas-lift unloading.
     void HidroDescargaP();
 
+    /// Whether this step computes the hydrate envelopes: asked for in the input, and the simulated time not past the
+    /// end of the run.
+    bool hydrateEnvelopeDue() const;
     /// Runs the hydrate-envelope solvers for the production and gas lines.
     void solveHydrateEnvelopes();
 };

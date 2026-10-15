@@ -344,15 +344,14 @@ void SProd::HidroDescargaP() {
     gaslift::computeProductionUnloadingHydrostatics(context.gasLift());
 }
 
+bool SProd::hydrateEnvelopeDue() const {
+    return arq.calculaEnvelope == 1 && vg1dSP->lixo5 <= arq.tfinal;
+}
+
 void SProd::solveHydrateEnvelopes() {
-    if (!(arq.calculaEnvelope == 1 && vg1dSP->lixo5 <= arq.tfinal))
+    if (!hydrateEnvelopeDue())
         return;
-
-    FA_Hidrato solverHidrato(*this);
-    solverHidrato.solverHidrato();
-
-    if (arq.lingas > 0) {
-        FA_Hidrato_Servico solverHidratoG(*this);
-        solverHidratoG.solverHidratoG();
-    }
+    FA_Hidrato(*this).solverHidrato();
+    if (arq.lingas > 0)
+        FA_Hidrato_Servico(*this).solverHidratoG();
 }
