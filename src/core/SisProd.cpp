@@ -40,7 +40,7 @@ SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidatio
     montasistema(extraSourceLengths, extraSourceCells, extraSourceCount);
 }
 
-SProd::SProd() {}
+SProd::SProd() = default;
 
 SProd::SProd(Ler &parsedInput, const CarriedState &carried) : vg1dSP(parsedInput.vg1dSP) {
     arq.copiaSemJson(parsedInput);
