@@ -523,6 +523,14 @@ struct NetworkCoupling {
     int parallelPrimaryBranch = -1;
     /// Secondary branch index in a parallel network.
     int parallelSecondaryBranch = -1;
+
+    /// Takes over other's role in a parallel network: the boundary-condition type of the secondary branch and the
+    /// indices of both branches.
+    void takeParallelRole(const NetworkCoupling &other) {
+        parallelSecondaryBoundaryCondition = other.parallelSecondaryBoundaryCondition;
+        parallelPrimaryBranch = other.parallelPrimaryBranch;
+        parallelSecondaryBranch = other.parallelSecondaryBranch;
+    }
 };
 
 /// What the steady-state search carries from one iteration to the next: the convergence

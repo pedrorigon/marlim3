@@ -59,9 +59,7 @@ SProd &SProd::operator=(const SProd &other) {
     allocateSolutionBuffers();
     resetRunState();
     applyCarriedState(other.carriedState());
-    networkCoupling.parallelSecondaryBoundaryCondition = other.networkCoupling.parallelSecondaryBoundaryCondition;
-    networkCoupling.parallelPrimaryBranch = other.networkCoupling.parallelPrimaryBranch;
-    networkCoupling.parallelSecondaryBranch = other.networkCoupling.parallelSecondaryBranch;
+    networkCoupling.takeParallelRole(other.networkCoupling);
 
     montasistema();
 
