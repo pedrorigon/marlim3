@@ -21,48 +21,31 @@
 using namespace sisprod;
 
 SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidation,
-             tipoSimulacao_t simulationType, varGlob1D *globals, int dynamicTable, int blocking, int reversedGeometry,
-             double *extraSourceLengths, int *extraSourceCells, int extraSourceCount, int steadyBranch)
-    : networkCoupling{.previousReverseLiquidFraction = 0},
-      arq(inputFile, logFile, jsonValidation, simulationType, reversedGeometry, globals, steadyBranch),
-      flutG(arq.ncelg, arq.nvarprofg + kGasLineProfileFixedColumns),
-      flut(arq.ncelp, arq.nvarprofp + kProductionProfileFixedColumns),
-      gasLift{.systemMatrix =
-                  BandMtx<double>(kGasLineUnknownsPerCell * arq.ncelg, kGasLineBandwidth, kGasLineBandwidth),
-              .rightHandSide = Vcr<double>(kGasLineUnknownsPerCell * arq.ncelg)},
-      transient{.systemMatrix = BandMtx<double>(kProductionUnknownsPerCell * arq.ncelp, kProductionLeftBandwidth,
-                                                kProductionRightBandwidth),
-                .rightHandSide = Vcr<double>(kProductionUnknownsPerCell * arq.ncelp)},
-      bloq(blocking), vg1dSP(globals) {
-    resetRunState();
-    if (dynamicTable >= 0)
-        arq.tabelaDinamica = dynamicTable;
-    montasistema(extraSourceLengths, extraSourceCells, extraSourceCount);
+             tipoSimulacao_t simulationType, varGlob1D *globals, int dynamicTableOverride, int blocking,
+             int reversedGeometry, double *extraSourceLengths, int *extraSourceCells, int extraSourceCount,
+             int steadyBranch)
+    : arq(inputFile, logFile, jsonValidation, simulationType, reversedGeometry, globals, steadyBranch),
+      vg1dSP(globals) {
+    if (dynamicTableOverride >= 0)
+        arq.tabelaDinamica = dynamicTableOverride;
+    assemble({.bloq = blocking, .previousReverseLiquidFraction = 0.}, extraSourceLengths, extraSourceCells,
+             extraSourceCount);
 }
 
 SProd::SProd() = default;
 
 SProd::SProd(Ler &parsedInput, const CarriedState &carried) : vg1dSP(parsedInput.vg1dSP) {
     arq.copiaSemJson(parsedInput);
-    allocateSolutionBuffers();
-    resetRunState();
-    applyCarriedState(carried);
-
-    montasistema();
+    assemble(carried);
 }
 
 SProd &SProd::operator=(const SProd &other) {
     releaseOwnedStorage();
-
+    resetRunState();
     arq = other.arq;
     vg1dSP = other.vg1dSP;
-    allocateSolutionBuffers();
-    resetRunState();
-    applyCarriedState(other.carriedState());
     networkCoupling.takeParallelRole(other.networkCoupling);
-
-    montasistema();
-
+    assemble(other.carriedState());
     return *this;
 }
 
@@ -322,10 +305,16 @@ void SProd::calcTempFim() {
     thermal::computeOutletTemperature(context.thermal());
 }
 
-void SProd::resetRunState() {
+void SProd::assemble(const CarriedState &carried, double *extraSourceLengths, int *extraSourceCells,
+                     int extraSourceCount) {
     tables = PropertyTables();
     steadySearch = SteadySearch();
+    allocateSolutionBuffers();
+    applyCarriedState(carried);
+    montasistema(extraSourceLengths, extraSourceCells, extraSourceCount);
+}
 
+void SProd::resetRunState() {
     CalcLat = 0;
     celula = nullptr;
     presE = -1;

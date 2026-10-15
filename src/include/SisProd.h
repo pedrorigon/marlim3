@@ -608,14 +608,12 @@ class SProd {
         double minimumCycleTimeStep = 0.;
     };
 
-    /// Constructs and initializes a production-system simulation from the input and log files.
+    /// Constructs and initializes a production-system simulation from the input and log files. A
+    /// dynamicTableOverride that is not negative replaces the input's choice of dynamic property table.
     SProd(std::string inputFile, std::string logFile, tipoValidacaoJson_t jsonValidation,
-          tipoSimulacao_t simulationType, varGlob1D *globals = nullptr, int dynamicTable = -1, int blocking = 0,
-          int reversedGeometry = 0,
-          double *extraSourceLengths = nullptr,
-          int *extraSourceCells = nullptr,
-          int extraSourceCount = 0,
-          int steadyBranch = 1);
+          tipoSimulacao_t simulationType, varGlob1D *globals = nullptr, int dynamicTableOverride = -1,
+          int blocking = 0, int reversedGeometry = 0, double *extraSourceLengths = nullptr,
+          int *extraSourceCells = nullptr, int extraSourceCount = 0, int steadyBranch = 1);
 
     /// Creates an empty production-system object.
     SProd();
@@ -880,10 +878,14 @@ class SProd {
         "    Lao-Tse tomando coragem para simular um caso de parafinacao em dutos de producao    ",
         "            Lao-Tse, vendo o incremento de tempo ficar cada vez menor                   "};
 
-    /// Puts the run state back where a system built from an input starts: the property tables and the steady-state
-    /// search as declared, the trend pointers null, the boundary conditions, the time-step statistics and the counters
-    /// at their initial values, the previous-time-level interface state equal to the current one, and the histories
-    /// empty.
+    /// Assembles the system from arq: the property tables and the steady-state search as declared, the solution
+    /// buffers sized for arq's cells, carried's place in the network, and the production section with the extra gas
+    /// sources at extraSourceLengths, whose cell indices it records in extraSourceCells.
+    void assemble(const CarriedState &carried, double *extraSourceLengths = nullptr, int *extraSourceCells = nullptr,
+                  int extraSourceCount = 0);
+    /// Puts the run state back where a system built from an input starts: the trend pointers null, the boundary
+    /// conditions, the time-step statistics and the counters at their initial values, the previous-time-level
+    /// interface state equal to the current one, and the histories empty.
     void resetRunState();
     /// Sizes the profile buffers and the pressure-velocity systems of both lines for arq's cells, all zero.
     void allocateSolutionBuffers();
@@ -953,9 +955,7 @@ class SProd {
     /// moving-average and running-total state the transient loop starts from.
     void resetCouplingAndOutputState();
     /// Builds the production section after input parsing.
-    void montasistema(double *extraSourceLengths = nullptr,
-                      int *extraSourceCells = nullptr,
-                      int extraSourceCount = 0);
+    void montasistema(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount);
 
     /// Initializes the gas service line for gas-lift unloading.
     void HidroDescargaG();
