@@ -184,7 +184,7 @@ struct GasLiftLine {
     /// Current completion-fluid/gas interface velocity.
     double interfaceVelocity = 0.;
     /// Previous-time-level interface cell.
-    int previousInterfaceCell = 0;
+    int previousInterfaceCell = kNoInterfaceCell;
     /// Previous-time-level interface-limited time step.
     double previousInterfaceTimeStep = 0.;
     /// Previous-time-level interface velocity.
