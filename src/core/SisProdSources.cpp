@@ -354,8 +354,8 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
     }
     refreshChokeMultipleAndPorousSources(state, cellIndex);
 
-    const bool hydrateModel = state.input.tipoHmodel == 2 || state.input.tipoHmodel == 3;
-    if (state.input.calculaEnvelope == 1 && hydrateModel && state.cells[cellIndex].flui.BSW > 1e-12 && (*state.globals).lixo5 > 0.01) {
+    const bool hydrateModel = state.input.calculaEnvelope == 1 && (state.input.tipoHmodel == 2 || state.input.tipoHmodel == 3);
+    if (hydrateModel && state.cells[cellIndex].flui.BSW > 1e-12 && (*state.globals).lixo5 > 0.01) {
         state.cells[cellIndex].fontemassLR -= (agua_consumida_Mw / (*state.globals).lixo5);
         state.cells[cellIndex].fontemassGR -= (gas_consumido_Mg / (*state.globals).lixo5);
     }
