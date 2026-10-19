@@ -48,6 +48,7 @@ void Ler::iniciarVariaveis() {
 	ncalor=0;
 	npig = 0;
 	master1.parserie = 0;
+	master1.curvaCV=0;
 	master1.ncv=0;
 	psep.parserie = 0;
 	chokep.parserie = 0;
