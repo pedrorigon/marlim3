@@ -630,7 +630,7 @@ void solveUnloading(const GasLiftState &state) {
             sourceVolumeFlowRate = state.gasCells[gasCellIndex].massfonteCH / gasDensity;
         Qtotal -= sourceVolumeFlowRate;
         if (gasCellIndex < state.gasCellCount) {
-            state.gasCells[gasCellIndex + 1].VGasL = (Qtotal)*rhoL;
+            state.gasCells[gasCellIndex + 1].VGasL = Qtotal * rhoL;
             state.gasCells[gasCellIndex].VGasR = state.gasCells[gasCellIndex + 1].VGasL;
         } else
             state.gasCells[gasCellIndex].VGasR = 0.;
@@ -677,7 +677,7 @@ void advanceInterface(const GasLiftState &state) {
     }
 
     if (state.input.descarga == 1) {
-        if (((state.gasCells[state.interfaceCell].razInter <= (*state.globals).localtiny) && (state.gasCells[state.interfaceCell].razInter >= -(*state.globals).localtiny)))
+        if (state.gasCells[state.interfaceCell].razInter <= (*state.globals).localtiny && state.gasCells[state.interfaceCell].razInter >= -(*state.globals).localtiny)
             state.gasCells[state.interfaceCell].razInter = 0;
         else if (state.gasCells[state.interfaceCell].razInter < -(*state.globals).localtiny) {
             const double interfaceCrossingTimeStep =
@@ -685,7 +685,7 @@ void advanceInterface(const GasLiftState &state) {
             if (interfaceCrossingTimeStep > (*state.globals).localtiny)
                 state.interfaceTimeStep = interfaceCrossingTimeStep;
             state.gasCells[state.interfaceCell].razInter = 0.;
-        } else if ((state.gasCells[state.interfaceCell].razInter >= (1. - (*state.globals).localtiny) && state.gasCells[state.interfaceCell].razInter <= (1. + (*state.globals).localtiny))) {
+        } else if (state.gasCells[state.interfaceCell].razInter >= 1. - (*state.globals).localtiny && state.gasCells[state.interfaceCell].razInter <= 1. + (*state.globals).localtiny) {
             state.gasCells[state.interfaceCell].razInter = 1.;
         } else if (state.gasCells[state.interfaceCell].razInter > (1. + (*state.globals).localtiny)) {
             const double interfaceCrossingTimeStep =
@@ -784,7 +784,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
                     double rho1 = valveCell.MasEspFlu(valveCell.pres, valveCell.temp);
                     const double massFlowRate = primeValveMassSource<UnloadingThroughValve>(
                         state, valveIndex, valveCell, state.cells[productionValveCell]);
-                    double candidateFlowRate = massFlowRate / (rho1);
+                    double candidateFlowRate = massFlowRate / rho1;
                     if (candidateFlowRate > maximumUnloadingFlowRate) {
                         maximumUnloadingFlowRate = candidateFlowRate;
                         selectedValveIndex = valveIndex;
@@ -1114,7 +1114,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);
     double injectedFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].presaux, meanTemperature);
 
-    double vel1 = state.cells[cellIndex - 1].QL / (area);
+    double vel1 = state.cells[cellIndex - 1].QL / area;
 
     double visc = state.cells[cellIndex].fluicol.VisFlu(state.cells[cellIndex].presaux, meanTemperature);
 
@@ -1137,7 +1137,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     injectedFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
 
     if (cellIndex > 1)
-        vel1 = state.cells[cellIndex - 2].QL / (area);
+        vel1 = state.cells[cellIndex - 2].QL / area;
 
     visc = state.cells[cellIndex].fluicol.VisFlu(meanPressure, meanTemperature);
 
@@ -1315,7 +1315,7 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
 
 void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     if (state.thermalSourceDisabled == 0) {
-        if (((cellIndex) < state.tubingAnnulusStart || (cellIndex) > state.tubingAnnulusEnd)) {
+        if (cellIndex < state.tubingAnnulusStart || cellIndex > state.tubingAnnulusEnd) {
             double dx = state.gasCells[cellIndex].dx0;
             double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
             double meanTemperatureGradient = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].dTdLCor + state.gasCells[cellIndex - 1].dx0 * state.gasCells[cellIndex - 1].dTdLCor) / (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
@@ -1398,7 +1398,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             clampAndPropagateTemperature(state, cellIndex);
         } else {
             if (state.networkCoupled == 1) {
-                int connectionCellIndex = (cellIndex)-state.tubingAnnulusStart;
+                int connectionCellIndex = cellIndex - state.tubingAnnulusStart;
                 int connectionIndex = state.annulusTubingStart - connectionCellIndex;
                 int secondConnectionIndex = connectionIndex;
                 if (secondConnectionIndex == state.lastCell)
