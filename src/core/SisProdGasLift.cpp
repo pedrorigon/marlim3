@@ -749,32 +749,32 @@ void advanceInterface(const GasLiftState &state) {
     }
 
     if (state.input.descarga == 1) {
-        if (state.gasCells[state.interfaceCell].razInter <= state.globals->localtiny && state.gasCells[state.interfaceCell].razInter >= -state.globals->localtiny)
-            state.gasCells[state.interfaceCell].razInter = 0;
-        else if (state.gasCells[state.interfaceCell].razInter < -state.globals->localtiny) {
-            const double interfaceCrossingTimeStep =
-                -state.gasCells[state.interfaceCell].razInterIni * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
-            if (interfaceCrossingTimeStep > state.globals->localtiny)
+        const double tiny = state.globals->localtiny;
+        CelG &cell = state.gasCells[state.interfaceCell];
+        if (cell.razInter <= tiny && cell.razInter >= -tiny)
+            cell.razInter = 0;
+        else if (cell.razInter < -tiny) {
+            const double interfaceCrossingTimeStep = -cell.razInterIni * cell.dx0 / state.interfaceVelocity;
+            if (interfaceCrossingTimeStep > tiny)
                 state.interfaceTimeStep = interfaceCrossingTimeStep;
-            state.gasCells[state.interfaceCell].razInter = 0.;
-        } else if (state.gasCells[state.interfaceCell].razInter >= 1. - state.globals->localtiny && state.gasCells[state.interfaceCell].razInter <= 1. + state.globals->localtiny) {
-            state.gasCells[state.interfaceCell].razInter = 1.;
-        } else if (state.gasCells[state.interfaceCell].razInter > (1. + state.globals->localtiny)) {
-            const double interfaceCrossingTimeStep =
-                (1. - state.gasCells[state.interfaceCell].razInterIni) * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
-            if (interfaceCrossingTimeStep > state.globals->localtiny)
+            cell.razInter = 0.;
+        } else if (cell.razInter >= 1. - tiny && cell.razInter <= 1. + tiny) {
+            cell.razInter = 1.;
+        } else if (cell.razInter > 1. + tiny) {
+            const double interfaceCrossingTimeStep = (1. - cell.razInterIni) * cell.dx0 / state.interfaceVelocity;
+            if (interfaceCrossingTimeStep > tiny)
                 state.interfaceTimeStep = interfaceCrossingTimeStep;
-            state.gasCells[state.interfaceCell].razInter = 1.;
+            cell.razInter = 1.;
         }
 
-        if (fabs(state.gasCells[state.interfaceCell].razInter) < state.globals->localtiny && state.interfaceVelocity < -fabs(state.globals->localtiny)) {
-            state.gasCells[state.interfaceCell].razInter = 0.;
+        if (fabs(cell.razInter) < tiny && state.interfaceVelocity < -fabs(tiny)) {
+            cell.razInter = 0.;
             if (state.interfaceCell > 0) {
                 state.interfaceCell--;
                 state.gasCells[state.interfaceCell].razInter = 1.;
             }
-        } else if (fabs(state.gasCells[state.interfaceCell].razInter - 1.) < state.globals->localtiny && state.interfaceVelocity > state.globals->localtiny) {
-            state.gasCells[state.interfaceCell].razInter = 1.;
+        } else if (fabs(cell.razInter - 1.) < tiny && state.interfaceVelocity > tiny) {
+            cell.razInter = 1.;
             if (state.interfaceCell < state.gasCellCount) {
                 state.interfaceCell++;
                 state.gasCells[state.interfaceCell].razInter = 0.;
