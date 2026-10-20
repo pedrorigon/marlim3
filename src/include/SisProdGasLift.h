@@ -115,23 +115,13 @@ struct GasLiftState {
     GasLiftTemperatureUpdater temperatureUpdater;
 };
 
+// Unloading the completion fluid through the gas-lift valves.
+
 /// Hydrostatics of the gas column during unloading.
 void computeGasUnloadingHydrostatics(const GasLiftState &state);
 
 /// Hydrostatics of the production column during unloading.
 void computeProductionUnloadingHydrostatics(const GasLiftState &state);
-
-/// Advances the gas line by one sub-time-step.
-void advanceGasSubStep(const GasLiftState &state);
-
-/// Solves the gas line once and keeps the solved velocities in the buffer, without advancing the cells.
-void advanceBufferedGasSubStep(const GasLiftState &state);
-
-/// Updates the gas-line cells after a sub-step.
-void updateGasLine(const GasLiftState &state);
-
-/// Copies the solved gas velocities into the buffer.
-void updateBufferedGasLine(const GasLiftState &state);
 
 /// Throat area of a calibrated gas-lift valve.
 [[nodiscard]] double calibratedValveArea(double calibrationPressure, double calibrationTemperature,
@@ -159,16 +149,31 @@ void solveUnloading(const GasLiftState &state);
 /// Advances the unloading interface.
 void advanceInterface(const GasLiftState &state);
 
-/// Updates the transient gas-lift valves.
-void updateTransientGasValves(const GasLiftState &state);
+// The gas line in the transient.
 
 /// Solves the gas line.
 void solveGasLine(const GasLiftState &state);
 
+/// Updates the transient gas-lift valves.
+void updateTransientGasValves(const GasLiftState &state);
+
+/// Advances the gas line by one sub-time-step.
+void advanceGasSubStep(const GasLiftState &state);
+
+/// Updates the gas-line cells after a sub-step.
+void updateGasLine(const GasLiftState &state);
+
+/// Solves the gas line once and keeps the solved velocities in the buffer, without advancing the cells.
+void advanceBufferedGasSubStep(const GasLiftState &state);
+
+/// Copies the solved gas velocities into the buffer.
+void updateBufferedGasLine(const GasLiftState &state);
+
 /// Connects the gas line to the tubing.
 void connectTubing(const GasLiftState &state);
 
-/// Steady-state counterparts.
+// The gas line in the steady state.
+
 void connectTubingSteady(const GasLiftState &state);
 void initializeTubingConnectionSteady(const GasLiftState &state);
 [[nodiscard]] double steadyGasPressureDrop(const GasLiftState &state, int cellIndex);
