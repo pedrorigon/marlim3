@@ -63,26 +63,26 @@ struct GasLiftState {
 
     /// Band matrix and right-hand side of the gas-line pressure-velocity system.
     BandMtx<double> &gasSystemMatrix;
-    Vcr<double> &gasFreeTerms;
+    Vcr<double> &gasRightHandSide;
 
-    /// Bounds of the column-annulus thermal coupling: annulusTubingStart and
-    /// annulusTubingEnd are production-column cells, tubingAnnulusStart and
-    /// tubingAnnulusEnd gas-line cells.
-    const int &annulusTubingStart;
-    const int &annulusTubingEnd;
-    const int &tubingAnnulusStart;
-    const int &tubingAnnulusEnd;
+    /// Bounds of the column-annulus thermal coupling: tubingCouplingStart and
+    /// tubingCouplingEnd are production-column cells, annulusCouplingStart and
+    /// annulusCouplingEnd gas-line cells.
+    const int &tubingCouplingStart;
+    const int &tubingCouplingEnd;
+    const int &annulusCouplingStart;
+    const int &annulusCouplingEnd;
 
     /// Whether the column-annulus thermal coupling is on.
-    const bool &networkCoupled;
+    const bool &annulusThermalCoupling;
     /// Thermal source switch.
     const bool &thermalSourceDisabled;
 
     /// Gas-injection pressure and temperature. The pressure is written.
-    double &initialGasPressure;
-    const double &initialGasTemperature;
+    double &injectionPressure;
+    const double &injectionTemperature;
     /// Separator pressure, or the inlet pressure of the downstream network section. Written.
-    double &gasSurfacePressure;
+    double &separatorPressure;
 
     /// Time step. Written: the gas line can shorten it.
     double &timeStep;
@@ -92,9 +92,9 @@ struct GasLiftState {
     int &interfaceCell;
     double &interfaceVelocity;
     double &interfaceTimeStep;
-    int &initialInterfaceCell;
-    double &initialInterfaceVelocity;
-    double &initialInterfaceTimeStep;
+    int &previousInterfaceCell;
+    double &previousInterfaceVelocity;
+    double &previousInterfaceTimeStep;
 
     /// The unloading controller's moving average: the accumulated flow and the averaging interval,
     /// the samples they sum, and the window and the sample capacity that bound them.
@@ -103,11 +103,11 @@ struct GasLiftState {
     /// sample, and drops the oldest when they hold more samples than the capacity or span more time
     /// than the window.
     double &meanUnloadingFlowRate;
-    double &meanUnloadingTemperature;
-    std::vector<double> &maximumMeanUnloadingFlowRates;
-    std::vector<double> &unloadingTimeSteps;
-    const double &continuousMeanUnloadingTemperature;
-    const int &maximumContinuousUnloadingCount;
+    double &unloadingAveragingInterval;
+    std::vector<double> &maximumUnloadingFlowSamples;
+    std::vector<double> &unloadingTimeStepSamples;
+    const double &unloadingAveragingWindow;
+    const int &unloadingSampleCapacity;
 
     /// Discharge temperature, computed by the thermal module.
     GasLiftTemperatureUpdater temperatureUpdater;

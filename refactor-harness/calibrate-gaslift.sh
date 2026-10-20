@@ -71,10 +71,10 @@ probe 'areaValvCali: opening cap'         'if (openingArea > throatArea)' \
 # updateGasLine writes this assignment twice -- once per branch of its interior
 # if/else. Only the interior branch follows presL with presR, so carrying the
 # next line pins the corruption to that one.
-probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 3];
-            state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];' \
-                                          'state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 2];
-            state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];' \
+probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 3];
+            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];' \
+                                          'state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 2];
+            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];' \
                                           "$target_gaslift"
 # ------------------------------------------------------- unloading probes ---
 # The six routines below were, until the sweep was extended, executed by no
@@ -98,8 +98,8 @@ probe 'CalcPresValvDesc: wall shear' \
     "$target_gaslift"
 
 probe 'BuscaPresInjDesc: pressure decay' \
-    'state.gasSurfacePressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);' \
-    'state.gasSurfacePressure *= (1 - 2 * kSeparatorPressureDecayPerSecond * state.timeStep);' \
+    'state.separatorPressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);' \
+    'state.separatorPressure *= (1 - 2 * kSeparatorPressureDecayPerSecond * state.timeStep);' \
     "$target_gaslift"
 
 # The hand-over branch, which only the second advancInter row reaches. If that
@@ -133,9 +133,9 @@ probe 'subtempoGasBuf: choke opening bound' \
 # updateBufferedGasLine writes one field, in three byte-identical branches.
 # Without a probe on the offset itself the whole routine was unguarded.
 probe 'renovaGasBuf: buffer offset' \
-    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
+    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[3 * gasCellIndex + 1];
 }' \
-    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 2];
+    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[3 * gasCellIndex + 2];
 }' \
     "$target_gaslift"
 

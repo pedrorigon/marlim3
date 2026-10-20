@@ -143,8 +143,8 @@ template <typename Phase>
 [[nodiscard]] double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
     double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
     if (chokeOpeningFraction < kThrottlingChokeOpening) {
-        state.injectionChoke.presEstag = state.initialGasPressure;
-        state.injectionChoke.tempEstag = state.initialGasTemperature;
+        state.injectionChoke.presEstag = state.injectionPressure;
+        state.injectionChoke.tempEstag = state.injectionTemperature;
         state.injectionChoke.presGarg = state.gasCells[0].pres;
         state.gasCells[0].massfonteCH = state.injectionChoke.massica();
     }
@@ -163,17 +163,17 @@ void assembleAndSolveGasSystem(const GasLiftState &state) {
         [&](auto condition) { return injectionChokeOpening(state, condition); });
 #pragma omp parallel for num_threads(state.globals->ntrd)
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
-        state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.initialGasPressure, state.initialGasTemperature, chokeOpeningFraction);
+        state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.injectionPressure, state.injectionTemperature, chokeOpeningFraction);
         for (int bandIndex = 0; bandIndex < 9; bandIndex++) {
             state.gasSystemMatrix[3 * gasCellIndex][bandIndex - 3] = state.gasCells[gasCellIndex].local[0][bandIndex];
             state.gasSystemMatrix[3 * gasCellIndex + 1][bandIndex - 4] = state.gasCells[gasCellIndex].local[1][bandIndex];
             state.gasSystemMatrix[3 * gasCellIndex + 2][bandIndex - 5] = state.gasCells[gasCellIndex].local[2][bandIndex];
         }
-        state.gasFreeTerms[3 * gasCellIndex] = state.gasCells[gasCellIndex].TL[0];
-        state.gasFreeTerms[3 * gasCellIndex + 1] = state.gasCells[gasCellIndex].TL[1];
-        state.gasFreeTerms[3 * gasCellIndex + 2] = state.gasCells[gasCellIndex].TL[2];
+        state.gasRightHandSide[3 * gasCellIndex] = state.gasCells[gasCellIndex].TL[0];
+        state.gasRightHandSide[3 * gasCellIndex + 1] = state.gasCells[gasCellIndex].TL[1];
+        state.gasRightHandSide[3 * gasCellIndex + 2] = state.gasCells[gasCellIndex].TL[2];
     }
-    state.gasSystemMatrix.GaussElimPP(state.gasFreeTerms);
+    state.gasSystemMatrix.GaussElimPP(state.gasRightHandSide);
 }
 
 /// Clamps a gas cell's temperature to the physical range and copies it to the
@@ -255,7 +255,7 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
         state.input.gasinj.tipoCC,
         [&](auto condition) { return unloadingStartPressure(state, condition); });
     if (state.input.controDesc == 1)
-        state.initialGasPressure = state.input.presIniDescG;
+        state.injectionPressure = state.input.presIniDescG;
 
     state.gasCells[0].presL = meanPressure;
     state.gasCells[0].pres = meanPressure;
@@ -497,7 +497,7 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
 }
 
 void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex) {
-    double meanPressure = state.gasSurfacePressure;
+    double meanPressure = state.separatorPressure;
     state.input.presMaxDesc = kUnboundedUnloadingPressure;
     for (int cellIndex = state.lastCell; cellIndex >= 0; cellIndex--) {
         double meanTemperature = state.cells[cellIndex].temp;
@@ -527,27 +527,27 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
         double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.;
         meanPressure -= (-kGravity * mixtureDensity * sin(state.cells[cellIndex].duto.teta) - tens1 * perimeter / flowArea) * cellLength / units::kPascalPerKgfPerCm2;
         if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
-            double candidateMaximumPressure = state.cells[cellIndex].acsr.ipr.Pres - (meanPressure - state.gasSurfacePressure);
+            double candidateMaximumPressure = state.cells[cellIndex].acsr.ipr.Pres - (meanPressure - state.separatorPressure);
             if (candidateMaximumPressure < state.input.presMaxDesc)
                 state.input.presMaxDesc = candidateMaximumPressure;
         }
     }
-    if (state.gasSurfacePressure >= state.input.presMaxDesc * kReachedMaximumPressureFactor && throatFlowRate > (1 - kUnloadingUpperBandMargin) * state.input.vazDescControl && state.gasCells[0].VGasR > 0.) {
+    if (state.separatorPressure >= state.input.presMaxDesc * kReachedMaximumPressureFactor && throatFlowRate > (1 - kUnloadingUpperBandMargin) * state.input.vazDescControl && state.gasCells[0].VGasR > 0.) {
         double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, (1 - kUnloadingUpperBandMargin), -1);
-        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt)
-            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt;
-        state.initialGasPressure += pressureCorrection;
-        if (state.initialGasPressure < state.input.presMinDescG) {
-            state.initialGasPressure = state.input.presMinDescG;
+        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.injectionPressure * state.cells[0].dt)
+            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.injectionPressure * state.cells[0].dt;
+        state.injectionPressure += pressureCorrection;
+        if (state.injectionPressure < state.input.presMinDescG) {
+            state.injectionPressure = state.input.presMinDescG;
         }
 
-    } else if (throatFlowRate <= (1 - kUnloadingLowerBandMargin) * state.input.vazDescControl && state.gasSurfacePressure <= state.input.presMinDesc * kReachedMinimumPressureFactor) {
+    } else if (throatFlowRate <= (1 - kUnloadingLowerBandMargin) * state.input.vazDescControl && state.separatorPressure <= state.input.presMinDesc * kReachedMinimumPressureFactor) {
         double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, 1 - kUnloadingLowerBandMargin, 1);
-        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt)
-            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt;
-        state.initialGasPressure += pressureCorrection;
-        if (state.initialGasPressure > state.input.presMaxDescG) {
-            state.initialGasPressure = state.input.presMaxDescG;
+        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.injectionPressure * state.cells[0].dt)
+            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.injectionPressure * state.cells[0].dt;
+        state.injectionPressure += pressureCorrection;
+        if (state.injectionPressure > state.input.presMaxDescG) {
+            state.injectionPressure = state.input.presMaxDescG;
         }
     }
 }
@@ -576,56 +576,56 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
                     }
                 }
             }
-            if (std::ssize(state.unloadingTimeSteps) > state.maximumContinuousUnloadingCount || state.meanUnloadingTemperature > state.continuousMeanUnloadingTemperature) {
-                state.meanUnloadingTemperature -= state.unloadingTimeSteps[0];
-                state.unloadingTimeSteps.erase(state.unloadingTimeSteps.begin());
-                state.meanUnloadingFlowRate -= state.maximumMeanUnloadingFlowRates[0];
-                state.maximumMeanUnloadingFlowRates.erase(state.maximumMeanUnloadingFlowRates.begin());
+            if (std::ssize(state.unloadingTimeStepSamples) > state.unloadingSampleCapacity || state.unloadingAveragingInterval > state.unloadingAveragingWindow) {
+                state.unloadingAveragingInterval -= state.unloadingTimeStepSamples[0];
+                state.unloadingTimeStepSamples.erase(state.unloadingTimeStepSamples.begin());
+                state.meanUnloadingFlowRate -= state.maximumUnloadingFlowSamples[0];
+                state.maximumUnloadingFlowSamples.erase(state.maximumUnloadingFlowSamples.begin());
             }
 
-            state.maximumMeanUnloadingFlowRates.push_back(maximumUnloadingFlowRate * state.timeStep);
+            state.maximumUnloadingFlowSamples.push_back(maximumUnloadingFlowRate * state.timeStep);
             state.meanUnloadingFlowRate += maximumUnloadingFlowRate * state.timeStep;
-            state.unloadingTimeSteps.push_back(state.timeStep);
-            state.meanUnloadingTemperature += state.timeStep;
+            state.unloadingTimeStepSamples.push_back(state.timeStep);
+            state.unloadingAveragingInterval += state.timeStep;
 
             instantaneousMaximumFlowRate = maximumUnloadingFlowRate;
-            maximumUnloadingFlowRate = kCurrentFlowWeight * maximumUnloadingFlowRate + (1. - kCurrentFlowWeight) * state.meanUnloadingFlowRate / state.meanUnloadingTemperature;
+            maximumUnloadingFlowRate = kCurrentFlowWeight * maximumUnloadingFlowRate + (1. - kCurrentFlowWeight) * state.meanUnloadingFlowRate / state.unloadingAveragingInterval;
             computeUnloadingValvePressure(state, maximumUnloadingFlowRate, selectedValveIndex);
             if (state.gasValveCellIndices[selectedValveIndex] >= state.interfaceCell) {
                 if (state.cells[state.lastCell - 1].MC > 0.0) {
                     if (maximumUnloadingFlowRate > (1. - kUnloadingUpperBandMargin) * state.input.vazDescControl) {
                         double pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - kUnloadingUpperBandMargin, -1);
-                        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt)
-                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt;
-                        state.gasSurfacePressure -= pressureCorrection;
-                        if (state.gasSurfacePressure > state.input.presMaxDesc)
-                            state.gasSurfacePressure = state.input.presMaxDesc;
+                        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.separatorPressure * state.cells[0].dt)
+                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.separatorPressure * state.cells[0].dt;
+                        state.separatorPressure -= pressureCorrection;
+                        if (state.separatorPressure > state.input.presMaxDesc)
+                            state.separatorPressure = state.input.presMaxDesc;
                     } else if (maximumUnloadingFlowRate <= (1 - kUnloadingLowerBandMargin) * state.input.vazDescControl) {
                         double pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - kUnloadingLowerBandMargin, 1);
-                        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt)
-                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt;
-                        state.gasSurfacePressure -= pressureCorrection;
-                        if (state.gasSurfacePressure < state.input.presMinDesc)
-                            state.gasSurfacePressure = state.input.presMinDesc;
+                        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.separatorPressure * state.cells[0].dt)
+                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.separatorPressure * state.cells[0].dt;
+                        state.separatorPressure -= pressureCorrection;
+                        if (state.separatorPressure < state.input.presMinDesc)
+                            state.separatorPressure = state.input.presMinDesc;
                     }
                 } else {
-                    state.gasSurfacePressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);
-                    if (state.gasSurfacePressure < state.input.presMinDesc)
-                        state.gasSurfacePressure = state.input.presMinDesc;
+                    state.separatorPressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);
+                    if (state.separatorPressure < state.input.presMinDesc)
+                        state.separatorPressure = state.input.presMinDesc;
                 }
             }
         } else {
             if (state.globals->lixo5 < 0.5 * state.input.tempoLatenciaDesc)
-                state.gasSurfacePressure = initialUnloadingPressure - (initialUnloadingPressure - state.input.presMinDesc) * state.cells[0].dt / (0.5 * state.input.tempoLatenciaDesc - state.globals->lixo5);
+                state.separatorPressure = initialUnloadingPressure - (initialUnloadingPressure - state.input.presMinDesc) * state.cells[0].dt / (0.5 * state.input.tempoLatenciaDesc - state.globals->lixo5);
             else
-                state.gasSurfacePressure = state.input.presMinDesc;
-            state.initialGasPressure = state.input.presIniDescG;
+                state.separatorPressure = state.input.presMinDesc;
+            state.injectionPressure = state.input.presIniDescG;
         }
     } else {
-        state.gasSurfacePressure *= kRelaxationDownFactor;
-        if (state.gasSurfacePressure < state.input.presMinDesc)
-            state.gasSurfacePressure = state.input.presMinDesc;
-        relaxTowards(state.initialGasPressure, state.input.presIniDesc);
+        state.separatorPressure *= kRelaxationDownFactor;
+        if (state.separatorPressure < state.input.presMinDesc)
+            state.separatorPressure = state.input.presMinDesc;
+        relaxTowards(state.injectionPressure, state.input.presIniDesc);
     }
     return instantaneousMaximumFlowRate;
 }
@@ -864,9 +864,9 @@ void advanceGasSubStep(const GasLiftState &state) {
         state.gasCells[gasCellIndex].DeVoltaParaoFuturo();
     state.interfaceTimeStep = state.timeStep;
     if (state.input.descarga == 1) {
-        state.initialInterfaceCell = state.interfaceCell;
-        state.initialInterfaceTimeStep = state.interfaceTimeStep;
-        state.initialInterfaceVelocity = state.interfaceVelocity;
+        state.previousInterfaceCell = state.interfaceCell;
+        state.previousInterfaceTimeStep = state.interfaceTimeStep;
+        state.previousInterfaceVelocity = state.interfaceVelocity;
         advanceInterface(state);
     }
     if (state.interfaceTimeStep < state.timeStep) {
@@ -892,7 +892,7 @@ void advanceGasSubStep(const GasLiftState &state) {
     for (int thermalCouplingCycle = 0; thermalCouplingCycle <= maximumThermalCouplingCycles; thermalCouplingCycle++) {
         assembleAndSolveGasSystem(state);
         updateGasLine(state);
-        state.gasCells[0].temp = state.initialGasTemperature;
+        state.gasCells[0].temp = state.injectionTemperature;
         state.gasCells[0].dTdt = (state.gasCells[0].temp - state.gasCells[0].tempini) / state.timeStep;
         if (state.gasCells[state.gasCellCount].VGasR < 0.)
             state.gasCells[state.gasCellCount].temp = kReverseFlowOutletTemperatureCelsius;
@@ -936,23 +936,23 @@ void advanceGasSubStep(const GasLiftState &state) {
 void updateGasLine(const GasLiftState &state) {
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         if (gasCellIndex != 0 && gasCellIndex != state.gasCellCount) {
-            state.gasCells[gasCellIndex].pres = state.gasFreeTerms[3 * gasCellIndex];
-            state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 3];
-            state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];
-            state.gasCells[gasCellIndex].VGasR = state.gasFreeTerms[3 * gasCellIndex + 1];
-            state.gasCells[gasCellIndex].VGasL = state.gasFreeTerms[3 * gasCellIndex - 2];
-            state.gasCells[gasCellIndex].VGasRR = state.gasFreeTerms[3 * gasCellIndex + 4];
+            state.gasCells[gasCellIndex].pres = state.gasRightHandSide[3 * gasCellIndex];
+            state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 3];
+            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];
+            state.gasCells[gasCellIndex].VGasR = state.gasRightHandSide[3 * gasCellIndex + 1];
+            state.gasCells[gasCellIndex].VGasL = state.gasRightHandSide[3 * gasCellIndex - 2];
+            state.gasCells[gasCellIndex].VGasRR = state.gasRightHandSide[3 * gasCellIndex + 4];
         } else if (gasCellIndex == 0) {
-            state.gasCells[gasCellIndex].pres = state.gasFreeTerms[3 * gasCellIndex];
+            state.gasCells[gasCellIndex].pres = state.gasRightHandSide[3 * gasCellIndex];
             state.gasCells[gasCellIndex].presL = state.gasCells[gasCellIndex].pres;
-            state.gasCells[gasCellIndex].presR = state.gasFreeTerms[3 * gasCellIndex + 3];
-            state.gasCells[gasCellIndex].VGasR = state.gasFreeTerms[3 * gasCellIndex + 1];
-            state.gasCells[gasCellIndex].VGasRR = state.gasFreeTerms[3 * gasCellIndex + 4];
+            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];
+            state.gasCells[gasCellIndex].VGasR = state.gasRightHandSide[3 * gasCellIndex + 1];
+            state.gasCells[gasCellIndex].VGasRR = state.gasRightHandSide[3 * gasCellIndex + 4];
         } else {
-            state.gasCells[gasCellIndex].pres = state.gasFreeTerms[3 * gasCellIndex];
-            state.gasCells[gasCellIndex].presL = state.gasFreeTerms[3 * gasCellIndex - 3];
-            state.gasCells[gasCellIndex].VGasR = state.gasFreeTerms[3 * gasCellIndex + 1];
-            state.gasCells[gasCellIndex].VGasL = state.gasFreeTerms[3 * gasCellIndex - 2];
+            state.gasCells[gasCellIndex].pres = state.gasRightHandSide[3 * gasCellIndex];
+            state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 3];
+            state.gasCells[gasCellIndex].VGasR = state.gasRightHandSide[3 * gasCellIndex + 1];
+            state.gasCells[gasCellIndex].VGasL = state.gasRightHandSide[3 * gasCellIndex - 2];
             state.gasCells[gasCellIndex].presR = state.gasCells[gasCellIndex].pres;
         }
     }
@@ -967,12 +967,12 @@ void advanceBufferedGasSubStep(const GasLiftState &state) {
 
 void updateBufferedGasLine(const GasLiftState &state) {
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++)
-        state.gasCells[gasCellIndex].VGasRBuf = state.gasFreeTerms[3 * gasCellIndex + 1];
+        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[3 * gasCellIndex + 1];
 }
 
 void connectTubing(const GasLiftState &state) {
-    for (int annulusCellIndex = state.annulusTubingStart; annulusCellIndex >= state.annulusTubingEnd; annulusCellIndex--) {
-        int tubingCellIndex = state.annulusTubingStart + state.tubingAnnulusStart - annulusCellIndex;
+    for (int annulusCellIndex = state.tubingCouplingStart; annulusCellIndex >= state.tubingCouplingEnd; annulusCellIndex--) {
+        int tubingCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - annulusCellIndex;
         state.cells[annulusCellIndex].calor.Textern2 = state.gasCells[tubingCellIndex].calor.Tcamada[0][0];
         state.cells[annulusCellIndex].calor.betext = state.gasCells[tubingCellIndex].calor.betint;
         int layerIndex = state.cells[annulusCellIndex].calor.geom.ncamadas - 1;
@@ -1005,8 +1005,8 @@ void connectTubing(const GasLiftState &state) {
 }
 
 void connectTubingSteady(const GasLiftState &state) {
-    for (int annulusCellIndex = state.annulusTubingStart; annulusCellIndex >= state.annulusTubingEnd; annulusCellIndex--) {
-        int tubingCellIndex = state.annulusTubingStart + state.tubingAnnulusStart - annulusCellIndex;
+    for (int annulusCellIndex = state.tubingCouplingStart; annulusCellIndex >= state.tubingCouplingEnd; annulusCellIndex--) {
+        int tubingCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - annulusCellIndex;
         state.cells[annulusCellIndex].calor.Textern2 = state.gasCells[tubingCellIndex].calor.Textern1;
         state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
 
@@ -1024,8 +1024,8 @@ void connectTubingSteady(const GasLiftState &state) {
 }
 
 void initializeTubingConnectionSteady(const GasLiftState &state) {
-    for (int annulusCellIndex = state.annulusTubingStart; annulusCellIndex >= state.annulusTubingEnd; annulusCellIndex--) {
-        int tubingCellIndex = state.annulusTubingStart + state.tubingAnnulusStart - annulusCellIndex;
+    for (int annulusCellIndex = state.tubingCouplingStart; annulusCellIndex >= state.tubingCouplingEnd; annulusCellIndex--) {
+        int tubingCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - annulusCellIndex;
         state.cells[annulusCellIndex].calor.Textern2 = state.gasCells[tubingCellIndex].calor.Textern2;
         state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
 
@@ -1289,7 +1289,7 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
 
 void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     if (state.thermalSourceDisabled == 0) {
-        if (cellIndex < state.tubingAnnulusStart || cellIndex > state.tubingAnnulusEnd) {
+        if (cellIndex < state.annulusCouplingStart || cellIndex > state.annulusCouplingEnd) {
             double dx = state.gasCells[cellIndex].dx0;
             double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
             double meanTemperatureGradient = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].dTdLCor + state.gasCells[cellIndex - 1].dx0 * state.gasCells[cellIndex - 1].dTdLCor) / (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
@@ -1361,9 +1361,9 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
 
             clampAndPropagateTemperature(state, cellIndex);
         } else {
-            if (state.networkCoupled == 1) {
-                int connectionCellIndex = cellIndex - state.tubingAnnulusStart;
-                int connectionIndex = state.annulusTubingStart - connectionCellIndex;
+            if (state.annulusThermalCoupling == 1) {
+                int connectionCellIndex = cellIndex - state.annulusCouplingStart;
+                int connectionIndex = state.tubingCouplingStart - connectionCellIndex;
                 int secondConnectionIndex = connectionIndex;
                 if (secondConnectionIndex == state.lastCell)
                     secondConnectionIndex -= 1;
