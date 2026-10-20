@@ -143,9 +143,9 @@ void updateBufferedGasLine(const GasLiftState &state);
 [[nodiscard]] double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate, int valveIndex,
                                                  double factor, int sign);
 
-/// Pressure at an unloading valve.
-double computeUnloadingValvePressure(const GasLiftState &state,
-                                     double throatFlowRate, int valveIndex);
+/// Recomputes presMaxDesc along the production column and moves the injection pressure towards the unloading
+/// flow band.
+void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex);
 
 /// Searches the injection pressure that satisfies the unloading schedule,
 /// writing it into the gas surface and initial pressures and into each valve's

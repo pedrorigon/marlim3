@@ -471,8 +471,7 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
     return sign * pressureCorrection;
 }
 
-double computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex) {
-    double maximumVelocity = 0;
+void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex) {
     double upperBandMargin = 0.1;
     double lowerBandMargin = 0.4;
 
@@ -529,8 +528,6 @@ double computeUnloadingValvePressure(const GasLiftState &state, double throatFlo
             state.initialGasPressure = state.input.presMaxDescG;
         }
     }
-
-    return maximumVelocity;
 }
 
 void solveUnloading(const GasLiftState &state) {
