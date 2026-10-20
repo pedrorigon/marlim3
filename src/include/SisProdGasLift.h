@@ -25,7 +25,7 @@ struct GasLiftTemperatureUpdater {
 
     void dischargeTemperature(int cellIndex) const;
     void computeGasTemperature(int cellIndex, double previousTemperature, int steadyMode = 0) const;
-    double gasLiftDischargeTemperature(int valveIndex) const;
+    [[nodiscard]] double gasLiftDischargeTemperature(int valveIndex) const;
 };
 
 /// The state the gas line and gas-lift routines read, and the only state they
@@ -134,15 +134,14 @@ void updateGasLine(const GasLiftState &state);
 void updateBufferedGasLine(const GasLiftState &state);
 
 /// Throat area of a calibrated gas-lift valve.
-double calibratedValveArea(double calibrationPressure, double calibrationTemperature,
-                           double valveOpeningPressure, double tubingPressure,
-                           double externalDiameter, double throatArea,
-                           double valveRatio,
-                           double bottomHoleTemperatureFahrenheit);
+[[nodiscard]] double calibratedValveArea(double calibrationPressure, double calibrationTemperature,
+                                         double valveOpeningPressure, double tubingPressure,
+                                         double externalDiameter, double throatArea, double valveRatio,
+                                         double bottomHoleTemperatureFahrenheit);
 
 /// Pressure correction applied to the unloading flow of one valve.
-double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate,
-                                   int valveIndex, double factor, int sign);
+[[nodiscard]] double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate, int valveIndex,
+                                                 double factor, int sign);
 
 /// Pressure at an unloading valve.
 double computeUnloadingValvePressure(const GasLiftState &state,
@@ -152,7 +151,7 @@ double computeUnloadingValvePressure(const GasLiftState &state,
 /// writing it into the gas surface and initial pressures and into each valve's
 /// stage and throat pressures. Returns the maximum unloading flow rate the
 /// search reached -- the caller keeps it as velmaxdesc.
-double searchUnloadingInjectionPressure(const GasLiftState &state);
+[[nodiscard]] double searchUnloadingInjectionPressure(const GasLiftState &state);
 
 /// Solves one unloading step.
 void solveUnloading(const GasLiftState &state);
@@ -172,8 +171,8 @@ void connectTubing(const GasLiftState &state);
 /// Steady-state counterparts.
 void connectTubingSteady(const GasLiftState &state);
 void initializeTubingConnectionSteady(const GasLiftState &state);
-double steadyGasPressureDrop(const GasLiftState &state, int cellIndex);
-double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex);
+[[nodiscard]] double steadyGasPressureDrop(const GasLiftState &state, int cellIndex);
+[[nodiscard]] double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex);
 void updateSteadyGasPressure(const GasLiftState &state, int cellIndex);
 void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex);
 void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex);

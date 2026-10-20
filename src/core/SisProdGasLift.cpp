@@ -52,18 +52,18 @@ inline constexpr double kSmallBoreSpringRate = 1950.0;
 /// What flows through a gas-lift valve, and how its throat pressure is
 /// recovered.
 struct GasThroughValve {
-    static double recovery(const ChokeGas &choke) { return choke.frec; }
-    static double massFlowRate(ChokeGas &choke, const Ler &) { return choke.massica(); }
+    [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frec; }
+    [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &) { return choke.massica(); }
 };
 struct CompletionFluidThroughValve {
-    static double recovery(const ChokeGas &choke) { return choke.frecliq; }
-    static double massFlowRate(ChokeGas &choke, const Ler &input) { return choke.massica(1, input.salinDescarga); }
+    [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frecliq; }
+    [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &input) { return choke.massica(1, input.salinDescarga); }
 };
 /// Gas-side recovery, completion-fluid mass flow: the combination the unloading
 /// search uses.
 struct UnloadingThroughValve {
-    static double recovery(const ChokeGas &choke) { return choke.frec; }
-    static double massFlowRate(ChokeGas &choke, const Ler &input) { return choke.massica(1, input.salinDescarga); }
+    [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frec; }
+    [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &input) { return choke.massica(1, input.salinDescarga); }
 };
 
 /// Primes the choke from the two cells it spans and returns the mass source it
@@ -86,7 +86,7 @@ template <typename Phase>
 /// condition it is the choke's own, and a choke throttling the line also sets
 /// the inlet mass source through it; under a flow-rate condition the source is
 /// given and the choke counts as open.
-double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
+[[nodiscard]] double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
     double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
     if (chokeOpeningFraction < kThrottlingChokeOpening) {
         state.injectionChoke.presEstag = state.initialGasPressure;
@@ -97,7 +97,7 @@ double injectionChokeOpening(const GasLiftState &state, InjectionPressureConditi
     return chokeOpeningFraction;
 }
 
-double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
+[[nodiscard]] double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
     return 1.;
 }
 
@@ -171,7 +171,7 @@ void publishExternalFluid(Cel &annulusCell, const ExternalFluidProperties &fluid
 /// injection pressure does not give it: 10 kgf/cm^2, or the unloading's own
 /// initial pressure when the unloading is controlled -- which then becomes the
 /// line's initial pressure too.
-double defaultUnloadingStartPressure(const GasLiftState &state) {
+[[nodiscard]] double defaultUnloadingStartPressure(const GasLiftState &state) {
     double meanPressure = 10.;
     if (state.input.controDesc == 1) {
         meanPressure = state.input.presIniDescG;
@@ -182,13 +182,13 @@ double defaultUnloadingStartPressure(const GasLiftState &state) {
 
 /// The unloading starts from the configured injection pressure, unless the
 /// unloading is controlled.
-double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition) {
+[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition) {
     if (state.input.controDesc == 0)
         return state.input.gasinj.presinj[0];
     return defaultUnloadingStartPressure(state);
 }
 
-double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition) {
+[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition) {
     return defaultUnloadingStartPressure(state);
 }
 
