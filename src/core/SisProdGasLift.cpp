@@ -213,6 +213,15 @@ void relaxTowards(double &pressure, double target) {
     return correction;
 }
 
+/// Calls visit(productionCellIndex, gasCellIndex) for each pair of cells the column-annulus thermal coupling joins,
+/// from tubingCouplingStart down to tubingCouplingEnd.
+template <typename Visit>
+void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit) {
+    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd;
+         productionCellIndex--)
+        visit(productionCellIndex, state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex);
+}
+
 /// Clears a production cell's mass sources.
 void clearMassSources(Cel &cell) {
     cell.massfonteCH = 0;
@@ -970,8 +979,7 @@ void updateBufferedGasLine(const GasLiftState &state) {
 }
 
 void connectTubing(const GasLiftState &state) {
-    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd; productionCellIndex--) {
-        int gasCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex;
+    forEachCoupledCellPair(state, [&](int productionCellIndex, int gasCellIndex) {
         state.cells[productionCellIndex].calor.Textern2 = state.gasCells[gasCellIndex].calor.Tcamada[0][0];
         state.cells[productionCellIndex].calor.betext = state.gasCells[gasCellIndex].calor.betint;
         int layerIndex = state.cells[productionCellIndex].calor.geom.ncamadas - 1;
@@ -1000,12 +1008,11 @@ void connectTubing(const GasLiftState &state) {
                      gasCell.VisFlu(gasPressure, gasTemperature)};
         }
         publishExternalFluid(state.cells[productionCellIndex], fluid);
-    }
+    });
 }
 
 void connectTubingSteady(const GasLiftState &state) {
-    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd; productionCellIndex--) {
-        int gasCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex;
+    forEachCoupledCellPair(state, [&](int productionCellIndex, int gasCellIndex) {
         state.cells[productionCellIndex].calor.Textern2 = state.gasCells[gasCellIndex].calor.Textern1;
         state.cells[productionCellIndex].calor.colunaDia = state.gasCells[gasCellIndex].duto.dia;
 
@@ -1019,12 +1026,11 @@ void connectTubingSteady(const GasLiftState &state) {
         publishExternalFluid(state.cells[productionCellIndex],
                              {gasCell.flui.CondGas(gasPressure, gasTemperature), gasSpecificHeat, gasDensity,
                               gasCell.flui.ViscGas(gasPressure, gasTemperature)});
-    }
+    });
 }
 
 void initializeTubingConnectionSteady(const GasLiftState &state) {
-    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd; productionCellIndex--) {
-        int gasCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex;
+    forEachCoupledCellPair(state, [&](int productionCellIndex, int gasCellIndex) {
         state.cells[productionCellIndex].calor.Textern2 = state.gasCells[gasCellIndex].calor.Textern2;
         state.cells[productionCellIndex].calor.colunaDia = state.gasCells[gasCellIndex].duto.dia;
 
@@ -1041,7 +1047,7 @@ void initializeTubingConnectionSteady(const GasLiftState &state) {
         publishExternalFluid(state.cells[productionCellIndex],
                              {gasCell.flui.CondGas(productionPressure, externalTemperature), gasSpecificHeat, gasDensity,
                               kInitialAnnulusGasViscosityCentipoise});
-    }
+    });
 }
 
 double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
