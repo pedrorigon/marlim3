@@ -62,8 +62,14 @@ PY
     fi
 }
 
-probe 'areaValvCali: calibration blend'   'bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) * (kBellowsReferenceTemperatureFahrenheit + units::kZeroFahrenheitInRankine) / calibrationTemperatureRankine - units::kAtmosphereInPsi;' \
-                                          'bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) * (kBellowsReferenceTemperatureFahrenheit + 0.01 + units::kZeroFahrenheitInRankine) / calibrationTemperatureRankine - units::kAtmosphereInPsi;' \
+probe 'areaValvCali: calibration blend'   'bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) *
+                               (kBellowsReferenceTemperatureFahrenheit + units::kZeroFahrenheitInRankine) /
+                               calibrationTemperatureRankine -
+                           units::kAtmosphereInPsi;' \
+                                          'bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) *
+                               (kBellowsReferenceTemperatureFahrenheit + 0.01 + units::kZeroFahrenheitInRankine) /
+                               calibrationTemperatureRankine -
+                           units::kAtmosphereInPsi;' \
                                           "$target_gaslift"
 probe 'areaValvCali: opening cap'         'if (openingArea > throatArea)' \
                                           'if (openingArea > 2. * throatArea)' \
@@ -85,8 +91,10 @@ probe 'updateGasLine: neighbour source'   'cell.presL = first ? cell.pres : pres
 # a near-duplicate of advanceGasSubStep and every single line it contains also
 # appears there.
 probe 'HidroDescargaG: hydrostatic head' \
-    'meanPressure -= localDensity * kGravityUnloadingVariant * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
-    'meanPressure -= localDensity * kGravity * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
+    'meanPressure -= localDensity * kGravityUnloadingVariant * halfLocalLength *
+                        sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
+    'meanPressure -= localDensity * kGravity * halfLocalLength *
+                        sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
     "$target_gaslift"
 
 probe 'CalcPresValvDesc: wall shear' \
@@ -107,8 +115,10 @@ probe 'avancInter: handover ratio' \
     "$target_gaslift"
 
 probe 'resolveDescarga: liquid hydrostatic' \
-    'double leftLiquidHead = (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
-    'double leftLiquidHead = (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
+    'double leftLiquidHead =
+            (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
+    'double leftLiquidHead =
+            (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
     "$target_gaslift"
 
 # Splits the gas/liquid share of every control volume. Moving the threshold
@@ -138,23 +148,33 @@ probe 'renovaGasBuf: buffer offset' \
 
 probe 'prescordesc: sign'                 'return sign * pressureCorrection;' 'return -sign * pressureCorrection;' \
                                           "$target_gaslift"
-probe 'prescordesc: throat area'          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
-                                          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
+probe 'prescordesc: throat area'          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) /
+                                      (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
+                                          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) /
+                                      (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
                                           "$target_gaslift"
-probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
-                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravityUnloadingVariant * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
+probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient =
+        state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
+                                          'double hydrostaticGradient =
+        state.gasCells[cellIndex].dPdLHidro * (kGravityUnloadingVariant * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
                                           "$target_gaslift"
 # Both steady drops divide by 98066.5; the hydrostatic line above pins this one
 # to delpGasPerm.
-probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
+probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient =
+        state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
     double pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;' \
-                                          'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
+                                          'double hydrostaticGradient =
+        state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
 
     double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.52;' \
                                           "$target_gaslift"
-probe 'delpInjPerm: interpolation weight' 'meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
-                                          'meanTemperature = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp + state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
+probe 'delpInjPerm: interpolation weight' 'meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp +
+                              state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) /
+                             (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
+                                          'meanTemperature = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp +
+                              state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) /
+                             (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
                                           "$target_gaslift"
 
 cp "$scratch/pristine.cpp" "$target"
