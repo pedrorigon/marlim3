@@ -213,6 +213,47 @@ void relaxTowards(double &pressure, double target) {
     return correction;
 }
 
+/// Clears a production cell's mass sources.
+void clearMassSources(Cel &cell) {
+    cell.massfonteCH = 0;
+    cell.fontemassCL = 0;
+    cell.fontemassLL = 0;
+    cell.fontemassGL = 0;
+    cell.fontemassCR = 0;
+    cell.fontemassLR = 0;
+    cell.fontemassGR = 0;
+}
+
+/// Gives a production cell the phases of the unloading's initial state, completion fluid below the interface and
+/// gas above it, with the copies the march and the pigs start from.
+void setUnloadingPhase(Cel &cell, bool belowInterface) {
+    cell.alf = belowInterface ? 0. : 1.;
+    cell.bet = belowInterface ? 1. : 0.;
+    cell.betI = cell.bet;
+    cell.alfini = cell.alf;
+    cell.betini = cell.bet;
+    cell.alfPigD = cell.alf;
+    cell.betPigD = cell.bet;
+    cell.alfPigE = cell.alf;
+    cell.betPigE = cell.bet;
+}
+
+/// Copies a production cell's phases to the face values its neighbours hold of it.
+void copyPhaseToLeftNeighbour(const Cel &cell, Cel &left) {
+    left.betR = cell.bet;
+    left.betRini = cell.bet;
+    left.alfR = cell.alf;
+    left.alfRini = cell.alf;
+}
+
+void copyPhaseToRightNeighbour(const Cel &cell, Cel &right) {
+    right.alfL = cell.alf;
+    right.betL = cell.bet;
+    right.betLI = cell.bet;
+    right.alfLini = cell.alf;
+    right.betLini = cell.bet;
+}
+
 /// The volume flow of a gas cell's source during the unloading: gas once the
 /// interface is past the cell's middle, completion fluid before.
 [[nodiscard]] double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity) {
@@ -312,28 +353,10 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
 }
 
 void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
-    state.cells[0].massfonteCH = 0;
-    state.cells[0].fontemassCL = 0;
-    state.cells[0].fontemassLL = 0;
-    state.cells[0].fontemassGL = 0;
-    state.cells[0].fontemassCR = 0;
-    state.cells[0].fontemassLR = 0;
-    state.cells[0].fontemassGR = 0;
+    clearMassSources(state.cells[0]);
     const bool inletBelowInterface = 0 <= state.input.celdescargaP;
-    state.cells[0].alf = inletBelowInterface ? 0. : 1.;
-    state.cells[0].bet = inletBelowInterface ? 1. : 0.;
-    state.cells[0].betI = state.cells[0].bet;
-    state.cells[0].alfini = state.cells[0].alf;
-    state.cells[0].betini = state.cells[0].bet;
-    state.cells[0].alfPigD = state.cells[0].alf;
-    state.cells[0].betPigD = state.cells[0].bet;
-    state.cells[0].alfPigE = state.cells[0].alf;
-    state.cells[0].betPigE = state.cells[0].bet;
-    state.cells[1].alfL = state.cells[0].alf;
-    state.cells[1].betL = state.cells[0].bet;
-    state.cells[1].betLI = state.cells[0].bet;
-    state.cells[1].alfLini = state.cells[0].alf;
-    state.cells[1].betLini = state.cells[0].bet;
+    setUnloadingPhase(state.cells[0], inletBelowInterface);
+    copyPhaseToRightNeighbour(state.cells[0], state.cells[1]);
     double meanPressure = state.cells[0].acsr.ipr.Pres;
     state.cells[0].presL = meanPressure;
     state.cells[1].presL = meanPressure;
@@ -424,26 +447,9 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
         state.cells[i].rcCi = interpolatedDensity;
         state.cells[i - 1].rcRi = interpolatedDensity;
 
-        state.cells[i].massfonteCH = 0;
-        state.cells[i].fontemassCL = 0;
-        state.cells[i].fontemassLL = 0;
-        state.cells[i].fontemassGL = 0;
-        state.cells[i].fontemassCR = 0;
-        state.cells[i].fontemassLR = 0;
-        state.cells[i].fontemassGR = 0;
-        state.cells[i].alf = belowInterface ? 0. : 1.;
-        state.cells[i].bet = belowInterface ? 1. : 0.;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].betPigE = state.cells[i].bet;
+        clearMassSources(state.cells[i]);
+        setUnloadingPhase(state.cells[i], belowInterface);
+        copyPhaseToLeftNeighbour(state.cells[i], state.cells[i - 1]);
 
         if (i < state.lastCell) {
             state.cells[i + 1].tempL = meanTemperature;
@@ -452,11 +458,7 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
             state.cells[i + 1].rcL = state.cells[i].rcC;
             state.cells[i + 1].rpLi = interpolatedDensity;
             state.cells[i + 1].rcLi = interpolatedDensity;
-            state.cells[i + 1].alfL = state.cells[i].alf;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-            state.cells[i + 1].betLini = state.cells[i].bet;
+            copyPhaseToRightNeighbour(state.cells[i], state.cells[i + 1]);
         }
     }
 }
