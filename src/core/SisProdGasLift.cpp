@@ -107,7 +107,7 @@ void assembleAndSolveGasSystem(const GasLiftState &state) {
     double chokeOpeningFraction = withGasInletCondition(
         state.gasCells[0].tipoCC,
         [&](auto condition) { return injectionChokeOpening(state, condition); });
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads(state.globals->ntrd)
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.initialGasPressure, state.initialGasTemperature, chokeOpeningFraction);
         for (int bandIndex = 0; bandIndex < 9; bandIndex++) {
@@ -569,7 +569,7 @@ void solveUnloading(const GasLiftState &state) {
         double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(leftCellPressure, temp);
         double viscG = state.gasCells[gasCellIndex].flui.ViscGas(leftCellPressure, temp);
         const double carryingDensity =
-            state.gasCells[gasCellIndex].razInter > (*state.globals).localtiny ? gasDensity : rhoL;
+            state.gasCells[gasCellIndex].razInter > state.globals->localtiny ? gasDensity : rhoL;
         double vel1 = state.gasCells[gasCellIndex].VGasL / (carryingDensity * state.gasCells[gasCellIndex - 1].duto.area);
         double vel2 = state.gasCells[gasCellIndex].VGasL / (carryingDensity * state.gasCells[gasCellIndex].duto.area);
         double re1G;
@@ -677,31 +677,31 @@ void advanceInterface(const GasLiftState &state) {
     }
 
     if (state.input.descarga == 1) {
-        if (state.gasCells[state.interfaceCell].razInter <= (*state.globals).localtiny && state.gasCells[state.interfaceCell].razInter >= -(*state.globals).localtiny)
+        if (state.gasCells[state.interfaceCell].razInter <= state.globals->localtiny && state.gasCells[state.interfaceCell].razInter >= -state.globals->localtiny)
             state.gasCells[state.interfaceCell].razInter = 0;
-        else if (state.gasCells[state.interfaceCell].razInter < -(*state.globals).localtiny) {
+        else if (state.gasCells[state.interfaceCell].razInter < -state.globals->localtiny) {
             const double interfaceCrossingTimeStep =
                 -state.gasCells[state.interfaceCell].razInterIni * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
-            if (interfaceCrossingTimeStep > (*state.globals).localtiny)
+            if (interfaceCrossingTimeStep > state.globals->localtiny)
                 state.interfaceTimeStep = interfaceCrossingTimeStep;
             state.gasCells[state.interfaceCell].razInter = 0.;
-        } else if (state.gasCells[state.interfaceCell].razInter >= 1. - (*state.globals).localtiny && state.gasCells[state.interfaceCell].razInter <= 1. + (*state.globals).localtiny) {
+        } else if (state.gasCells[state.interfaceCell].razInter >= 1. - state.globals->localtiny && state.gasCells[state.interfaceCell].razInter <= 1. + state.globals->localtiny) {
             state.gasCells[state.interfaceCell].razInter = 1.;
-        } else if (state.gasCells[state.interfaceCell].razInter > (1. + (*state.globals).localtiny)) {
+        } else if (state.gasCells[state.interfaceCell].razInter > (1. + state.globals->localtiny)) {
             const double interfaceCrossingTimeStep =
                 (1. - state.gasCells[state.interfaceCell].razInterIni) * state.gasCells[state.interfaceCell].dx0 / state.interfaceVelocity;
-            if (interfaceCrossingTimeStep > (*state.globals).localtiny)
+            if (interfaceCrossingTimeStep > state.globals->localtiny)
                 state.interfaceTimeStep = interfaceCrossingTimeStep;
             state.gasCells[state.interfaceCell].razInter = 1.;
         }
 
-        if (fabs(state.gasCells[state.interfaceCell].razInter) < (*state.globals).localtiny && state.interfaceVelocity < -fabs((*state.globals).localtiny)) {
+        if (fabs(state.gasCells[state.interfaceCell].razInter) < state.globals->localtiny && state.interfaceVelocity < -fabs(state.globals->localtiny)) {
             state.gasCells[state.interfaceCell].razInter = 0.;
             if (state.interfaceCell > 0) {
                 state.interfaceCell--;
                 state.gasCells[state.interfaceCell].razInter = 1.;
             }
-        } else if (fabs(state.gasCells[state.interfaceCell].razInter - 1.) < (*state.globals).localtiny && state.interfaceVelocity > (*state.globals).localtiny) {
+        } else if (fabs(state.gasCells[state.interfaceCell].razInter - 1.) < state.globals->localtiny && state.interfaceVelocity > state.globals->localtiny) {
             state.gasCells[state.interfaceCell].razInter = 1.;
             if (state.interfaceCell < state.gasCellCount) {
                 state.interfaceCell++;
@@ -773,7 +773,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
     double lowerBandMargin = 0.4;
     if (state.input.descarga == 1) {
         double initialUnloadingPressure = state.cells[state.lastCell].pres;
-        if ((*state.globals).lixo5 > state.input.tempoLatenciaDesc) {
+        if (state.globals->lixo5 > state.input.tempoLatenciaDesc) {
             int valveCount = state.input.nvalvgas;
             int selectedValveIndex = 0;
             for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
@@ -833,8 +833,8 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
                 }
             }
         } else {
-            if ((*state.globals).lixo5 < 0.5 * state.input.tempoLatenciaDesc)
-                state.gasSurfacePressure = initialUnloadingPressure - (initialUnloadingPressure - state.input.presMinDesc) * state.cells[0].dt / (0.5 * state.input.tempoLatenciaDesc - (*state.globals).lixo5);
+            if (state.globals->lixo5 < 0.5 * state.input.tempoLatenciaDesc)
+                state.gasSurfacePressure = initialUnloadingPressure - (initialUnloadingPressure - state.input.presMinDesc) * state.cells[0].dt / (0.5 * state.input.tempoLatenciaDesc - state.globals->lixo5);
             else
                 state.gasSurfacePressure = state.input.presMinDesc;
             state.initialGasPressure = state.input.presIniDescG;
@@ -885,7 +885,7 @@ void advanceGasSubStep(const GasLiftState &state) {
         state.gasCells[0].dTdt = (state.gasCells[0].temp - state.gasCells[0].tempini) / state.timeStep;
         if (state.gasCells[state.gasCellCount].VGasR < 0.)
             state.gasCells[state.gasCellCount].temp = 20.;
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads(state.globals->ntrd)
         for (int gasCellIndex = 1; gasCellIndex < cellLimit; gasCellIndex++) {
             state.temperatureUpdater.computeGasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
             state.gasCells[gasCellIndex].dTdt = (state.gasCells[gasCellIndex].temp - state.gasCells[gasCellIndex].tempini) / state.timeStep;
@@ -895,7 +895,7 @@ void advanceGasSubStep(const GasLiftState &state) {
                 state.gasCells[renewedCellIndex].FeiticoDoTempo();
     }
 
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads(state.globals->ntrd)
     for (int gasCellIndex = 0; gasCellIndex < cellLimit; gasCellIndex++)
         state.gasCells[gasCellIndex].rg = state.gasCells[gasCellIndex].flui.MasEspGas(state.gasCells[gasCellIndex].pres, state.gasCells[gasCellIndex].temp);
 
