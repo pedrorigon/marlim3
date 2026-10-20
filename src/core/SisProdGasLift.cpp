@@ -648,14 +648,12 @@ void solveUnloading(const GasLiftState &state) {
             state.gasCells[gasCellIndex].razInter > state.globals->localtiny ? gasDensity : rhoL;
         double vel1 = state.gasCells[gasCellIndex].VGasL / (carryingDensity * state.gasCells[gasCellIndex - 1].duto.area);
         double vel2 = state.gasCells[gasCellIndex].VGasL / (carryingDensity * state.gasCells[gasCellIndex].duto.area);
-        const double re1L = state.gasCells[gasCellIndex - 1].Rey(characteristicDiameter(state.gasCells[gasCellIndex - 1].duto.revest, state.gasCells[gasCellIndex - 1].duto.a, state.gasCells[gasCellIndex - 1].duto.area, state.gasCells[gasCellIndex - 1].duto.peri),
-                                 vel1, rhoL, viscL);
-        const double re2L = state.gasCells[gasCellIndex].Rey(characteristicDiameter(state.gasCells[gasCellIndex].duto.revest, state.gasCells[gasCellIndex].duto.a, state.gasCells[gasCellIndex].duto.area, state.gasCells[gasCellIndex].duto.peri),
-                                 vel2, rhoL, viscL);
-        const double re1G = state.gasCells[gasCellIndex - 1].Rey(characteristicDiameter(state.gasCells[gasCellIndex - 1].duto.revest, state.gasCells[gasCellIndex - 1].duto.a, state.gasCells[gasCellIndex - 1].duto.area, state.gasCells[gasCellIndex - 1].duto.peri),
-                                 vel1, gasDensity, viscG);
-        const double re2G = state.gasCells[gasCellIndex].Rey(characteristicDiameter(state.gasCells[gasCellIndex].duto.revest, state.gasCells[gasCellIndex].duto.a, state.gasCells[gasCellIndex].duto.area, state.gasCells[gasCellIndex].duto.peri),
-                                 vel2, gasDensity, viscG);
+        const double leftDiameter = characteristicDiameter(state.gasCells[gasCellIndex - 1].duto.revest, state.gasCells[gasCellIndex - 1].duto.a, state.gasCells[gasCellIndex - 1].duto.area, state.gasCells[gasCellIndex - 1].duto.peri);
+        const double localDiameter = characteristicDiameter(state.gasCells[gasCellIndex].duto.revest, state.gasCells[gasCellIndex].duto.a, state.gasCells[gasCellIndex].duto.area, state.gasCells[gasCellIndex].duto.peri);
+        const double re1L = state.gasCells[gasCellIndex - 1].Rey(leftDiameter, vel1, rhoL, viscL);
+        const double re2L = state.gasCells[gasCellIndex].Rey(localDiameter, vel2, rhoL, viscL);
+        const double re1G = state.gasCells[gasCellIndex - 1].Rey(leftDiameter, vel1, gasDensity, viscG);
+        const double re2G = state.gasCells[gasCellIndex].Rey(localDiameter, vel2, gasDensity, viscG);
         double leftLiquidFriction = state.gasCells[gasCellIndex - 1].fric(re1L, state.gasCells[gasCellIndex - 1].duto.rug / state.gasCells[gasCellIndex - 1].duto.a) * leftLiquidLength;
         double localLiquidFriction = state.gasCells[gasCellIndex].fric(re2L, state.gasCells[gasCellIndex].duto.rug / state.gasCells[gasCellIndex].duto.a) * localLiquidLength;
         double hidro1L = (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * leftLiquidLength;
