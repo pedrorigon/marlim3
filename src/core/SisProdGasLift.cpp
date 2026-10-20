@@ -85,6 +85,10 @@ inline constexpr double kMinimumMarchDiameterRatio = 0.5;
 /// passes this value.
 inline constexpr double kThermalSubstepLength = 1000.;
 
+/// The steady gas temperature keeps a cell's kinetic term only while the gas line is shorter than this many times
+/// the cell's length.
+inline constexpr double kKineticTermMaximumLengthRatio = 1e6;
+
 /// The diameter a Reynolds number is formed on: the bore when the segment is
 /// bare, the hydraulic diameter when it is cased.
 [[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
@@ -1467,7 +1471,7 @@ void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     const double superficialVelocityGradient =
         (meanSuperficialGasVelocity - leftCellLeftFaceSuperficialGasVelocity) / dx;
 
-    const double kineticTerm = state.input.nCompTotalUnidadesG / dx < 1e6
+    const double kineticTerm = state.input.nCompTotalUnidadesG / dx < kKineticTermMaximumLengthRatio
                                    ? mixtureDensity * area * meanSuperficialGasVelocity * meanSuperficialGasVelocity *
                                          superficialVelocityGradient
                                    : 0.;
