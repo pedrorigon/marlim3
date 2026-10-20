@@ -9,7 +9,7 @@
 #include "chokegas.h"
 #include "UnitConversions.h"
 
-#include <math.h>
+#include <cmath>
 #include <numbers>
 
 namespace sisprod::gaslift {
