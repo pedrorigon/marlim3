@@ -29,6 +29,36 @@ inline constexpr double kLargeBoreValveInches = 1.1;
 inline constexpr double kLargeBoreSpringRate = 500.0;
 inline constexpr double kSmallBoreSpringRate = 1950.0;
 
+/// The unloading controller corrects the injection or the separator pressure when the completion-fluid flow
+/// through the selected valve leaves the band from 1 - kUnloadingLowerBandMargin to 1 - kUnloadingUpperBandMargin
+/// of the controlled flow rate.
+inline constexpr double kUnloadingUpperBandMargin = 0.1;
+inline constexpr double kUnloadingLowerBandMargin = 0.4;
+
+/// The largest pressure correction of one step, as a fraction of the corrected pressure per second of the step.
+inline constexpr double kMaximumUnloadingCorrectionPerSecond = 0.01;
+
+/// The separator pressure counts as at the unloading's maximum or minimum within these factors.
+inline constexpr double kReachedMaximumPressureFactor = 0.9999999;
+inline constexpr double kReachedMinimumPressureFactor = 1.0000001;
+
+/// presMaxDesc before the minimum over the IPR accessories: above any pressure the column reaches, in kgf/cm^2.
+inline constexpr double kUnboundedUnloadingPressure = 100000.;
+
+/// The pressure the unloading hydrostatics start the gas line from when nothing else gives it, in kgf/cm^2.
+inline constexpr double kDefaultUnloadingStartPressure = 10.;
+
+/// The weight of the step's own flow against the moving average, in the flow the unloading controller corrects.
+inline constexpr double kCurrentFlowWeight = 0.5;
+
+/// The fraction of the separator pressure the unloading takes off per second while the column's last cell but
+/// one holds no completion fluid.
+inline constexpr double kSeparatorPressureDecayPerSecond = 0.01;
+
+/// The factors a pressure is relaxed by per step towards its target, after the unloading.
+inline constexpr double kRelaxationDownFactor = 0.95;
+inline constexpr double kRelaxationUpFactor = 1.05;
+
 /// The diameter a Reynolds number is formed on: the bore when the segment is
 /// bare, the hydraulic diameter when it is cased.
 [[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
@@ -139,11 +169,11 @@ void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
 /// each other's inverse.
 void relaxTowards(double &pressure, double target) {
     if (pressure > target) {
-        pressure *= 0.95;
+        pressure *= kRelaxationDownFactor;
         if (pressure < target)
             pressure = target;
     } else if (pressure < target) {
-        pressure *= 1.05;
+        pressure *= kRelaxationUpFactor;
         if (pressure > target)
             pressure = target;
     }
@@ -166,11 +196,11 @@ void publishExternalFluid(Cel &annulusCell, const ExternalFluidProperties &fluid
 }
 
 /// The pressure the unloading hydrostatics start the gas line from when the
-/// injection pressure does not give it: 10 kgf/cm^2, or the unloading's own
+/// injection pressure does not give it: kDefaultUnloadingStartPressure, or the unloading's own
 /// initial pressure when the unloading is controlled -- which then becomes the
 /// line's initial pressure too.
 [[nodiscard]] double defaultUnloadingStartPressure(const GasLiftState &state) {
-    double meanPressure = 10.;
+    double meanPressure = kDefaultUnloadingStartPressure;
     if (state.input.controDesc == 1) {
         meanPressure = state.input.presIniDescG;
         state.initialGasPressure = state.input.presIniDescG;
@@ -440,11 +470,8 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
 }
 
 void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex) {
-    double upperBandMargin = 0.1;
-    double lowerBandMargin = 0.4;
-
     double meanPressure = state.gasSurfacePressure;
-    state.input.presMaxDesc = 100000.;
+    state.input.presMaxDesc = kUnboundedUnloadingPressure;
     for (int cellIndex = state.lastCell; cellIndex >= 0; cellIndex--) {
         double meanTemperature = state.cells[cellIndex].temp;
         double flowArea = state.cells[cellIndex].duto.area;
@@ -478,19 +505,19 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
                 state.input.presMaxDesc = candidateMaximumPressure;
         }
     }
-    if (state.gasSurfacePressure >= state.input.presMaxDesc * 0.9999999 && throatFlowRate > (1 - upperBandMargin) * state.input.vazDescControl && state.gasCells[0].VGasR > 0.) {
-        double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, (1 - upperBandMargin), -1);
-        if (fabs(pressureCorrection) > 0.01 * state.initialGasPressure * state.cells[0].dt)
-            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.initialGasPressure * state.cells[0].dt;
+    if (state.gasSurfacePressure >= state.input.presMaxDesc * kReachedMaximumPressureFactor && throatFlowRate > (1 - kUnloadingUpperBandMargin) * state.input.vazDescControl && state.gasCells[0].VGasR > 0.) {
+        double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, (1 - kUnloadingUpperBandMargin), -1);
+        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt)
+            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt;
         state.initialGasPressure += pressureCorrection;
         if (state.initialGasPressure < state.input.presMinDescG) {
             state.initialGasPressure = state.input.presMinDescG;
         }
 
-    } else if (throatFlowRate <= (1 - lowerBandMargin) * state.input.vazDescControl && state.gasSurfacePressure <= state.input.presMinDesc * 1.0000001) {
-        double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, 1 - lowerBandMargin, 1);
-        if (fabs(pressureCorrection) > 0.01 * state.initialGasPressure * state.cells[0].dt)
-            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.initialGasPressure * state.cells[0].dt;
+    } else if (throatFlowRate <= (1 - kUnloadingLowerBandMargin) * state.input.vazDescControl && state.gasSurfacePressure <= state.input.presMinDesc * kReachedMinimumPressureFactor) {
+        double pressureCorrection = unloadingPressureCorrection(state, throatFlowRate, valveIndex, 1 - kUnloadingLowerBandMargin, 1);
+        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt)
+            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.initialGasPressure * state.cells[0].dt;
         state.initialGasPressure += pressureCorrection;
         if (state.initialGasPressure > state.input.presMaxDescG) {
             state.initialGasPressure = state.input.presMaxDescG;
@@ -502,8 +529,6 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
     double maximumUnloadingFlowRate = 0;
     double instantaneousMaximumFlowRate = 0;
 
-    double upperBandMargin = 0.1;
-    double lowerBandMargin = 0.4;
     if (state.input.descarga == 1) {
         double initialUnloadingPressure = state.cells[state.lastCell].pres;
         if (state.globals->lixo5 > state.input.tempoLatenciaDesc) {
@@ -536,29 +561,28 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
             state.unloadingTimeSteps.push_back(state.timeStep);
             state.meanUnloadingTemperature += state.timeStep;
 
-            double weight = 0.5;
             instantaneousMaximumFlowRate = maximumUnloadingFlowRate;
-            maximumUnloadingFlowRate = weight * maximumUnloadingFlowRate + (1. - weight) * state.meanUnloadingFlowRate / state.meanUnloadingTemperature;
+            maximumUnloadingFlowRate = kCurrentFlowWeight * maximumUnloadingFlowRate + (1. - kCurrentFlowWeight) * state.meanUnloadingFlowRate / state.meanUnloadingTemperature;
             computeUnloadingValvePressure(state, maximumUnloadingFlowRate, selectedValveIndex);
             if (state.gasValveCellIndices[selectedValveIndex] >= state.interfaceCell) {
                 if (state.cells[state.lastCell - 1].MC > 0.0) {
-                    if (maximumUnloadingFlowRate > (1. - upperBandMargin) * state.input.vazDescControl) {
-                        double pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - upperBandMargin, -1);
-                        if (fabs(pressureCorrection) > 0.01 * state.gasSurfacePressure * state.cells[0].dt)
-                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.gasSurfacePressure * state.cells[0].dt;
+                    if (maximumUnloadingFlowRate > (1. - kUnloadingUpperBandMargin) * state.input.vazDescControl) {
+                        double pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - kUnloadingUpperBandMargin, -1);
+                        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt)
+                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt;
                         state.gasSurfacePressure -= pressureCorrection;
                         if (state.gasSurfacePressure > state.input.presMaxDesc)
                             state.gasSurfacePressure = state.input.presMaxDesc;
-                    } else if (maximumUnloadingFlowRate <= (1 - lowerBandMargin) * state.input.vazDescControl) {
-                        double pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - lowerBandMargin, 1);
-                        if (fabs(pressureCorrection) > 0.01 * state.gasSurfacePressure * state.cells[0].dt)
-                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * 0.01 * state.gasSurfacePressure * state.cells[0].dt;
+                    } else if (maximumUnloadingFlowRate <= (1 - kUnloadingLowerBandMargin) * state.input.vazDescControl) {
+                        double pressureCorrection = unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex, 1. - kUnloadingLowerBandMargin, 1);
+                        if (fabs(pressureCorrection) > kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt)
+                            pressureCorrection = (fabs(pressureCorrection) / pressureCorrection) * kMaximumUnloadingCorrectionPerSecond * state.gasSurfacePressure * state.cells[0].dt;
                         state.gasSurfacePressure -= pressureCorrection;
                         if (state.gasSurfacePressure < state.input.presMinDesc)
                             state.gasSurfacePressure = state.input.presMinDesc;
                     }
                 } else {
-                    state.gasSurfacePressure *= (1 - 0.01 * state.timeStep);
+                    state.gasSurfacePressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);
                     if (state.gasSurfacePressure < state.input.presMinDesc)
                         state.gasSurfacePressure = state.input.presMinDesc;
                 }
@@ -571,7 +595,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
             state.initialGasPressure = state.input.presIniDescG;
         }
     } else {
-        state.gasSurfacePressure *= 0.95;
+        state.gasSurfacePressure *= kRelaxationDownFactor;
         if (state.gasSurfacePressure < state.input.presMinDesc)
             state.gasSurfacePressure = state.input.presMinDesc;
         relaxTowards(state.initialGasPressure, state.input.presIniDesc);

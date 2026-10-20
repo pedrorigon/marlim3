@@ -98,8 +98,8 @@ probe 'CalcPresValvDesc: wall shear' \
     "$target_gaslift"
 
 probe 'BuscaPresInjDesc: pressure decay' \
-    'state.gasSurfacePressure *= (1 - 0.01 * state.timeStep);' \
-    'state.gasSurfacePressure *= (1 - 0.02 * state.timeStep);' \
+    'state.gasSurfacePressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);' \
+    'state.gasSurfacePressure *= (1 - 2 * kSeparatorPressureDecayPerSecond * state.timeStep);' \
     "$target_gaslift"
 
 # The hand-over branch, which only the second advancInter row reaches. If that
