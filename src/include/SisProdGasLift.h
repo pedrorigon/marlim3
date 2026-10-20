@@ -33,42 +33,37 @@ struct GasLiftTemperatureUpdater {
 /// The state the gas line and gas-lift routines read, and the only state they
 /// may read.
 ///
-/// Same role as ThermalState in the thermal module: it names in one place what
-/// this domain is allowed to touch, and it makes the routines callable without
-/// an SProd, so they can be driven over synthetic cells.
-///
 /// Scalars are held by reference, not by value: a copy would read every one at
 /// construction, before the branch that decides whether it is read at all.
 struct GasLiftState {
-    /// Gas-line cells -- SProd::gasLift.cells. Written as well as read.
+    /// Gas-line cells, written as well as read.
     CelG *const &gasCells;
-    /// Production cells -- SProd::celula. The gas line reads the tubing it
-    /// feeds, and writes back at the connection points.
+    /// Production cells. The gas line reads the tubing it feeds, and writes back
+    /// at the connection points.
     Cel *const &cells;
-    /// Input deck -- SProd::arq. NOT const: the unloading schedule uses
+    /// The parsed input. Not const: the unloading schedule uses
     /// presMaxDesc as scratch, recomputing it as a minimum over the IPR
     /// accessories and writing it back, and clears descarga when the
     /// interface reaches the end of the gas line.
     Ler &input;
-    /// Shared 1D globals -- SProd::vg1dSP.
+    /// Shared 1D globals.
     varGlob1D *const &globals;
 
-    /// Index of the last gas-line cell -- SProd::gasLift.cellCount.
+    /// Index of the last gas-line cell.
     const int &gasCellCount;
-    /// Index of the last production cell -- SProd::ncel.
+    /// Index of the last production cell.
     const int &lastCell;
 
-    /// Gas-lift valve chokes -- SProd::gasLift.valveChokes.
+    /// Gas-lift valve chokes.
     std::vector<ChokeGas> &gasLiftChokes;
-    /// Injection choke -- SProd::gasLift.injectionChoke.
+    /// Injection choke.
     ChokeGas &injectionChoke;
-    /// Gas-line cell index of each gas-lift valve -- SProd::gasLift.gasValveCells.
+    /// Gas-line cell index of each gas-lift valve.
     const std::vector<int> &gasValveCellIndices;
-    /// Production cell index of each gas-lift valve -- SProd::gasLift.productionValveCells.
+    /// Production cell index of each gas-lift valve.
     const std::vector<int> &productionValveCellIndices;
 
-    /// Band matrix and free-term vector of the gas line -- SProd::gasLift.systemMatrix and
-    /// SProd::gasLift.rightHandSide.
+    /// Band matrix and right-hand side of the gas-line pressure-velocity system.
     BandMtx<double> &gasSystemMatrix;
     Vcr<double> &gasFreeTerms;
 
@@ -80,11 +75,11 @@ struct GasLiftState {
     const int &tubingAnnulusStart;
     const int &tubingAnnulusEnd;
 
-    /// Steady-state iteration counter -- SProd::steadyIteration.
+    /// Steady-state iteration counter.
     const int &steadyIteration;
     /// Whether the column-annulus thermal coupling is on.
     const bool &networkCoupled;
-    /// Thermal source switch -- SProd::thermalSourceDisabled.
+    /// Thermal source switch.
     const bool &thermalSourceDisabled;
 
     /// Gas-injection pressure and temperature. The pressure is written.
@@ -93,11 +88,11 @@ struct GasLiftState {
     /// Separator pressure, or the inlet pressure of the downstream network section. Written.
     double &gasSurfacePressure;
 
-    /// Time step -- SProd::dt. Written: the gas line can shorten it.
+    /// Time step. Written: the gas line can shorten it.
     double &timeStep;
 
-    /// Unloading interface state -- SProd::gasLift.interfaceCell, velInter, dtInter, and
-    /// their initial counterparts. All written.
+    /// The completion-fluid/gas interface: its cell, velocity and time step, and their values at
+    /// the previous time level. All written.
     int &interfaceCell;
     double &interfaceVelocity;
     double &interfaceTimeStep;
@@ -131,14 +126,13 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state);
 /// Advances the gas line by one sub-time-step.
 void advanceGasSubStep(const GasLiftState &state);
 
-/// Same, for the buffered variant. No call site exists in the product.
+/// Solves the gas line once and keeps the solved velocities in the buffer, without advancing the cells.
 void advanceBufferedGasSubStep(const GasLiftState &state);
 
 /// Updates the gas-line cells after a sub-step.
 void updateGasLine(const GasLiftState &state);
 
-/// Same, buffered. Reachable only from advanceBufferedGasSubStep, which nothing
-/// calls.
+/// Copies the solved gas velocities into the buffer.
 void updateBufferedGasLine(const GasLiftState &state);
 
 /// Throat area of a calibrated gas-lift valve.

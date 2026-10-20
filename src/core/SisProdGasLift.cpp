@@ -33,9 +33,6 @@ inline constexpr double kSmallBoreSpringRate = 1950.0;
 
 /// The diameter a Reynolds number is formed on: the bore when the segment is
 /// bare, the hydraulic diameter when it is cased.
-///
-/// Cel::Rey and CelG::Rey read no member of their cell, so which cell a
-/// Reynolds number below is computed on does not matter.
 [[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
                                             double perimeter) {
     return cased == 0 ? bore : 4 * area / perimeter;
@@ -71,9 +68,6 @@ struct UnloadingThroughValve {
 
 /// Primes the choke from the two cells it spans and returns the mass source it
 /// delivers, already scaled by the calibrated opening when the valve is one.
-///
-/// The callers use it differently -- three add it to the gas cell's source
-/// term, one keeps it in a local -- so the value is returned rather than stored.
 template <typename Phase>
 [[nodiscard]] double primeValveMassSource(const GasLiftState &state, int valveIndex,
                                           const CelG &gasCell, const Cel &productionCell) {
@@ -964,10 +958,6 @@ void connectTubing(const GasLiftState &state) {
         const CelG &tubingCell = state.gasCells[tubingCellIndex];
         const double pres = tubingCell.pres;
         const double temp = tubingCell.temp;
-        // The four property calls run in this order -- specific heat, density,
-        // conductivity, viscosity -- not in the order the struct lists its fields: a
-        // braced initialiser would reorder them, and these correlations are not known
-        // to be free of side effects.
         ExternalFluidProperties fluid;
         if (tubingCellIndex < state.interfaceCell) {
             const double specificHeat = tubingCell.flui.CalorGas(pres, temp);
@@ -1054,8 +1044,7 @@ void initializeTubingConnectionSteady(const GasLiftState &state) {
 
         const CelG &tubingCell = state.gasCells[tubingCellIndex];
         // Not the tubing cell's own state: the annulus pressure and the deck's
-        // external temperature. That difference is why this cannot share the
-        // steady connection above.
+        // external temperature.
         const double pres = state.cells[annulusCellIndex].pres;
         const double temp = state.input.celg[tubingCellIndex].textern;
         const double gasSpecificHeat = tubingCell.flui.CalorGas(pres, temp);
@@ -1323,9 +1312,6 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
         int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
         int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
         if (cellIndex == gasLiftProductionCell) {
-            // Only how the mass source is obtained differs; the three statements that
-            // publish it are the same in both arms.
-            //
             // This site reads the flag the other way round from the rest: "1 is the flow
             // rate, anything else the pressure", where every other reads "0 is the
             // pressure, anything else the flow rate". The readings differ only for a
