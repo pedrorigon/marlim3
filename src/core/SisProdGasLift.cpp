@@ -819,28 +819,17 @@ void solveGasLine(const GasLiftState &state) {
 void updateTransientGasValves(const GasLiftState &state) {
     int valveCount = state.input.nvalvgas;
     int master2CellIndex = state.input.master2.posic;
-    for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
-        CelG &gasCell = state.gasCells[state.gasValveCellIndices[valveIndex]];
-        const Cel &productionCell = state.cells[state.productionValveCellIndices[valveIndex]];
-        if (state.gasValveCellIndices[valveIndex] < state.interfaceCell)
-            gasCell.massfonteCH =
-                primeValveMassSource<GasThroughValve>(state, valveIndex, gasCell, productionCell);
-    }
-    for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
+    for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.gasCellCount; gasCellIndex++)
         state.gasCells[gasCellIndex].massfonteCH = 0.;
-        // Behind the interface the valve discharges completion fluid, ahead of
-        // it gas.
-        const bool valveBehindInterface = state.gasCells[gasCellIndex].razInter < 0.5;
-        for (int candidateValveIndex = 0; candidateValveIndex < valveCount; candidateValveIndex++) {
-            if (gasCellIndex == state.gasValveCellIndices[candidateValveIndex]) {
-                CelG &valveCell = state.gasCells[state.gasValveCellIndices[candidateValveIndex]];
-                const Cel &productionCell = state.cells[state.productionValveCellIndices[candidateValveIndex]];
-                valveCell.massfonteCH =
-                    valveBehindInterface
-                        ? primeValveMassSource<CompletionFluidThroughValve>(state, candidateValveIndex, valveCell, productionCell)
-                        : primeValveMassSource<GasThroughValve>(state, candidateValveIndex, valveCell, productionCell);
-            }
-        }
+    for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
+        const int valveCellIndex = state.gasValveCellIndices[valveIndex];
+        CelG &valveCell = state.gasCells[valveCellIndex];
+        const Cel &productionCell = state.cells[state.productionValveCellIndices[valveIndex]];
+        // Behind the interface the valve discharges completion fluid, ahead of it gas.
+        valveCell.massfonteCH =
+            valveCellIndex >= state.interfaceCell && valveCell.razInter < 0.5
+                ? primeValveMassSource<CompletionFluidThroughValve>(state, valveIndex, valveCell, productionCell)
+                : primeValveMassSource<GasThroughValve>(state, valveIndex, valveCell, productionCell);
     }
 
     double master2FlowArea = state.gasCells[master2CellIndex].duto.area;
