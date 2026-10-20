@@ -25,7 +25,6 @@ struct GasLiftTemperatureUpdater {
     SolveContext &context;
 
     void dischargeTemperature(int cellIndex) const;
-    /// steadyMode defaults to 0, as SProd::calctempGas does; most callers omit it.
     void computeGasTemperature(int cellIndex, double previousTemperature,
                         int steadyMode = 0) const;
     double gasLiftDischargeTemperature(int valveIndex) const;
@@ -48,7 +47,8 @@ struct GasLiftState {
     Cel *const &cells;
     /// Input deck -- SProd::arq. NOT const: the unloading schedule uses
     /// presMaxDesc as scratch, recomputing it as a minimum over the IPR
-    /// accessories and writing it back.
+    /// accessories and writing it back, and clears descarga when the
+    /// interface reaches the end of the gas line.
     Ler &input;
     /// Shared 1D globals -- SProd::vg1dSP.
     varGlob1D *const &globals;
@@ -72,9 +72,9 @@ struct GasLiftState {
     BandMtx<double> &gasSystemMatrix;
     Vcr<double> &gasFreeTerms;
 
-    /// Annulus/tubing coupling bounds, shared with the thermal module and named
-    /// as they are named there -- SProd::gasLift.tubingCouplingStart, ColunaAnulaFim,
-    /// AnulaColunaIni, AnulaColunaFim.
+    /// Bounds of the column-annulus thermal coupling: annulusTubingStart and
+    /// annulusTubingEnd are production-column cells, tubingAnnulusStart and
+    /// tubingAnnulusEnd gas-line cells.
     const int &annulusTubingStart;
     const int &annulusTubingEnd;
     const int &tubingAnnulusStart;
@@ -82,16 +82,15 @@ struct GasLiftState {
 
     /// Steady-state iteration counter -- SProd::steadyIteration.
     const int &steadyIteration;
-    /// Network coupling flag -- SProd::gasLift.annulusThermalCoupling.
+    /// Whether the column-annulus thermal coupling is on.
     const bool &networkCoupled;
     /// Thermal source switch -- SProd::thermalSourceDisabled.
     const bool &thermalSourceDisabled;
 
-    /// Previous-step gas pressure and temperature -- SProd::gasLift.injectionPressure and
-    /// SProd::gasLift.injectionTemperature. The pressure is written.
+    /// Gas-injection pressure and temperature. The pressure is written.
     double &initialGasPressure;
     const double &initialGasTemperature;
-    /// Surface gas pressure -- SProd::gasLift.separatorPressure. Written.
+    /// Separator pressure, or the inlet pressure of the downstream network section. Written.
     double &gasSurfacePressure;
 
     /// Time step -- SProd::dt. Written: the gas line can shorten it.
@@ -106,12 +105,12 @@ struct GasLiftState {
     double &initialInterfaceVelocity;
     double &initialInterfaceTimeStep;
 
-    /// Unloading averages -- SProd::gasLift.meanUnloadingFlowRate, tempmedDEsc (spelling as in
-    /// SProd), and the bounds they are compared against.
+    /// The unloading controller's moving average: the accumulated flow and the averaging interval,
+    /// the samples they sum, and the window and the sample capacity that bound them.
     ///
-    /// The two vectors are NOT const: they are sliding windows. advanceGasSubStep
-    /// push_backs the current step at the tail and erases the front once the
-    /// window passes maximumContinuousUnloadingCount.
+    /// The two vectors are sliding windows: searchUnloadingInjectionPressure appends each step's
+    /// sample, and drops the oldest when they hold more samples than the capacity or span more time
+    /// than the window.
     double &meanUnloadingFlowRate;
     double &meanUnloadingTemperature;
     std::vector<double> &maximumMeanUnloadingFlowRates;
