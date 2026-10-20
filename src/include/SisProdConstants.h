@@ -72,6 +72,22 @@ enum AccessoryKind : int {
     kAccessoryMultiPump = 17,       ///< acsr.multibcs
 };
 
+// ------------------------------------------------------ gas-lift valves ----
+
+/// The value of a gas-lift valve's `ChokeGas::tipo`, from the input's
+/// tipoValvula: an orifice, or a pressure valve calibrated at the surface.
+enum GasLiftValveKind : int {
+    kGasLiftOrificeValve = 0,
+    kGasLiftCalibratedValve = 1,
+};
+
+/// The value of `acsr.injg.tipoflu`: what a gas-lift valve delivers into its
+/// production cell, gas or the completion fluid behind the unloading interface.
+enum InjectedFluid : int {
+    kInjectedGas = 0,
+    kInjectedCompletionFluid = 1,
+};
+
 // ------------------------------------------------ gas-line inlet condition ----
 
 /// The value of `tipoCC` on the gas line's first cell, and of the configured
@@ -177,6 +193,10 @@ static_assert(kAccessoryPorous2D == 16);
 static_assert(kAccessoryMultiPump == 17);
 static_assert(kGasInletInjectionPressure == 0);
 static_assert(kGasInletInjectionFlowRate == 1);
+static_assert(kGasLiftOrificeValve == 0);
+static_assert(kGasLiftCalibratedValve == 1);
+static_assert(kInjectedGas == 0);
+static_assert(kInjectedCompletionFluid == 1);
 
 static_assert(kAirDensityAtStandardConditions == 1.225);
 static_assert(kGravity == 9.82);

@@ -131,7 +131,7 @@ template <typename Phase>
     choke.presGarg = (productionCell.pres - choke.presEstag * recovery) / (1. - recovery);
     choke.tempEstag = gasCell.temp;
     double massSource = productionCell.pres < gasCell.pres ? Phase::massFlowRate(choke, state.input) : 0.;
-    if (choke.tipo == 1)
+    if (choke.tipo == kGasLiftCalibratedValve)
         massSource *= calibratedValveOpening(choke);
     return massSource;
 }
@@ -801,10 +801,10 @@ void solveGasLine(const GasLiftState &state) {
             (gasLiftGasCell == state.interfaceCell && state.gasCells[gasLiftGasCell].razInter > 0.5);
         if (valveDischargesGas) {
             state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * units::kSecondsPerDay / state.gasCells[gasLiftGasCell].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
-            state.cells[gasLiftProductionCell].acsr.injg.tipoflu = 0;
+            state.cells[gasLiftProductionCell].acsr.injg.tipoflu = kInjectedGas;
         } else {
             state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH;
-            state.cells[gasLiftProductionCell].acsr.injg.tipoflu = 1;
+            state.cells[gasLiftProductionCell].acsr.injg.tipoflu = kInjectedCompletionFluid;
         }
         if (valveDischargesGas) {
             const double gasTemperature = state.gasLiftChokes[valveIndex].presEstag > state.gasLiftChokes[valveIndex].presGarg
