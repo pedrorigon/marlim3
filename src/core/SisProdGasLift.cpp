@@ -1093,7 +1093,6 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     perimeter = state.gasCells[cellIndex].dutoL.peri;
     gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
 
-    leftFaceGasMassFlowRate = state.gasCells[cellIndex - 1].VGasR;
     vel1 = leftFaceGasMassFlowRate / (gasDensity * area);
 
     visc = state.gasCells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
@@ -1185,7 +1184,6 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     double areaVariation = 1 / pow(state.gasCells[cellIndex].dutoL.area, 2.) - 1 / pow(state.gasCells[cellIndex].duto.area, 2.);
     double dynamicPressureTerm = 0.5 * leftFaceGasMassFlowRate * leftFaceGasMassFlowRate * areaVariation / gasDensity;
 
-    leftFaceGasMassFlowRate = state.gasCells[cellIndex - 1].VGasR;
     vel1 = leftFaceGasMassFlowRate / (gasDensity * area);
 
     visc = state.gasCells[cellIndex].flui.ViscGas(meanPressure, meanTemperature);
@@ -1334,10 +1332,9 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
             double dpdx = 2. * (state.gasCells[cellIndex].pres - ((1 - lengthRatio) * state.gasCells[cellIndex - 1].pres + lengthRatio * state.gasCells[cellIndex].pres)) * units::kPascalPerKgfPerCm2 / dx;
 
-            double superficialVelocityGradient = 0.;
             double mixtureDensity = gasDensity;
             double leftCellLeftFaceSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasL / state.gasCells[cellIndex - 1].u1L;
-            superficialVelocityGradient = (meanSuperficialGasVelocity - leftCellLeftFaceSuperficialGasVelocity) / dx;
+            const double superficialVelocityGradient = (meanSuperficialGasVelocity - leftCellLeftFaceSuperficialGasVelocity) / dx;
 
             const double kineticTerm =
                 state.input.nCompTotalUnidadesG / dx < 1e6
@@ -1360,9 +1357,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
                     stepCount = static_cast<int>(2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / kThermalSubstepLength + 1);
                     stepLength = meanCellLength / stepCount;
                 }
-                double stepTemperature = state.gasCells[cellIndex - 1].temp;
-
-                stepTemperature = stepLength * (state.gasCells[cellIndex - 1].temp / stepLength + energyTerm1 + energyTerm2);
+                double stepTemperature = stepLength * (state.gasCells[cellIndex - 1].temp / stepLength + energyTerm1 + energyTerm2);
                 for (int stepIndex = 1; stepIndex < stepCount; stepIndex++) {
                     state.gasCells[cellIndex - 1].calor.Tint = stepTemperature;
                     state.gasCells[cellIndex - 1].calor.Vint = meanSuperficialGasVelocity;
