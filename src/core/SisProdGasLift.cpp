@@ -59,6 +59,32 @@ inline constexpr double kSeparatorPressureDecayPerSecond = 0.01;
 inline constexpr double kRelaxationDownFactor = 0.95;
 inline constexpr double kRelaxationUpFactor = 1.05;
 
+/// The ratio of its cell the interface must reach in the last cell but one before it is handed over to the end of
+/// the gas line.
+inline constexpr double kInterfaceHandoverRatio = 0.99;
+
+/// The temperature of the gas line's last cell while the flow there runs backwards, in degrees Celsius.
+inline constexpr double kReverseFlowOutletTemperatureCelsius = 20.;
+
+/// The gas line's master2 valve throttles while its throat area lies between these fractions of the smaller pipe
+/// area around it.
+inline constexpr double kMaster2ThrottlingAreaFraction = 0.01;
+inline constexpr double kMaster2ClosedAreaFraction = 1e-5;
+
+/// The bellows of a calibrated valve: the temperature its dome charge is referred to, in degrees Fahrenheit, and
+/// the fractional change of the dome pressure per degree Fahrenheit.
+inline constexpr double kBellowsReferenceTemperatureFahrenheit = 80.;
+inline constexpr double kBellowsPressureChangePerFahrenheit = 0.00215;
+
+/// The steady gas temperature marches a cell only above this superficial gas velocity, in m/s, and between
+/// diameters within this ratio of each other; elsewhere the cell takes the external temperature.
+inline constexpr double kMinimumMarchGasVelocity = 1e-3;
+inline constexpr double kMinimumMarchDiameterRatio = 0.5;
+
+/// The steady gas temperature marches a cell in substeps when its length over its global thermal resistance
+/// passes this value.
+inline constexpr double kThermalSubstepLength = 1000.;
+
 /// The diameter a Reynolds number is formed on: the bore when the segment is
 /// bare, the hydraulic diameter when it is cased.
 [[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
@@ -433,8 +459,8 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
 
     double bellowsPressureAt80F = calibrationPressure * (1 - valveRatio);
     const double calibrationTemperatureRankine = units::celsiusToFahrenheit(calibrationTemperature) + units::kZeroFahrenheitInRankine;
-    bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) * (80 + units::kZeroFahrenheitInRankine) / calibrationTemperatureRankine - units::kAtmosphereInPsi;
-    double bellowsPressure = bellowsPressureAt80F * (1 + 0.00215 * (bottomHoleTemperatureFahrenheit - 80));
+    bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) * (kBellowsReferenceTemperatureFahrenheit + units::kZeroFahrenheitInRankine) / calibrationTemperatureRankine - units::kAtmosphereInPsi;
+    double bellowsPressure = bellowsPressureAt80F * (1 + kBellowsPressureChangePerFahrenheit * (bottomHoleTemperatureFahrenheit - kBellowsReferenceTemperatureFahrenheit));
     // A closed valve is not forced to zero here: the opening fraction returned is
     // always the area ratio computed at the end.
     double bellowsArea = throatArea / valveRatio;
@@ -693,7 +719,7 @@ void solveUnloading(const GasLiftState &state) {
 
 void advanceInterface(const GasLiftState &state) {
     state.gasCells[state.interfaceCell].razInter = (state.gasCells[state.interfaceCell].razInterIni * state.gasCells[state.interfaceCell].dx0 + state.interfaceVelocity * state.timeStep) / state.gasCells[state.interfaceCell].dx0;
-    if (state.interfaceCell == (state.gasCellCount - 1) && state.gasCells[state.interfaceCell].razInter >= 0.99) {
+    if (state.interfaceCell == (state.gasCellCount - 1) && state.gasCells[state.interfaceCell].razInter >= kInterfaceHandoverRatio) {
         double meanPressure = state.gasCells[state.interfaceCell].pres;
         double meanTemperature = state.gasCells[state.interfaceCell].temp;
         double interfaceFlowArea = state.gasCells[state.interfaceCell].duto.area;
@@ -829,8 +855,8 @@ void updateTransientGasValves(const GasLiftState &state) {
     double master2FlowArea = state.gasCells[master2CellIndex].duto.area;
     if (master2FlowArea > state.gasCells[master2CellIndex].dutoR.area)
         master2FlowArea = state.gasCells[master2CellIndex].dutoR.area;
-    if (state.gasCells[master2CellIndex].chkcell.areagarg <= 0.01 * master2FlowArea &&
-        state.gasCells[master2CellIndex].chkcell.areagarg >= 1e-5 * master2FlowArea) {
+    if (state.gasCells[master2CellIndex].chkcell.areagarg <= kMaster2ThrottlingAreaFraction * master2FlowArea &&
+        state.gasCells[master2CellIndex].chkcell.areagarg >= kMaster2ClosedAreaFraction * master2FlowArea) {
         state.gasCells[master2CellIndex].chkcell.tempEstag = state.gasCells[master2CellIndex].temp;
         double rhoM = state.gasCells[master2CellIndex].flui.MasEspGas(state.gasCells[master2CellIndex].pres, state.gasCells[master2CellIndex].temp);
         double rhoJ = state.gasCells[master2CellIndex + 1].flui.MasEspGas(state.gasCells[master2CellIndex + 1].pres, state.gasCells[master2CellIndex + 1].temp);
@@ -889,7 +915,7 @@ void advanceGasSubStep(const GasLiftState &state) {
         state.gasCells[0].temp = state.initialGasTemperature;
         state.gasCells[0].dTdt = (state.gasCells[0].temp - state.gasCells[0].tempini) / state.timeStep;
         if (state.gasCells[state.gasCellCount].VGasR < 0.)
-            state.gasCells[state.gasCellCount].temp = 20.;
+            state.gasCells[state.gasCellCount].temp = kReverseFlowOutletTemperatureCelsius;
 #pragma omp parallel for num_threads(state.globals->ntrd)
         for (int gasCellIndex = 1; gasCellIndex < cellLimit; gasCellIndex++) {
             state.temperatureUpdater.computeGasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
@@ -1345,17 +1371,17 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             double gasMassSource = 0.;
             double liquidMassSource = 0.;
 
-            if (meanSuperficialGasVelocity > 1e-3 && (state.gasCells[cellIndex].duto.a / state.gasCells[cellIndex - 1].duto.a > 0.5 &&
-                                  state.gasCells[cellIndex - 1].duto.a / state.gasCells[cellIndex].duto.a > 0.5)) {
+            if (meanSuperficialGasVelocity > kMinimumMarchGasVelocity && (state.gasCells[cellIndex].duto.a / state.gasCells[cellIndex - 1].duto.a > kMinimumMarchDiameterRatio &&
+                                  state.gasCells[cellIndex - 1].duto.a / state.gasCells[cellIndex].duto.a > kMinimumMarchDiameterRatio)) {
                 double energyTerm1 = meanTemperatureGradient * (pressureMarchCoefficient * dpdx - kineticTerm - hidro + liquidMassSource + gasMassSource) / temperatureMarchCoefficient;
                 double energyTerm2 = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
                 int stepCount;
                 double stepLength;
-                if (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob < 1000.) {
+                if (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob < kThermalSubstepLength) {
                     stepCount = 0;
                     stepLength = meanCellLength;
                 } else {
-                    stepCount = static_cast<int>(2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / 1000 + 1);
+                    stepCount = static_cast<int>(2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / kThermalSubstepLength + 1);
                     stepLength = meanCellLength / stepCount;
                 }
                 double stepTemperature = state.gasCells[cellIndex - 1].temp;
