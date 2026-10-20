@@ -211,8 +211,8 @@ void relaxTowards(double &pressure, double target) {
     return cell.razInter > 0.5 ? cell.massfonteCH / gasDensity : cell.massfonteCH / liquidDensity;
 }
 
-/// Publishes one fluid's transport properties onto the annulus cell that faces
-/// a tubing cell.
+/// Publishes the transport properties of the gas line's fluid onto the production
+/// cell that faces it, as that cell's external fluid.
 struct ExternalFluidProperties {
     double conductivity;
     double specificHeat;
@@ -220,11 +220,11 @@ struct ExternalFluidProperties {
     double viscosityCentipoise;
 };
 
-void publishExternalFluid(Cel &annulusCell, const ExternalFluidProperties &fluid) {
-    annulusCell.calor.kextern1 = fluid.conductivity;
-    annulusCell.calor.cpextern1 = fluid.specificHeat;
-    annulusCell.calor.rhoextern1 = fluid.density;
-    annulusCell.calor.viscextern1 = fluid.viscosityCentipoise * units::kPascalSecondPerCentipoise;
+void publishExternalFluid(Cel &productionCell, const ExternalFluidProperties &fluid) {
+    productionCell.calor.kextern1 = fluid.conductivity;
+    productionCell.calor.cpextern1 = fluid.specificHeat;
+    productionCell.calor.rhoextern1 = fluid.density;
+    productionCell.calor.viscextern1 = fluid.viscosityCentipoise * units::kPascalSecondPerCentipoise;
 }
 
 /// The pressure the unloading hydrostatics start the gas line from when the
@@ -971,76 +971,76 @@ void updateBufferedGasLine(const GasLiftState &state) {
 }
 
 void connectTubing(const GasLiftState &state) {
-    for (int annulusCellIndex = state.tubingCouplingStart; annulusCellIndex >= state.tubingCouplingEnd; annulusCellIndex--) {
-        int tubingCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - annulusCellIndex;
-        state.cells[annulusCellIndex].calor.Textern2 = state.gasCells[tubingCellIndex].calor.Tcamada[0][0];
-        state.cells[annulusCellIndex].calor.betext = state.gasCells[tubingCellIndex].calor.betint;
-        int layerIndex = state.cells[annulusCellIndex].calor.geom.ncamadas - 1;
-        int discretizationIndex = state.cells[annulusCellIndex].calor.ncamada[layerIndex] - 1;
-        state.gasCells[tubingCellIndex].calor.Tint2 = state.cells[annulusCellIndex].calor.Tcamada[layerIndex][discretizationIndex];
-        state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
-        state.cells[annulusCellIndex].calor.geom.b = state.gasCells[tubingCellIndex].calor.geom.a;
+    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd; productionCellIndex--) {
+        int gasCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex;
+        state.cells[productionCellIndex].calor.Textern2 = state.gasCells[gasCellIndex].calor.Tcamada[0][0];
+        state.cells[productionCellIndex].calor.betext = state.gasCells[gasCellIndex].calor.betint;
+        int layerIndex = state.cells[productionCellIndex].calor.geom.ncamadas - 1;
+        int discretizationIndex = state.cells[productionCellIndex].calor.ncamada[layerIndex] - 1;
+        state.gasCells[gasCellIndex].calor.Tint2 = state.cells[productionCellIndex].calor.Tcamada[layerIndex][discretizationIndex];
+        state.cells[productionCellIndex].calor.colunaDia = state.gasCells[gasCellIndex].duto.dia;
+        state.cells[productionCellIndex].calor.geom.b = state.gasCells[gasCellIndex].calor.geom.a;
 
-        state.cells[annulusCellIndex].calor.Textern1 = state.gasCells[tubingCellIndex].temp;
-        state.cells[annulusCellIndex].calor.Vextern1 = state.gasCells[tubingCellIndex].VGasR / state.gasCells[tubingCellIndex].u1L;
+        state.cells[productionCellIndex].calor.Textern1 = state.gasCells[gasCellIndex].temp;
+        state.cells[productionCellIndex].calor.Vextern1 = state.gasCells[gasCellIndex].VGasR / state.gasCells[gasCellIndex].u1L;
         // Ahead of the interface the annulus carries gas; behind it, completion
         // fluid. Same five fields either way, different fluid answering.
-        const CelG &tubingCell = state.gasCells[tubingCellIndex];
-        const double pres = tubingCell.pres;
-        const double temp = tubingCell.temp;
+        const CelG &gasCell = state.gasCells[gasCellIndex];
+        const double gasPressure = gasCell.pres;
+        const double gasTemperature = gasCell.temp;
         ExternalFluidProperties fluid;
-        if (tubingCellIndex < state.interfaceCell) {
-            const double specificHeat = tubingCell.flui.CalorGas(pres, temp);
-            const double density = tubingCell.flui.MasEspGas(pres, temp);
-            fluid = {tubingCell.flui.CondGas(pres, temp), specificHeat, density,
-                     tubingCell.flui.ViscGas(pres, temp)};
+        if (gasCellIndex < state.interfaceCell) {
+            const double specificHeat = gasCell.flui.CalorGas(gasPressure, gasTemperature);
+            const double density = gasCell.flui.MasEspGas(gasPressure, gasTemperature);
+            fluid = {gasCell.flui.CondGas(gasPressure, gasTemperature), specificHeat, density,
+                     gasCell.flui.ViscGas(gasPressure, gasTemperature)};
         } else {
-            const double specificHeat = tubingCell.CalorLiq(pres, temp);
-            const double density = tubingCell.MasEspFlu(pres, temp);
-            fluid = {tubingCell.CondLiq(pres, temp), specificHeat, density,
-                     tubingCell.VisFlu(pres, temp)};
+            const double specificHeat = gasCell.CalorLiq(gasPressure, gasTemperature);
+            const double density = gasCell.MasEspFlu(gasPressure, gasTemperature);
+            fluid = {gasCell.CondLiq(gasPressure, gasTemperature), specificHeat, density,
+                     gasCell.VisFlu(gasPressure, gasTemperature)};
         }
-        publishExternalFluid(state.cells[annulusCellIndex], fluid);
+        publishExternalFluid(state.cells[productionCellIndex], fluid);
     }
 }
 
 void connectTubingSteady(const GasLiftState &state) {
-    for (int annulusCellIndex = state.tubingCouplingStart; annulusCellIndex >= state.tubingCouplingEnd; annulusCellIndex--) {
-        int tubingCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - annulusCellIndex;
-        state.cells[annulusCellIndex].calor.Textern2 = state.gasCells[tubingCellIndex].calor.Textern1;
-        state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
+    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd; productionCellIndex--) {
+        int gasCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex;
+        state.cells[productionCellIndex].calor.Textern2 = state.gasCells[gasCellIndex].calor.Textern1;
+        state.cells[productionCellIndex].calor.colunaDia = state.gasCells[gasCellIndex].duto.dia;
 
-        const CelG &tubingCell = state.gasCells[tubingCellIndex];
-        const double pres = tubingCell.pres;
-        const double temp = tubingCell.temp;
-        const double gasSpecificHeat = tubingCell.flui.CalorGas(pres, temp);
-        const double gasDensity = tubingCell.flui.MasEspGas(pres, temp);
-        state.cells[annulusCellIndex].calor.Textern1 = tubingCell.calor.Textern1;
-        state.cells[annulusCellIndex].calor.Vextern1 = tubingCell.VGasR / tubingCell.u1L;
-        publishExternalFluid(state.cells[annulusCellIndex],
-                             {tubingCell.flui.CondGas(pres, temp), gasSpecificHeat, gasDensity,
-                              tubingCell.flui.ViscGas(pres, temp)});
+        const CelG &gasCell = state.gasCells[gasCellIndex];
+        const double gasPressure = gasCell.pres;
+        const double gasTemperature = gasCell.temp;
+        const double gasSpecificHeat = gasCell.flui.CalorGas(gasPressure, gasTemperature);
+        const double gasDensity = gasCell.flui.MasEspGas(gasPressure, gasTemperature);
+        state.cells[productionCellIndex].calor.Textern1 = gasCell.calor.Textern1;
+        state.cells[productionCellIndex].calor.Vextern1 = gasCell.VGasR / gasCell.u1L;
+        publishExternalFluid(state.cells[productionCellIndex],
+                             {gasCell.flui.CondGas(gasPressure, gasTemperature), gasSpecificHeat, gasDensity,
+                              gasCell.flui.ViscGas(gasPressure, gasTemperature)});
     }
 }
 
 void initializeTubingConnectionSteady(const GasLiftState &state) {
-    for (int annulusCellIndex = state.tubingCouplingStart; annulusCellIndex >= state.tubingCouplingEnd; annulusCellIndex--) {
-        int tubingCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - annulusCellIndex;
-        state.cells[annulusCellIndex].calor.Textern2 = state.gasCells[tubingCellIndex].calor.Textern2;
-        state.cells[annulusCellIndex].calor.colunaDia = state.gasCells[tubingCellIndex].duto.dia;
+    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd; productionCellIndex--) {
+        int gasCellIndex = state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex;
+        state.cells[productionCellIndex].calor.Textern2 = state.gasCells[gasCellIndex].calor.Textern2;
+        state.cells[productionCellIndex].calor.colunaDia = state.gasCells[gasCellIndex].duto.dia;
 
-        const CelG &tubingCell = state.gasCells[tubingCellIndex];
-        // Not the tubing cell's own state: the annulus pressure and the deck's
-        // external temperature.
-        const double pres = state.cells[annulusCellIndex].pres;
-        const double temp = state.input.celg[tubingCellIndex].textern;
-        const double gasSpecificHeat = tubingCell.flui.CalorGas(pres, temp);
-        const double gasDensity = tubingCell.flui.MasEspGas(pres, temp);
-        state.cells[annulusCellIndex].calor.Textern1 = tubingCell.calor.Textern1;
-        state.cells[annulusCellIndex].calor.Vextern1 = 1.;
+        const CelG &gasCell = state.gasCells[gasCellIndex];
+        // Not the gas cell's own state: the facing production cell's pressure and
+        // the deck's external temperature.
+        const double productionPressure = state.cells[productionCellIndex].pres;
+        const double externalTemperature = state.input.celg[gasCellIndex].textern;
+        const double gasSpecificHeat = gasCell.flui.CalorGas(productionPressure, externalTemperature);
+        const double gasDensity = gasCell.flui.MasEspGas(productionPressure, externalTemperature);
+        state.cells[productionCellIndex].calor.Textern1 = gasCell.calor.Textern1;
+        state.cells[productionCellIndex].calor.Vextern1 = 1.;
         // The viscosity is a fixed figure here, not a correlation.
-        publishExternalFluid(state.cells[annulusCellIndex],
-                             {tubingCell.flui.CondGas(pres, temp), gasSpecificHeat, gasDensity,
+        publishExternalFluid(state.cells[productionCellIndex],
+                             {gasCell.flui.CondGas(productionPressure, externalTemperature), gasSpecificHeat, gasDensity,
                               kInitialAnnulusGasViscosityCentipoise});
     }
 }
