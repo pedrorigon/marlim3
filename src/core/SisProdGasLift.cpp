@@ -1099,27 +1099,14 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     leftFaceGasMassFlowRate = state.gasCells[cellIndex - 1].VGasR;
     vel1 = leftFaceGasMassFlowRate / (gasDensity * area);
 
-    if (cellIndex > 0)
-        visc = state.gasCells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
-    else
-        visc = state.gasCells[cellIndex].flui.ViscGas(meanPressure, meanTemperature);
+    visc = state.gasCells[cellIndex - 1].flui.ViscGas(meanPressure, meanTemperature);
 
     reynolds = state.gasCells[cellIndex].Rey(
         characteristicDiameter(state.gasCells[cellIndex].dutoL.revest, state.gasCells[cellIndex].dutoL.a, area, perimeter),
         vel1, gasDensity, visc);
-    double dpFLoc;
-    double dpHLoc;
-    if (cellIndex > 0) {
-        frictionFactor = state.gasCells[cellIndex - 1].fric(reynolds, state.gasCells[cellIndex].dutoL.rug / diameter);
-        dpFLoc = state.gasCells[cellIndex - 1].dPdLFric;
-        dpHLoc = state.gasCells[cellIndex - 1].dPdLHidro;
-    } else {
-        frictionFactor = state.gasCells[cellIndex].fric(reynolds, state.gasCells[cellIndex].dutoL.rug / diameter);
-        dpFLoc = state.gasCells[cellIndex].dPdLFric;
-        dpHLoc = state.gasCells[cellIndex].dPdLHidro;
-    }
-    frictionGradient = dpFLoc * (0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area);
-    hydrostaticGradient = dpHLoc * (kGravity * sin(state.gasCells[cellIndex].dutoL.teta) * gasDensity * dx);
+    frictionFactor = state.gasCells[cellIndex - 1].fric(reynolds, state.gasCells[cellIndex].dutoL.rug / diameter);
+    frictionGradient = state.gasCells[cellIndex - 1].dPdLFric * (0.5 * frictionFactor * gasDensity * (fabs(vel1) * vel1) * perimeter * dx / area);
+    hydrostaticGradient = state.gasCells[cellIndex - 1].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].dutoL.teta) * gasDensity * dx);
     pressureDrop += (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
     return pressureDrop;
 }
@@ -1263,12 +1250,8 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
         }
     }
     if (match == 0) {
-        if (cellIndex > 0)
-            state.gasCells[cellIndex].VGasR = state.gasCells[cellIndex - 1].VGasR - 0 * state.gasCells[cellIndex].massfonteCH;
-        else
-            state.gasCells[cellIndex].VGasR = state.gasCells[cellIndex - 1].VGasR + 0 * state.gasCells[cellIndex].massfonteCH;
-        if (cellIndex > 0)
-            state.gasCells[cellIndex - 1].VGasRR = state.gasCells[cellIndex].VGasR;
+        state.gasCells[cellIndex].VGasR = state.gasCells[cellIndex - 1].VGasR - 0 * state.gasCells[cellIndex].massfonteCH;
+        state.gasCells[cellIndex - 1].VGasRR = state.gasCells[cellIndex].VGasR;
         if (cellIndex < state.gasCellCount)
             state.gasCells[cellIndex + 1].VGasL = state.gasCells[cellIndex].VGasR;
     }
@@ -1349,11 +1332,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
             double leftCellHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
             double tubingHeatFlux = 0.;
 
-            double lengthRatio;
-            if (cellIndex > 0)
-                lengthRatio = dx / (dx + state.gasCells[cellIndex - 1].dx0);
-            else
-                lengthRatio = 0.5;
+            const double lengthRatio = dx / (dx + state.gasCells[cellIndex - 1].dx0);
             double temperatureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasSpecificHeat * area;
             double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
             double dpdx = 2. * (state.gasCells[cellIndex].pres - ((1 - lengthRatio) * state.gasCells[cellIndex - 1].pres + lengthRatio * state.gasCells[cellIndex].pres)) * units::kPascalPerKgfPerCm2 / dx;
