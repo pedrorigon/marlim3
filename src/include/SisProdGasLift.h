@@ -135,10 +135,9 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state);
 /// flow band.
 void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex);
 
-/// Searches the injection pressure that satisfies the unloading schedule,
-/// writing it into the gas surface and initial pressures and into each valve's
-/// stage and throat pressures. Returns the maximum unloading flow rate the
-/// search reached -- the caller keeps it as velmaxdesc.
+/// Searches the injection pressure that satisfies the unloading schedule, writing it into the separator and
+/// injection pressures and into the stagnation and throat pressures of the valves behind the interface. Returns the
+/// maximum unloading flow rate the search reached.
 [[nodiscard]] double searchUnloadingInjectionPressure(const GasLiftState &state);
 
 /// Solves one unloading step.
