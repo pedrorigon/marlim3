@@ -222,16 +222,10 @@ void publishExternalFluid(Cel &annulusCell, const ExternalFluidProperties &fluid
 }
 
 /// The pressure the unloading hydrostatics start the gas line from when the
-/// injection pressure does not give it: kDefaultUnloadingStartPressure, or the unloading's own
-/// initial pressure when the unloading is controlled -- which then becomes the
-/// line's initial pressure too.
+/// injection pressure does not give it: the unloading's own initial pressure when
+/// the unloading is controlled, kDefaultUnloadingStartPressure otherwise.
 [[nodiscard]] double defaultUnloadingStartPressure(const GasLiftState &state) {
-    double meanPressure = kDefaultUnloadingStartPressure;
-    if (state.input.controDesc == 1) {
-        meanPressure = state.input.presIniDescG;
-        state.initialGasPressure = state.input.presIniDescG;
-    }
-    return meanPressure;
+    return state.input.controDesc == 1 ? state.input.presIniDescG : kDefaultUnloadingStartPressure;
 }
 
 /// The unloading starts from the configured injection pressure, unless the
@@ -254,6 +248,8 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     double meanPressure = withGasInletCondition(
         state.input.gasinj.tipoCC,
         [&](auto condition) { return unloadingStartPressure(state, condition); });
+    if (state.input.controDesc == 1)
+        state.initialGasPressure = state.input.presIniDescG;
 
     state.gasCells[0].presL = meanPressure;
     state.gasCells[0].pres = meanPressure;
