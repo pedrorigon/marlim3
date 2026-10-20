@@ -25,8 +25,6 @@ inline constexpr double kInitialAnnulusGasViscosityCentipoise = 0.16;
 
 /// Gas-lift valve geometry. The bore threshold and the two spring rates are
 /// imperial, as the whole valve correlation is.
-inline constexpr double kCentimetrePerMetre = 100.;
-inline constexpr double kCentimetrePerInch = 2.54;
 inline constexpr double kLargeBoreValveInches = 1.1;
 inline constexpr double kLargeBoreSpringRate = 500.0;
 inline constexpr double kSmallBoreSpringRate = 1950.0;
@@ -411,7 +409,7 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
     // always the area ratio computed at the end.
     double bellowsArea = throatArea / valveRatio;
     // The spring rate depends only on whether the valve is a large-bore one.
-    const double externalDiameterInches = externalDiameter * kCentimetrePerMetre / kCentimetrePerInch;
+    const double externalDiameterInches = externalDiameter * units::kCentimetrePerMetre / units::kCentimetrePerInch;
     const double bellowsSpringRate =
         (externalDiameterInches > kLargeBoreValveInches ? kLargeBoreSpringRate : kSmallBoreSpringRate) * bellowsArea;
     double stemTravel = ((valveOpeningPressure - bellowsPressure) * bellowsArea - (valveOpeningPressure - tubingPressure) * throatArea) / bellowsSpringRate;

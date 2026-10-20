@@ -32,6 +32,10 @@ inline constexpr double kCubicMetrePerCubicFoot = 0.028316846592;
 inline constexpr double kBarrelPerCubicMetre = 1. / kCubicMetrePerBarrel;
 inline constexpr double kCubicFootPerCubicMetre = 1. / kCubicMetrePerCubicFoot;
 
+/// The centimetre per metre, and per inch: 2.54 cm by definition.
+inline constexpr double kCentimetrePerMetre = 100.;
+inline constexpr double kCentimetrePerInch = 2.54;
+
 inline constexpr double kSecondsPerDay = 86400.;
 inline constexpr double kPascalSecondPerCentipoise = 1.e-3;
 
@@ -52,6 +56,8 @@ static_assert(kCubicMetrePerBarrel == 0.158987294928);
 static_assert(kCubicMetrePerCubicFoot == 0.028316846592);
 static_assert(kBarrelPerCubicMetre == 6.289810770432105);
 static_assert(kCubicFootPerCubicMetre == 35.31466672148859);
+static_assert(kCentimetrePerMetre == 100.);
+static_assert(kCentimetrePerInch == 2.54);
 static_assert(kSecondsPerDay == 86400.);
 static_assert(kPascalSecondPerCentipoise == 1.e-3);
 static_assert(celsiusToFahrenheit(0.) == 32. && celsiusToFahrenheit(100.) == 212.);
