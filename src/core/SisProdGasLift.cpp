@@ -164,14 +164,17 @@ void assembleAndSolveGasSystem(const GasLiftState &state) {
 #pragma omp parallel for num_threads(state.globals->ntrd)
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.injectionPressure, state.injectionTemperature, chokeOpeningFraction);
-        for (int bandIndex = 0; bandIndex < 9; bandIndex++) {
-            state.gasSystemMatrix[3 * gasCellIndex][bandIndex - 3] = state.gasCells[gasCellIndex].local[0][bandIndex];
-            state.gasSystemMatrix[3 * gasCellIndex + 1][bandIndex - 4] = state.gasCells[gasCellIndex].local[1][bandIndex];
-            state.gasSystemMatrix[3 * gasCellIndex + 2][bandIndex - 5] = state.gasCells[gasCellIndex].local[2][bandIndex];
+        // Each of a cell's equations couples the unknowns of the cell and of its two neighbours.
+        constexpr int kStencilCoefficients = 3 * kGasLineUnknownsPerCell;
+        const int firstRow = kGasLineUnknownsPerCell * gasCellIndex;
+        for (int bandIndex = 0; bandIndex < kStencilCoefficients; bandIndex++) {
+            state.gasSystemMatrix[firstRow][bandIndex - kGasLineUnknownsPerCell] = state.gasCells[gasCellIndex].local[0][bandIndex];
+            state.gasSystemMatrix[firstRow + 1][bandIndex - kGasLineUnknownsPerCell - 1] = state.gasCells[gasCellIndex].local[1][bandIndex];
+            state.gasSystemMatrix[firstRow + 2][bandIndex - kGasLineUnknownsPerCell - 2] = state.gasCells[gasCellIndex].local[2][bandIndex];
         }
-        state.gasRightHandSide[3 * gasCellIndex] = state.gasCells[gasCellIndex].TL[0];
-        state.gasRightHandSide[3 * gasCellIndex + 1] = state.gasCells[gasCellIndex].TL[1];
-        state.gasRightHandSide[3 * gasCellIndex + 2] = state.gasCells[gasCellIndex].TL[2];
+        state.gasRightHandSide[firstRow] = state.gasCells[gasCellIndex].TL[0];
+        state.gasRightHandSide[firstRow + 1] = state.gasCells[gasCellIndex].TL[1];
+        state.gasRightHandSide[firstRow + 2] = state.gasCells[gasCellIndex].TL[2];
     }
     state.gasSystemMatrix.GaussElimPP(state.gasRightHandSide);
 }
@@ -975,7 +978,7 @@ void advanceBufferedGasSubStep(const GasLiftState &state) {
 
 void updateBufferedGasLine(const GasLiftState &state) {
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++)
-        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[3 * gasCellIndex + 1];
+        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[kGasLineUnknownsPerCell * gasCellIndex + 1];
 }
 
 void connectTubing(const GasLiftState &state) {

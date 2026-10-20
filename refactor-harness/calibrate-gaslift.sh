@@ -130,9 +130,9 @@ probe 'subtempoGasBuf: choke opening bound' \
 # updateBufferedGasLine writes one field, in three byte-identical branches.
 # Without a probe on the offset itself the whole routine was unguarded.
 probe 'renovaGasBuf: buffer offset' \
-    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[3 * gasCellIndex + 1];
+    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[kGasLineUnknownsPerCell * gasCellIndex + 1];
 }' \
-    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[3 * gasCellIndex + 2];
+    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[kGasLineUnknownsPerCell * gasCellIndex + 2];
 }' \
     "$target_gaslift"
 
