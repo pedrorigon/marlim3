@@ -73,8 +73,6 @@ struct GasLiftState {
     const int &tubingAnnulusStart;
     const int &tubingAnnulusEnd;
 
-    /// Steady-state iteration counter.
-    const int &steadyIteration;
     /// Whether the column-annulus thermal coupling is on.
     const bool &networkCoupled;
     /// Thermal source switch.

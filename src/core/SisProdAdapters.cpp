@@ -235,7 +235,6 @@ sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system, SolveContext &conte
         .annulusTubingEnd = system.gasLift.tubingCouplingEnd,
         .tubingAnnulusStart = system.gasLift.annulusCouplingStart,
         .tubingAnnulusEnd = system.gasLift.annulusCouplingEnd,
-        .steadyIteration = system.steadyIteration,
         .networkCoupled = system.gasLift.annulusThermalCoupling,
         .thermalSourceDisabled = system.thermalSourceDisabled,
         .initialGasPressure = system.gasLift.injectionPressure,
