@@ -980,7 +980,6 @@ void solveGasLine(const GasLiftState &state) {
 
     {
         double gasTemperature;
-        // dt,celula,ColunaAnulaIni,ColunaAnulaFim,
         updateTransientGasValves(state);
         for (int valveIndex = 0; valveIndex < state.input.nvalvgas; valveIndex++) {
             int gasLiftProductionCell = state.productionValveCellIndices[valveIndex];
@@ -1242,7 +1241,7 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
             int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
             double gasTemperature;
             state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * units::kSecondsPerDay /
-                                            (kAirDensityAtStandardConditions * state.gasCells[gasLiftGasCell].flui.Deng); // celulaG[gasLiftGasCell].flui.MasEspGas(1.,15.);
+                                            (kAirDensityAtStandardConditions * state.gasCells[gasLiftGasCell].flui.Deng);
             if (state.gasLiftChokes[valveIndex].presEstag > state.gasLiftChokes[valveIndex].presGarg) {
                 gasTemperature = state.temperatureUpdater.gasLiftDischargeTemperature(valveIndex);
             } else
