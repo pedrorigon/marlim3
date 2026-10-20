@@ -672,7 +672,7 @@ void advanceInterface(const GasLiftState &state) {
         state.gasCells[state.interfaceCell - 1].u1R = state.gasCells[state.interfaceCell].u1L;
         state.gasCells[state.interfaceCell - 1].VGasRR = state.gasCells[state.interfaceCell].VGasR;
 
-        state.interfaceCell = 1e7;
+        state.interfaceCell = kNoInterfaceCell;
         state.input.descarga = 0;
     }
 
@@ -1368,10 +1368,10 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
                 int stepCount;
                 double stepLength;
                 if (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob < 1000.) {
-                    stepCount = 0.;
+                    stepCount = 0;
                     stepLength = meanCellLength;
                 } else {
-                    stepCount = 2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / 1000 + 1;
+                    stepCount = static_cast<int>(2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / 1000 + 1);
                     stepLength = meanCellLength / stepCount;
                 }
                 double stepTemperature = state.gasCells[cellIndex - 1].temp;
