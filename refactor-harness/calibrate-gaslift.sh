@@ -88,13 +88,13 @@ probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = 
 # a near-duplicate of advanceGasSubStep and every single line it contains also
 # appears there.
 probe 'HidroDescargaG: hydrostatic head' \
-    'meanPressure -= rho1 * kGravityUnloadingVariant * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
-    'meanPressure -= rho1 * kGravity * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
+    'meanPressure -= localDensity * kGravityUnloadingVariant * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
+    'meanPressure -= localDensity * kGravity * halfLocalLength * sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
     "$target_gaslift"
 
 probe 'CalcPresValvDesc: wall shear' \
-    'double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.;' \
-    'double tens1 = frictionFactor * mixtureDensity * vel1 * fabs(vel1) / 2.5;' \
+    'double wallShearStress = frictionFactor * mixtureDensity * mixtureVelocity * fabs(mixtureVelocity) / 2.;' \
+    'double wallShearStress = frictionFactor * mixtureDensity * mixtureVelocity * fabs(mixtureVelocity) / 2.5;' \
     "$target_gaslift"
 
 probe 'BuscaPresInjDesc: pressure decay' \
@@ -110,8 +110,8 @@ probe 'avancInter: handover ratio' \
     "$target_gaslift"
 
 probe 'resolveDescarga: liquid hydrostatic' \
-    'double hidro1L = (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * leftLiquidLength;' \
-    'double hidro1L = (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * rhoL) * leftLiquidLength;' \
+    'double leftLiquidHead = (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
+    'double leftLiquidHead = (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
     "$target_gaslift"
 
 # Splits the gas/liquid share of every control volume. Moving the threshold
@@ -141,8 +141,8 @@ probe 'renovaGasBuf: buffer offset' \
 
 probe 'prescordesc: sign'                 'return sign * pressureCorrection;' 'return -sign * pressureCorrection;' \
                                           "$target_gaslift"
-probe 'prescordesc: throat area'          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * rho0 * units::kPascalPerKgfPerCm2);' \
-                                          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * rho0 * units::kPascalPerKgfPerCm2);' \
+probe 'prescordesc: throat area'          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
+                                          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
                                           "$target_gaslift"
 probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
                                           'double hydrostaticGradient = state.gasCells[cellIndex].dPdLHidro * (kGravityUnloadingVariant * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
