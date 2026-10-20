@@ -11,7 +11,6 @@ class CelG;
 class ChokeGas;
 class Ler;
 struct varGlob1D;
-class SProd;
 namespace sisprod { class SolveContext; }
 template <class T> class Vcr;
 template <class T> class BandMtx;
