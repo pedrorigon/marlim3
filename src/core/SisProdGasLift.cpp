@@ -1206,10 +1206,10 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
 
 void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
     int valveCount = state.input.nvalvgas;
-    int match = 0;
+    bool matched = false;
     for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
         if (state.gasValveCellIndices[valveIndex] == cellIndex) {
-            match = 1;
+            matched = true;
             CelG &valveCell = state.gasCells[state.gasValveCellIndices[valveIndex]];
             valveCell.massfonteCH = primeValveMassSource<GasThroughValve>(
                 state, valveIndex, valveCell,
@@ -1246,7 +1246,7 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
                 state.gasCells[cellIndex + 1].VGasL = state.gasCells[cellIndex].VGasR;
         }
     }
-    if (match == 0) {
+    if (!matched) {
         state.gasCells[cellIndex].VGasR = state.gasCells[cellIndex - 1].VGasR - 0 * state.gasCells[cellIndex].massfonteCH;
         state.gasCells[cellIndex - 1].VGasRR = state.gasCells[cellIndex].VGasR;
         if (cellIndex < state.gasCellCount)
