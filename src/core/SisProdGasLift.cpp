@@ -1418,7 +1418,6 @@ void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
             : 0.;
 }
 
-
 /// The steady gas temperature of a cell outside the column-annulus coupling, marched from its left neighbour.
 void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     double dx = state.gasCells[cellIndex].dx0;
