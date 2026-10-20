@@ -934,27 +934,24 @@ void advanceGasSubStep(const GasLiftState &state) {
 }
 
 void updateGasLine(const GasLiftState &state) {
+    // The unknowns of a gas cell in the solved system: its pressure, then the gas mass flow through its right face.
+    const auto pressureOf = [&](int cellIndex) { return state.gasRightHandSide[kGasLineUnknownsPerCell * cellIndex]; };
+    const auto rightFaceFlowOf = [&](int cellIndex) {
+        return state.gasRightHandSide[kGasLineUnknownsPerCell * cellIndex + 1];
+    };
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
-        if (gasCellIndex != 0 && gasCellIndex != state.gasCellCount) {
-            state.gasCells[gasCellIndex].pres = state.gasRightHandSide[3 * gasCellIndex];
-            state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 3];
-            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];
-            state.gasCells[gasCellIndex].VGasR = state.gasRightHandSide[3 * gasCellIndex + 1];
-            state.gasCells[gasCellIndex].VGasL = state.gasRightHandSide[3 * gasCellIndex - 2];
-            state.gasCells[gasCellIndex].VGasRR = state.gasRightHandSide[3 * gasCellIndex + 4];
-        } else if (gasCellIndex == 0) {
-            state.gasCells[gasCellIndex].pres = state.gasRightHandSide[3 * gasCellIndex];
-            state.gasCells[gasCellIndex].presL = state.gasCells[gasCellIndex].pres;
-            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];
-            state.gasCells[gasCellIndex].VGasR = state.gasRightHandSide[3 * gasCellIndex + 1];
-            state.gasCells[gasCellIndex].VGasRR = state.gasRightHandSide[3 * gasCellIndex + 4];
-        } else {
-            state.gasCells[gasCellIndex].pres = state.gasRightHandSide[3 * gasCellIndex];
-            state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 3];
-            state.gasCells[gasCellIndex].VGasR = state.gasRightHandSide[3 * gasCellIndex + 1];
-            state.gasCells[gasCellIndex].VGasL = state.gasRightHandSide[3 * gasCellIndex - 2];
-            state.gasCells[gasCellIndex].presR = state.gasCells[gasCellIndex].pres;
-        }
+        CelG &cell = state.gasCells[gasCellIndex];
+        // The first cell counts as the first even when it is also the last.
+        const bool first = gasCellIndex == 0;
+        const bool last = !first && gasCellIndex == state.gasCellCount;
+        cell.pres = pressureOf(gasCellIndex);
+        cell.presL = first ? cell.pres : pressureOf(gasCellIndex - 1);
+        cell.presR = last ? cell.pres : pressureOf(gasCellIndex + 1);
+        cell.VGasR = rightFaceFlowOf(gasCellIndex);
+        if (!first)
+            cell.VGasL = rightFaceFlowOf(gasCellIndex - 1);
+        if (!last)
+            cell.VGasRR = rightFaceFlowOf(gasCellIndex + 1);
     }
 }
 

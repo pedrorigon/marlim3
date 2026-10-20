@@ -68,13 +68,10 @@ probe 'areaValvCali: calibration blend'   'bellowsPressureAt80F = (bellowsPressu
 probe 'areaValvCali: opening cap'         'if (openingArea > throatArea)' \
                                           'if (openingArea > 2. * throatArea)' \
                                           "$target_gaslift"
-# updateGasLine writes this assignment twice -- once per branch of its interior
-# if/else. Only the interior branch follows presL with presR, so carrying the
-# next line pins the corruption to that one.
-probe 'updateGasLine: neighbour source'   'state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 3];
-            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];' \
-                                          'state.gasCells[gasCellIndex].presL = state.gasRightHandSide[3 * gasCellIndex - 2];
-            state.gasCells[gasCellIndex].presR = state.gasRightHandSide[3 * gasCellIndex + 3];' \
+# updateGasLine reads each cell's left neighbour's pressure from the solved
+# system; reading that neighbour's right-face flow instead has to be caught.
+probe 'updateGasLine: neighbour source'   'cell.presL = first ? cell.pres : pressureOf(gasCellIndex - 1);' \
+                                          'cell.presL = first ? cell.pres : rightFaceFlowOf(gasCellIndex - 1);' \
                                           "$target_gaslift"
 # ------------------------------------------------------- unloading probes ---
 # The six routines below were, until the sweep was extended, executed by no
