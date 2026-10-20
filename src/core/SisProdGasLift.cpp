@@ -205,6 +205,12 @@ void relaxTowards(double &pressure, double target) {
     }
 }
 
+/// The volume flow of a gas cell's source during the unloading: gas once the
+/// interface is past the cell's middle, completion fluid before.
+[[nodiscard]] double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity) {
+    return cell.razInter > 0.5 ? cell.massfonteCH / gasDensity : cell.massfonteCH / liquidDensity;
+}
+
 /// Publishes one fluid's transport properties onto the annulus cell that faces
 /// a tubing cell.
 struct ExternalFluidProperties {
@@ -675,30 +681,24 @@ void solveUnloading(const GasLiftState &state) {
 
     double Qtotal = 0.;
     for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
-        double temp = state.gasCells[gasCellIndex].temp;
-        double cellPressure = state.gasCells[gasCellIndex].pres;
-        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(cellPressure, temp);
-        double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(cellPressure, temp);
-        double sourceVolumeFlowRate = state.gasCells[gasCellIndex].massfonteCH / rhoL;
-        if (state.gasCells[gasCellIndex].razInter > 0.5)
-            sourceVolumeFlowRate = state.gasCells[gasCellIndex].massfonteCH / gasDensity;
-        Qtotal += sourceVolumeFlowRate;
+        const double cellTemperature = state.gasCells[gasCellIndex].temp;
+        const double cellPressure = state.gasCells[gasCellIndex].pres;
+        const double rhoL = state.gasCells[gasCellIndex].MasEspFlu(cellPressure, cellTemperature);
+        const double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(cellPressure, cellTemperature);
+        Qtotal += sourceVolumeFlowRate(state.gasCells[gasCellIndex], rhoL, gasDensity);
     }
-    double temp = state.gasCells[state.interfaceCell].temp;
-    double interfaceCellPressure = state.gasCells[state.interfaceCell].pres;
-    double gasDensity = state.gasCells[state.interfaceCell].flui.MasEspGas(interfaceCellPressure, temp);
-    state.gasCells[state.interfaceCell].VGasL = Qtotal * gasDensity;
+    const double interfaceTemperature = state.gasCells[state.interfaceCell].temp;
+    const double interfacePressure = state.gasCells[state.interfaceCell].pres;
+    const double interfaceGasDensity = state.gasCells[state.interfaceCell].flui.MasEspGas(interfacePressure, interfaceTemperature);
+    state.gasCells[state.interfaceCell].VGasL = Qtotal * interfaceGasDensity;
     state.gasCells[state.interfaceCell - 1].VGasR = state.gasCells[state.interfaceCell].VGasL;
     state.gasCells[state.interfaceCell - 2].VGasRR = state.gasCells[state.interfaceCell].VGasL;
     for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
-        double temp = state.gasCells[gasCellIndex].temp;
-        double interfaceCellPressure = state.gasCells[gasCellIndex].pres;
-        double rhoL = state.gasCells[gasCellIndex].MasEspFlu(interfaceCellPressure, temp);
-        double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(interfaceCellPressure, temp);
-        double sourceVolumeFlowRate = state.gasCells[gasCellIndex].massfonteCH / rhoL;
-        if (state.gasCells[gasCellIndex].razInter > 0.5)
-            sourceVolumeFlowRate = state.gasCells[gasCellIndex].massfonteCH / gasDensity;
-        Qtotal -= sourceVolumeFlowRate;
+        const double cellTemperature = state.gasCells[gasCellIndex].temp;
+        const double cellPressure = state.gasCells[gasCellIndex].pres;
+        const double rhoL = state.gasCells[gasCellIndex].MasEspFlu(cellPressure, cellTemperature);
+        const double gasDensity = state.gasCells[gasCellIndex].flui.MasEspGas(cellPressure, cellTemperature);
+        Qtotal -= sourceVolumeFlowRate(state.gasCells[gasCellIndex], rhoL, gasDensity);
         if (gasCellIndex < state.gasCellCount) {
             state.gasCells[gasCellIndex + 1].VGasL = Qtotal * rhoL;
             state.gasCells[gasCellIndex].VGasR = state.gasCells[gasCellIndex + 1].VGasL;
