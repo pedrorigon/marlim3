@@ -802,19 +802,17 @@ void solveGasLine(const GasLiftState &state) {
         if (valveDischargesGas) {
             state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH * units::kSecondsPerDay / state.gasCells[gasLiftGasCell].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
             state.cells[gasLiftProductionCell].acsr.injg.tipoflu = kInjectedGas;
-        } else {
-            state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH;
-            state.cells[gasLiftProductionCell].acsr.injg.tipoflu = kInjectedCompletionFluid;
-        }
-        if (valveDischargesGas) {
             const double gasTemperature = state.gasLiftChokes[valveIndex].presEstag > state.gasLiftChokes[valveIndex].presGarg
                                               ? state.temperatureUpdater.gasLiftDischargeTemperature(valveIndex)
                                               : state.cells[gasLiftProductionCell].temp;
             state.cells[gasLiftProductionCell].acsr.injg.temp = gasTemperature;
             if (state.cells[gasLiftProductionCell].acsr.injg.temp < kMinimumTemperatureCelsius)
                 state.cells[gasLiftProductionCell].acsr.injg.temp = kMinimumTemperatureCelsius;
-        } else
+        } else {
+            state.cells[gasLiftProductionCell].acsr.injg.QGas = state.gasCells[gasLiftGasCell].massfonteCH;
+            state.cells[gasLiftProductionCell].acsr.injg.tipoflu = kInjectedCompletionFluid;
             state.cells[gasLiftProductionCell].acsr.injg.temp = state.gasLiftChokes[valveIndex].tempEstag;
+        }
         state.gasCells[gasLiftGasCell].pEstag = state.gasLiftChokes[valveIndex].presEstag;
         state.gasCells[gasLiftGasCell].tEstag = state.gasLiftChokes[valveIndex].tempEstag;
         state.gasCells[gasLiftGasCell].pGarg = state.gasLiftChokes[valveIndex].presGarg;
