@@ -157,7 +157,7 @@ probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient = state.ga
     double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.52;' \
                                           "$target_gaslift"
 probe 'delpInjPerm: interpolation weight' 'meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp + state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
-                                          'tmed = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp + state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
+                                          'meanTemperature = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp + state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) / (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
                                           "$target_gaslift"
 
 cp "$scratch/pristine.cpp" "$target"
