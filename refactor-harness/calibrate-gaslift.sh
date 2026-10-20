@@ -148,10 +148,8 @@ probe 'renovaGasBuf: buffer offset' \
 
 probe 'prescordesc: sign'                 'return sign * pressureCorrection;' 'return -sign * pressureCorrection;' \
                                           "$target_gaslift"
-probe 'prescordesc: throat area'          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) /
-                                      (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
-                                          'pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 3.) /
-                                      (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
+probe 'prescordesc: throat area'          'throatMassFlux * throatMassFlux / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
+                                          'throatMassFlux * throatMassFlux * throatMassFlux / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
                                           "$target_gaslift"
 probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient =
         state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \

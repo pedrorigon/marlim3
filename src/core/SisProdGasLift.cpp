@@ -540,8 +540,9 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
     double completionFluidDensity = state.gasCells[gasValveCell].MasEspFlu(state.gasLiftChokes[valveIndex].presEstag,
                                                                            state.gasLiftChokes[valveIndex].tempEstag);
     double massFlowRate = (factor * state.input.vazDescControl - maximumFlowRate) * completionFluidDensity;
-    const double pressureCorrection = pow(massFlowRate / state.gasLiftChokes[valveIndex].areagarg, 2.) /
-                                      (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);
+    const double throatMassFlux = massFlowRate / state.gasLiftChokes[valveIndex].areagarg;
+    const double pressureCorrection =
+        throatMassFlux * throatMassFlux / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);
     return sign * pressureCorrection;
 }
 
@@ -1311,8 +1312,9 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     area = 0.25 * std::numbers::pi * diameter * diameter;
     perimeter = state.gasCells[cellIndex].duto.peri;
     gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
-    double areaVariation =
-        1 / pow(state.gasCells[cellIndex].dutoL.area, 2.) - 1 / pow(state.gasCells[cellIndex].duto.area, 2.);
+    const double leftFlowArea = state.gasCells[cellIndex].dutoL.area;
+    const double flowArea = state.gasCells[cellIndex].duto.area;
+    double areaVariation = 1 / (leftFlowArea * leftFlowArea) - 1 / (flowArea * flowArea);
     double dynamicPressureTerm = 0.5 * leftFaceGasMassFlowRate * leftFaceGasMassFlowRate * areaVariation / gasDensity;
 
     gasVelocity = leftFaceGasMassFlowRate / (gasDensity * area);
