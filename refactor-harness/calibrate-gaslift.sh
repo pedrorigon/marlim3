@@ -62,14 +62,10 @@ PY
     fi
 }
 
-probe 'areaValvCali: calibration blend'   'bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) *
-                               (kBellowsReferenceTemperatureFahrenheit + units::kZeroFahrenheitInRankine) /
-                               calibrationTemperatureRankine -
-                           units::kAtmosphereInPsi;' \
-                                          'bellowsPressureAt80F = (bellowsPressureAt80F + units::kAtmosphereInPsi) *
-                               (kBellowsReferenceTemperatureFahrenheit + 0.01 + units::kZeroFahrenheitInRankine) /
-                               calibrationTemperatureRankine -
-                           units::kAtmosphereInPsi;' \
+probe 'areaValvCali: calibration blend'   'domePressure = (domePressure + units::kAtmosphereInPsi) *
+                       (kBellowsReferenceTemperatureFahrenheit + units::kZeroFahrenheitInRankine) /' \
+                                          'domePressure = (domePressure + units::kAtmosphereInPsi) *
+                       (kBellowsReferenceTemperatureFahrenheit + 0.01 + units::kZeroFahrenheitInRankine) /' \
                                           "$target_gaslift"
 probe 'areaValvCali: opening cap'         'if (openingArea > throatArea)' \
                                           'if (openingArea > 2. * throatArea)' \
