@@ -51,6 +51,11 @@ inline constexpr bool marchPressureTooLow(double pressure) {
     return !(pressure > kMarchMinimumPressure);
 }
 
+/// The temperature marches of the production column and of the gas line keep a
+/// cell's kinetic term only while the line is shorter than this many times the
+/// cell's length.
+inline constexpr double kKineticTermMaximumLengthRatio = 1e6;
+
 // ------------------------------------------------------ accessory kinds ----
 
 /// The value of `celula[i].acsr.tipo`, selecting the accessory attached to a
@@ -134,6 +139,10 @@ inline constexpr int kProductionRightBandwidth = 2;
 inline constexpr int kGasLineUnknownsPerCell = 3;
 inline constexpr int kGasLineBandwidth = 5;
 
+/// Coefficients in each equation of a gas-line cell: the unknowns of the cell
+/// and of its two neighbours.
+inline constexpr int kGasLineStencilCoefficients = 3 * kGasLineUnknownsPerCell;
+
 /// Columns of a profile row besides the variables the input asks for.
 inline constexpr int kProductionProfileFixedColumns = 6;
 inline constexpr int kGasLineProfileFixedColumns = 7;
@@ -167,6 +176,7 @@ static_assert(kProductionLeftBandwidth == 3);
 static_assert(kProductionRightBandwidth == 2);
 static_assert(kGasLineUnknownsPerCell == 3);
 static_assert(kGasLineBandwidth == 5);
+static_assert(kGasLineStencilCoefficients == 9);
 static_assert(kProductionProfileFixedColumns == 6);
 static_assert(kGasLineProfileFixedColumns == 7);
 static_assert(kTrendSentinel == -10000.);
@@ -210,6 +220,7 @@ static_assert(kMinimumTemperatureCelsius == -50.);
 static_assert(kMaximumTemperatureCelsius == 200.);
 static_assert(kMarchMinimumPressure == 0.1);
 static_assert(marchPressureTooLow(0.1) && !marchPressureTooLow(0.2));
+static_assert(kKineticTermMaximumLengthRatio == 1e6);
 
 }  // namespace sisprod
 

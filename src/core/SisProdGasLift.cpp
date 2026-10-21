@@ -91,10 +91,6 @@ constexpr double kMinimumMarchDiameterRatio = 0.5;
 /// passes this value.
 constexpr double kThermalSubstepLength = 1000.;
 
-/// The steady gas temperature keeps a cell's kinetic term only while the gas line is shorter than this many times
-/// the cell's length.
-constexpr double kKineticTermMaximumLengthRatio = 1e6;
-
 /// The diameter a Reynolds number is formed on: the bore when the segment is
 /// bare, the hydraulic diameter when it is cased.
 [[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
@@ -1052,10 +1048,8 @@ void assembleAndSolveGasSystem(const GasLiftState &state) {
     for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
         state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.injectionPressure, state.injectionTemperature,
                                                chokeOpeningFraction);
-        // Each of a cell's equations couples the unknowns of the cell and of its two neighbours.
-        constexpr int kStencilCoefficients = 3 * kGasLineUnknownsPerCell;
         const int firstRow = kGasLineUnknownsPerCell * gasCellIndex;
-        for (int bandIndex = 0; bandIndex < kStencilCoefficients; bandIndex++) {
+        for (int bandIndex = 0; bandIndex < kGasLineStencilCoefficients; bandIndex++) {
             state.gasSystemMatrix[firstRow][bandIndex - kGasLineUnknownsPerCell] =
                 state.gasCells[gasCellIndex].local[0][bandIndex];
             state.gasSystemMatrix[firstRow + 1][bandIndex - kGasLineUnknownsPerCell - 1] =

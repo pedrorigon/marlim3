@@ -3248,7 +3248,7 @@ double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
             upstreamMeanLiquidVelocity /= (1. - state.cells[cellIndex - 2].alf);
         }
 
-        if (state.input.nCompTotalUnidadesP / kineticCellLength < 1e6)
+        if (state.input.nCompTotalUnidadesP / kineticCellLength < kKineticTermMaximumLengthRatio)
             kineticTerm = (cell.MC - cell.Mliqini) * meanGasVelocity * (meanGasVelocity - upstreamMeanGasVelocity) / kineticCellLength + cell.Mliqini * meanLiquidVelocity * (meanLiquidVelocity - upstreamMeanLiquidVelocity) / kineticCellLength;
         else
             kineticTerm = 0;
