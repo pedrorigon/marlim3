@@ -1085,18 +1085,6 @@ void updateGasLine(const GasLiftState &state) {
     }
 }
 
-void advanceBufferedGasSubStep(const GasLiftState &state) {
-    for (int gasCellIndex = 0; gasCellIndex < state.gasCellCount + 1; gasCellIndex++)
-        state.gasCells[gasCellIndex].dTdt = 0;
-    assembleAndSolveGasSystem(state);
-    updateBufferedGasLine(state);
-}
-
-void updateBufferedGasLine(const GasLiftState &state) {
-    for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++)
-        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[kGasLineUnknownsPerCell * gasCellIndex + 1];
-}
-
 void connectTubing(const GasLiftState &state) {
     forEachCoupledCellPair(state, [&](int productionCellIndex, int gasCellIndex) {
         state.cells[productionCellIndex].calor.Textern2 = state.gasCells[gasCellIndex].calor.Tcamada[0][0];

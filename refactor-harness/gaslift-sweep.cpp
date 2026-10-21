@@ -779,17 +779,6 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     sisprod::gaslift::updateGasLine(sisprod::SolveContext(system).gasLift());
     printGas("renovaGas", scenario.name, system.gasLift.cells[2]);
 
-    resetGasLine(system, scenario);
-    sisprod::gaslift::updateBufferedGasLine(sisprod::SolveContext(system).gasLift());
-    printGas("renovaGasBuf", scenario.name, system.gasLift.cells[2]);
-    // VGasRBuf is the ONLY field updateBufferedGasLine writes, and printGas does
-    // not carry it, so until this row existed the routine could have been
-    // rewritten freely. Here the free terms come straight from resetGasLine
-    // rather than from a solve, so the values are finite and discriminating.
-    printf("%-28s %-15s VGasRBuf0=%a VGasRBuf2=%a VGasRBuf4=%a\n",
-           "renovaGasBuf-buffer", scenario.name, system.gasLift.cells[0].VGasRBuf,
-           system.gasLift.cells[2].VGasRBuf, system.gasLift.cells[4].VGasRBuf);
-
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);

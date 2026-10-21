@@ -87,9 +87,7 @@ probe 'updateGasLine: neighbour source'   'cell.presL = first ? cell.pres : pres
 #
 # Every corruption here is a LITERAL or a comparison bound. Renaming cannot
 # excuse any of them, and each pattern is pinned to text that occurs exactly
-# once -- advanceBufferedGasSubStep needs a two-line window, because its body is
-# a near-duplicate of advanceGasSubStep and every single line it contains also
-# appears there.
+# once.
 probe 'HidroDescargaG: hydrostatic head' \
     'meanPressure -= localDensity * kGravityUnloadingVariant * halfLocalLength *
                         sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
@@ -137,16 +135,7 @@ probe 'subtempoGasBuf: choke opening bound' \
     if (chokeOpeningFraction < 0.3 * kThrottlingChokeOpening / 0.2) {' \
     "$target_gaslift"
 
-# updateBufferedGasLine writes one field, in three byte-identical branches.
-# Without a probe on the offset itself the whole routine was unguarded.
-probe 'renovaGasBuf: buffer offset' \
-    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[kGasLineUnknownsPerCell * gasCellIndex + 1];
-}' \
-    '        state.gasCells[gasCellIndex].VGasRBuf = state.gasRightHandSide[kGasLineUnknownsPerCell * gasCellIndex + 2];
-}' \
-    "$target_gaslift"
-
-probe 'prescordesc: sign'                 'return sign * pressureCorrection;' 'return -sign * pressureCorrection;' \
+probe 'prescordesc: sign'                'return sign * pressureCorrection;' 'return -sign * pressureCorrection;' \
                                           "$target_gaslift"
 probe 'prescordesc: throat area'          'throatMassFlux * throatMassFlux / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
                                           'throatMassFlux * throatMassFlux * throatMassFlux / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
@@ -190,7 +179,7 @@ cp "$scratch/pristine-gaslift.cpp" "$target_gaslift"
 #
 # Kept dead it would report SKIP for ever, which reads like a caveat and is
 # really a dead instrument. What it guarded is covered without it: every probe
-# above corrupts a LITERAL and requires the 116-row table to reject it, which is
+# above corrupts a LITERAL and requires the 108-row table to reject it, which is
 # the same guarantee without the retired premise.
 
 printf '\n%s cases: %s detected, %s missed, %s skipped\n' \

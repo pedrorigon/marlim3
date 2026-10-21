@@ -163,12 +163,6 @@ void assembleAndSolveGasSystem(const GasLiftState &state);
 /// Updates the gas-line cells after a sub-step.
 void updateGasLine(const GasLiftState &state);
 
-/// Solves the gas line once and keeps the solved velocities in the buffer, without advancing the cells.
-void advanceBufferedGasSubStep(const GasLiftState &state);
-
-/// Copies the solved gas velocities into the buffer.
-void updateBufferedGasLine(const GasLiftState &state);
-
 /// Connects the gas line to the tubing.
 void connectTubing(const GasLiftState &state);
 
