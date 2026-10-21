@@ -109,7 +109,7 @@ struct GasLiftState {
     const double &unloadingAveragingWindow;
     const int &unloadingSampleCapacity;
 
-    /// Discharge temperature, computed by the thermal module.
+    /// The gas line's temperatures, which the thermal module computes.
     GasLiftTemperatureUpdater temperatureUpdater;
 };
 
@@ -168,13 +168,34 @@ void connectTubing(const GasLiftState &state);
 
 // The gas line in the steady state.
 
+/// Connects the gas line to the tubing at steady state: each coupled production cell takes the facing gas cell's
+/// temperature, velocity and transport properties as its external fluid.
 void connectTubingSteady(const GasLiftState &state);
+
+/// Connects the gas line to the tubing before the first steady march iteration, from the facing production cell's
+/// pressure, the deck's external temperature and a fixed gas viscosity.
 void initializeTubingConnectionSteady(const GasLiftState &state);
+
+/// The friction and hydrostatic pressure drop across a gas-line cell's two half cells at steady state, in kgf/cm^2.
 [[nodiscard]] double steadyGasPressureDrop(const GasLiftState &state, int cellIndex);
+
+/// The friction and hydrostatic pressure drop across the two half cells of an injection well's production cell at
+/// steady state, in kgf/cm^2.
 [[nodiscard]] double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex);
+
+/// Marches the steady gas pressure into a cell from its left neighbour, and copies it to the neighbours' faces.
 void updateSteadyGasPressure(const GasLiftState &state, int cellIndex);
+
+/// The steady gas flow through a cell's right face: the left face's, less what a gas-lift valve in the cell
+/// delivers to the tubing.
 void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex);
+
+/// Primes the steady gas mass source of the gas-lift valves that discharge into this production cell, and records
+/// the injection on the cell.
 void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex);
+
+/// The steady gas temperature of a cell: marched from its left neighbour, or coupled to the tubing inside the
+/// column-annulus coupling.
 void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex);
 
 }  // namespace sisprod::gaslift
