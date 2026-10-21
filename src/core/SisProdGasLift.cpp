@@ -98,6 +98,11 @@ constexpr double kThermalSubstepLength = 1000.;
     return cased == 0 ? bore : 4 * area / perimeter;
 }
 
+/// The flow area of a bore of this diameter.
+[[nodiscard]] double boreArea(double diameter) {
+    return 0.25 * std::numbers::pi * diameter * diameter;
+}
+
 /// Opening of a calibrated gas-lift valve, from the state already primed on the
 /// choke. Imperial in, fraction out.
 [[nodiscard]] double calibratedValveOpening(const ChokeGas &choke) {
@@ -109,24 +114,29 @@ constexpr double kThermalSubstepLength = 1000.;
                                units::celsiusToFahrenheit(choke.tempEstag));
 }
 
-/// What flows through a gas-lift valve, and how its throat pressure is
-/// recovered.
+// What flows through a gas-lift valve, as policies of primeValveMassSource: the recovery factor that turns the
+// stagnation pressure into the throat pressure, and the mass flow the choke passes.
+
+/// Gas: the gas recovery factor and the gas mass flow.
 struct GasThroughValve {
     [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frec; }
     [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &) { return choke.massica(); }
 };
+
+/// Completion fluid: the liquid recovery factor and the completion-fluid mass flow.
 struct CompletionFluidThroughValve {
     [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frecliq; }
     [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &input) {
         return choke.massica(1, input.salinDescarga);
     }
 };
+
 /// Gas-side recovery, completion-fluid mass flow: the combination the unloading
 /// search uses.
 struct UnloadingThroughValve {
-    [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frec; }
+    [[nodiscard]] static double recovery(const ChokeGas &choke) { return GasThroughValve::recovery(choke); }
     [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &input) {
-        return choke.massica(1, input.salinDescarga);
+        return CompletionFluidThroughValve::massFlowRate(choke, input);
     }
 };
 
@@ -1163,7 +1173,7 @@ void initializeTubingConnectionSteady(const GasLiftState &state) {
 double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     double dx = 0.5 * state.gasCells[cellIndex].dx0;
     double diameter = state.gasCells[cellIndex].duto.a;
-    double area = 0.25 * std::numbers::pi * diameter * diameter;
+    double area = boreArea(diameter);
     double perimeter = state.gasCells[cellIndex].duto.peri;
     double gasDensity =
         state.gasCells[cellIndex].flui.MasEspGas(state.gasCells[cellIndex].pres, state.gasCells[cellIndex].temp);
@@ -1195,7 +1205,7 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
 
     dx = 0.5 * state.gasCells[cellIndex].dxL;
     diameter = state.gasCells[cellIndex].dutoL.a;
-    area = 0.25 * std::numbers::pi * diameter * diameter;
+    area = boreArea(diameter);
     perimeter = state.gasCells[cellIndex].dutoL.peri;
     gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
 
@@ -1218,7 +1228,7 @@ double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
 double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     double dx = 0.5 * state.cells[cellIndex].dx;
     double diameter = state.cells[cellIndex].duto.a;
-    double area = 0.25 * std::numbers::pi * diameter * diameter;
+    double area = boreArea(diameter);
     double perimeter = state.cells[cellIndex].duto.peri;
     double meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp +
                               state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) /
@@ -1244,7 +1254,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
 
     dx = 0.5 * state.cells[cellIndex].dxL;
     diameter = state.cells[cellIndex].dutoL.a;
-    area = 0.25 * std::numbers::pi * diameter * diameter;
+    area = boreArea(diameter);
     perimeter = state.cells[cellIndex].dutoL.peri;
     meanTemperature = state.cells[cellIndex - 1].temp;
     injectedFluidDensity = state.cells[cellIndex].fluicol.MasEspFlu(meanPressure, meanTemperature);
@@ -1269,7 +1279,7 @@ double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
 void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     double dx = 0.5 * state.gasCells[cellIndex].dxL;
     double diameter = state.gasCells[cellIndex].dutoL.a;
-    double area = 0.25 * std::numbers::pi * diameter * diameter;
+    double area = boreArea(diameter);
     double perimeter = state.gasCells[cellIndex].dutoL.peri;
     double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres,
                                                                      state.gasCells[cellIndex - 1].temp);
@@ -1300,7 +1310,7 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
 
     dx = 0.5 * state.gasCells[cellIndex].dx0;
     diameter = state.gasCells[cellIndex].duto.a;
-    area = 0.25 * std::numbers::pi * diameter * diameter;
+    area = boreArea(diameter);
     perimeter = state.gasCells[cellIndex].duto.peri;
     gasDensity = state.gasCells[cellIndex].flui.MasEspGas(meanPressure, meanTemperature);
     const double leftFlowArea = state.gasCells[cellIndex].dutoL.area;
