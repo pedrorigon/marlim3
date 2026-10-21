@@ -15,18 +15,11 @@
 
 namespace sisprod::gaslift {
 
-namespace {
-
-/// The diameter a Reynolds number is formed on: the bore when the segment is
-/// bare, the hydraulic diameter when it is cased.
-[[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
-                                            double perimeter) {
+double characteristicDiameter(int cased, double bore, double area, double perimeter) {
     return cased == 0 ? bore : 4 * area / perimeter;
 }
 
-/// The opening fraction of a calibrated gas-lift valve, from the state already primed on its choke, converted to
-/// the units of the valve correlation.
-[[nodiscard]] double calibratedValveOpening(const ChokeGas &choke) {
+double calibratedValveOpening(const ChokeGas &choke) {
     return calibratedValveOpeningFraction(choke.pcalib * units::kPsiPerKgfPerCm2, choke.tcalib,
                                           (choke.presEstag - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
                                           (choke.presGarg - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
@@ -34,11 +27,8 @@ namespace {
                                           units::celsiusToFahrenheit(choke.tempEstag));
 }
 
-/// Primes the choke from the two cells it spans and returns the mass source it
-/// delivers, already scaled by the calibrated opening when the valve is one.
 template <ValveFluids fluids>
-[[nodiscard]] double primeValveMassSource(const GasLiftState &state, int valveIndex,
-                                          const CelG &gasCell, const Cel &productionCell) {
+double primeValveMassSource(const GasLiftState &state, int valveIndex, const CelG &gasCell, const Cel &productionCell) {
     ChokeGas &choke = state.gasLiftChokes[valveIndex];
     const double recovery = fluids.recovery == kInjectedGas ? choke.frec : choke.frecliq;
     choke.presEstag = gasCell.pres;
@@ -53,8 +43,6 @@ template <ValveFluids fluids>
     return massSource;
 }
 
-/// Calls visit(productionCellIndex, gasCellIndex) for each pair of cells the column-annulus thermal coupling joins,
-/// from tubingCouplingStart down to tubingCouplingEnd.
 template <typename Visit>
 void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit) {
     for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd;
@@ -62,8 +50,6 @@ void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit) {
         visit(productionCellIndex, state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex);
 }
 
-/// Publishes the transport properties of the gas line's fluid onto the production
-/// cell that faces it, as that cell's external fluid.
 void publishExternalFluid(Cel &productionCell, const ExternalFluidProperties &fluid) {
     productionCell.calor.kextern1 = fluid.conductivity;
     productionCell.calor.cpextern1 = fluid.specificHeat;
@@ -71,14 +57,8 @@ void publishExternalFluid(Cel &productionCell, const ExternalFluidProperties &fl
     productionCell.calor.viscextern1 = fluid.viscosityCentipoise * units::kPascalSecondPerCentipoise;
 }
 
-}  // namespace
-
 // Unloading the completion fluid through the gas-lift valves.
 
-namespace {
-
-/// Walks a pressure towards a target by kRelaxationDownFactor or kRelaxationUpFactor per step, without overshooting
-/// it. The two factors are not each other's inverse.
 void relaxTowards(double &pressure, double target) {
     if (pressure > target) {
         pressure *= kRelaxationDownFactor;
@@ -91,15 +71,12 @@ void relaxTowards(double &pressure, double target) {
     }
 }
 
-/// A pressure correction of the unloading control, limited to kMaximumUnloadingCorrectionPerSecond of the pressure
-/// it corrects per second of the step, with its sign.
-[[nodiscard]] double limitedCorrection(double correction, double pressure, double timeStep) {
+double limitedCorrection(double correction, double pressure, double timeStep) {
     if (fabs(correction) > kMaximumUnloadingCorrectionPerSecond * pressure * timeStep)
         return (fabs(correction) / correction) * kMaximumUnloadingCorrectionPerSecond * pressure * timeStep;
     return correction;
 }
 
-/// Clears a production cell's mass sources.
 void clearMassSources(Cel &cell) {
     cell.massfonteCH = 0;
     cell.fontemassCL = 0;
@@ -110,8 +87,6 @@ void clearMassSources(Cel &cell) {
     cell.fontemassGR = 0;
 }
 
-/// Gives a production cell the phases of the unloading's initial state, completion fluid below the interface and
-/// gas above it, with the copies the march and the pigs start from.
 void setUnloadingPhase(Cel &cell, bool belowInterface) {
     cell.alf = belowInterface ? 0. : 1.;
     cell.bet = belowInterface ? 1. : 0.;
@@ -124,7 +99,6 @@ void setUnloadingPhase(Cel &cell, bool belowInterface) {
     cell.betPigE = cell.bet;
 }
 
-/// Copies a production cell's phases to the face values its neighbours hold of it.
 void copyPhaseToLeftNeighbour(const Cel &cell, Cel &left) {
     left.betR = cell.bet;
     left.betRini = cell.bet;
@@ -140,32 +114,23 @@ void copyPhaseToRightNeighbour(const Cel &cell, Cel &right) {
     right.betLini = cell.bet;
 }
 
-/// The volume flow of a gas cell's source during the unloading: gas once the
-/// interface is past the cell's middle, completion fluid before.
-[[nodiscard]] double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity) {
+double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity) {
     return cell.razInter > kMidCellInterfaceRatio ? cell.massfonteCH / gasDensity : cell.massfonteCH / liquidDensity;
 }
 
-/// The pressure the unloading hydrostatics start the gas line from when the
-/// injection pressure does not give it: the unloading's own initial pressure when
-/// the unloading is controlled, kDefaultUnloadingStartPressure otherwise.
-[[nodiscard]] double defaultUnloadingStartPressure(const GasLiftState &state) {
+double defaultUnloadingStartPressure(const GasLiftState &state) {
     return state.input.controDesc == 1 ? state.input.presIniDescG : kDefaultUnloadingStartPressure;
 }
 
-/// The unloading starts from the configured injection pressure, unless the
-/// unloading is controlled.
-[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition) {
+double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition) {
     if (state.input.controDesc == 0)
         return state.input.gasinj.presinj[0];
     return defaultUnloadingStartPressure(state);
 }
 
-[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition) {
+double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition) {
     return defaultUnloadingStartPressure(state);
 }
-
-}  // namespace
 
 void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     // The configured condition, not the first gas cell's: the cells are being
@@ -746,13 +711,7 @@ void advanceInterface(const GasLiftState &state) {
 
 // The gas line in the transient.
 
-namespace {
-
-/// The opening the injection choke presents to the gas line. Under a pressure
-/// condition it is the choke's own, and a choke throttling the line also sets
-/// the inlet mass source through it; under a flow-rate condition the source is
-/// given and the choke counts as open.
-[[nodiscard]] double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
+double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
     double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
     if (chokeOpeningFraction < kThrottlingChokeOpening) {
         state.injectionChoke.presEstag = state.injectionPressure;
@@ -763,11 +722,9 @@ namespace {
     return chokeOpeningFraction;
 }
 
-[[nodiscard]] double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
+double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
     return 1.;
 }
-
-}  // namespace
 
 void solveGasLine(const GasLiftState &state) {
     if (state.input.lingas <= 0)
@@ -1014,15 +971,10 @@ void connectTubing(const GasLiftState &state) {
 
 // The gas line in the steady state.
 
-namespace {
-
-/// The flow area of a bore of this diameter.
-[[nodiscard]] double boreArea(double diameter) {
+double boreArea(double diameter) {
     return 0.25 * std::numbers::pi * diameter * diameter;
 }
 
-/// Clamps a gas cell's temperature to the physical range and copies it to the
-/// neighbours that face it.
 void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
     if (state.gasCells[cellIndex].temp < kMinimumTemperatureCelsius)
         state.gasCells[cellIndex].temp = kMinimumTemperatureCelsius;
@@ -1035,12 +987,8 @@ void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
         state.gasCells[cellIndex + 1].tempL = state.gasCells[cellIndex].temp;
 }
 
-/// One valve's gas mass source at steady state. Under a flow-rate condition,
-/// an equal share of the injection flow rate; under a pressure condition, what
-/// the valve's choke passes from the casing pressure, if the casing is above
-/// the production line.
-void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int valveCount,
-                                 double, InjectionFlowRateCondition) {
+void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int valveCount, double,
+                                 InjectionFlowRateCondition) {
     double valveFlowRate = (state.input.gasinj.vazgas[0] *
                             state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) /
                             units::kSecondsPerDay) /
@@ -1048,8 +996,8 @@ void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int 
     state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = valveFlowRate;
 }
 
-void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
-                                 double casingTemperature, InjectionPressureCondition) {
+void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int, double casingTemperature,
+                                 InjectionPressureCondition) {
     int gasValveCell = state.gasValveCellIndices[valveIndex];
     double casingPressure = state.gasCells[gasValveCell].pres;
     state.gasLiftChokes[valveIndex].presEstag = casingPressure;
@@ -1061,7 +1009,6 @@ void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
             : 0.;
 }
 
-/// The steady gas temperature of a cell outside the column-annulus coupling, marched from its left neighbour.
 void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     double dx = state.gasCells[cellIndex].dx0;
     double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
@@ -1159,8 +1106,6 @@ void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     clampAndPropagateTemperature(state, cellIndex);
 }
 
-/// The steady gas temperature of a cell inside the column-annulus coupling, and the properties its heat
-/// transfer is computed with.
 void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     if (state.annulusThermalCoupling) {
         int connectionCellIndex = cellIndex - state.annulusCouplingStart;
@@ -1211,8 +1156,6 @@ void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
         units::kPascalSecondPerCentipoise;
     state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transperm();
 }
-
-}  // namespace
 
 void connectTubingSteady(const GasLiftState &state) {
     forEachCoupledCellPair(state, [&](int productionCellIndex, int gasCellIndex) {

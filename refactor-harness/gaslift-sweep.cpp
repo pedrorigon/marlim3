@@ -18,6 +18,7 @@
 #include "SisProd.h"
 #include "SisProdSolveContext.h"
 #include "SisProdGasLift.h"
+#include "SisProdGasLiftInternal.h"
 #include "estruturas.h"
 #include "variaveisGlobais1D.h"
 

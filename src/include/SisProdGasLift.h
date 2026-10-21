@@ -126,40 +126,10 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state);
 /// it; each cell's external temperature; the matching phases; no flow and no mass source.
 void computeProductionUnloadingHydrostatics(const GasLiftState &state);
 
-/// The opening of a calibrated gas-lift valve as a fraction of its throat area, at most 1; a closed valve is not a
-/// special case. The correlation is imperial: the calibration pressure, the valve opening pressure (the casing's) and
-/// the tubing pressure are gauge pressures in psi, and the bottom-hole temperature is in degrees Fahrenheit; the
-/// calibration temperature comes in degrees Celsius and the external diameter in metres. valveRatio is the throat
-/// area over the bellows area.
-[[nodiscard]] double calibratedValveOpeningFraction(double calibrationPressure, double calibrationTemperature,
-                                                    double valveOpeningPressure, double tubingPressure,
-                                                    double externalDiameter, double throatArea, double valveRatio,
-                                                    double bottomHoleTemperatureFahrenheit);
-
-/// The pressure correction the unloading control applies for one valve, in kgf/cm^2 and with the given sign: the
-/// dynamic pressure, at the valve's throat, of the completion-fluid flow that separates maximumFlowRate from factor
-/// times the controlled unloading flow rate. Primes the valve's choke with its gas cell's pressure and temperature.
-[[nodiscard]] double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate, int valveIndex,
-                                                 double factor, int sign);
-
-/// Recomputes presMaxDesc along the production column and moves the injection pressure towards the unloading
-/// flow band.
-void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex);
-
 /// Searches the injection pressure that satisfies the unloading schedule, writing it into the separator and
 /// injection pressures and into the stagnation and throat pressures of the valves behind the interface. Returns the
 /// maximum unloading flow rate the search reached.
 [[nodiscard]] double searchUnloadingInjectionPressure(const GasLiftState &state);
-
-/// Solves one unloading step from the interface cell to the end of the gas line: marches the pressure through the
-/// friction and the head of each half cell's gas and completion-fluid parts, updates the discharge temperatures, and
-/// sets the flows that carry the valves' sources along the line and the interface velocity.
-void solveUnloading(const GasLiftState &state);
-
-/// Advances the unloading interface over the time step. When it crosses a face of its cell, the interface time step
-/// is shortened to the crossing and the interface moves to the next or the previous cell; at the end of the gas line
-/// it is handed over and the unloading ends (interfaceCell becomes kNoInterfaceCell, input.descarga 0).
-void advanceInterface(const GasLiftState &state);
 
 // The gas line in the transient.
 
@@ -168,23 +138,11 @@ void advanceInterface(const GasLiftState &state);
 /// copies the valve's state onto its gas cell, then advances the sub-step. Does nothing without a gas line.
 void solveGasLine(const GasLiftState &state);
 
-/// Clears the gas cells' sources from the interface cell on, primes each gas-lift valve's choke and sets the mass
-/// source it gives its gas cell (completion fluid behind the interface, gas ahead of it), then the sources of the
-/// master2 valve's two cells, which only flow while it throttles.
-void updateTransientGasValves(const GasLiftState &state);
-
 /// Advances the gas line by one sub-time-step. During the unloading it first advances the interface, shortening the
 /// time step of the gas line and of the production cells when the interface needs a shorter one; then, for each
 /// thermal coupling cycle, it solves the pressure-flow system and the gas temperatures; last come the gas densities
 /// and, during the unloading, the unloading step.
 void advanceGasSubStep(const GasLiftState &state);
-
-/// Opens the injection choke if it is throttling, assembles the band system from every gas cell and solves it.
-void assembleAndSolveGasSystem(const GasLiftState &state);
-
-/// Copies the solved pressure-flow system into the gas cells: each cell's pressure and right-face mass flow, and the
-/// values its neighbours' faces hold of them.
-void updateGasLine(const GasLiftState &state);
 
 /// Couples the gas line to the production tubing in the transient: each coupled production cell takes the facing gas
 /// cell's temperatures, velocity, diameters and fluid (gas ahead of the interface, completion fluid behind it) as its
