@@ -102,22 +102,20 @@ probe 'BuscaPresInjDesc: pressure decay' \
 # The hand-over branch, which only the second advancInter row reaches. If that
 # row were ever dropped this probe would start missing, which is the point.
 probe 'avancInter: handover ratio' \
-    'state.gasCells[state.interfaceCell + 1].razInter = 1.0;' \
-    'state.gasCells[state.interfaceCell + 1].razInter = 0.999;' \
+    'rightGasCell.razInter = 1.0;' \
+    'rightGasCell.razInter = 0.999;' \
     "$target_gaslift"
 
 probe 'resolveDescarga: liquid hydrostatic' \
-    'double leftLiquidHead =
-            (kGravity * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
-    'double leftLiquidHead =
-            (kGravityUnloadingVariant * sin(state.gasCells[gasCellIndex - 1].duto.teta) * liquidDensity) * leftLiquidLength;' \
+    'double leftLiquidHead = (kGravity * sin(left.duto.teta) * liquidDensity) * leftLiquidLength;' \
+    'double leftLiquidHead = (kGravityUnloadingVariant * sin(left.duto.teta) * liquidDensity) * leftLiquidLength;' \
     "$target_gaslift"
 
 # Splits the gas/liquid share of every control volume. Moving the threshold
 # changes which side of the interface each cell is counted on.
 probe 'resolveDescarga: interface split' \
-    'if (state.gasCells[gasCellIndex].razInter <= kMidCellInterfaceRatio)' \
-    'if (state.gasCells[gasCellIndex].razInter <= 0.6)' \
+    'if (cell.razInter <= kMidCellInterfaceRatio)' \
+    'if (cell.razInter <= 0.6)' \
     "$target_gaslift"
 
 # SC-012 moved the throttling test into injectionChokeOpening, the overload for
@@ -134,28 +132,20 @@ probe 'prescordesc: sign'                'return sign * pressureCorrection;' 're
 probe 'prescordesc: throat area'          'throatMassFlux * throatMassFlux / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
                                           'throatMassFlux * throatMassFlux * throatMassFlux / (2. * completionFluidDensity * units::kPascalPerKgfPerCm2);' \
                                           "$target_gaslift"
-probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient =
-        state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
-                                          'double hydrostaticGradient =
-        state.gasCells[cellIndex].dPdLHidro * (kGravityUnloadingVariant * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);' \
+probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient = cell.dPdLHidro * (kGravity * sin(cell.duto.teta) * gasDensity * dx);' \
+                                          'double hydrostaticGradient = cell.dPdLHidro * (kGravityUnloadingVariant * sin(cell.duto.teta) * gasDensity * dx);' \
                                           "$target_gaslift"
 # Both steady drops divide by 98066.5; the hydrostatic line above pins this one
 # to delpGasPerm.
-probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient =
-        state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
+probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient = cell.dPdLHidro * (kGravity * sin(cell.duto.teta) * gasDensity * dx);
 
     double pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;' \
-                                          'double hydrostaticGradient =
-        state.gasCells[cellIndex].dPdLHidro * (kGravity * sin(state.gasCells[cellIndex].duto.teta) * gasDensity * dx);
+                                          'double hydrostaticGradient = cell.dPdLHidro * (kGravity * sin(cell.duto.teta) * gasDensity * dx);
 
     double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.52;' \
                                           "$target_gaslift"
-probe 'delpInjPerm: interpolation weight' 'meanTemperature = (state.cells[cellIndex].dx * state.cells[cellIndex].temp +
-                              state.cells[cellIndex].dxL * state.cells[cellIndex - 1].temp) /
-                             (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
-                                          'meanTemperature = (state.cells[cellIndex].dxL * state.cells[cellIndex].temp +
-                              state.cells[cellIndex].dx * state.cells[cellIndex - 1].temp) /
-                             (state.cells[cellIndex].dx + state.cells[cellIndex].dxL);' \
+probe 'delpInjPerm: interpolation weight' 'meanTemperature = (cell.dx * cell.temp + cell.dxL * left.temp) / (cell.dx + cell.dxL);' \
+                                          'meanTemperature = (cell.dxL * cell.temp + cell.dx * left.temp) / (cell.dx + cell.dxL);' \
                                           "$target_gaslift"
 
 cp "$scratch/pristine.cpp" "$target"
