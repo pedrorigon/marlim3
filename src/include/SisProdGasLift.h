@@ -24,7 +24,7 @@ struct GasLiftTemperatureUpdater {
     SolveContext &context;
 
     void dischargeTemperature(int cellIndex) const;
-    void computeGasTemperature(int cellIndex, double previousTemperature, int steadyMode = 0) const;
+    void computeGasTemperature(int cellIndex, double previousTemperature) const;
     [[nodiscard]] double gasLiftDischargeTemperature(int valveIndex) const;
 };
 

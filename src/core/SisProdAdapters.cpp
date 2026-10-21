@@ -18,8 +18,8 @@ void sisprod::gaslift::GasLiftTemperatureUpdater::dischargeTemperature(
 }
 
 void sisprod::gaslift::GasLiftTemperatureUpdater::computeGasTemperature(
-    int cellIndex, double previousTemperature, int steadyMode) const {
-    sisprod::thermal::computeGasTemperature(context.thermal(), cellIndex, previousTemperature, steadyMode);
+    int cellIndex, double previousTemperature) const {
+    sisprod::thermal::computeGasTemperature(context.thermal(), cellIndex, previousTemperature, /*steadyMode=*/0);
 }
 
 double sisprod::gaslift::GasLiftTemperatureUpdater::gasLiftDischargeTemperature(
