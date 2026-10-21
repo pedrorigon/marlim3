@@ -16,91 +16,14 @@ namespace sisprod::gaslift {
 
 namespace {
 
-/// Below this opening the injection choke is throttling and becomes the mass
-/// source of the first cell instead of a free boundary.
-constexpr double kThrottlingChokeOpening = 0.2;
-
-/// Fixed gas viscosity used to prime the steady annulus connection, in cP.
-constexpr double kInitialAnnulusGasViscosityCentipoise = 0.16;
-
-/// Gas-lift valve geometry. The bore threshold and the two spring rates are
-/// imperial, as the whole valve correlation is.
-constexpr double kLargeBoreValveInches = 1.1;
-constexpr double kLargeBoreSpringRate = 500.0;
-constexpr double kSmallBoreSpringRate = 1950.0;
-
-/// The unloading controller corrects the injection or the separator pressure when the completion-fluid flow
-/// through the selected valve leaves the band from 1 - kUnloadingLowerBandMargin to 1 - kUnloadingUpperBandMargin
-/// of the controlled flow rate.
-constexpr double kUnloadingUpperBandMargin = 0.1;
-constexpr double kUnloadingLowerBandMargin = 0.4;
-
-/// The largest pressure correction of one step, as a fraction of the corrected pressure per second of the step.
-constexpr double kMaximumUnloadingCorrectionPerSecond = 0.01;
-
-/// The separator pressure counts as at the unloading's maximum or minimum within these factors.
-constexpr double kReachedMaximumPressureFactor = 0.9999999;
-constexpr double kReachedMinimumPressureFactor = 1.0000001;
-
-/// presMaxDesc before the minimum over the IPR accessories: above any pressure the column reaches, in kgf/cm^2.
-constexpr double kUnboundedUnloadingPressure = 100000.;
-
-/// The pressure the unloading hydrostatics start the gas line from when nothing else gives it, in kgf/cm^2.
-constexpr double kDefaultUnloadingStartPressure = 10.;
-
-/// The weight of the step's own flow against the moving average, in the flow the unloading controller corrects.
-constexpr double kCurrentFlowWeight = 0.5;
-
-/// The fraction of the separator pressure the unloading takes off per second while the column's last cell but
-/// one holds no completion fluid.
-constexpr double kSeparatorPressureDecayPerSecond = 0.01;
-
-/// The factors a pressure is relaxed by per step towards its target, after the unloading.
-constexpr double kRelaxationDownFactor = 0.95;
-constexpr double kRelaxationUpFactor = 1.05;
-
-/// The ratio of its cell the interface must reach in the last cell but one before it is handed over to the end of
-/// the gas line.
-constexpr double kInterfaceHandoverRatio = 0.99;
-
 /// The interface ratio at the middle of a cell: once the interface is past it, the cell counts as on the gas side.
 constexpr double kMidCellInterfaceRatio = 0.5;
-
-/// At or below this mixture velocity, in m/s, the unloading column counts as still and takes no wall friction.
-constexpr double kStillMixtureVelocity = 1e-15;
-
-/// The temperature of the gas line's last cell while the flow there runs backwards, in degrees Celsius.
-constexpr double kReverseFlowOutletTemperatureCelsius = 20.;
-
-/// The gas line's master2 valve throttles while its throat area lies between these fractions of the smaller pipe
-/// area around it.
-constexpr double kMaster2ThrottlingAreaFraction = 0.01;
-constexpr double kMaster2ClosedAreaFraction = 1e-5;
-
-/// The bellows of a calibrated valve: the temperature its dome charge is referred to, in degrees Fahrenheit, and
-/// the fractional change of the dome pressure per degree Fahrenheit.
-constexpr double kBellowsReferenceTemperatureFahrenheit = 80.;
-constexpr double kBellowsPressureChangePerFahrenheit = 0.00215;
-
-/// The steady gas temperature marches a cell only above this superficial gas velocity, in m/s, and between
-/// diameters within this ratio of each other; elsewhere the cell takes the external temperature.
-constexpr double kMinimumMarchGasVelocity = 1e-3;
-constexpr double kMinimumMarchDiameterRatio = 0.5;
-
-/// The steady gas temperature marches a cell in substeps when its length over its global thermal resistance
-/// passes this value.
-constexpr double kThermalSubstepLength = 1000.;
 
 /// The diameter a Reynolds number is formed on: the bore when the segment is
 /// bare, the hydraulic diameter when it is cased.
 [[nodiscard]] double characteristicDiameter(int cased, double bore, double area,
                                             double perimeter) {
     return cased == 0 ? bore : 4 * area / perimeter;
-}
-
-/// The flow area of a bore of this diameter.
-[[nodiscard]] double boreArea(double diameter) {
-    return 0.25 * std::numbers::pi * diameter * diameter;
 }
 
 /// Opening of a calibrated gas-lift valve, from the state already primed on the
@@ -156,38 +79,85 @@ template <typename Phase>
     return massSource;
 }
 
-/// The opening the injection choke presents to the gas line. Under a pressure
-/// condition it is the choke's own, and a choke throttling the line also sets
-/// the inlet mass source through it; under a flow-rate condition the source is
-/// given and the choke counts as open.
-[[nodiscard]] double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
-    double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
-    if (chokeOpeningFraction < kThrottlingChokeOpening) {
-        state.injectionChoke.presEstag = state.injectionPressure;
-        state.injectionChoke.tempEstag = state.injectionTemperature;
-        state.injectionChoke.presGarg = state.gasCells[0].pres;
-        state.gasCells[0].massfonteCH = state.injectionChoke.massica();
-    }
-    return chokeOpeningFraction;
+/// Calls visit(productionCellIndex, gasCellIndex) for each pair of cells the column-annulus thermal coupling joins,
+/// from tubingCouplingStart down to tubingCouplingEnd.
+template <typename Visit>
+void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit) {
+    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd;
+         productionCellIndex--)
+        visit(productionCellIndex, state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex);
 }
 
-[[nodiscard]] double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
-    return 1.;
+/// The transport properties of the fluid outside a production cell, as its heat transfer reads them.
+struct ExternalFluidProperties {
+    double conductivity;
+    double specificHeat;
+    double density;
+    double viscosityCentipoise;
+};
+
+/// Publishes the transport properties of the gas line's fluid onto the production
+/// cell that faces it, as that cell's external fluid.
+void publishExternalFluid(Cel &productionCell, const ExternalFluidProperties &fluid) {
+    productionCell.calor.kextern1 = fluid.conductivity;
+    productionCell.calor.cpextern1 = fluid.specificHeat;
+    productionCell.calor.rhoextern1 = fluid.density;
+    productionCell.calor.viscextern1 = fluid.viscosityCentipoise * units::kPascalSecondPerCentipoise;
 }
 
-/// Clamps a gas cell's temperature to the physical range and copies it to the
-/// neighbours that face it.
-void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
-    if (state.gasCells[cellIndex].temp < kMinimumTemperatureCelsius)
-        state.gasCells[cellIndex].temp = kMinimumTemperatureCelsius;
-    if (state.gasCells[cellIndex].temp > kMaximumTemperatureCelsius)
-        state.gasCells[cellIndex].temp = kMaximumTemperatureCelsius;
+}  // namespace
 
-    if (cellIndex > 0)
-        state.gasCells[cellIndex - 1].tempR = state.gasCells[cellIndex].temp;
-    if (cellIndex < state.gasCellCount)
-        state.gasCells[cellIndex + 1].tempL = state.gasCells[cellIndex].temp;
-}
+// Unloading the completion fluid through the gas-lift valves.
+
+namespace {
+
+/// Gas-lift valve geometry. The bore threshold and the two spring rates are
+/// imperial, as the whole valve correlation is.
+constexpr double kLargeBoreValveInches = 1.1;
+constexpr double kLargeBoreSpringRate = 500.0;
+constexpr double kSmallBoreSpringRate = 1950.0;
+
+/// The bellows of a calibrated valve: the temperature its dome charge is referred to, in degrees Fahrenheit, and
+/// the fractional change of the dome pressure per degree Fahrenheit.
+constexpr double kBellowsReferenceTemperatureFahrenheit = 80.;
+constexpr double kBellowsPressureChangePerFahrenheit = 0.00215;
+
+/// The unloading controller corrects the injection or the separator pressure when the completion-fluid flow
+/// through the selected valve leaves the band from 1 - kUnloadingLowerBandMargin to 1 - kUnloadingUpperBandMargin
+/// of the controlled flow rate.
+constexpr double kUnloadingUpperBandMargin = 0.1;
+constexpr double kUnloadingLowerBandMargin = 0.4;
+
+/// The largest pressure correction of one step, as a fraction of the corrected pressure per second of the step.
+constexpr double kMaximumUnloadingCorrectionPerSecond = 0.01;
+
+/// The separator pressure counts as at the unloading's maximum or minimum within these factors.
+constexpr double kReachedMaximumPressureFactor = 0.9999999;
+constexpr double kReachedMinimumPressureFactor = 1.0000001;
+
+/// presMaxDesc before the minimum over the IPR accessories: above any pressure the column reaches, in kgf/cm^2.
+constexpr double kUnboundedUnloadingPressure = 100000.;
+
+/// The pressure the unloading hydrostatics start the gas line from when nothing else gives it, in kgf/cm^2.
+constexpr double kDefaultUnloadingStartPressure = 10.;
+
+/// The weight of the step's own flow against the moving average, in the flow the unloading controller corrects.
+constexpr double kCurrentFlowWeight = 0.5;
+
+/// The fraction of the separator pressure the unloading takes off per second while the column's last cell but
+/// one holds no completion fluid.
+constexpr double kSeparatorPressureDecayPerSecond = 0.01;
+
+/// The factors a pressure is relaxed by per step towards its target, after the unloading.
+constexpr double kRelaxationDownFactor = 0.95;
+constexpr double kRelaxationUpFactor = 1.05;
+
+/// The ratio of its cell the interface must reach in the last cell but one before it is handed over to the end of
+/// the gas line.
+constexpr double kInterfaceHandoverRatio = 0.99;
+
+/// At or below this mixture velocity, in m/s, the unloading column counts as still and takes no wall friction.
+constexpr double kStillMixtureVelocity = 1e-15;
 
 /// Walks a pressure towards a target by a fixed factor per step, without
 /// overshooting it. Down at 5% a step, up at 5% a step -- the two rates are not
@@ -210,15 +180,6 @@ void relaxTowards(double &pressure, double target) {
     if (fabs(correction) > kMaximumUnloadingCorrectionPerSecond * pressure * timeStep)
         return (fabs(correction) / correction) * kMaximumUnloadingCorrectionPerSecond * pressure * timeStep;
     return correction;
-}
-
-/// Calls visit(productionCellIndex, gasCellIndex) for each pair of cells the column-annulus thermal coupling joins,
-/// from tubingCouplingStart down to tubingCouplingEnd.
-template <typename Visit>
-void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit) {
-    for (int productionCellIndex = state.tubingCouplingStart; productionCellIndex >= state.tubingCouplingEnd;
-         productionCellIndex--)
-        visit(productionCellIndex, state.tubingCouplingStart + state.annulusCouplingStart - productionCellIndex);
 }
 
 /// Clears a production cell's mass sources.
@@ -266,23 +227,6 @@ void copyPhaseToRightNeighbour(const Cel &cell, Cel &right) {
 /// interface is past the cell's middle, completion fluid before.
 [[nodiscard]] double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity) {
     return cell.razInter > kMidCellInterfaceRatio ? cell.massfonteCH / gasDensity : cell.massfonteCH / liquidDensity;
-}
-
-/// The transport properties of the fluid outside a production cell, as its heat transfer reads them.
-struct ExternalFluidProperties {
-    double conductivity;
-    double specificHeat;
-    double density;
-    double viscosityCentipoise;
-};
-
-/// Publishes the transport properties of the gas line's fluid onto the production
-/// cell that faces it, as that cell's external fluid.
-void publishExternalFluid(Cel &productionCell, const ExternalFluidProperties &fluid) {
-    productionCell.calor.kextern1 = fluid.conductivity;
-    productionCell.calor.cpextern1 = fluid.specificHeat;
-    productionCell.calor.rhoextern1 = fluid.density;
-    productionCell.calor.viscextern1 = fluid.viscosityCentipoise * units::kPascalSecondPerCentipoise;
 }
 
 /// The pressure the unloading hydrostatics start the gas line from when the
@@ -887,6 +831,43 @@ void advanceInterface(const GasLiftState &state) {
     }
 }
 
+// The gas line in the transient.
+
+namespace {
+
+/// Below this opening the injection choke is throttling and becomes the mass
+/// source of the first cell instead of a free boundary.
+constexpr double kThrottlingChokeOpening = 0.2;
+
+/// The temperature of the gas line's last cell while the flow there runs backwards, in degrees Celsius.
+constexpr double kReverseFlowOutletTemperatureCelsius = 20.;
+
+/// The gas line's master2 valve throttles while its throat area lies between these fractions of the smaller pipe
+/// area around it.
+constexpr double kMaster2ThrottlingAreaFraction = 0.01;
+constexpr double kMaster2ClosedAreaFraction = 1e-5;
+
+/// The opening the injection choke presents to the gas line. Under a pressure
+/// condition it is the choke's own, and a choke throttling the line also sets
+/// the inlet mass source through it; under a flow-rate condition the source is
+/// given and the choke counts as open.
+[[nodiscard]] double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition) {
+    double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+    if (chokeOpeningFraction < kThrottlingChokeOpening) {
+        state.injectionChoke.presEstag = state.injectionPressure;
+        state.injectionChoke.tempEstag = state.injectionTemperature;
+        state.injectionChoke.presGarg = state.gasCells[0].pres;
+        state.gasCells[0].massfonteCH = state.injectionChoke.massica();
+    }
+    return chokeOpeningFraction;
+}
+
+[[nodiscard]] double injectionChokeOpening(const GasLiftState &, InjectionFlowRateCondition) {
+    return 1.;
+}
+
+}  // namespace
+
 void solveGasLine(const GasLiftState &state) {
     if (state.input.lingas <= 0)
         return;
@@ -1130,6 +1111,220 @@ void connectTubing(const GasLiftState &state) {
         publishExternalFluid(state.cells[productionCellIndex], fluid);
     });
 }
+
+// The gas line in the steady state.
+
+namespace {
+
+/// Fixed gas viscosity used to prime the steady annulus connection, in cP.
+constexpr double kInitialAnnulusGasViscosityCentipoise = 0.16;
+
+/// The steady gas temperature marches a cell only above this superficial gas velocity, in m/s, and between
+/// diameters within this ratio of each other; elsewhere the cell takes the external temperature.
+constexpr double kMinimumMarchGasVelocity = 1e-3;
+constexpr double kMinimumMarchDiameterRatio = 0.5;
+
+/// The steady gas temperature marches a cell in substeps when its length over its global thermal resistance
+/// passes this value.
+constexpr double kThermalSubstepLength = 1000.;
+
+/// The flow area of a bore of this diameter.
+[[nodiscard]] double boreArea(double diameter) {
+    return 0.25 * std::numbers::pi * diameter * diameter;
+}
+
+/// Clamps a gas cell's temperature to the physical range and copies it to the
+/// neighbours that face it.
+void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
+    if (state.gasCells[cellIndex].temp < kMinimumTemperatureCelsius)
+        state.gasCells[cellIndex].temp = kMinimumTemperatureCelsius;
+    if (state.gasCells[cellIndex].temp > kMaximumTemperatureCelsius)
+        state.gasCells[cellIndex].temp = kMaximumTemperatureCelsius;
+
+    if (cellIndex > 0)
+        state.gasCells[cellIndex - 1].tempR = state.gasCells[cellIndex].temp;
+    if (cellIndex < state.gasCellCount)
+        state.gasCells[cellIndex + 1].tempL = state.gasCells[cellIndex].temp;
+}
+
+/// One valve's gas mass source at steady state. Under a flow-rate condition,
+/// an equal share of the injection flow rate; under a pressure condition, what
+/// the valve's choke passes from the casing pressure, if the casing is above
+/// the production line.
+void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int valveCount,
+                                 double, InjectionFlowRateCondition) {
+    double valveFlowRate = (state.input.gasinj.vazgas[0] *
+                            state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) /
+                            units::kSecondsPerDay) /
+                           valveCount;
+    state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = valveFlowRate;
+}
+
+void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
+                                 double casingTemperature, InjectionPressureCondition) {
+    int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
+    double casingPressure = state.gasCells[gasLiftGasCell].pres;
+    state.gasLiftChokes[valveIndex].presEstag = casingPressure;
+    state.gasLiftChokes[valveIndex].presGarg = state.cells[state.productionValveCellIndices[valveIndex]].pres;
+    state.gasLiftChokes[valveIndex].tempEstag = casingTemperature;
+    state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH =
+        state.cells[state.productionValveCellIndices[valveIndex]].pres < casingPressure
+            ? state.gasLiftChokes[valveIndex].massica()
+            : 0.;
+}
+
+/// The steady gas temperature of a cell outside the column-annulus coupling, marched from its left neighbour.
+void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
+    double dx = state.gasCells[cellIndex].dx0;
+    double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
+    double meanTemperatureGradient = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].dTdLCor +
+                                      state.gasCells[cellIndex - 1].dx0 * state.gasCells[cellIndex - 1].dTdLCor) /
+                                     (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
+    double area = state.gasCells[cellIndex].duto.area;
+    double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres,
+                                                                     state.gasCells[cellIndex - 1].temp);
+    double meanSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
+    double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres,
+                                                                         state.gasCells[cellIndex - 1].temp);
+    double gasJouleThomson =
+        state.gasCells[cellIndex - 1].flui.JTG(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
+    double hydrostaticTerm =
+        (gasDensity * meanSuperficialGasVelocity) * area * kGravity * sin(state.gasCells[cellIndex].duto.teta);
+
+    state.gasCells[cellIndex - 1].calor.Tint = state.gasCells[cellIndex - 1].temp;
+    state.gasCells[cellIndex - 1].calor.Vint = meanSuperficialGasVelocity;
+    state.gasCells[cellIndex - 1].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(
+        state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
+    state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
+    state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
+    state.gasCells[cellIndex - 1].calor.viscint =
+        state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres,
+                                                   state.gasCells[cellIndex - 1].temp) *
+        units::kPascalSecondPerCentipoise;
+    state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
+    double leftCellHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
+    double tubingHeatFlux = 0.;
+
+    const double lengthRatio = dx / (dx + state.gasCells[cellIndex - 1].dx0);
+    double temperatureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasSpecificHeat * area;
+    double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
+    double pressureGradient =
+        2. *
+        (state.gasCells[cellIndex].pres -
+         ((1 - lengthRatio) * state.gasCells[cellIndex - 1].pres + lengthRatio * state.gasCells[cellIndex].pres)) *
+        units::kPascalPerKgfPerCm2 / dx;
+
+    double mixtureDensity = gasDensity;
+    double leftCellLeftFaceSuperficialGasVelocity =
+        state.gasCells[cellIndex - 1].VGasL / state.gasCells[cellIndex - 1].u1L;
+    const double superficialVelocityGradient =
+        (meanSuperficialGasVelocity - leftCellLeftFaceSuperficialGasVelocity) / dx;
+
+    const double kineticTerm = state.input.nCompTotalUnidadesG / dx < kKineticTermMaximumLengthRatio
+                                   ? mixtureDensity * area * meanSuperficialGasVelocity * meanSuperficialGasVelocity *
+                                         superficialVelocityGradient
+                                   : 0.;
+
+    double gasMassSource = 0.;
+    double liquidMassSource = 0.;
+
+    if (meanSuperficialGasVelocity > kMinimumMarchGasVelocity &&
+        (state.gasCells[cellIndex].duto.a / state.gasCells[cellIndex - 1].duto.a > kMinimumMarchDiameterRatio &&
+         state.gasCells[cellIndex - 1].duto.a / state.gasCells[cellIndex].duto.a > kMinimumMarchDiameterRatio)) {
+        double workTerm = meanTemperatureGradient *
+                          (pressureMarchCoefficient * pressureGradient - kineticTerm - hydrostaticTerm +
+                           liquidMassSource + gasMassSource) /
+                          temperatureMarchCoefficient;
+        double heatTerm = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
+        int stepCount;
+        double stepLength;
+        if (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob < kThermalSubstepLength) {
+            stepCount = 0;
+            stepLength = meanCellLength;
+        } else {
+            stepCount = static_cast<int>(
+                2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / kThermalSubstepLength + 1);
+            stepLength = meanCellLength / stepCount;
+        }
+        double stepTemperature = stepLength * (state.gasCells[cellIndex - 1].temp / stepLength + workTerm + heatTerm);
+        for (int stepIndex = 1; stepIndex < stepCount; stepIndex++) {
+            state.gasCells[cellIndex - 1].calor.Tint = stepTemperature;
+            state.gasCells[cellIndex - 1].calor.Vint = meanSuperficialGasVelocity;
+            state.gasCells[cellIndex - 1].calor.kint =
+                state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, stepTemperature);
+            state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
+            state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
+            state.gasCells[cellIndex - 1].calor.viscint =
+                state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, stepTemperature) *
+                units::kPascalSecondPerCentipoise;
+            state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
+            leftCellHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
+            heatTerm = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
+            stepTemperature = stepLength * (stepTemperature / stepLength + workTerm + heatTerm);
+        }
+
+        state.gasCells[cellIndex].temp = stepTemperature;
+    } else {
+        state.gasCells[cellIndex].temp = state.gasCells[cellIndex].calor.Textern1;
+    }
+
+    clampAndPropagateTemperature(state, cellIndex);
+}
+
+/// The steady gas temperature of a cell inside the column-annulus coupling, and the properties its heat
+/// transfer is computed with.
+void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
+    if (state.annulusThermalCoupling == 1) {
+        int connectionCellIndex = cellIndex - state.annulusCouplingStart;
+        int connectionIndex = state.tubingCouplingStart - connectionCellIndex;
+        int secondConnectionIndex = connectionIndex;
+        if (secondConnectionIndex == state.lastCell)
+            secondConnectionIndex -= 1;
+
+        state.gasCells[cellIndex].temp =
+            state.cells[secondConnectionIndex].calor.resGlob * state.cells[connectionIndex].calor.fluxFim +
+            state.cells[connectionIndex].temp;
+
+        if (state.input.correcaoContracorPerm == 1) {
+            double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
+            double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres,
+                                                                                 state.gasCells[cellIndex - 1].temp);
+            double inverseHeatCapacity =
+                1. / (state.cells[connectionIndex].calor.cpint * state.cells[connectionIndex].MC) +
+                1. / (gasSpecificHeat * state.gasCells[cellIndex - 1].VGasR);
+            double logTemperature =
+                -exp(-(1. / state.cells[secondConnectionIndex].calor.resGlob) *
+                     (1 + 0 * state.cells[connectionIndex].duto.peri) * meanCellLength * inverseHeatCapacity) *
+                    (state.cells[secondConnectionIndex + 1].temp - state.gasCells[cellIndex - 1].temp) +
+                state.cells[secondConnectionIndex].temp;
+
+            if (logTemperature < state.gasCells[cellIndex].temp)
+                state.gasCells[cellIndex].temp = logTemperature;
+        }
+    }
+
+    clampAndPropagateTemperature(state, cellIndex);
+
+    double meanSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
+    double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres,
+                                                                     state.gasCells[cellIndex - 1].temp);
+    double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres,
+                                                                         state.gasCells[cellIndex - 1].temp);
+
+    state.gasCells[cellIndex].calor.Tint = state.gasCells[cellIndex].temp;
+    state.gasCells[cellIndex].calor.Vint = meanSuperficialGasVelocity;
+    state.gasCells[cellIndex].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(
+        state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
+    state.gasCells[cellIndex].calor.cpint = gasSpecificHeat;
+    state.gasCells[cellIndex].calor.rhoint = gasDensity;
+    state.gasCells[cellIndex].calor.viscint =
+        state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres,
+                                                   state.gasCells[cellIndex - 1].temp) *
+        units::kPascalSecondPerCentipoise;
+    state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transperm();
+}
+
+}  // namespace
 
 void connectTubingSteady(const GasLiftState &state) {
     forEachCoupledCellPair(state, [&](int productionCellIndex, int gasCellIndex) {
@@ -1392,186 +1587,6 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
             state.gasCells[cellIndex + 1].VGasL = state.gasCells[cellIndex].VGasR;
     }
 }
-
-namespace {
-
-/// One valve's gas mass source at steady state. Under a flow-rate condition,
-/// an equal share of the injection flow rate; under a pressure condition, what
-/// the valve's choke passes from the casing pressure, if the casing is above
-/// the production line.
-void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int valveCount,
-                                 double, InjectionFlowRateCondition) {
-    double valveFlowRate = (state.input.gasinj.vazgas[0] *
-                            state.gasCells[0].flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius) /
-                            units::kSecondsPerDay) /
-                           valveCount;
-    state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH = valveFlowRate;
-}
-
-void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
-                                 double casingTemperature, InjectionPressureCondition) {
-    int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
-    double casingPressure = state.gasCells[gasLiftGasCell].pres;
-    state.gasLiftChokes[valveIndex].presEstag = casingPressure;
-    state.gasLiftChokes[valveIndex].presGarg = state.cells[state.productionValveCellIndices[valveIndex]].pres;
-    state.gasLiftChokes[valveIndex].tempEstag = casingTemperature;
-    state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH =
-        state.cells[state.productionValveCellIndices[valveIndex]].pres < casingPressure
-            ? state.gasLiftChokes[valveIndex].massica()
-            : 0.;
-}
-
-/// The steady gas temperature of a cell outside the column-annulus coupling, marched from its left neighbour.
-void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
-    double dx = state.gasCells[cellIndex].dx0;
-    double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
-    double meanTemperatureGradient = (state.gasCells[cellIndex].dx0 * state.gasCells[cellIndex].dTdLCor +
-                                      state.gasCells[cellIndex - 1].dx0 * state.gasCells[cellIndex - 1].dTdLCor) /
-                                     (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
-    double area = state.gasCells[cellIndex].duto.area;
-    double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres,
-                                                                     state.gasCells[cellIndex - 1].temp);
-    double meanSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
-    double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres,
-                                                                         state.gasCells[cellIndex - 1].temp);
-    double gasJouleThomson =
-        state.gasCells[cellIndex - 1].flui.JTG(state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
-    double hydrostaticTerm =
-        (gasDensity * meanSuperficialGasVelocity) * area * kGravity * sin(state.gasCells[cellIndex].duto.teta);
-
-    state.gasCells[cellIndex - 1].calor.Tint = state.gasCells[cellIndex - 1].temp;
-    state.gasCells[cellIndex - 1].calor.Vint = meanSuperficialGasVelocity;
-    state.gasCells[cellIndex - 1].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(
-        state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
-    state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
-    state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
-    state.gasCells[cellIndex - 1].calor.viscint =
-        state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres,
-                                                   state.gasCells[cellIndex - 1].temp) *
-        units::kPascalSecondPerCentipoise;
-    state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
-    double leftCellHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
-    double tubingHeatFlux = 0.;
-
-    const double lengthRatio = dx / (dx + state.gasCells[cellIndex - 1].dx0);
-    double temperatureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasSpecificHeat * area;
-    double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
-    double pressureGradient =
-        2. *
-        (state.gasCells[cellIndex].pres -
-         ((1 - lengthRatio) * state.gasCells[cellIndex - 1].pres + lengthRatio * state.gasCells[cellIndex].pres)) *
-        units::kPascalPerKgfPerCm2 / dx;
-
-    double mixtureDensity = gasDensity;
-    double leftCellLeftFaceSuperficialGasVelocity =
-        state.gasCells[cellIndex - 1].VGasL / state.gasCells[cellIndex - 1].u1L;
-    const double superficialVelocityGradient =
-        (meanSuperficialGasVelocity - leftCellLeftFaceSuperficialGasVelocity) / dx;
-
-    const double kineticTerm = state.input.nCompTotalUnidadesG / dx < kKineticTermMaximumLengthRatio
-                                   ? mixtureDensity * area * meanSuperficialGasVelocity * meanSuperficialGasVelocity *
-                                         superficialVelocityGradient
-                                   : 0.;
-
-    double gasMassSource = 0.;
-    double liquidMassSource = 0.;
-
-    if (meanSuperficialGasVelocity > kMinimumMarchGasVelocity &&
-        (state.gasCells[cellIndex].duto.a / state.gasCells[cellIndex - 1].duto.a > kMinimumMarchDiameterRatio &&
-         state.gasCells[cellIndex - 1].duto.a / state.gasCells[cellIndex].duto.a > kMinimumMarchDiameterRatio)) {
-        double workTerm = meanTemperatureGradient *
-                          (pressureMarchCoefficient * pressureGradient - kineticTerm - hydrostaticTerm +
-                           liquidMassSource + gasMassSource) /
-                          temperatureMarchCoefficient;
-        double heatTerm = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
-        int stepCount;
-        double stepLength;
-        if (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob < kThermalSubstepLength) {
-            stepCount = 0;
-            stepLength = meanCellLength;
-        } else {
-            stepCount = static_cast<int>(
-                2 * (meanCellLength / state.gasCells[cellIndex - 1].calor.resGlob) / kThermalSubstepLength + 1);
-            stepLength = meanCellLength / stepCount;
-        }
-        double stepTemperature = stepLength * (state.gasCells[cellIndex - 1].temp / stepLength + workTerm + heatTerm);
-        for (int stepIndex = 1; stepIndex < stepCount; stepIndex++) {
-            state.gasCells[cellIndex - 1].calor.Tint = stepTemperature;
-            state.gasCells[cellIndex - 1].calor.Vint = meanSuperficialGasVelocity;
-            state.gasCells[cellIndex - 1].calor.kint =
-                state.gasCells[cellIndex - 1].flui.CondGas(state.gasCells[cellIndex - 1].pres, stepTemperature);
-            state.gasCells[cellIndex - 1].calor.cpint = gasSpecificHeat;
-            state.gasCells[cellIndex - 1].calor.rhoint = gasDensity;
-            state.gasCells[cellIndex - 1].calor.viscint =
-                state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres, stepTemperature) *
-                units::kPascalSecondPerCentipoise;
-            state.gasCells[cellIndex - 1].fluxcal = state.gasCells[cellIndex - 1].calor.transperm();
-            leftCellHeatFlux = state.gasCells[cellIndex - 1].fluxcal;
-            heatTerm = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
-            stepTemperature = stepLength * (stepTemperature / stepLength + workTerm + heatTerm);
-        }
-
-        state.gasCells[cellIndex].temp = stepTemperature;
-    } else {
-        state.gasCells[cellIndex].temp = state.gasCells[cellIndex].calor.Textern1;
-    }
-
-    clampAndPropagateTemperature(state, cellIndex);
-}
-
-/// The steady gas temperature of a cell inside the column-annulus coupling, and the properties its heat
-/// transfer is computed with.
-void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
-    if (state.annulusThermalCoupling == 1) {
-        int connectionCellIndex = cellIndex - state.annulusCouplingStart;
-        int connectionIndex = state.tubingCouplingStart - connectionCellIndex;
-        int secondConnectionIndex = connectionIndex;
-        if (secondConnectionIndex == state.lastCell)
-            secondConnectionIndex -= 1;
-
-        state.gasCells[cellIndex].temp =
-            state.cells[secondConnectionIndex].calor.resGlob * state.cells[connectionIndex].calor.fluxFim +
-            state.cells[connectionIndex].temp;
-
-        if (state.input.correcaoContracorPerm == 1) {
-            double meanCellLength = 0.5 * (state.gasCells[cellIndex].dx0 + state.gasCells[cellIndex - 1].dx0);
-            double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres,
-                                                                                 state.gasCells[cellIndex - 1].temp);
-            double inverseHeatCapacity =
-                1. / (state.cells[connectionIndex].calor.cpint * state.cells[connectionIndex].MC) +
-                1. / (gasSpecificHeat * state.gasCells[cellIndex - 1].VGasR);
-            double logTemperature =
-                -exp(-(1. / state.cells[secondConnectionIndex].calor.resGlob) *
-                     (1 + 0 * state.cells[connectionIndex].duto.peri) * meanCellLength * inverseHeatCapacity) *
-                    (state.cells[secondConnectionIndex + 1].temp - state.gasCells[cellIndex - 1].temp) +
-                state.cells[secondConnectionIndex].temp;
-
-            if (logTemperature < state.gasCells[cellIndex].temp)
-                state.gasCells[cellIndex].temp = logTemperature;
-        }
-    }
-
-    clampAndPropagateTemperature(state, cellIndex);
-
-    double meanSuperficialGasVelocity = state.gasCells[cellIndex - 1].VGasR / state.gasCells[cellIndex - 1].u1L;
-    double gasDensity = state.gasCells[cellIndex - 1].flui.MasEspGas(state.gasCells[cellIndex - 1].pres,
-                                                                     state.gasCells[cellIndex - 1].temp);
-    double gasSpecificHeat = state.gasCells[cellIndex - 1].flui.CalorGas(state.gasCells[cellIndex - 1].pres,
-                                                                         state.gasCells[cellIndex - 1].temp);
-
-    state.gasCells[cellIndex].calor.Tint = state.gasCells[cellIndex].temp;
-    state.gasCells[cellIndex].calor.Vint = meanSuperficialGasVelocity;
-    state.gasCells[cellIndex].calor.kint = state.gasCells[cellIndex - 1].flui.CondGas(
-        state.gasCells[cellIndex - 1].pres, state.gasCells[cellIndex - 1].temp);
-    state.gasCells[cellIndex].calor.cpint = gasSpecificHeat;
-    state.gasCells[cellIndex].calor.rhoint = gasDensity;
-    state.gasCells[cellIndex].calor.viscint =
-        state.gasCells[cellIndex - 1].flui.ViscGas(state.gasCells[cellIndex - 1].pres,
-                                                   state.gasCells[cellIndex - 1].temp) *
-        units::kPascalSecondPerCentipoise;
-    state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transperm();
-}
-}  // namespace
 
 void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) {
     int valveCount = state.input.nvalvgas;
