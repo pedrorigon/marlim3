@@ -63,6 +63,12 @@ constexpr double kRelaxationUpFactor = 1.05;
 /// the gas line.
 constexpr double kInterfaceHandoverRatio = 0.99;
 
+/// The interface ratio at the middle of a cell: once the interface is past it, the cell counts as on the gas side.
+constexpr double kMidCellInterfaceRatio = 0.5;
+
+/// At or below this mixture velocity, in m/s, the unloading column counts as still and takes no wall friction.
+constexpr double kStillMixtureVelocity = 1e-15;
+
 /// The temperature of the gas line's last cell while the flow there runs backwards, in degrees Celsius.
 constexpr double kReverseFlowOutletTemperatureCelsius = 20.;
 
@@ -253,7 +259,7 @@ void copyPhaseToRightNeighbour(const Cel &cell, Cel &right) {
 /// The volume flow of a gas cell's source during the unloading: gas once the
 /// interface is past the cell's middle, completion fluid before.
 [[nodiscard]] double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity) {
-    return cell.razInter > 0.5 ? cell.massfonteCH / gasDensity : cell.massfonteCH / liquidDensity;
+    return cell.razInter > kMidCellInterfaceRatio ? cell.massfonteCH / gasDensity : cell.massfonteCH / liquidDensity;
 }
 
 /// The transport properties of the fluid outside a production cell, as its heat transfer reads them.
@@ -548,7 +554,7 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
         double mixtureVelocity = state.cells[cellIndex].QL / (flowArea * liquidDensity) +
                                  state.cells[cellIndex].QG / (flowArea * gasDensity);
         double frictionFactor = 0.;
-        if (fabs(mixtureVelocity) > 1e-15) {
+        if (fabs(mixtureVelocity) > kStillMixtureVelocity) {
             const double reynolds =
                 state.cells[cellIndex].Rey(characteristicDiameter(state.cells[cellIndex].duto.revest,
                                                                   state.cells[cellIndex].duto.a, flowArea, perimeter),
@@ -680,10 +686,10 @@ void solveUnloading(const GasLiftState &state) {
         double leftHalfLength = 0.5 * state.gasCells[gasCellIndex].dxL;
         double halfLocalLength = 0.5 * state.gasCells[gasCellIndex].dx0;
         double localGasShare = 1.;
-        if (state.gasCells[gasCellIndex].razInter <= 0.5)
+        if (state.gasCells[gasCellIndex].razInter <= kMidCellInterfaceRatio)
             localGasShare = 2 * state.gasCells[gasCellIndex].razInter;
         double leftGasShare = 0.;
-        if (state.gasCells[gasCellIndex - 1].razInter >= 0.5)
+        if (state.gasCells[gasCellIndex - 1].razInter >= kMidCellInterfaceRatio)
             leftGasShare = 2 * (state.gasCells[gasCellIndex - 1].razInter - 0.5);
         double leftGasLength = leftHalfLength * leftGasShare;
         double localGasLength = halfLocalLength * localGasShare;
@@ -885,7 +891,7 @@ void solveGasLine(const GasLiftState &state) {
         int gasLiftGasCell = state.gasValveCellIndices[valveIndex];
         const bool valveDischargesGas =
             gasLiftGasCell < state.interfaceCell ||
-            (gasLiftGasCell == state.interfaceCell && state.gasCells[gasLiftGasCell].razInter > 0.5);
+            (gasLiftGasCell == state.interfaceCell && state.gasCells[gasLiftGasCell].razInter > kMidCellInterfaceRatio);
         if (valveDischargesGas) {
             state.cells[gasLiftProductionCell].acsr.injg.QGas =
                 state.gasCells[gasLiftGasCell].massfonteCH * units::kSecondsPerDay /
@@ -924,7 +930,7 @@ void updateTransientGasValves(const GasLiftState &state) {
         const Cel &productionCell = state.cells[state.productionValveCellIndices[valveIndex]];
         // Behind the interface the valve discharges completion fluid, ahead of it gas.
         valveCell.massfonteCH =
-            valveCellIndex >= state.interfaceCell && valveCell.razInter < 0.5
+            valveCellIndex >= state.interfaceCell && valveCell.razInter < kMidCellInterfaceRatio
                 ? primeValveMassSource<CompletionFluidThroughValve>(state, valveIndex, valveCell, productionCell)
                 : primeValveMassSource<GasThroughValve>(state, valveIndex, valveCell, productionCell);
     }

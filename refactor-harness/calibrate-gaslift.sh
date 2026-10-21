@@ -122,7 +122,7 @@ probe 'resolveDescarga: liquid hydrostatic' \
 # Splits the gas/liquid share of every control volume. Moving the threshold
 # changes which side of the interface each cell is counted on.
 probe 'resolveDescarga: interface split' \
-    'if (state.gasCells[gasCellIndex].razInter <= 0.5)' \
+    'if (state.gasCells[gasCellIndex].razInter <= kMidCellInterfaceRatio)' \
     'if (state.gasCells[gasCellIndex].razInter <= 0.6)' \
     "$target_gaslift"
 
