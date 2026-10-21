@@ -147,6 +147,66 @@ double unloadingHalfCellHead(double density, double halfLength, double inclinati
     return density * kGravityUnloadingVariant * halfLength * sin(inclination) / units::kPascalPerKgfPerCm2;
 }
 
+UnloadingValve selectUnloadingValve(const GasLiftState &state) {
+    UnloadingValve selected{0., 0};
+    int valveCount = state.input.nvalvgas;
+    for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
+        int gasValveCell = state.gasValveCellIndices[valveIndex];
+        int productionValveCell = state.productionValveCellIndices[valveIndex];
+        if (gasValveCell > state.interfaceCell) {
+            const CelG &valveCell = state.gasCells[gasValveCell];
+            double completionFluidDensity = valveCell.MasEspFlu(valveCell.pres, valveCell.temp);
+            const double massFlowRate = primeValveMassSource<kUnloadingThroughValve>(
+                state, valveIndex, valveCell, state.cells[productionValveCell]);
+            double candidateFlowRate = massFlowRate / completionFluidDensity;
+            if (candidateFlowRate > selected.flowRate) {
+                selected.flowRate = candidateFlowRate;
+                selected.index = valveIndex;
+            }
+        }
+    }
+    return selected;
+}
+
+void recordUnloadingSample(const GasLiftState &state, double maximumFlowRate) {
+    if (std::ssize(state.unloadingTimeStepSamples) > state.unloadingSampleCapacity ||
+        state.unloadingAveragingInterval > state.unloadingAveragingWindow) {
+        state.unloadingAveragingInterval -= state.unloadingTimeStepSamples[0];
+        state.unloadingTimeStepSamples.erase(state.unloadingTimeStepSamples.begin());
+        state.meanUnloadingFlowRate -= state.maximumUnloadingFlowSamples[0];
+        state.maximumUnloadingFlowSamples.erase(state.maximumUnloadingFlowSamples.begin());
+    }
+
+    state.maximumUnloadingFlowSamples.push_back(maximumFlowRate * state.timeStep);
+    state.meanUnloadingFlowRate += maximumFlowRate * state.timeStep;
+    state.unloadingTimeStepSamples.push_back(state.timeStep);
+    state.unloadingAveragingInterval += state.timeStep;
+}
+
+void correctSeparatorPressure(const GasLiftState &state, double flowRate, int valveIndex) {
+    if (state.cells[state.lastCell - 1].MC > 0.0) {
+        if (flowRate > kUnloadingUpperBandEdge * state.input.vazDescControl) {
+            const double pressureCorrection = limitedCorrection(
+                unloadingPressureCorrection(state, flowRate, valveIndex, kUnloadingUpperBandEdge, -1),
+                state.separatorPressure, state.cells[0].dt);
+            state.separatorPressure -= pressureCorrection;
+            if (state.separatorPressure > state.input.presMaxDesc)
+                state.separatorPressure = state.input.presMaxDesc;
+        } else if (flowRate <= kUnloadingLowerBandEdge * state.input.vazDescControl) {
+            const double pressureCorrection = limitedCorrection(
+                unloadingPressureCorrection(state, flowRate, valveIndex, kUnloadingLowerBandEdge, 1),
+                state.separatorPressure, state.cells[0].dt);
+            state.separatorPressure -= pressureCorrection;
+            if (state.separatorPressure < state.input.presMinDesc)
+                state.separatorPressure = state.input.presMinDesc;
+        }
+    } else {
+        state.separatorPressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);
+        if (state.separatorPressure < state.input.presMinDesc)
+            state.separatorPressure = state.input.presMinDesc;
+    }
+}
+
 void computeGasUnloadingHydrostatics(const GasLiftState &state) {
     // The configured condition, not the first gas cell's: the cells are being
     // given their initial state here.
@@ -435,78 +495,27 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
 }
 
 double searchUnloadingInjectionPressure(const GasLiftState &state) {
-    double maximumUnloadingFlowRate = 0;
     double instantaneousMaximumFlowRate = 0;
 
     if (state.input.descarga == 1) {
         double initialUnloadingPressure = state.cells[state.lastCell].pres;
-        if (state.globals->lixo5 > state.input.tempoLatenciaDesc) {
-            int valveCount = state.input.nvalvgas;
-            int selectedValveIndex = 0;
-            for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
-                int gasValveCell = state.gasValveCellIndices[valveIndex];
-                int productionValveCell = state.productionValveCellIndices[valveIndex];
-                if (gasValveCell > state.interfaceCell) {
-                    const CelG &valveCell = state.gasCells[gasValveCell];
-                    double completionFluidDensity = valveCell.MasEspFlu(valveCell.pres, valveCell.temp);
-                    const double massFlowRate = primeValveMassSource<kUnloadingThroughValve>(
-                        state, valveIndex, valveCell, state.cells[productionValveCell]);
-                    double candidateFlowRate = massFlowRate / completionFluidDensity;
-                    if (candidateFlowRate > maximumUnloadingFlowRate) {
-                        maximumUnloadingFlowRate = candidateFlowRate;
-                        selectedValveIndex = valveIndex;
-                    }
-                }
-            }
-            if (std::ssize(state.unloadingTimeStepSamples) > state.unloadingSampleCapacity ||
-                state.unloadingAveragingInterval > state.unloadingAveragingWindow) {
-                state.unloadingAveragingInterval -= state.unloadingTimeStepSamples[0];
-                state.unloadingTimeStepSamples.erase(state.unloadingTimeStepSamples.begin());
-                state.meanUnloadingFlowRate -= state.maximumUnloadingFlowSamples[0];
-                state.maximumUnloadingFlowSamples.erase(state.maximumUnloadingFlowSamples.begin());
-            }
-
-            state.maximumUnloadingFlowSamples.push_back(maximumUnloadingFlowRate * state.timeStep);
-            state.meanUnloadingFlowRate += maximumUnloadingFlowRate * state.timeStep;
-            state.unloadingTimeStepSamples.push_back(state.timeStep);
-            state.unloadingAveragingInterval += state.timeStep;
-
-            instantaneousMaximumFlowRate = maximumUnloadingFlowRate;
-            maximumUnloadingFlowRate =
-                kCurrentFlowWeight * maximumUnloadingFlowRate +
+        const double simulationTime = state.globals->lixo5;
+        if (simulationTime > state.input.tempoLatenciaDesc) {
+            const UnloadingValve valve = selectUnloadingValve(state);
+            recordUnloadingSample(state, valve.flowRate);
+            instantaneousMaximumFlowRate = valve.flowRate;
+            const double controlledFlowRate =
+                kCurrentFlowWeight * valve.flowRate +
                 (1. - kCurrentFlowWeight) * state.meanUnloadingFlowRate / state.unloadingAveragingInterval;
-            computeUnloadingValvePressure(state, maximumUnloadingFlowRate, selectedValveIndex);
-            if (state.gasValveCellIndices[selectedValveIndex] >= state.interfaceCell) {
-                if (state.cells[state.lastCell - 1].MC > 0.0) {
-                    if (maximumUnloadingFlowRate > kUnloadingUpperBandEdge * state.input.vazDescControl) {
-                        const double pressureCorrection = limitedCorrection(
-                            unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex,
-                                                        kUnloadingUpperBandEdge, -1),
-                            state.separatorPressure, state.cells[0].dt);
-                        state.separatorPressure -= pressureCorrection;
-                        if (state.separatorPressure > state.input.presMaxDesc)
-                            state.separatorPressure = state.input.presMaxDesc;
-                    } else if (maximumUnloadingFlowRate <= kUnloadingLowerBandEdge * state.input.vazDescControl) {
-                        const double pressureCorrection = limitedCorrection(
-                            unloadingPressureCorrection(state, maximumUnloadingFlowRate, selectedValveIndex,
-                                                        kUnloadingLowerBandEdge, 1),
-                            state.separatorPressure, state.cells[0].dt);
-                        state.separatorPressure -= pressureCorrection;
-                        if (state.separatorPressure < state.input.presMinDesc)
-                            state.separatorPressure = state.input.presMinDesc;
-                    }
-                } else {
-                    state.separatorPressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);
-                    if (state.separatorPressure < state.input.presMinDesc)
-                        state.separatorPressure = state.input.presMinDesc;
-                }
-            }
+            computeUnloadingValvePressure(state, controlledFlowRate, valve.index);
+            if (state.gasValveCellIndices[valve.index] >= state.interfaceCell)
+                correctSeparatorPressure(state, controlledFlowRate, valve.index);
         } else {
-            if (state.globals->lixo5 < kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc)
+            if (simulationTime < kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc)
                 state.separatorPressure =
                     initialUnloadingPressure -
                     (initialUnloadingPressure - state.input.presMinDesc) * state.cells[0].dt /
-                        (kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc - state.globals->lixo5);
+                        (kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc - simulationTime);
             else
                 state.separatorPressure = state.input.presMinDesc;
             state.injectionPressure = state.input.presIniDescG;

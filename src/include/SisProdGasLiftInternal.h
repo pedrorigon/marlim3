@@ -159,6 +159,26 @@ void copyPhaseToRightNeighbour(const Cel &cell, Cel &right);
 /// The hydrostatic head across a half cell of the unloading's initial state, in kgf/cm^2.
 [[nodiscard]] double unloadingHalfCellHead(double density, double halfLength, double inclination);
 
+/// The valve the unloading control follows: the largest completion-fluid volume flow among the valves behind the
+/// interface, and the valve's index.
+struct UnloadingValve {
+    double flowRate;
+    int index;
+};
+
+/// Primes each valve behind the interface for the unloading and returns the one with the largest completion-fluid
+/// volume flow; zero and the first valve when none flows.
+[[nodiscard]] UnloadingValve selectUnloadingValve(const GasLiftState &state);
+
+/// Adds a step's largest unloading flow to the unloading control's moving average, after dropping the oldest sample
+/// when the window holds more samples than its capacity or spans more time than the averaging window.
+void recordUnloadingSample(const GasLiftState &state, double maximumFlowRate);
+
+/// Corrects the separator pressure towards the unloading flow band through the selected valve, within the
+/// unloading's pressures, while the column's last cell but one holds completion fluid; once it holds none, lets the
+/// separator pressure decay towards the unloading's minimum.
+void correctSeparatorPressure(const GasLiftState &state, double flowRate, int valveIndex);
+
 /// The opening of a calibrated gas-lift valve as a fraction of its throat area, at most 1; a closed valve is not a
 /// special case. The correlation is imperial: the calibration pressure, the valve opening pressure (the casing's) and
 /// the tubing pressure are gauge pressures in psi, and the bottom-hole temperature is in degrees Fahrenheit; the
