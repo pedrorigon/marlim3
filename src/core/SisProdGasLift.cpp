@@ -26,8 +26,8 @@ constexpr double kMidCellInterfaceRatio = 0.5;
     return cased == 0 ? bore : 4 * area / perimeter;
 }
 
-/// Opening of a calibrated gas-lift valve, from the state already primed on the
-/// choke. Imperial in, fraction out.
+/// The opening fraction of a calibrated gas-lift valve, from the state already primed on its choke, converted to
+/// the units of the valve correlation.
 [[nodiscard]] double calibratedValveOpening(const ChokeGas &choke) {
     return calibratedValveArea(choke.pcalib * units::kPsiPerKgfPerCm2, choke.tcalib,
                                (choke.presEstag - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
@@ -159,9 +159,8 @@ constexpr double kInterfaceHandoverRatio = 0.99;
 /// At or below this mixture velocity, in m/s, the unloading column counts as still and takes no wall friction.
 constexpr double kStillMixtureVelocity = 1e-15;
 
-/// Walks a pressure towards a target by a fixed factor per step, without
-/// overshooting it. Down at 5% a step, up at 5% a step -- the two rates are not
-/// each other's inverse.
+/// Walks a pressure towards a target by kRelaxationDownFactor or kRelaxationUpFactor per step, without overshooting
+/// it. The two factors are not each other's inverse.
 void relaxTowards(double &pressure, double target) {
     if (pressure > target) {
         pressure *= kRelaxationDownFactor;
@@ -426,9 +425,6 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
 double calibratedValveArea(double calibrationPressure, double calibrationTemperature, double valveOpeningPressure,
                            double tubingPressure, double externalDiameter, double throatArea, double valveRatio,
                            double bottomHoleTemperatureFahrenheit) {
-    // Imperial throughout: pressures in psi, temperature in Fahrenheit. The
-    // valve opening pressure is the casing pressure; the ratio is of areas.
-
     double bellowsPressureAt80F = calibrationPressure * (1 - valveRatio);
     const double calibrationTemperatureRankine =
         units::celsiusToFahrenheit(calibrationTemperature) + units::kZeroFahrenheitInRankine;
@@ -439,8 +435,6 @@ double calibratedValveArea(double calibrationPressure, double calibrationTempera
     double bellowsPressure =
         bellowsPressureAt80F * (1 + kBellowsPressureChangePerFahrenheit *
                                         (bottomHoleTemperatureFahrenheit - kBellowsReferenceTemperatureFahrenheit));
-    // A closed valve is not forced to zero here: the opening fraction returned is
-    // always the area ratio computed at the end.
     double bellowsArea = throatArea / valveRatio;
     // The spring rate depends only on whether the valve is a large-bore one.
     const double externalDiameterInches = externalDiameter * units::kCentimetrePerMetre / units::kCentimetrePerInch;
@@ -1091,8 +1085,7 @@ void connectTubing(const GasLiftState &state) {
         state.cells[productionCellIndex].calor.Textern1 = state.gasCells[gasCellIndex].temp;
         state.cells[productionCellIndex].calor.Vextern1 =
             state.gasCells[gasCellIndex].VGasR / state.gasCells[gasCellIndex].u1L;
-        // Ahead of the interface the annulus carries gas; behind it, completion
-        // fluid. Same five fields either way, different fluid answering.
+        // Ahead of the interface the annulus carries gas; behind it, completion fluid.
         const CelG &gasCell = state.gasCells[gasCellIndex];
         const double gasPressure = gasCell.pres;
         const double gasTemperature = gasCell.temp;
@@ -1350,15 +1343,12 @@ void initializeTubingConnectionSteady(const GasLiftState &state) {
         state.cells[productionCellIndex].calor.colunaDia = state.gasCells[gasCellIndex].duto.dia;
 
         const CelG &gasCell = state.gasCells[gasCellIndex];
-        // Not the gas cell's own state: the facing production cell's pressure and
-        // the deck's external temperature.
         const double productionPressure = state.cells[productionCellIndex].pres;
         const double externalTemperature = state.input.celg[gasCellIndex].textern;
         const double gasSpecificHeat = gasCell.flui.CalorGas(productionPressure, externalTemperature);
         const double gasDensity = gasCell.flui.MasEspGas(productionPressure, externalTemperature);
         state.cells[productionCellIndex].calor.Textern1 = gasCell.calor.Textern1;
         state.cells[productionCellIndex].calor.Vextern1 = 1.;
-        // The viscosity is a fixed figure here, not a correlation.
         publishExternalFluid(state.cells[productionCellIndex],
                              {gasCell.flui.CondGas(productionPressure, externalTemperature), gasSpecificHeat,
                               gasDensity, kInitialAnnulusGasViscosityCentipoise});

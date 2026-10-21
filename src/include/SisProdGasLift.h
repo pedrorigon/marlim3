@@ -75,7 +75,7 @@ struct GasLiftState {
 
     /// Whether the column-annulus thermal coupling is on.
     const bool &annulusThermalCoupling;
-    /// Thermal source switch.
+    /// When set, the steady gas temperature is the external one, neither marched nor coupled to the tubing.
     const bool &thermalSourceDisabled;
 
     /// Gas-injection pressure and temperature. The pressure is written.
@@ -115,19 +115,30 @@ struct GasLiftState {
 
 // Unloading the completion fluid through the gas-lift valves.
 
-/// Hydrostatics of the gas column during unloading.
+/// Gives the gas line its initial unloading state: the pressure marched cell by cell from the start pressure through
+/// the hydrostatic head, of gas before the interface cell and of completion fluid from it on; each cell's external
+/// temperature; no flow and no source. A controlled unloading also takes its initial gas pressure as the injection
+/// pressure.
 void computeGasUnloadingHydrostatics(const GasLiftState &state);
 
-/// Hydrostatics of the production column during unloading.
+/// Gives the production column its initial unloading state: the pressure marched cell by cell from the first cell's
+/// IPR reservoir pressure through the hydrostatic head, of completion fluid up to the unloading cell and of gas above
+/// it; each cell's external temperature; the matching phases; no flow and no mass source.
 void computeProductionUnloadingHydrostatics(const GasLiftState &state);
 
-/// Throat area of a calibrated gas-lift valve.
+/// The opening of a calibrated gas-lift valve as a fraction of its throat area, at most 1; a closed valve is not a
+/// special case. The correlation is imperial: the calibration pressure, the valve opening pressure (the casing's) and
+/// the tubing pressure are gauge pressures in psi, and the bottom-hole temperature is in degrees Fahrenheit; the
+/// calibration temperature comes in degrees Celsius and the external diameter in metres. valveRatio is the throat
+/// area over the bellows area.
 [[nodiscard]] double calibratedValveArea(double calibrationPressure, double calibrationTemperature,
                                          double valveOpeningPressure, double tubingPressure,
                                          double externalDiameter, double throatArea, double valveRatio,
                                          double bottomHoleTemperatureFahrenheit);
 
-/// Pressure correction applied to the unloading flow of one valve.
+/// The pressure correction the unloading control applies for one valve, in kgf/cm^2 and with the given sign: the
+/// dynamic pressure, at the valve's throat, of the completion-fluid flow that separates maximumFlowRate from factor
+/// times the controlled unloading flow rate. Primes the valve's choke with its gas cell's pressure and temperature.
 [[nodiscard]] double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate, int valveIndex,
                                                  double factor, int sign);
 
@@ -140,30 +151,44 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
 /// maximum unloading flow rate the search reached.
 [[nodiscard]] double searchUnloadingInjectionPressure(const GasLiftState &state);
 
-/// Solves one unloading step.
+/// Solves one unloading step from the interface cell to the end of the gas line: marches the pressure through the
+/// friction and the head of each half cell's gas and completion-fluid parts, updates the discharge temperatures, and
+/// sets the flows that carry the valves' sources along the line and the interface velocity.
 void solveUnloading(const GasLiftState &state);
 
-/// Advances the unloading interface.
+/// Advances the unloading interface over the time step. When it crosses a face of its cell, the interface time step
+/// is shortened to the crossing and the interface moves to the next or the previous cell; at the end of the gas line
+/// it is handed over and the unloading ends (interfaceCell becomes kNoInterfaceCell, input.descarga 0).
 void advanceInterface(const GasLiftState &state);
 
 // The gas line in the transient.
 
-/// Solves the gas line.
+/// Advances the gas line by one sub-step in the transient: updates the valves, records on each valve's production
+/// cell what the valve injects (gas ahead of the interface, completion fluid behind it), at what rate and temperature,
+/// copies the valve's state onto its gas cell, then advances the sub-step. Does nothing without a gas line.
 void solveGasLine(const GasLiftState &state);
 
-/// Updates the transient gas-lift valves.
+/// Clears the gas cells' sources from the interface cell on, primes each gas-lift valve's choke and sets the mass
+/// source it gives its gas cell (completion fluid behind the interface, gas ahead of it), then the sources of the
+/// master2 valve's two cells, which only flow while it throttles.
 void updateTransientGasValves(const GasLiftState &state);
 
-/// Advances the gas line by one sub-time-step.
+/// Advances the gas line by one sub-time-step. During the unloading it first advances the interface, shortening the
+/// time step of the gas line and of the production cells when the interface needs a shorter one; then, for each
+/// thermal coupling cycle, it solves the pressure-flow system and the gas temperatures; last come the gas densities
+/// and, during the unloading, the unloading step.
 void advanceGasSubStep(const GasLiftState &state);
 
 /// Opens the injection choke if it is throttling, assembles the band system from every gas cell and solves it.
 void assembleAndSolveGasSystem(const GasLiftState &state);
 
-/// Updates the gas-line cells after a sub-step.
+/// Copies the solved pressure-flow system into the gas cells: each cell's pressure and right-face mass flow, and the
+/// values its neighbours' faces hold of them.
 void updateGasLine(const GasLiftState &state);
 
-/// Connects the gas line to the tubing.
+/// Couples the gas line to the production tubing in the transient: each coupled production cell takes the facing gas
+/// cell's temperatures, velocity, diameters and fluid (gas ahead of the interface, completion fluid behind it) as its
+/// outside, and the gas cell takes the temperature of the tubing's outermost layer.
 void connectTubing(const GasLiftState &state);
 
 // The gas line in the steady state.
@@ -183,11 +208,13 @@ void initializeTubingConnectionSteady(const GasLiftState &state);
 /// steady state, in kgf/cm^2.
 [[nodiscard]] double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex);
 
-/// Marches the steady gas pressure into a cell from its left neighbour, and copies it to the neighbours' faces.
+/// Marches the steady gas pressure into a cell from its left neighbour, records on the neighbour the friction and
+/// hydrostatic gradients of the march's first half, and copies the pressure to the neighbours' faces.
 void updateSteadyGasPressure(const GasLiftState &state, int cellIndex);
 
 /// The steady gas flow through a cell's right face: the left face's, less what a gas-lift valve in the cell
-/// delivers to the tubing.
+/// delivers to the tubing. For each valve in the cell it also primes the choke and records the injection on the
+/// valve's production cell; when the flow runs out before the end of the line, the valves after it get no source.
 void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex);
 
 /// Primes the steady gas mass source of the gas-lift valves that discharge into this production cell, and records
