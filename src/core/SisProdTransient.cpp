@@ -952,7 +952,7 @@ void computeImplicitTimeStep(const TransientStepState &state) {
             state.timeStep = dtaux;
     }
     if (state.input.lingas == 1) {
-        for (int i = 0; i <= state.gasCellCount; i++) {
+        for (int i = 0; i <= state.lastGasCell; i++) {
             double dtaux;
             double jmix = fabs(state.gasCells[i].VGasR / state.gasCells[i].u1L);
             if (fabs(jmix) > 1e-5)
@@ -1315,7 +1315,7 @@ void restartFractionEvolution(const TransientStepState &state) {
         state.cells[i].dtPig = state.timeStep;
     }
     if (state.input.lingas > 0) {
-        for (int i = 0; i <= state.gasCellCount; i++)
+        for (int i = 0; i <= state.lastGasCell; i++)
             state.gasCells[i].FeiticoDoTempo();
         if (state.input.descarga == 1) {
             state.interfaceCell = state.initialInterfaceCell;

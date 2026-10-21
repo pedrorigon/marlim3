@@ -158,7 +158,8 @@ struct GasLiftLine {
     std::vector<double> unloadingTimeStepSamples;
     /// Separator pressure or pressure at the inlet of the downstream network section.
     double separatorPressure = 0;
-    /// Number of control volumes in the gas service line.
+    /// Index of the last control volume of the gas service line, which has cellCount + 1 of them; zero without a gas
+    /// line.
     int cellCount = 0;
     /// Gas-injection pressure. Zero until an injection-pressure condition or a sensitivity analysis case sets it; the
     /// steady summary and the restart file record it either way.

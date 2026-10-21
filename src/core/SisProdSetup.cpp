@@ -513,7 +513,7 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
 /// Builds the gas-lift line when there is one: its cells, the second master valve,
 /// the injection choke, one gas-lift valve choke per valve with its position on
 /// both lines, and each gas cell's share of the annulus above the discharge cell.
-/// Without a gas line, only zeroes the gas cell count.
+/// Without a gas line, only zeroes the index of the last gas cell.
 void SProd::buildGasLiftLine() {
     if (arq.lingas == 0)
         gasLift.cellCount = 0;

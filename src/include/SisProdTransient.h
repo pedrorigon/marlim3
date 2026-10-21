@@ -177,7 +177,7 @@ struct TransientStepState {
     /// SProd::ncel -- read only.
     const int &lastCell;
     /// SProd::gasLift.cellCount -- read only.
-    const int &gasCellCount;
+    const int &lastGasCell;
     /// SProd::trends.productionWallProfileCells -- read only.
     std::vector<int> &productionCrossSectionCount;
     /// The number of scheduled Master1 closing events, SProd::transient.masterValveCloseTimes.size().

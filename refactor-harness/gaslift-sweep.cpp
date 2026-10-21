@@ -725,10 +725,10 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // differs from its own -- through the Logger, which has no open file in this
     // harness, so the rejection arrives as a segfault rather than a message.
     //
-    // The assembly loop runs 0..gasCellCount inclusive at three rows per cell,
+    // The assembly loop runs 0..lastGasCell inclusive at three rows per cell,
     // so both sides must be 3 * (kGasCells + 1). termolivreG is deliberately
     // wider than that for the rest of the sweep -- resetGasLine seeds
-    // 3 * (kGasCells + 2) entries and updateGasLine reads past 3 * gasCellCount
+    // 3 * (kGasCells + 2) entries and updateGasLine reads past 3 * lastGasCell
     // -- and narrowing it globally would change rows this file already
     // publishes. So it is narrowed for this call only and restored after.
     // Nothing is lost: the assembly overwrites every entry it then solves.
@@ -829,7 +829,7 @@ int main() {
     // else in this sweep touches, so main never sized it.
     //
     // The size is 3 * (kGasCells + 1), not 3 * (kGasCells + 3) as termolivreG
-    // above: the assembly loop runs 0..gasCellCount INCLUSIVE and writes three
+    // above: the assembly loop runs 0..lastGasCell INCLUSIVE and writes three
     // rows per cell, so it fills exactly 3 * (kGasCells + 1) of them. Sized any
     // larger, the surplus rows stay zero, the matrix is singular, and
     // GaussElimPP reports it through the Logger -- which in this harness has no

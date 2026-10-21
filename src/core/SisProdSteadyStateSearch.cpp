@@ -118,14 +118,14 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
     double deepestValveTemperatureGuess;
     if (state.march.steadyIteration == 0) {                              // for the first iteration of the production line-gas line system
         deepestValveTemperatureGuess = state.march.cells[state.march.productionValveCellIndices[maisprof]].temp; // estimate of the temperature at the deepest gas-lift valve
-        for (int k = state.march.gasCellCount; k > 0; k--) {           // march from the last cell to the first
+        for (int k = state.march.lastGasCell; k > 0; k--) {           // march from the last cell to the first
             // to estimate the injection pressure
             double dx = 0.5 * (state.march.gasCells[k].dx0 + state.march.gasCells[k].dxL);
             double rhog = state.march.gasCells[k].flui.MasEspGas(pchute, deepestValveTemperatureGuess);
             pchute += rhog * 9.81 * sin(state.march.gasCells[k].duto.teta) * dx / units::kPascalPerKgfPerCm2; // advance by the hydrostatics only
         }
     } else {
-        for (int k = state.march.gasCellCount; k > 0; k--)
+        for (int k = state.march.lastGasCell; k > 0; k--)
             pchute += state.march.updaters.steadyGasPressureDrop(k); // advance using the results of the previous iteration, with the hydrostatics
         // and the friction
     }
@@ -2862,9 +2862,9 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
             computePseudoTransientTimeStep(state.march);
             state.march.updaters.connectTubing();
             for (int kontaPseudo = 0; kontaPseudo < state.march.input.acopColAnulPermForte; kontaPseudo++) {
-                for (int i = 0; i <= state.march.gasCellCount; i++)
+                for (int i = 0; i <= state.march.lastGasCell; i++)
                     state.march.gasCells[i].tempini = state.march.gasCells[i].temp;
-                for (int i = 1; i <= state.march.gasCellCount; i++) {
+                for (int i = 1; i <= state.march.lastGasCell; i++) {
                     state.march.updaters.computeGasTemperature(i, state.march.gasCells[i - 1].tempini, 1);
                 }
                 state.march.cells[0].tempini = state.march.cells[0].temp;

@@ -91,7 +91,7 @@ struct ThermalState {
     const bool &productionNetworkHeatCoupled;
     const int &primaryNetworkSectionEnd;
     const int &primaryNetworkSectionStart;
-    const int &gasCellCount;
+    const int &lastGasCell;
     std::vector<ChokeGas> &gasLiftChokes;
     const double &gasSurfacePressure;
     const double &outletPressure;

@@ -48,7 +48,7 @@ struct GasLiftState {
     varGlob1D *const &globals;
 
     /// Index of the last gas-line cell.
-    const int &gasCellCount;
+    const int &lastGasCell;
     /// Index of the last production cell.
     const int &lastCell;
 

@@ -85,7 +85,7 @@ struct SteadyStateState {
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
     /// Index of the last gas-line cell -- SProd::gasLift.cellCount.
-    const int &gasCellCount;
+    const int &lastGasCell;
 
     /// Injection choke -- SProd::gasLift.injectionChoke. Written.
     ChokeGas &injectionChoke;

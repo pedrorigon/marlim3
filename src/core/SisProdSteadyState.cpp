@@ -3652,7 +3652,7 @@ void computePseudoTransientTimeStep(const SteadyStateState &state) {
             state.timeStep = dtaux;
     }
     if (state.input.lingas == 1) {
-        for (int i = 0; i <= state.gasCellCount; i++) {
+        for (int i = 0; i <= state.lastGasCell; i++) {
             double dtaux;
             double jmix = fabs(state.gasCells[i].VGasR / state.gasCells[i].u1L);
             if (fabs(jmix) > 1e-5)
@@ -3667,7 +3667,7 @@ void computePseudoTransientTimeStep(const SteadyStateState &state) {
     for (int i = 0; i <= state.lastCell; i++)
         state.cells[i].dt = state.timeStep;
     if (state.input.lingas == 1) {
-        for (int i = 0; i <= state.gasCellCount; i++)
+        for (int i = 0; i <= state.lastGasCell; i++)
             state.gasCells[i].dt = state.timeStep;
     }
 }
@@ -3766,7 +3766,7 @@ void gasLineHydrostatic(const SteadyStateState &state) {
     taux = state.input.celg[0].textern;
     state.cells[0].temp = taux;
     double rhog = state.gasCells[0].flui.MasEspGas(state.gasCells[0].pres, taux);
-    for (int i = 0; i < state.gasCellCount; i++) {
+    for (int i = 0; i < state.lastGasCell; i++) {
         taux = state.input.celg[i].textern;
         rhog = state.gasCells[i].flui.MasEspGas(pchute, taux);
         double dxmed = 0.5 * (state.gasCells[i].dx0 + state.gasCells[i + 1].dx0);
@@ -3816,7 +3816,7 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
         state.gasCells[0].massfonteCH = massGas;
         state.gasCells[0].VGasR = massGas;
         state.gasCells[1].VGasL = massGas;
-        for (int i = 1; i <= state.gasCellCount; i++) { // march
+        for (int i = 1; i <= state.lastGasCell; i++) { // march
             state.updaters.updateSteadyGasPressure(i);            // pressure advance from one cell to the next, at the cell centre
             state.updaters.updateSteadyGasTemperature(i);            // temperature advance from one cell to the next, cell centre
             if (isnan(state.gasCells[i].temp))
@@ -3827,10 +3827,10 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
             state.gasCells[i - 1].rgR = state.gasCells[i].rg;
             state.gasCells[i].u1L = state.gasCells[i].duto.area * state.gasCells[i].rg;
             state.gasCells[i - 1].u1R = state.gasCells[i].u1L;
-            if (i < state.gasCellCount)
+            if (i < state.lastGasCell)
                 state.gasCells[i + 1].u1LL = state.gasCells[i].u1L;
         }
-        state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
+        state.gasCells[state.lastGasCell].rgR = state.gasCells[state.lastGasCell].rg;
         double massGas2 = massGas; // keeps the previous gas injection value
         massGas = 0;
         for (int j = 0; j < valveCount; j++)
@@ -3849,7 +3849,7 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
             erro = fabs(massGas - massGas2) / fabs(massGas2); // erro = erro/2.;
         else
             erro = 0.;
-        presteste = state.gasCells[state.gasCellCount].pres;
+        presteste = state.gasCells[state.lastGasCell].pres;
         erro1 = fabs(presteste - presteste0) / presteste0; // error in the pressure of the last cell
     }
     if (itera >= 600) {
@@ -4053,9 +4053,9 @@ void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, double pchute) 
         computePseudoTransientTimeStep(state);
         state.updaters.connectTubing();
         for (int kontaPseudo = 0; kontaPseudo < state.input.acopColAnulPermForte; kontaPseudo++) {
-            for (int iterm = 0; iterm <= state.gasCellCount; iterm++)
+            for (int iterm = 0; iterm <= state.lastGasCell; iterm++)
                 state.gasCells[iterm].tempini = state.gasCells[iterm].temp;
-            for (int iterm = 1; iterm <= state.gasCellCount; iterm++) {
+            for (int iterm = 1; iterm <= state.lastGasCell; iterm++) {
                 state.updaters.computeGasTemperature(iterm, state.gasCells[iterm - 1].tempini, 1);
             }
             state.cells[0].tempini = state.cells[0].temp;
@@ -5702,7 +5702,7 @@ double marchGasSteadySecondary(const SteadyStateState &state, double pchute, dou
     state.gasCells[0].VGasR = state.gasCells[0].massfonteCH;
     state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
 
-    for (int i = 1; i <= state.gasCellCount; i++) { // march along the service line
+    for (int i = 1; i <= state.lastGasCell; i++) { // march along the service line
         state.updaters.updateSteadyGasPressure(i);            // pressure advance from one cell to the next, at the cell centre
         state.updaters.updateSteadyGasTemperature(i);            // temperature advance from one cell to the next, cell centre
         if (isnan(state.gasCells[i].temp))
@@ -5713,10 +5713,10 @@ double marchGasSteadySecondary(const SteadyStateState &state, double pchute, dou
         state.gasCells[i - 1].rgR = state.gasCells[i].rg;
         state.gasCells[i].u1L = state.gasCells[i].duto.area * state.gasCells[i].rg;
         state.gasCells[i - 1].u1R = state.gasCells[i].u1L;
-        if (i < state.gasCellCount)
+        if (i < state.lastGasCell)
             state.gasCells[i + 1].u1LL = state.gasCells[i].u1L;
     }
-    state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
+    state.gasCells[state.lastGasCell].rgR = state.gasCells[state.lastGasCell].rg;
 
     int valveCount = state.input.nvalvgas;
     double mastot = 0.;
@@ -5746,7 +5746,7 @@ double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
     state.gasCells[0].VGasR = state.gasCells[0].massfonteCH;
     state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
 
-    for (int i = 1; i <= state.gasCellCount; i++) { // march along the gas line
+    for (int i = 1; i <= state.lastGasCell; i++) { // march along the gas line
         state.updaters.updateSteadyGasPressure(i);            // pressure advance from one cell to the next, at the cell centre
         state.updaters.updateSteadyGasTemperature(i);            // temperature advance from one cell to the next, cell centre
         if (isnan(state.gasCells[i].temp))
@@ -5757,10 +5757,10 @@ double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
         state.gasCells[i - 1].rgR = state.gasCells[i].rg;
         state.gasCells[i].u1L = state.gasCells[i].duto.area * state.gasCells[i].rg;
         state.gasCells[i - 1].u1R = state.gasCells[i].u1L;
-        if (i < state.gasCellCount)
+        if (i < state.lastGasCell)
             state.gasCells[i + 1].u1LL = state.gasCells[i].u1L;
     }
-    state.gasCells[state.gasCellCount].rgR = state.gasCells[state.gasCellCount].rg;
+    state.gasCells[state.lastGasCell].rgR = state.gasCells[state.lastGasCell].rg;
 
     int valveCount = state.input.nvalvgas;
     double mastot = 0.;

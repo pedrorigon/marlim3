@@ -3849,7 +3849,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
 }
 
 void computeGasTemperature(const ThermalState &state, int cellIndex, double previousTemperature, int steadyMode) {
-    const bool hasRightGasCell = cellIndex < state.gasCellCount;
+    const bool hasRightGasCell = cellIndex < state.lastGasCell;
 
     if (state.thermalSourceDisabled == 0) {
         double cellLength = state.gasCells[cellIndex].dx0;
@@ -3910,7 +3910,7 @@ void computeGasTemperature(const ThermalState &state, int cellIndex, double prev
         if (hasRightGasCell)
             if (meanSuperficialGasVelocity < 0)
                 temperatureGradient = (state.gasCells[cellIndex + 1].tempini - state.gasCells[cellIndex].tempini) / meanCellLength;
-        if ((cellIndex == 1 && meanSuperficialGasVelocity <= 0) || (cellIndex == state.gasCellCount && meanSuperficialGasVelocity <= 0))
+        if ((cellIndex == 1 && meanSuperficialGasVelocity <= 0) || (cellIndex == state.lastGasCell && meanSuperficialGasVelocity <= 0))
             temperatureGradient = 0.;
 
         double kineticTerm;
