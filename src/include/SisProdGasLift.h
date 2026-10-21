@@ -131,10 +131,10 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state);
 /// the tubing pressure are gauge pressures in psi, and the bottom-hole temperature is in degrees Fahrenheit; the
 /// calibration temperature comes in degrees Celsius and the external diameter in metres. valveRatio is the throat
 /// area over the bellows area.
-[[nodiscard]] double calibratedValveArea(double calibrationPressure, double calibrationTemperature,
-                                         double valveOpeningPressure, double tubingPressure,
-                                         double externalDiameter, double throatArea, double valveRatio,
-                                         double bottomHoleTemperatureFahrenheit);
+[[nodiscard]] double calibratedValveOpeningFraction(double calibrationPressure, double calibrationTemperature,
+                                                    double valveOpeningPressure, double tubingPressure,
+                                                    double externalDiameter, double throatArea, double valveRatio,
+                                                    double bottomHoleTemperatureFahrenheit);
 
 /// The pressure correction the unloading control applies for one valve, in kgf/cm^2 and with the given sign: the
 /// dynamic pressure, at the valve's throat, of the completion-fluid flow that separates maximumFlowRate from factor

@@ -29,12 +29,11 @@ constexpr double kMidCellInterfaceRatio = 0.5;
 /// The opening fraction of a calibrated gas-lift valve, from the state already primed on its choke, converted to
 /// the units of the valve correlation.
 [[nodiscard]] double calibratedValveOpening(const ChokeGas &choke) {
-    return calibratedValveArea(choke.pcalib * units::kPsiPerKgfPerCm2, choke.tcalib,
-                               (choke.presEstag - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
-                               (choke.presGarg - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
-                               choke.dextern, choke.areagarg,
-                               choke.areagarg / choke.areafole,
-                               units::celsiusToFahrenheit(choke.tempEstag));
+    return calibratedValveOpeningFraction(choke.pcalib * units::kPsiPerKgfPerCm2, choke.tcalib,
+                                          (choke.presEstag - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
+                                          (choke.presGarg - units::kAtmosphereInKgfPerCm2) * units::kPsiPerKgfPerCm2,
+                                          choke.dextern, choke.areagarg, choke.areagarg / choke.areafole,
+                                          units::celsiusToFahrenheit(choke.tempEstag));
 }
 
 // What flows through a gas-lift valve, as policies of primeValveMassSource: the recovery factor that turns the
@@ -431,9 +430,9 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
     }
 }
 
-double calibratedValveArea(double calibrationPressure, double calibrationTemperature, double valveOpeningPressure,
-                           double tubingPressure, double externalDiameter, double throatArea, double valveRatio,
-                           double bottomHoleTemperatureFahrenheit) {
+double calibratedValveOpeningFraction(double calibrationPressure, double calibrationTemperature,
+                                      double valveOpeningPressure, double tubingPressure, double externalDiameter,
+                                      double throatArea, double valveRatio, double bottomHoleTemperatureFahrenheit) {
     double domePressure = calibrationPressure * (1 - valveRatio);
     const double calibrationTemperatureRankine =
         units::celsiusToFahrenheit(calibrationTemperature) + units::kZeroFahrenheitInRankine;

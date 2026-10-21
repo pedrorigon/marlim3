@@ -204,7 +204,7 @@ calcTempFim
 # All this declaration suppresses is "the body at this address differs from the
 # baseline body" -- which is the point of having moved it.
 HidroDescargaG
-areaValvCali -> calibratedValveArea
+areaValvCali -> calibratedValveOpeningFraction
 BuscaPresInjDesc -> searchUnloadingInjectionPressure
 solveLinGas
 delpGasPerm -> steadyGasPressureDrop

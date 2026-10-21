@@ -481,7 +481,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
         choke.pcalib = scenario.pressure * 1.25;
         choke.tcalib = scenario.temperature;
         choke.dextern = 0.0381;
-        // One calibrated valve and one orifice, so the calibratedValveArea
+        // One calibrated valve and one orifice, so the calibratedValveOpeningFraction
         // branch and the branch that skips it are both driven.
         choke.tipo = valve == 0 ? 1 : 0;
     }
@@ -765,11 +765,11 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // swamping it, so the cap has something to do; the other three pin the
     // saturated and closed behaviour, which is coverage of its own.
     printValue("areaValvCali", scenario.name,
-               sisprod::gaslift::calibratedValveArea(scenario.pressure, scenario.temperature,
+               sisprod::gaslift::calibratedValveOpeningFraction(scenario.pressure, scenario.temperature,
                                    scenario.pressure, scenario.pressure * 0.95,
                                    0.02, 1.0e-4, 0.05, scenario.temperature + 20.));
     printValue("areaValvCali-closed", scenario.name,
-               sisprod::gaslift::calibratedValveArea(scenario.pressure * 3., scenario.temperature,
+               sisprod::gaslift::calibratedValveOpeningFraction(scenario.pressure * 3., scenario.temperature,
                                    scenario.pressure * 0.2, scenario.pressure * 0.1,
                                    0.05, 1.2e-4, 0.12, scenario.temperature));
 
