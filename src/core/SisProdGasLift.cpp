@@ -36,43 +36,34 @@ constexpr double kMidCellInterfaceRatio = 0.5;
                                           units::celsiusToFahrenheit(choke.tempEstag));
 }
 
-// What flows through a gas-lift valve, as policies of primeValveMassSource: the recovery factor that turns the
-// stagnation pressure into the throat pressure, and the mass flow the choke passes.
-
-/// Gas: the gas recovery factor and the gas mass flow.
-struct GasThroughValve {
-    [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frec; }
-    [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &) { return choke.massica(); }
+/// What a gas-lift valve is primed for: the fluid whose recovery factor turns the stagnation pressure into the
+/// throat pressure, and the fluid whose mass flow the choke passes.
+struct ValveFluids {
+    InjectedFluid recovery;
+    InjectedFluid flow;
 };
 
-/// Completion fluid: the liquid recovery factor and the completion-fluid mass flow.
-struct CompletionFluidThroughValve {
-    [[nodiscard]] static double recovery(const ChokeGas &choke) { return choke.frecliq; }
-    [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &input) {
-        return choke.massica(1, input.salinDescarga);
-    }
-};
-
-/// Gas-side recovery, completion-fluid mass flow: the combination the unloading
-/// search uses.
-struct UnloadingThroughValve {
-    [[nodiscard]] static double recovery(const ChokeGas &choke) { return GasThroughValve::recovery(choke); }
-    [[nodiscard]] static double massFlowRate(ChokeGas &choke, const Ler &input) {
-        return CompletionFluidThroughValve::massFlowRate(choke, input);
-    }
-};
+/// Gas through the valve.
+constexpr ValveFluids kGasThroughValve{kInjectedGas, kInjectedGas};
+/// Completion fluid through the valve.
+constexpr ValveFluids kCompletionFluidThroughValve{kInjectedCompletionFluid, kInjectedCompletionFluid};
+/// The unloading search's combination: the gas recovery factor with the completion-fluid mass flow.
+constexpr ValveFluids kUnloadingThroughValve{kInjectedGas, kInjectedCompletionFluid};
 
 /// Primes the choke from the two cells it spans and returns the mass source it
 /// delivers, already scaled by the calibrated opening when the valve is one.
-template <typename Phase>
+template <ValveFluids fluids>
 [[nodiscard]] double primeValveMassSource(const GasLiftState &state, int valveIndex,
                                           const CelG &gasCell, const Cel &productionCell) {
     ChokeGas &choke = state.gasLiftChokes[valveIndex];
-    const double recovery = Phase::recovery(choke);
+    const double recovery = fluids.recovery == kInjectedGas ? choke.frec : choke.frecliq;
     choke.presEstag = gasCell.pres;
     choke.presGarg = (productionCell.pres - choke.presEstag * recovery) / (1. - recovery);
     choke.tempEstag = gasCell.temp;
-    double massSource = productionCell.pres < gasCell.pres ? Phase::massFlowRate(choke, state.input) : 0.;
+    double massSource = 0.;
+    if (productionCell.pres < gasCell.pres)
+        massSource = fluids.flow == kInjectedGas ? choke.massica()
+                                                 : choke.massica(kInjectedCompletionFluid, state.input.salinDescarga);
     if (choke.tipo == kGasLiftCalibratedValve)
         massSource *= calibratedValveOpening(choke);
     return massSource;
@@ -562,7 +553,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
                 if (gasValveCell > state.interfaceCell) {
                     const CelG &valveCell = state.gasCells[gasValveCell];
                     double completionFluidDensity = valveCell.MasEspFlu(valveCell.pres, valveCell.temp);
-                    const double massFlowRate = primeValveMassSource<UnloadingThroughValve>(
+                    const double massFlowRate = primeValveMassSource<kUnloadingThroughValve>(
                         state, valveIndex, valveCell, state.cells[productionValveCell]);
                     double candidateFlowRate = massFlowRate / completionFluidDensity;
                     if (candidateFlowRate > maximumUnloadingFlowRate) {
@@ -920,8 +911,8 @@ void updateTransientGasValves(const GasLiftState &state) {
         // Behind the interface the valve discharges completion fluid, ahead of it gas.
         valveCell.massfonteCH =
             gasValveCell >= state.interfaceCell && valveCell.razInter < kMidCellInterfaceRatio
-                ? primeValveMassSource<CompletionFluidThroughValve>(state, valveIndex, valveCell, productionCell)
-                : primeValveMassSource<GasThroughValve>(state, valveIndex, valveCell, productionCell);
+                ? primeValveMassSource<kCompletionFluidThroughValve>(state, valveIndex, valveCell, productionCell)
+                : primeValveMassSource<kGasThroughValve>(state, valveIndex, valveCell, productionCell);
     }
 
     double master2FlowArea = state.gasCells[master2CellIndex].duto.area;
@@ -1539,7 +1530,7 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
         if (state.gasValveCellIndices[valveIndex] == cellIndex) {
             matched = true;
             CelG &valveCell = state.gasCells[state.gasValveCellIndices[valveIndex]];
-            valveCell.massfonteCH = primeValveMassSource<GasThroughValve>(
+            valveCell.massfonteCH = primeValveMassSource<kGasThroughValve>(
                 state, valveIndex, valveCell,
                 state.cells[state.productionValveCellIndices[valveIndex]]);
 
