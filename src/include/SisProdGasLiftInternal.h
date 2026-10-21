@@ -25,8 +25,9 @@ inline constexpr ValveFluids kCompletionFluidThroughValve{kInjectedCompletionFlu
 /// The unloading search's combination: the gas recovery factor with the completion-fluid mass flow.
 inline constexpr ValveFluids kUnloadingThroughValve{kInjectedGas, kInjectedCompletionFluid};
 
-/// The transport properties of the fluid outside a production cell, as its heat transfer reads them.
-struct ExternalFluidProperties {
+/// The transport properties of a fluid as a cell's heat transfer reads them: the fluid outside a production cell, or
+/// the gas inside a gas cell.
+struct FluidProperties {
     double conductivity;
     double specificHeat;
     double density;
@@ -54,7 +55,15 @@ void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit);
 
 /// Publishes the transport properties of the gas line's fluid onto the production
 /// cell that faces it, as that cell's external fluid.
-void publishExternalFluid(Cel &productionCell, const ExternalFluidProperties &fluid);
+void publishExternalFluid(Cel &productionCell, const FluidProperties &fluid);
+
+/// The cell across the column-annulus coupling from this one: the gas cell that faces a production cell, or the
+/// production cell that faces a gas cell.
+[[nodiscard]] int facingCouplingCell(const GasLiftState &state, int cellIndex);
+
+/// The temperature of the gas a valve injects into its production cell: the valve's discharge temperature while the
+/// valve flows, the cell's own otherwise, and never below kMinimumTemperatureCelsius.
+[[nodiscard]] double injectedGasTemperature(const GasLiftState &state, int valveIndex, const Cel &productionCell);
 
 // Unloading the completion fluid through the gas-lift valves.
 
@@ -147,6 +156,9 @@ void copyPhaseToRightNeighbour(const Cel &cell, Cel &right);
 [[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition);
 [[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition);
 
+/// The hydrostatic head across a half cell of the unloading's initial state, in kgf/cm^2.
+[[nodiscard]] double unloadingHalfCellHead(double density, double halfLength, double inclination);
+
 /// The opening of a calibrated gas-lift valve as a fraction of its throat area, at most 1; a closed valve is not a
 /// special case. The correlation is imperial: the calibration pressure, the valve opening pressure (the casing's) and
 /// the tubing pressure are gauge pressures in psi, and the bottom-hole temperature is in degrees Fahrenheit; the
@@ -198,6 +210,14 @@ inline constexpr double kMaster2ClosedAreaFraction = 1e-5;
 [[nodiscard]] double injectionChokeOpening(const GasLiftState &state, InjectionPressureCondition);
 [[nodiscard]] double injectionChokeOpening(const GasLiftState &state, InjectionFlowRateCondition);
 
+/// Copies a gas-lift valve's choke state onto its gas cell: the stagnation and throat pressures and temperatures, the
+/// throat flow and the throat area.
+void recordValveState(CelG &gasCell, const ChokeGas &choke);
+
+/// The mass sources the gas line's master2 valve gives its cell and the next one while it throttles, from the
+/// pressure difference across it; none otherwise.
+void updateMaster2Source(const GasLiftState &state);
+
 /// Clears the gas cells' sources from the interface cell on, primes each gas-lift valve's choke and sets the mass
 /// source it gives its gas cell (completion fluid behind the interface, gas ahead of it), then the sources of the
 /// master2 valve's two cells, which only flow while it throttles.
@@ -230,6 +250,10 @@ inline constexpr double kThermalSubstepLength = 1000.;
 /// Clamps a gas cell's temperature to the physical range and copies it to the
 /// neighbours that face it.
 void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex);
+
+/// Gives a gas cell's heat transfer the gas flowing inside it, at this temperature and superficial velocity, and
+/// computes the cell's heat flux.
+void publishInternalGas(CelG &cell, double temperature, double velocity, const FluidProperties &gas);
 
 /// One valve's gas mass source at steady state. Under a flow-rate condition,
 /// an equal share of the injection flow rate; under a pressure condition, what

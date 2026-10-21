@@ -85,10 +85,8 @@ probe 'updateGasLine: neighbour source'   'cell.presL = first ? cell.pres : pres
 # excuse any of them, and each pattern is pinned to text that occurs exactly
 # once.
 probe 'HidroDescargaG: hydrostatic head' \
-    'meanPressure -= localDensity * kGravityUnloadingVariant * halfLocalLength *
-                        sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
-    'meanPressure -= localDensity * kGravity * halfLocalLength *
-                        sin(state.gasCells[gasCellIndex].duto.teta) / units::kPascalPerKgfPerCm2;' \
+    'return density * kGravityUnloadingVariant * halfLength * sin(inclination) / units::kPascalPerKgfPerCm2;' \
+    'return density * kGravity * halfLength * sin(inclination) / units::kPascalPerKgfPerCm2;' \
     "$target_gaslift"
 
 probe 'CalcPresValvDesc: wall shear' \
