@@ -449,7 +449,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     // ABOVE the gas line, not below it. The injection choke sits upstream, and
     // ChokeGas::massica zeroes its own output when the stagnation pressure is
     // below the throat pressure. Seeded under the line, the choke delivered
-    // exactly nothing, so the whole source term advanceBufferedGasSubStep
+    // exactly nothing, so the whole source term assembleAndSolveGasSystem
     // assembles was zero and moving the opening bound changed no digit.
     system.gasLift.injectionPressure = scenario.pressure * kInjectionOverPressure * 1.15;
     system.gasLift.injectionTemperature = scenario.temperature + 4.;
@@ -539,7 +539,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     system.gasLift.injectionChoke.tempEstag = scenario.temperature + 8.;
     system.gasLift.injectionChoke.presGarg = scenario.pressure * 1.1;
     // Sized as a FRACTION of the pipe, so abertoChk lands around the 0.2 bound
-    // advanceBufferedGasSubStep switches on rather than far below it, where
+    // injectionChokeOpening switches on rather than far below it, where
     // moving the bound changes nothing.
     system.gasLift.injectionChoke.areagarg =
         (0.15 + 0.3 * scenario.voidFraction) * system.gasLift.cells[0].duto.area;
@@ -549,7 +549,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
         CelG &cell = system.gasLift.cells[index];
         // celInter is a POINTER on the cell, aimed at SProd::gasLift.interfaceCell, and
         // CelG::GeraLocal dereferences it unconditionally. Unseeded it is null
-        // and advanceBufferedGasSubStep segfaults -- which is how this line came
+        // and the assembly segfaults -- which is how this line came
         // to be written. Same wiring the product does at SisProd.cpp:1483.
         cell.celInter = &system.gasLift.interfaceCell;
         cell.celInterini = &system.gasLift.previousInterfaceCell;
@@ -623,13 +623,14 @@ void printRatios(const char *method, const char *scenario, const CelG &cell) {
            cell.u1LL);
 }
 
-// Same problem, worse: everything advanceBufferedGasSubStep computes ends up in
+// Same problem, worse: everything assembleAndSolveGasSystem computes ends up in
 // the choke source term and the local system it assembles, and printGas shows
 // neither.
 //
-// What is published is the ASSEMBLY, not the solution. VGasRBuf -- the field the
-// buffered update writes -- comes back NaN here, because the band system built
-// from synthetic cells is singular and the elimination divides by a zero pivot.
+// What is published is the ASSEMBLY, not the solution. The solution -- the
+// right-hand side the elimination leaves -- comes back NaN here, because the
+// band system built from synthetic cells is singular and the elimination
+// divides by a zero pivot.
 // A NaN is deterministic and discriminates nothing, so publishing it would be a
 // field that cannot fail. TL and local survive the solve as cell members, they
 // are finite, and they are where GeraLocal's arithmetic and the choke source
@@ -719,10 +720,10 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     printGas("resolveDescarga", scenario.name, system.gasLift.cells[kInterfaceCell]);
     printGas("resolveDescarga-last", scenario.name, system.gasLift.cells[kGasCells]);
 
-    // subtempoGasBuf is the only routine here that solves the band system, and
-    // BandMtx::GaussElimPP rejects a right-hand side whose size differs from its
-    // own -- through the Logger, which has no open file in this harness, so the
-    // rejection arrives as a segfault rather than a message.
+    // assembleAndSolveGasSystem is the only routine here that solves the band
+    // system, and BandMtx::GaussElimPP rejects a right-hand side whose size
+    // differs from its own -- through the Logger, which has no open file in this
+    // harness, so the rejection arrives as a segfault rather than a message.
     //
     // The assembly loop runs 0..gasCellCount inclusive at three rows per cell,
     // so both sides must be 3 * (kGasCells + 1). termolivreG is deliberately
@@ -731,10 +732,17 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // -- and narrowing it globally would change rows this file already
     // publishes. So it is narrowed for this call only and restored after.
     // Nothing is lost: the assembly overwrites every entry it then solves.
+    //
+    // These rows keep the subtempoGasBuf label of the original routine whose
+    // scenario they reproduce: it cleared every gas cell's dTdt and then
+    // assembled and solved, as advanceGasSubStep does before its first thermal
+    // coupling cycle.
     seed();
     Vcr<double> wideFreeTerms = system.gasLift.rightHandSide;
     system.gasLift.rightHandSide = Vcr<double>(3 * (kGasCells + 1), 0.);
-    sisprod::gaslift::advanceBufferedGasSubStep(sisprod::SolveContext(system).gasLift());
+    for (int index = 0; index <= system.gasLift.cellCount; ++index)
+        system.gasLift.cells[index].dTdt = 0;
+    sisprod::gaslift::assembleAndSolveGasSystem(sisprod::SolveContext(system).gasLift());
     printGas("subtempoGasBuf", scenario.name, system.gasLift.cells[kInterfaceCell]);
     printBuffered("subtempoGasBuf-buffer", scenario.name,
                   system.gasLift.cells[kInterfaceCell], system.gasLift.cells[0]);
@@ -828,7 +836,7 @@ int main() {
     system.gasLift.gasValveCells = vector<int>(kValves);
     system.gasLift.productionValveCells = vector<int>(kValves);
 
-    // advanceBufferedGasSubStep assembles into the band matrix, which nothing
+    // assembleAndSolveGasSystem assembles into the band matrix, which nothing
     // else in this sweep touches, so main never sized it.
     //
     // The size is 3 * (kGasCells + 1), not 3 * (kGasCells + 3) as termolivreG

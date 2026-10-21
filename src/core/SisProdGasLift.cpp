@@ -163,34 +163,6 @@ template <typename Phase>
     return 1.;
 }
 
-/// Opens the injection choke if it is throttling, assembles the band system
-/// from every gas cell and solves it.
-void assembleAndSolveGasSystem(const GasLiftState &state) {
-    double chokeOpeningFraction = withGasInletCondition(
-        state.gasCells[0].tipoCC,
-        [&](auto condition) { return injectionChokeOpening(state, condition); });
-#pragma omp parallel for num_threads(state.globals->ntrd)
-    for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
-        state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.injectionPressure, state.injectionTemperature,
-                                               chokeOpeningFraction);
-        // Each of a cell's equations couples the unknowns of the cell and of its two neighbours.
-        constexpr int kStencilCoefficients = 3 * kGasLineUnknownsPerCell;
-        const int firstRow = kGasLineUnknownsPerCell * gasCellIndex;
-        for (int bandIndex = 0; bandIndex < kStencilCoefficients; bandIndex++) {
-            state.gasSystemMatrix[firstRow][bandIndex - kGasLineUnknownsPerCell] =
-                state.gasCells[gasCellIndex].local[0][bandIndex];
-            state.gasSystemMatrix[firstRow + 1][bandIndex - kGasLineUnknownsPerCell - 1] =
-                state.gasCells[gasCellIndex].local[1][bandIndex];
-            state.gasSystemMatrix[firstRow + 2][bandIndex - kGasLineUnknownsPerCell - 2] =
-                state.gasCells[gasCellIndex].local[2][bandIndex];
-        }
-        state.gasRightHandSide[firstRow] = state.gasCells[gasCellIndex].TL[0];
-        state.gasRightHandSide[firstRow + 1] = state.gasCells[gasCellIndex].TL[1];
-        state.gasRightHandSide[firstRow + 2] = state.gasCells[gasCellIndex].TL[2];
-    }
-    state.gasSystemMatrix.GaussElimPP(state.gasRightHandSide);
-}
-
 /// Clamps a gas cell's temperature to the physical range and copies it to the
 /// neighbours that face it.
 void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
@@ -1063,6 +1035,32 @@ void advanceGasSubStep(const GasLiftState &state) {
 
     if (state.input.descarga == 1)
         solveUnloading(state);
+}
+
+void assembleAndSolveGasSystem(const GasLiftState &state) {
+    double chokeOpeningFraction = withGasInletCondition(
+        state.gasCells[0].tipoCC,
+        [&](auto condition) { return injectionChokeOpening(state, condition); });
+#pragma omp parallel for num_threads(state.globals->ntrd)
+    for (int gasCellIndex = 0; gasCellIndex <= state.gasCellCount; gasCellIndex++) {
+        state.gasCells[gasCellIndex].GeraLocal(state.gasCellCount, state.injectionPressure, state.injectionTemperature,
+                                               chokeOpeningFraction);
+        // Each of a cell's equations couples the unknowns of the cell and of its two neighbours.
+        constexpr int kStencilCoefficients = 3 * kGasLineUnknownsPerCell;
+        const int firstRow = kGasLineUnknownsPerCell * gasCellIndex;
+        for (int bandIndex = 0; bandIndex < kStencilCoefficients; bandIndex++) {
+            state.gasSystemMatrix[firstRow][bandIndex - kGasLineUnknownsPerCell] =
+                state.gasCells[gasCellIndex].local[0][bandIndex];
+            state.gasSystemMatrix[firstRow + 1][bandIndex - kGasLineUnknownsPerCell - 1] =
+                state.gasCells[gasCellIndex].local[1][bandIndex];
+            state.gasSystemMatrix[firstRow + 2][bandIndex - kGasLineUnknownsPerCell - 2] =
+                state.gasCells[gasCellIndex].local[2][bandIndex];
+        }
+        state.gasRightHandSide[firstRow] = state.gasCells[gasCellIndex].TL[0];
+        state.gasRightHandSide[firstRow + 1] = state.gasCells[gasCellIndex].TL[1];
+        state.gasRightHandSide[firstRow + 2] = state.gasCells[gasCellIndex].TL[2];
+    }
+    state.gasSystemMatrix.GaussElimPP(state.gasRightHandSide);
 }
 
 void updateGasLine(const GasLiftState &state) {

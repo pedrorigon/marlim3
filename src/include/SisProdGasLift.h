@@ -157,6 +157,9 @@ void updateTransientGasValves(const GasLiftState &state);
 /// Advances the gas line by one sub-time-step.
 void advanceGasSubStep(const GasLiftState &state);
 
+/// Opens the injection choke if it is throttling, assembles the band system from every gas cell and solves it.
+void assembleAndSolveGasSystem(const GasLiftState &state);
+
 /// Updates the gas-line cells after a sub-step.
 void updateGasLine(const GasLiftState &state);
 
