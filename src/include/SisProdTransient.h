@@ -321,6 +321,10 @@ void generateFluidMiniTables(const TransientStepState &state);
 void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui);
 void storePreviousSources(const TransientStepState &state);
 
+/// Evaluates wax deposition in every cell and applies its effect on the pipe
+/// wall and its heat transfer.
+void evaluateWaxDeposition(const TransientStepState &state);
+
 /// Stores the void and complementary-liquid fractions of the time level just finished,
 /// then moves the pigs and receives those that reach their receiver cell.
 void storePreviousFractionsAndMovePigs(const TransientStepState &state);
@@ -350,7 +354,6 @@ struct TransientSolveUpdaters {
     void writeProductionCrossSectionTrendRows(int i) const;
     void writeGasCrossSectionTrendHeader(int i) const;
     void writeGasCrossSectionTrendRows(int i) const;
-    void evaluateParaffin() const;
     void connectTubing() const;
     void marchTransientEnergy(int ciclo, int ciclomax) const;
     void updateMolarFractions(const ProFlu *fluiRev) const;

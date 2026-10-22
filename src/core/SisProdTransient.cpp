@@ -2199,7 +2199,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     }
 
     if (state.step.input.modoParafina == 1)
-        state.updaters.evaluateParaffin();
+        evaluateWaxDeposition(state.step);
 
     storePreviousSources(state.step);
     state.updaters.updateTemperatures();
@@ -2653,6 +2653,30 @@ void storePreviousSources(const TransientStepState &state) {
         state.cells[i].fontemassLRini = state.cells[i].fontemassLR;
         state.cells[i].fontemassCRini = state.cells[i].fontemassCR;
         state.cells[i].fontemassGRini = state.cells[i].fontemassGR;
+    }
+}
+
+void evaluateWaxDeposition(const TransientStepState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        if (i < state.lastCell)
+            state.cells[i].WaxDeposition(state.input.detalParafina, state.lastCell);
+        else {
+            if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0) {
+                double cpDep = state.cells[i - 1].duto.cp[0];
+                double kDep = state.cells[i - 1].duto.cond[0];
+                double rhoDep = state.cells[i - 1].duto.rhoC[0];
+                state.cells[i].deltaPar = state.cells[i - 1].deltaPar;
+                if (state.cells[i].parafinado == 0 && state.cells[i].deltaPar > 0.) {
+                    state.cells[i].duto.atualizaCamada(state.cells[i].deltaPar, state.input.detalParafina.rug, cpDep, kDep, rhoDep);
+                    state.cells[i].calor.atualiza(state.cells[i].duto, 1);
+                    state.cells[i].parafinado = 1;
+                } else if (state.cells[i].deltaPar > 0.) {
+                    state.cells[i].duto.atualizaCamada2(state.cells[i].deltaPar, cpDep, kDep, rhoDep);
+                    state.cells[i].calor.atualiza2(state.cells[i].duto);
+                }
+            } else
+                state.cells[i].WaxDeposition(state.input.detalParafina, state.lastCell);
+        }
     }
 }
 

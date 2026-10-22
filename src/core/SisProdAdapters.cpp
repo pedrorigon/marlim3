@@ -172,9 +172,6 @@ void sisprod::transient::TransientSolveUpdaters::writeGasCrossSectionTrendHeader
 void sisprod::transient::TransientSolveUpdaters::writeGasCrossSectionTrendRows(int i) const {
     trendoutput::writeGasLineCrossSectionTrendRows(context.trends(), i);
 }
-void sisprod::transient::TransientSolveUpdaters::evaluateParaffin() const {
-    sisprod::composition::evaluateWaxDeposition(context.composition());
-}
 void sisprod::transient::TransientSolveUpdaters::connectTubing() const {
     sisprod::gaslift::connectTubing(context.gasLift());
 }
@@ -383,7 +380,7 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
     };
 }
 
-/// The composition module's view of SProd: twelve members by reference.
+/// The composition module's view of SProd: eleven members by reference.
 sisprod::composition::CompositionState compositionStateOf(SProd &system, SolveContext &context) {
     return sisprod::composition::CompositionState{
         .cells = system.celula,
@@ -397,7 +394,6 @@ sisprod::composition::CompositionState compositionStateOf(SProd &system, SolveCo
         .trackGasOilRatio = system.transient.trackGasOilRatio,
         .trackGasGravity = system.transient.trackGasGravity,
         .compositionalRefreshCounter = system.transient.compositionalRefreshCounter,
-        .surfaceChokeMassFlag = system.masChkSup,
         .updaters = {context},
     };
 }
