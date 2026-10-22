@@ -751,9 +751,10 @@ void advanceGasSubStep(const GasLiftState &state) {
     }
 
 #pragma omp parallel for num_threads(state.globals->ntrd)
-    for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++)
-        state.gasCells[gasCellIndex].rg = state.gasCells[gasCellIndex].flui.MasEspGas(
-            state.gasCells[gasCellIndex].pres, state.gasCells[gasCellIndex].temp);
+    for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++) {
+        CelG &cell = state.gasCells[gasCellIndex];
+        cell.rg = cell.flui.MasEspGas(cell.pres, cell.temp);
+    }
 
     for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++) {
         CelG &cell = state.gasCells[gasCellIndex];
@@ -766,7 +767,7 @@ void advanceGasSubStep(const GasLiftState &state) {
         }
         if (gasCellIndex == state.lastGasCell) {
             cell.u1R = cell.u1L;
-            state.gasCells[state.lastGasCell].rgR = state.gasCells[state.lastGasCell].rg;
+            cell.rgR = cell.rg;
         }
     }
 
@@ -1277,8 +1278,7 @@ void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
     choke.presEstag = casingPressure;
     choke.presGarg = productionCell.pres;
     choke.tempEstag = casingTemperature;
-    state.gasCells[state.gasValveCellIndices[valveIndex]].massfonteCH =
-        productionCell.pres < casingPressure ? choke.massica() : 0.;
+    state.gasCells[gasValveCell].massfonteCH = productionCell.pres < casingPressure ? choke.massica() : 0.;
 }
 
 void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
