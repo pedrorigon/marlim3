@@ -973,40 +973,42 @@ void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
     publishInternalGas(left, left.temp, meanSuperficialGasVelocity,
                        {left.flui.CondGas(left.pres, left.temp), gasSpecificHeat, gasDensity,
                         left.flui.ViscGas(left.pres, left.temp)});
-    double leftCellHeatFlux = left.fluxcal;
-    const double tubingHeatFlux = 0.;
 
-    const double lengthRatio = dx / (dx + left.dx0);
-    const double temperatureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasSpecificHeat * area;
-    const double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
-    double pressureGradient =
-        2. * (cell.pres - ((1 - lengthRatio) * left.pres + lengthRatio * cell.pres)) * units::kPascalPerKgfPerCm2 / dx;
+    const bool marches = meanSuperficialGasVelocity > kMinimumMarchGasVelocity &&
+                         cell.duto.a / left.duto.a > kMinimumMarchDiameterRatio &&
+                         left.duto.a / cell.duto.a > kMinimumMarchDiameterRatio;
+    if (marches) {
+        double leftCellHeatFlux = left.fluxcal;
+        const double tubingHeatFlux = 0.;
 
-    const double leftCellLeftFaceSuperficialGasVelocity = left.VGasL / left.u1L;
-    const double superficialVelocityGradient =
-        (meanSuperficialGasVelocity - leftCellLeftFaceSuperficialGasVelocity) / dx;
+        const double lengthRatio = dx / (dx + left.dx0);
+        const double temperatureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasSpecificHeat * area;
+        const double pressureMarchCoefficient = gasDensity * meanSuperficialGasVelocity * gasJouleThomson * area;
+        const double pressureGradient = 2. * (cell.pres - ((1 - lengthRatio) * left.pres + lengthRatio * cell.pres)) *
+                                        units::kPascalPerKgfPerCm2 / dx;
 
-    const double kineticTerm = state.input.nCompTotalUnidadesG / dx < kKineticTermMaximumLengthRatio
-                                   ? gasDensity * area * meanSuperficialGasVelocity * meanSuperficialGasVelocity *
-                                         superficialVelocityGradient
-                                   : 0.;
+        const double leftCellLeftFaceSuperficialGasVelocity = left.VGasL / left.u1L;
+        const double superficialVelocityGradient =
+            (meanSuperficialGasVelocity - leftCellLeftFaceSuperficialGasVelocity) / dx;
 
-    const double gasMassSource = 0.;
-    const double liquidMassSource = 0.;
+        const double kineticTerm = state.input.nCompTotalUnidadesG / dx < kKineticTermMaximumLengthRatio
+                                       ? gasDensity * area * meanSuperficialGasVelocity * meanSuperficialGasVelocity *
+                                             superficialVelocityGradient
+                                       : 0.;
 
-    if (meanSuperficialGasVelocity > kMinimumMarchGasVelocity &&
-        (cell.duto.a / left.duto.a > kMinimumMarchDiameterRatio &&
-         left.duto.a / cell.duto.a > kMinimumMarchDiameterRatio)) {
+        const double gasMassSource = 0.;
+        const double liquidMassSource = 0.;
+
         const double workTerm = meanTemperatureGradient *
-                          (pressureMarchCoefficient * pressureGradient - kineticTerm - hydrostaticTerm +
-                           liquidMassSource + gasMassSource) /
-                          temperatureMarchCoefficient;
+                                (pressureMarchCoefficient * pressureGradient - kineticTerm - hydrostaticTerm +
+                                 liquidMassSource + gasMassSource) /
+                                temperatureMarchCoefficient;
         double heatTerm = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
         const double lengthOverResistance = meanCellLength / left.calor.resGlob;
         int stepCount;
         double stepLength;
         if (lengthOverResistance < kThermalSubstepLength) {
-            stepCount = 0;
+            stepCount = 1;
             stepLength = meanCellLength;
         } else {
             stepCount = static_cast<int>(2 * lengthOverResistance / kThermalSubstepLength + 1);
