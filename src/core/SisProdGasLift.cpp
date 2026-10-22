@@ -184,37 +184,36 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
 }
 
 double searchUnloadingInjectionPressure(const GasLiftState &state) {
-    double instantaneousMaximumFlowRate = 0;
-
-    if (state.input.descarga == 1) {
-        const double initialUnloadingPressure = state.cells[state.lastCell].pres;
-        const double simulationTime = state.globals->lixo5;
-        if (simulationTime > state.input.tempoLatenciaDesc) {
-            const UnloadingValve valve = selectUnloadingValve(state);
-            recordUnloadingSample(state, valve.flowRate);
-            instantaneousMaximumFlowRate = valve.flowRate;
-            const double controlledFlowRate =
-                kCurrentFlowWeight * valve.flowRate +
-                (1. - kCurrentFlowWeight) * state.accumulatedUnloadingVolume / state.unloadingAveragingInterval;
-            computeMaximumSeparatorPressure(state);
-            correctInjectionPressure(state, controlledFlowRate, valve.index);
-            if (state.gasValveCellIndices[valve.index] >= state.interfaceCell)
-                correctSeparatorPressure(state, controlledFlowRate, valve.index);
-        } else {
-            const double rampEnd = kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc;
-            if (simulationTime < rampEnd)
-                state.separatorPressure =
-                    initialUnloadingPressure - (initialUnloadingPressure - state.input.presMinDesc) *
-                                                   state.cells[0].dt / (rampEnd - simulationTime);
-            else
-                state.separatorPressure = state.input.presMinDesc;
-            state.injectionPressure = state.input.presIniDescG;
-        }
-    } else {
+    if (state.input.descarga != 1) {
         state.separatorPressure = std::max(state.separatorPressure * kRelaxationDownFactor, state.input.presMinDesc);
         relaxTowards(state.injectionPressure, state.input.presIniDesc);
+        return 0.;
     }
-    return instantaneousMaximumFlowRate;
+    const double simulationTime = state.globals->lixo5;
+    if (simulationTime > state.input.tempoLatenciaDesc) {
+        const UnloadingValve valve = selectUnloadingValve(state);
+        recordUnloadingSample(state, valve.flowRate);
+        const double controlledFlowRate = kCurrentFlowWeight * valve.flowRate + (1. - kCurrentFlowWeight) *
+                                                                                    state.accumulatedUnloadingVolume /
+                                                                                    state.unloadingAveragingInterval;
+        computeMaximumSeparatorPressure(state);
+        correctInjectionPressure(state, controlledFlowRate, valve.index);
+        if (state.gasValveCellIndices[valve.index] >= state.interfaceCell)
+            correctSeparatorPressure(state, controlledFlowRate, valve.index);
+        return valve.flowRate;
+    }
+    // Before the control starts, the separator pressure ramps down to the unloading's minimum, and the injection
+    // pressure holds its initial value.
+    const double rampEnd = kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc;
+    if (simulationTime < rampEnd) {
+        const double columnTopPressure = state.cells[state.lastCell].pres;
+        state.separatorPressure = columnTopPressure - (columnTopPressure - state.input.presMinDesc) *
+                                                          state.cells[0].dt / (rampEnd - simulationTime);
+    } else {
+        state.separatorPressure = state.input.presMinDesc;
+    }
+    state.injectionPressure = state.input.presIniDescG;
+    return 0.;
 }
 
 UnloadingValve selectUnloadingValve(const GasLiftState &state) {
