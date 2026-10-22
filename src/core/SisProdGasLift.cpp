@@ -234,18 +234,15 @@ UnloadingValve selectUnloadingValve(const GasLiftState &state) {
     const int valveCount = state.input.nvalvgas;
     for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
         const int gasValveCell = state.gasValveCellIndices[valveIndex];
-        const int productionValveCell = state.productionValveCellIndices[valveIndex];
-        if (gasValveCell > state.interfaceCell) {
-            const CelG &valveCell = state.gasCells[gasValveCell];
-            const double completionFluidDensity = valveCell.MasEspFlu(valveCell.pres, valveCell.temp);
-            const double massFlowRate = primeValveMassSource<kUnloadingThroughValve>(
-                state, valveIndex, valveCell, state.cells[productionValveCell]);
-            const double candidateFlowRate = massFlowRate / completionFluidDensity;
-            if (candidateFlowRate > selected.flowRate) {
-                selected.flowRate = candidateFlowRate;
-                selected.index = valveIndex;
-            }
-        }
+        if (gasValveCell <= state.interfaceCell)
+            continue;
+        const CelG &valveCell = state.gasCells[gasValveCell];
+        const double completionFluidDensity = valveCell.MasEspFlu(valveCell.pres, valveCell.temp);
+        const double massFlowRate = primeValveMassSource<kUnloadingThroughValve>(
+            state, valveIndex, valveCell, state.cells[state.productionValveCellIndices[valveIndex]]);
+        const double candidateFlowRate = massFlowRate / completionFluidDensity;
+        if (candidateFlowRate > selected.flowRate)
+            selected = {candidateFlowRate, valveIndex};
     }
     return selected;
 }
@@ -650,31 +647,33 @@ void updateMaster2Source(const GasLiftState &state) {
     const int master2CellIndex = state.input.master2.posic;
     CelG &upstreamCell = state.gasCells[master2CellIndex];
     CelG &downstreamCell = state.gasCells[master2CellIndex + 1];
+    ChokeGas &choke = upstreamCell.chkcell;
     const double master2FlowArea = std::min(upstreamCell.duto.area, upstreamCell.dutoR.area);
-    if (upstreamCell.chkcell.areagarg <= kMaster2ThrottlingAreaFraction * master2FlowArea &&
-        upstreamCell.chkcell.areagarg >= kMaster2ClosedAreaFraction * master2FlowArea) {
-        upstreamCell.chkcell.tempEstag = upstreamCell.temp;
-        const double upstreamGasDensity = upstreamCell.flui.MasEspGas(upstreamCell.pres, upstreamCell.temp);
-        const double downstreamGasDensity = downstreamCell.flui.MasEspGas(downstreamCell.pres, downstreamCell.temp);
-        const double upstreamHead = -0.5 * upstreamGasDensity * units::kStandardGravity * upstreamCell.dx0 *
-                              sin(upstreamCell.duto.teta) / units::kPascalPerKgfPerCm2;
-        const double downstreamHead = 0.5 * downstreamGasDensity * units::kStandardGravity * downstreamCell.dx0 *
-                                sin(downstreamCell.duto.teta) / units::kPascalPerKgfPerCm2;
-        upstreamCell.chkcell.presEstag = upstreamCell.pres + upstreamHead;
-        upstreamCell.chkcell.presGarg = downstreamCell.pres + downstreamHead;
-        if (downstreamCell.pres < upstreamCell.pres)
-            upstreamCell.fonteM2 = -upstreamCell.chkcell.massica();
-        else {
-            upstreamCell.chkcell.presEstag = downstreamCell.pres;
-            upstreamCell.chkcell.presGarg = upstreamCell.pres;
-            upstreamCell.chkcell.tempEstag = downstreamCell.temp;
-            upstreamCell.fonteM2 = upstreamCell.chkcell.massica();
-        }
-        downstreamCell.fonteM2 = -upstreamCell.fonteM2;
-    } else {
+    const bool throttling = choke.areagarg <= kMaster2ThrottlingAreaFraction * master2FlowArea &&
+                            choke.areagarg >= kMaster2ClosedAreaFraction * master2FlowArea;
+    if (!throttling) {
         upstreamCell.fonteM2 = 0.;
         downstreamCell.fonteM2 = 0.;
+        return;
     }
+    const double upstreamGasDensity = upstreamCell.flui.MasEspGas(upstreamCell.pres, upstreamCell.temp);
+    const double downstreamGasDensity = downstreamCell.flui.MasEspGas(downstreamCell.pres, downstreamCell.temp);
+    const double upstreamHead = -0.5 * upstreamGasDensity * units::kStandardGravity * upstreamCell.dx0 *
+                                sin(upstreamCell.duto.teta) / units::kPascalPerKgfPerCm2;
+    const double downstreamHead = 0.5 * downstreamGasDensity * units::kStandardGravity * downstreamCell.dx0 *
+                                  sin(downstreamCell.duto.teta) / units::kPascalPerKgfPerCm2;
+    if (downstreamCell.pres < upstreamCell.pres) {
+        choke.presEstag = upstreamCell.pres + upstreamHead;
+        choke.presGarg = downstreamCell.pres + downstreamHead;
+        choke.tempEstag = upstreamCell.temp;
+        upstreamCell.fonteM2 = -choke.massica();
+    } else {
+        choke.presEstag = downstreamCell.pres;
+        choke.presGarg = upstreamCell.pres;
+        choke.tempEstag = downstreamCell.temp;
+        upstreamCell.fonteM2 = choke.massica();
+    }
+    downstreamCell.fonteM2 = -upstreamCell.fonteM2;
 }
 
 void advanceGasSubStep(const GasLiftState &state) {
@@ -951,14 +950,16 @@ void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
 }
 
 void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
-    if (!state.thermalSourceDisabled) {
-        if (cellIndex < state.annulusCouplingStart || cellIndex > state.annulusCouplingEnd)
-            marchSteadyGasTemperature(state, cellIndex);
-        else
-            coupledSteadyGasTemperature(state, cellIndex);
-    } else {
-        state.gasCells[cellIndex].temp = state.gasCells[cellIndex].calor.Textern1;
+    if (state.thermalSourceDisabled) {
+        CelG &cell = state.gasCells[cellIndex];
+        cell.temp = cell.calor.Textern1;
+        return;
     }
+    const bool insideCoupling = cellIndex >= state.annulusCouplingStart && cellIndex <= state.annulusCouplingEnd;
+    if (insideCoupling)
+        coupledSteadyGasTemperature(state, cellIndex);
+    else
+        marchSteadyGasTemperature(state, cellIndex);
 }
 
 void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
@@ -1113,26 +1114,25 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
     const double casingTemperature = state.gasCells[0].calor.Textern1;
     for (int valveIndex = 0; valveIndex < valveCount; valveIndex++) {
         const int productionValveCell = state.productionValveCellIndices[valveIndex];
-        const int gasValveCell = state.gasValveCellIndices[valveIndex];
-        if (cellIndex == productionValveCell) {
-            Cel &productionCell = state.cells[productionValveCell];
-            const CelG &valveCell = state.gasCells[gasValveCell];
-            // This site reads the flag the other way round from the rest: "1 is the flow
-            // rate, anything else the pressure", where every other reads "0 is the
-            // pressure, anything else the flow rate". The readings differ only for a
-            // value outside {0, 1}, which the input does not reject.
-            withGasInletCondition(
-                state.gasCells[0].tipoCC == kGasInletInjectionFlowRate ? kGasInletInjectionFlowRate
-                                                                       : kGasInletInjectionPressure,
-                [&](auto condition) {
-                    setSteadyValveGasMassSource(state, valveIndex, valveCount, casingTemperature, condition);
-                });
-            productionCell.acsr.injg.QGas =
-                valveCell.massfonteCH * units::kSecondsPerDay /
-                valveCell.flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
-            productionCell.acsr.injg.temp = casingTemperature;
-            productionCell.fontemassGR = valveCell.massfonteCH;
-        }
+        if (cellIndex != productionValveCell)
+            continue;
+        Cel &productionCell = state.cells[productionValveCell];
+        const CelG &valveCell = state.gasCells[state.gasValveCellIndices[valveIndex]];
+        // This site reads the flag the other way round from the rest: "1 is the flow
+        // rate, anything else the pressure", where every other reads "0 is the
+        // pressure, anything else the flow rate". The readings differ only for a
+        // value outside {0, 1}, which the input does not reject.
+        withGasInletCondition(state.gasCells[0].tipoCC == kGasInletInjectionFlowRate ? kGasInletInjectionFlowRate
+                                                                                     : kGasInletInjectionPressure,
+                              [&](auto condition) {
+                                  setSteadyValveGasMassSource(state, valveIndex, valveCount, casingTemperature,
+                                                              condition);
+                              });
+        productionCell.acsr.injg.QGas =
+            valveCell.massfonteCH * units::kSecondsPerDay /
+            valveCell.flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
+        productionCell.acsr.injg.temp = casingTemperature;
+        productionCell.fontemassGR = valveCell.massfonteCH;
     }
 }
 
