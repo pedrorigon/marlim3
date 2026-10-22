@@ -213,11 +213,11 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
             if (state.gasValveCellIndices[valve.index] >= state.interfaceCell)
                 correctSeparatorPressure(state, controlledFlowRate, valve.index);
         } else {
-            if (simulationTime < kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc)
+            const double rampEnd = kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc;
+            if (simulationTime < rampEnd)
                 state.separatorPressure =
-                    initialUnloadingPressure -
-                    (initialUnloadingPressure - state.input.presMinDesc) * state.cells[0].dt /
-                        (kSeparatorRampLatencyFraction * state.input.tempoLatenciaDesc - simulationTime);
+                    initialUnloadingPressure - (initialUnloadingPressure - state.input.presMinDesc) *
+                                                   state.cells[0].dt / (rampEnd - simulationTime);
             else
                 state.separatorPressure = state.input.presMinDesc;
             state.injectionPressure = state.input.presIniDescG;
@@ -259,8 +259,9 @@ void recordUnloadingSample(const GasLiftState &state, double maximumFlowRate) {
         state.maximumUnloadingFlowSamples.erase(state.maximumUnloadingFlowSamples.begin());
     }
 
-    state.maximumUnloadingFlowSamples.push_back(maximumFlowRate * state.timeStep);
-    state.accumulatedUnloadingVolume += maximumFlowRate * state.timeStep;
+    const double sample = maximumFlowRate * state.timeStep;
+    state.maximumUnloadingFlowSamples.push_back(sample);
+    state.accumulatedUnloadingVolume += sample;
     state.unloadingTimeStepSamples.push_back(state.timeStep);
     state.unloadingAveragingInterval += state.timeStep;
 }
@@ -589,8 +590,9 @@ void relaxTowards(double &pressure, double target) {
 }
 
 double limitedCorrection(double correction, double pressure, double timeStep) {
-    if (fabs(correction) > kMaximumUnloadingCorrectionPerSecond * pressure * timeStep)
-        return (fabs(correction) / correction) * kMaximumUnloadingCorrectionPerSecond * pressure * timeStep;
+    const double limit = kMaximumUnloadingCorrectionPerSecond * pressure * timeStep;
+    if (fabs(correction) > limit)
+        return (fabs(correction) / correction) * limit;
     return correction;
 }
 
@@ -1007,13 +1009,14 @@ void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
                            liquidMassSource + gasMassSource) /
                           temperatureMarchCoefficient;
         double heatTerm = meanTemperatureGradient * (leftCellHeatFlux + tubingHeatFlux) / temperatureMarchCoefficient;
+        const double lengthOverResistance = meanCellLength / left.calor.resGlob;
         int stepCount;
         double stepLength;
-        if (meanCellLength / left.calor.resGlob < kThermalSubstepLength) {
+        if (lengthOverResistance < kThermalSubstepLength) {
             stepCount = 0;
             stepLength = meanCellLength;
         } else {
-            stepCount = static_cast<int>(2 * (meanCellLength / left.calor.resGlob) / kThermalSubstepLength + 1);
+            stepCount = static_cast<int>(2 * lengthOverResistance / kThermalSubstepLength + 1);
             stepLength = meanCellLength / stepCount;
         }
         double stepTemperature = stepLength * (left.temp / stepLength + workTerm + heatTerm);
