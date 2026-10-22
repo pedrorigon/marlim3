@@ -121,9 +121,9 @@ probe 'resolveDescarga: interface split' \
 # SC-012 moved the throttling test into injectionChokeOpening, the overload for
 # an injection-pressure inlet, so the anchor follows it there. Same mutation.
 probe 'subtempoGasBuf: choke opening bound' \
-    '    double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+    '    const double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
     if (chokeOpeningFraction < kThrottlingChokeOpening) {' \
-    '    double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
+    '    const double chokeOpeningFraction = state.injectionChoke.areagarg / state.gasCells[0].duto.area;
     if (chokeOpeningFraction < 0.3 * kThrottlingChokeOpening / 0.2) {' \
     "$target_gaslift"
 
