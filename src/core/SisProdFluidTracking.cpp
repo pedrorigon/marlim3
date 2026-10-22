@@ -1,4 +1,4 @@
-#include "SisProdComposition.h"
+#include "SisProdFluidTracking.h"
 
 #include "Leitura.h"
 #include "SisProdConstants.h"
@@ -8,7 +8,7 @@
 
 #include <math.h>
 
-namespace sisprod::composition {
+namespace sisprod::fluidtracking {
 
 namespace {
 
@@ -111,7 +111,7 @@ struct BlackOilBalance {
 /// and, with more than one production fluid or in a network, its BSW, water
 /// density and dead-oil viscosities, each transported from the faces and the
 /// source.
-void transportBlackOilBalances(const CompositionState &state, const BlackOilFace &left, const BlackOilFace &right, const BlackOilCell &cell, const BlackOilSource &source, BlackOilBalance &balance, double dx, double flowArea, int i, Vcr<double> &rgo, Vcr<double> &dg, Vcr<double> &yco2, Vcr<double> &API, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, double dt) {
+void transportBlackOilBalances(const FluidTrackingState &state, const BlackOilFace &left, const BlackOilFace &right, const BlackOilCell &cell, const BlackOilSource &source, BlackOilBalance &balance, double dx, double flowArea, int i, Vcr<double> &rgo, Vcr<double> &dg, Vcr<double> &yco2, Vcr<double> &API, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, double dt) {
     if (state.input.nfluP > 1 || (*state.globals).chaverede != 0) {
         balance.MultPe = 0.;
         if (state.cells[i].flui.dStockTankVaporMassFraction < 1. - 1e-15)
@@ -187,7 +187,7 @@ void transportBlackOilBalances(const CompositionState &state, const BlackOilFace
 }
 
 /// No accessory, but mass coming in: the source is the cell's own fluid.
-void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &source, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourceCellFluid(const FluidTrackingState &state, BlackOilSource &source, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i].acsr.tipo == kAccessoryChoke || state.cells[i].acsr.tipo == kAccessoryVolumetricPump) {
         source.dgO = state.cells[i].flui.Deng;
         source.yco2O = state.cells[i].flui.yco2;
@@ -273,7 +273,7 @@ void blackOilSourceCellFluid(const CompositionState &state, BlackOilSource &sour
 }
 
 /// A 2D porous-medium source (accessory 16): its transfer fluid.
-void blackOilSourcePorous2D(const CompositionState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourcePorous2D(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if ((state.cells[i].fontemassLR + state.cells[i].fontemassGR) > 1e-15)
         fluF = state.cells[i].acsr.radialPoro.flup;
     else
@@ -315,7 +315,7 @@ void blackOilSourcePorous2D(const CompositionState &state, BlackOilSource &sourc
 }
 
 /// A radial porous-medium source (accessory 15): its fluid.
-void blackOilSourceRadialPorous(const CompositionState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourceRadialPorous(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if ((state.cells[i].fontemassLR + state.cells[i].fontemassGR) > 1e-15)
         fluF = state.cells[i].acsr.radialPoro.flup;
     else
@@ -358,7 +358,7 @@ void blackOilSourceRadialPorous(const CompositionState &state, BlackOilSource &s
 
 /// A leak to or from the annulus (accessory 9): the fluid of the side at the
 /// higher pressure. The block declares its own fluF, shadowing the step's.
-void blackOilSourceLeak(const CompositionState &state, BlackOilSource &source, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourceLeak(const FluidTrackingState &state, BlackOilSource &source, int i, double temperatureHigh, double temperatureLow) {
     ProFlu fluF;
     if (state.cells[i].acsr.fontechk.presT > state.cells[i].acsr.fontechk.pamb) {
         fluF = state.cells[i].acsr.fontechk.fluidoP;
@@ -408,7 +408,7 @@ void blackOilSourceLeak(const CompositionState &state, BlackOilSource &source, i
 }
 
 /// A reservoir inflow (accessory 3): the IPR's fluid.
-void blackOilSourceInflowPerformance(const CompositionState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourceInflowPerformance(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if ((state.cells[i].acsr.ipr.Pres) > state.cells[i].pres)
         fluF = state.cells[i].acsr.ipr.FluidoPro;
     else
@@ -450,7 +450,7 @@ void blackOilSourceInflowPerformance(const CompositionState &state, BlackOilSour
 }
 
 /// A multiple source (accessory 10): its fluid.
-void blackOilSourceMultipleSource(const CompositionState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourceMultipleSource(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if ((state.cells[i].acsr.injm.MassC + state.cells[i].acsr.injm.MassG + state.cells[i].acsr.injm.MassP) > 0.)
         fluF = state.cells[i].acsr.injm.FluidoPro;
     else
@@ -499,7 +499,7 @@ void blackOilSourceMultipleSource(const CompositionState &state, BlackOilSource 
 }
 
 /// A liquid injection (accessory 2): the injected fluid.
-void blackOilSourceLiquidInjection(const CompositionState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourceLiquidInjection(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i].acsr.injl.QLiq > 0.)
         fluF = state.cells[i].acsr.injl.FluidoPro;
     else
@@ -546,7 +546,7 @@ void blackOilSourceLiquidInjection(const CompositionState &state, BlackOilSource
 
 /// A gas injection that carries liquid (accessory 1, not dry): the injected
 /// fluid, or the cell's when the injection is idle.
-void blackOilSourceWetGasInjection(const CompositionState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
+void blackOilSourceWetGasInjection(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i].acsr.injg.QGas > 0.)
         fluF = state.cells[i].acsr.injg.FluidoPro;
     else
@@ -593,7 +593,7 @@ void blackOilSourceWetGasInjection(const CompositionState &state, BlackOilSource
 
 /// The gas at cell i's left face, from the side it flows from: the upstream cell
 /// or the inlet when it flows in, cell i itself otherwise.
-void upwindLeftFaceGasProperties(const CompositionState &state, BlackOilFace &left, int i) {
+void upwindLeftFaceGasProperties(const FluidTrackingState &state, BlackOilFace &left, int i) {
     if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].QG > 0) {
         if (i > 0) {
         } else {
@@ -611,7 +611,7 @@ void upwindLeftFaceGasProperties(const CompositionState &state, BlackOilFace &le
 }
 
 /// The liquid at cell i's right face when it flows back from cell i+1.
-void upwindRightFaceLiquidProperties(const CompositionState &state, BlackOilFace &right, int i, double temperatureHigh, double temperatureLow) {
+void upwindRightFaceLiquidProperties(const FluidTrackingState &state, BlackOilFace &right, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i + 1].QL < 0.) {
         right.betI = state.cells[i + 1].betPigE;
         right.rgo = state.cells[i + 1].flui.RGO;
@@ -635,7 +635,7 @@ void upwindRightFaceLiquidProperties(const CompositionState &state, BlackOilFace
 /// The liquid's black-oil properties at cell i's left face, from the side it flows
 /// from: the upstream cell or the inlet when it flows in, cell i itself when it
 /// flows back.
-void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &left, int i, double temperatureHigh, double temperatureLow) {
+void upwindLeftFaceBlackOilLiquid(const FluidTrackingState &state, BlackOilFace &left, int i, double temperatureHigh, double temperatureLow) {
     if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].QL >= 0.) {
         double upstreamPressure;
         double upstreamTemperature;
@@ -688,7 +688,7 @@ void upwindLeftFaceBlackOilLiquid(const CompositionState &state, BlackOilFace &l
 /// One cell's step of the black-oil property transport: the face properties, the
 /// source by accessory, and the transported gas-oil ratio, gas density, CO2
 /// fraction, API, BSW, water density and dead-oil viscosities.
-void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<double> &rgo, Vcr<double> &dg, Vcr<double> &yco2, Vcr<double> &API, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, double temperatureHigh, double temperatureLow, double dt) {
+void transportCellBlackOilProperties(const FluidTrackingState &state, int i, Vcr<double> &rgo, Vcr<double> &dg, Vcr<double> &yco2, Vcr<double> &API, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, double temperatureHigh, double temperatureLow, double dt) {
     BlackOilBalance balance;
     double flowArea = state.cells[i].duto.area;
     double dx = state.cells[i].dx;
@@ -863,7 +863,7 @@ void transportCellBlackOilProperties(const CompositionState &state, int i, Vcr<d
 
 }  // namespace
 
-void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev) {
+void transportBlackOilProperties(const FluidTrackingState &state, ProFlu fluiRev) {
     Vcr<double> rgo(state.lastCell);
     Vcr<double> dg(state.lastCell);
     Vcr<double> yco2(state.lastCell);
@@ -1088,7 +1088,7 @@ void normalizePhaseFractions(vector<double>& fracMolFase, double* fracMolOrigina
 /// The stock-tank volume balances of cell i, and from them the transported BSW,
 /// water density and dead-oil viscosities, when there is more than one production
 /// fluid or the line is part of a network.
-void transportPhaseVolumesAndViscosities(const CompositionState &state, const PhaseFace &left, const PhaseFace &right, const PhaseCell &cell, const PhaseSource &source, PhaseBalance &balance, double dx, double flowArea, int i, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, double dt) {
+void transportPhaseVolumesAndViscosities(const FluidTrackingState &state, const PhaseFace &left, const PhaseFace &right, const PhaseCell &cell, const PhaseSource &source, PhaseBalance &balance, double dx, double flowArea, int i, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, double dt) {
     if ((*state.globals).lixo5 < 1e-15 && state.input.snaps != 1) {
         state.cells[i].VolPesaST = balance.volpesFim;
         state.cells[i].VolAguaST = balance.volaguaFim;
@@ -1147,7 +1147,7 @@ void transportPhaseVolumesAndViscosities(const CompositionState &state, const Ph
 /// rates of dead oil and water, and takes the source fluid's BSW, water density and
 /// dead-oil viscosities; with no accessory and dissolved gas coming in, the same
 /// from the cell's own fluid.
-void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
+void phaseSourceStandardRatesByAccessory(const FluidTrackingState &state, PhaseSource &source, ProFlu &fluF, int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
         double solutionGasRatioSource = state.cells[i].acsr.injl.FluidoPro.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
         if (state.input.nfluP > 0 || (*state.globals).chaverede != 0) {
@@ -1344,7 +1344,7 @@ void phaseSourceStandardRatesByAccessory(const CompositionState &state, PhaseSou
 
 /// The phase molar fractions of cell i from the liquid and vapour mole balances,
 /// corrected limCorrige times, and the cell's fluid refreshed from them.
-void solveCellPhaseMolarFractions(const CompositionState &state, const PhaseFace &left, const PhaseFace &right, PhaseCell &cell, PhaseTransported &transported, const PhaseSource &source, int limCorrige, ProFlu &fluF, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, double dt, ProFlu *fluC, int ncomp) {
+void solveCellPhaseMolarFractions(const FluidTrackingState &state, const PhaseFace &left, const PhaseFace &right, PhaseCell &cell, PhaseTransported &transported, const PhaseSource &source, int limCorrige, ProFlu &fluF, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, double dt, ProFlu *fluC, int ncomp) {
     for (int corrige = 0; corrige < limCorrige; corrige++) {
 
         transported.betIV = state.cells[i].bet;
@@ -1402,7 +1402,7 @@ void solveCellPhaseMolarFractions(const CompositionState &state, const PhaseFace
 /// accessory's own fluid, flashed at the cell's pressure and temperature, or the
 /// cell's when the source is idle, with its water cut, volume factors, densities
 /// and quality.
-void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, ProFlu &fluF, int i) {
+void readPhaseSourceFluid(const FluidTrackingState &state, PhaseSource &source, ProFlu &fluF, int i) {
     if (state.cells[i].acsr.tipo == kAccessoryGasInjection) {
         if (state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta < 0. || state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta > 1.)
             state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
@@ -1536,7 +1536,7 @@ void readPhaseSourceFluid(const CompositionState &state, PhaseSource &source, Pr
 /// The vapour molar fractions and masses at cell i's two faces, each normalised
 /// from the side the gas comes from, and the mixture's from the side the mixture
 /// comes from.
-void upwindVapourAndMixtureFractions(const CompositionState &state, PhaseFace &left, PhaseFace &right, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, Vcr<double> &fracMol0G, Vcr<double> &fracMol1G, int ncomp) {
+void upwindVapourAndMixtureFractions(const FluidTrackingState &state, PhaseFace &left, PhaseFace &right, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, Vcr<double> &fracMol0G, Vcr<double> &fracMol1G, int ncomp) {
     if ((i > 0 || state.input.ConContEntrada == 1) && (state.cells[i].MC - state.cells[i].Mliqini) >= 0.) {
         double upstreamPressure;
         double upstreamTemperature;
@@ -1643,7 +1643,7 @@ void upwindVapourAndMixtureFractions(const CompositionState &state, PhaseFace &l
 
 /// The liquid molar fractions and masses at cell i's two faces, each normalised
 /// from the side the liquid comes from, with the liquid's mass rates.
-void upwindLiquidFractions(const CompositionState &state, PhaseFace &left, PhaseFace &right, int i, Vcr<double> &fracMol0O, Vcr<double> &fracMol1O, int ncomp) {
+void upwindLiquidFractions(const FluidTrackingState &state, PhaseFace &left, PhaseFace &right, int i, Vcr<double> &fracMol0O, Vcr<double> &fracMol1O, int ncomp) {
     if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].Mliqini >= 0.) {
         double upstreamPressure;
         double upstreamTemperature;
@@ -1748,7 +1748,7 @@ void upwindLiquidFractions(const CompositionState &state, PhaseFace &left, Phase
 /// The liquid's properties at cell i's left face, water density included, from the
 /// side the liquid comes from: the upstream cell or the inlet when it flows in,
 /// cell i itself when it flows back.
-void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFace &left, int i, double temperatureHigh, double temperatureLow) {
+void upwindLeftFacePhaseLiquidProperties(const FluidTrackingState &state, PhaseFace &left, int i, double temperatureHigh, double temperatureLow) {
     if ((i > 0 || state.input.ConContEntrada == 1) && state.cells[i].QL >= 0.) {
         double upstreamPressure;
         double upstreamTemperature;
@@ -1787,7 +1787,7 @@ void upwindLeftFacePhaseLiquidProperties(const CompositionState &state, PhaseFac
 /// One cell's step of the phase molar-fraction transport: the face properties,
 /// the upwinded phase fractions, the source, the cell's balance and the transported
 /// BSW, water density and viscosities.
-void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, Vcr<double> &fracMol0, Vcr<double> &fracMol1, Vcr<double> &fracMol0O, Vcr<double> &fracMol1O, Vcr<double> &fracMol0G, Vcr<double> &fracMol1G, double temperatureHigh, double temperatureLow, double dt, ProFlu *fluC, int ncomp) {
+void transportCellPhaseMolarFractions(const FluidTrackingState &state, int i, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, Vcr<double> &fracMol0, Vcr<double> &fracMol1, Vcr<double> &fracMol0O, Vcr<double> &fracMol1O, Vcr<double> &fracMol0G, Vcr<double> &fracMol1G, double temperatureHigh, double temperatureLow, double dt, ProFlu *fluC, int ncomp) {
 
     PhaseFace left;
     PhaseFace right;
@@ -1938,7 +1938,7 @@ void transportCellPhaseMolarFractions(const CompositionState &state, int i, Vcr<
 
 }  // namespace
 
-void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev) {
+void transportPhaseMolarFractions(const FluidTrackingState &state, ProFlu fluiRev) {
     Vcr<double> BSW(state.lastCell);
     Vcr<double> denag(state.lastCell);
     Vcr<double> VISCL(state.lastCell);
@@ -2008,4 +2008,4 @@ transportCellPhaseMolarFractions(state, i, BSW, denag, VISCL, VISCH, fracMol0, f
     if(state.input.miniTabAtraso > 0)(*state.globals).modoTransiente = 1;
 }
 
-}  // namespace sisprod::composition
+}  // namespace sisprod::fluidtracking

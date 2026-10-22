@@ -45,7 +45,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MODULES = ["DriftFluxClosure", "RootFindingSolvers", "SisProdThermal", "SisProdGasLift",
            "SisProdSteadyState", "SisProdSteadyStateSearch", "SisProdTrendOutput",
-           "SisProdComposition", "SisProdTransient"]
+           "SisProdFluidTracking", "SisProdTransient"]
 HEADERS = MODULES + ["SisProdConstants"]
 
 # glossary concept -> spellings that would be a second name for it

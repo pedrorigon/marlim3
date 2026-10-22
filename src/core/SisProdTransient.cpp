@@ -2219,7 +2219,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     totbet /= state.step.lastCell;
     storePreviousFractionsAndMovePigs(state.step);
     if ((state.trackGasOilRatio > 0 || state.trackGasGravity > 0) && state.step.input.flashCompleto != 2)
-        state.updaters.updateGasOilRatioAndCo2(fluiRev);
+        state.updaters.updateBlackOilProperties(fluiRev);
     if (state.step.input.flashCompleto == 2) {
         state.updaters.updateMolarFractions(fluiRev);
         state.compositionalRefreshCounter++;

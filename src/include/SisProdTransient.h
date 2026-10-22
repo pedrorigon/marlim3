@@ -357,7 +357,7 @@ struct TransientSolveUpdaters {
     void connectTubing() const;
     void marchTransientEnergy(int ciclo, int ciclomax) const;
     void updateMolarFractions(const ProFlu *fluiRev) const;
-    void updateGasOilRatioAndCo2(const ProFlu *fluiRev) const;
+    void updateBlackOilProperties(const ProFlu *fluiRev) const;
     void updateTemperatures() const;
     void updateThermal(int aflu = 0) const;
     void solveGasLine() const;

@@ -90,7 +90,7 @@ CALLBACKS = {
     "marchaEnergTrans": "state.updaters.marchTransientEnergy",
     "renovaFracMol2": "state.updaters.updateMolarFractions",
     "renovaMasEsp": "state.updaters.updateDensities",
-    "renovaRGOdgYco2": "state.updaters.updateGasOilRatioAndCo2",
+    "renovaRGOdgYco2": "state.updaters.updateBlackOilProperties",
     "renovaTemp": "state.updaters.updateTemperatures",
     "renovaalbetini": "state.updaters.updateInitialFractions",
     "renovaterm": "state.updaters.updateThermal",

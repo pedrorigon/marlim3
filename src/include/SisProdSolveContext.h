@@ -2,7 +2,7 @@
 #define SISPRODSOLVECONTEXT_H_
 
 #include "DriftFluxClosure.h"
-#include "SisProdComposition.h"
+#include "SisProdFluidTracking.h"
 #include "SisProdGasLift.h"
 #include "SisProdSources.h"
 #include "SisProdSteadyState.h"
@@ -35,7 +35,7 @@ class SolveContext {
     const sisprod::steady::SteadyStateState &steady() const { return steady_; }
     const sisprod::steady::SteadyStateSearchState &search() const { return search_; }
     const sisprod::transient::TransientStepState &transientStep() const { return transientStep_; }
-    const sisprod::composition::CompositionState &composition() const { return composition_; }
+    const sisprod::fluidtracking::FluidTrackingState &fluidTracking() const { return fluidTracking_; }
     const sisprod::transient::TransientSolveState &transientSolve() const { return transientSolve_; }
     const driftflux::coefficient::ClosureState &closure() const { return closure_; }
     const sisprod::sources::SourceState &sources() const { return sources_; }
@@ -48,7 +48,7 @@ class SolveContext {
     sisprod::steady::SteadyStateState steady_;
     sisprod::steady::SteadyStateSearchState search_;
     sisprod::transient::TransientStepState transientStep_;
-    sisprod::composition::CompositionState composition_;
+    sisprod::fluidtracking::FluidTrackingState fluidTracking_;
     sisprod::transient::TransientSolveState transientSolve_;
     driftflux::coefficient::ClosureState closure_;
     sisprod::sources::SourceState sources_;

@@ -311,8 +311,9 @@ montasistema
 # return type. SProd is declared above since stage 1 and covers both overloads.
 
 # --- stage 9: composition moves (T102d) -----------------------------------
-# Moved to SisProdComposition.cpp as free functions over CompositionState; the
-# SProd members read through `state.` fields, corrDeng through an updater. Each
+# The two property transports live in SisProdFluidTracking.cpp over FluidTrackingState;
+# the three step routines live in SisProdTransient.cpp over TransientStepState.
+# SProd members are read through `state.` fields, corrDeng through an updater. Each
 # proved token for token by composition-move.py `check`, which applies the
 # inverse substitution and compares with the pre-move commit -- calibrated
 # against a changed literal and a field swapped for another.

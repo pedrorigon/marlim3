@@ -10,8 +10,8 @@ transient-move.py, which owns and calibrates it; only what names the stage is
 here.
 
 The member map is DERIVED, not written: it is read from the `T &field; //
-member` lines of SisProdComposition.h, whose seventeen fields were themselves
-derived from measure-members.py. So is the adapter (`adapter` mode prints it),
+member` lines of SisProdFluidTracking.h. The original field map was derived
+from measure-members.py. So is the adapter (`adapter` mode prints it),
 in the header's declaration order, which C++20 designated initialisers
 require. Table, header and adapter cannot drift apart.
 
@@ -30,10 +30,10 @@ import re
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
-HEADER = HERE.parent / "src/include/SisProdComposition.h"
-STATE = "CompositionState"
-NAMESPACE = "sisprod::composition"
-ADAPTER = "compositionStateOf"
+HEADER = HERE.parent / "src/include/SisProdFluidTracking.h"
+STATE = "FluidTrackingState"
+NAMESPACE = "sisprod::fluidtracking"
+ADAPTER = "fluidTrackingStateOf"
 
 _spec = importlib.util.spec_from_file_location("transient_move", HERE / "transient-move.py")
 tm = importlib.util.module_from_spec(_spec)

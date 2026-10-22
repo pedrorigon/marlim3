@@ -44,7 +44,7 @@ namespace trendoutput { struct TrendState; }
 namespace sisprod {
 
 class SolveContext;
-namespace composition { struct CompositionState; struct CompositionUpdaters; }
+namespace fluidtracking { struct FluidTrackingState; struct FluidTrackingUpdaters; }
 namespace gaslift { struct GasLiftState; struct GasLiftTemperatureUpdater; }
 namespace sources { struct SourceState; }
 namespace steady { struct SteadyStateSearchState; struct SteadyStateState; struct SteadyStateUpdaters; }
@@ -61,7 +61,7 @@ gaslift::GasLiftState gasLiftStateOf(SProd &system, SolveContext &context);
 steady::SteadyStateState steadyStateOf(SProd &system, SolveContext &context);
 steady::SteadyStateSearchState searchStateOf(SProd &system, SolveContext &context);
 transient::TransientStepState transientStateOf(SProd &system, SolveContext &context);
-composition::CompositionState compositionStateOf(SProd &system, SolveContext &context);
+fluidtracking::FluidTrackingState fluidTrackingStateOf(SProd &system, SolveContext &context);
 transient::TransientSolveState transientSolveStateOf(SProd &system, SolveContext &context);
 thermal::ThermalState thermalStateOf(SProd &system, SolveContext &context);
 sources::SourceState sourceStateOf(SProd &system);
@@ -566,8 +566,8 @@ class SProd {
     friend sisprod::steady::SteadyStateState sisprod::adapters::steadyStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::steady::SteadyStateSearchState sisprod::adapters::searchStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::transient::TransientStepState sisprod::adapters::transientStateOf(SProd &, sisprod::SolveContext &);
-    friend sisprod::composition::CompositionState
-    sisprod::adapters::compositionStateOf(SProd &, sisprod::SolveContext &);
+    friend sisprod::fluidtracking::FluidTrackingState
+    sisprod::adapters::fluidTrackingStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::transient::TransientSolveState
     sisprod::adapters::transientSolveStateOf(SProd &, sisprod::SolveContext &);
     friend sisprod::thermal::ThermalState sisprod::adapters::thermalStateOf(SProd &, sisprod::SolveContext &);
@@ -580,7 +580,7 @@ class SProd {
     friend struct sisprod::gaslift::GasLiftTemperatureUpdater;
     friend struct sisprod::thermal::ThermalClosureUpdater;
     friend struct sisprod::thermal::ThermalSourceUpdater;
-    friend struct sisprod::composition::CompositionUpdaters;
+    friend struct sisprod::fluidtracking::FluidTrackingUpdaters;
 
   public:
     /// What a system built from an already parsed input takes from the system that

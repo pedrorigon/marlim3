@@ -3,7 +3,7 @@
 /// and the callbacks through which a module reaches another module's code with them.
 #include "SisProd.h"
 #include "SisProdSolveContext.h"
-#include "SisProdComposition.h"
+#include "SisProdFluidTracking.h"
 #include "SisProdGasLift.h"
 #include "SisProdSources.h"
 #include "SisProdSteadyState.h"
@@ -128,7 +128,7 @@ void sisprod::transient::TransientStepUpdaters::advanceGasSubStep() const {
     sisprod::gaslift::advanceGasSubStep(context.gasLift());
 }
 
-void sisprod::composition::CompositionUpdaters::correctGasSpecificGravity(int i) const {
+void sisprod::fluidtracking::FluidTrackingUpdaters::correctGasSpecificGravity(int i) const {
     sisprod::steady::correctGasSpecificGravity(context.steady(), i);
 }
 
@@ -179,10 +179,10 @@ void sisprod::transient::TransientSolveUpdaters::marchTransientEnergy(int ciclo,
     sisprod::thermal::advanceTransientEnergy(context.thermal(), ciclo, ciclomax);
 }
 void sisprod::transient::TransientSolveUpdaters::updateMolarFractions(const ProFlu *fluiRev) const {
-    sisprod::composition::transportPhaseMolarFractions(context.composition(), reverseFlowFluid(fluiRev));
+    sisprod::fluidtracking::transportPhaseMolarFractions(context.fluidTracking(), reverseFlowFluid(fluiRev));
 }
-void sisprod::transient::TransientSolveUpdaters::updateGasOilRatioAndCo2(const ProFlu *fluiRev) const {
-    sisprod::composition::transportBlackOilProperties(context.composition(), reverseFlowFluid(fluiRev));
+void sisprod::transient::TransientSolveUpdaters::updateBlackOilProperties(const ProFlu *fluiRev) const {
+    sisprod::fluidtracking::transportBlackOilProperties(context.fluidTracking(), reverseFlowFluid(fluiRev));
 }
 void sisprod::transient::TransientSolveUpdaters::updateTemperatures() const {
     sisprod::thermal::updateDistributedMassTransfer(context.thermal());
@@ -380,9 +380,9 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
     };
 }
 
-/// The composition module's view of SProd: eleven members by reference.
-sisprod::composition::CompositionState compositionStateOf(SProd &system, SolveContext &context) {
-    return sisprod::composition::CompositionState{
+/// The fluid tracking module's view of SProd: eleven members by reference.
+sisprod::fluidtracking::FluidTrackingState fluidTrackingStateOf(SProd &system, SolveContext &context) {
+    return sisprod::fluidtracking::FluidTrackingState{
         .cells = system.celula,
         .lastCell = system.ncel,
         .input = system.arq,
@@ -587,7 +587,7 @@ SolveContext::SolveContext(SProd &system)
       steady_(adapters::steadyStateOf(system, *this)),
       search_(adapters::searchStateOf(system, *this)),
       transientStep_(adapters::transientStateOf(system, *this)),
-      composition_(adapters::compositionStateOf(system, *this)),
+      fluidTracking_(adapters::fluidTrackingStateOf(system, *this)),
       transientSolve_(adapters::transientSolveStateOf(system, *this)),
       closure_(adapters::closureStateOf(system)),
       sources_(adapters::sourceStateOf(system)),
