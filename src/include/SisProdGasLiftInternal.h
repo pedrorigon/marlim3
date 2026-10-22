@@ -127,6 +127,11 @@ void solveUnloading(const GasLiftState &state);
 /// it is handed over and the unloading ends (interfaceCell becomes kNoInterfaceCell, input.descarga 0).
 void advanceInterface(const GasLiftState &state);
 
+/// Hands the interface over to the end of the gas line, once it is far enough into the last cell but one: that cell
+/// and the last one take the gas density, their faces the values that go with it, both ratios 1, and the unloading
+/// ends (interfaceCell becomes kNoInterfaceCell, input.descarga 0).
+void handOverInterface(const GasLiftState &state);
+
 /// The pressure the unloading hydrostatics start the gas line from: the unloading's own initial pressure when the
 /// unloading is controlled; the configured injection pressure when it is not and the gas inlet is under a pressure
 /// condition; kDefaultUnloadingStartPressure otherwise.

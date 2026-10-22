@@ -438,80 +438,78 @@ void solveUnloading(const GasLiftState &state) {
 }
 
 void advanceInterface(const GasLiftState &state) {
+    CelG &cell = state.gasCells[state.interfaceCell];
+    cell.razInter = (cell.razInterIni * cell.dx0 + state.interfaceVelocity * state.timeStep) / cell.dx0;
+    if (state.interfaceCell == (state.lastGasCell - 1) && cell.razInter >= kInterfaceHandoverRatio) {
+        handOverInterface(state);
+        return;
+    }
+    if (state.input.descarga != 1)
+        return;
+
+    // The ratio snaps to the face it reached; when it crossed the face during the step, the interface time step is
+    // shortened to the crossing.
+    const double tiny = state.globals->localtiny;
+    if (cell.razInter < -tiny) {
+        const double interfaceCrossingTimeStep = -cell.razInterIni * cell.dx0 / state.interfaceVelocity;
+        if (interfaceCrossingTimeStep > tiny)
+            state.interfaceTimeStep = interfaceCrossingTimeStep;
+        cell.razInter = 0.;
+    } else if (cell.razInter <= tiny) {
+        cell.razInter = 0.;
+    } else if (cell.razInter > 1. + tiny) {
+        const double interfaceCrossingTimeStep = (1. - cell.razInterIni) * cell.dx0 / state.interfaceVelocity;
+        if (interfaceCrossingTimeStep > tiny)
+            state.interfaceTimeStep = interfaceCrossingTimeStep;
+        cell.razInter = 1.;
+    } else if (cell.razInter >= 1. - tiny) {
+        cell.razInter = 1.;
+    }
+
+    if (fabs(cell.razInter) < tiny && state.interfaceVelocity < -fabs(tiny)) {
+        cell.razInter = 0.;
+        if (state.interfaceCell > 0) {
+            state.interfaceCell--;
+            state.gasCells[state.interfaceCell].razInter = 1.;
+        }
+    } else if (fabs(cell.razInter - 1.) < tiny && state.interfaceVelocity > tiny) {
+        cell.razInter = 1.;
+        if (state.interfaceCell < state.lastGasCell) {
+            state.interfaceCell++;
+            state.gasCells[state.interfaceCell].razInter = 0.;
+        }
+    }
+}
+
+void handOverInterface(const GasLiftState &state) {
     CelG &interfaceGasCell = state.gasCells[state.interfaceCell];
-    interfaceGasCell.razInter =
-        (interfaceGasCell.razInterIni * interfaceGasCell.dx0 + state.interfaceVelocity * state.timeStep) /
-        interfaceGasCell.dx0;
-    if (state.interfaceCell == (state.lastGasCell - 1) && interfaceGasCell.razInter >= kInterfaceHandoverRatio) {
-        CelG &leftGasCell = state.gasCells[state.interfaceCell - 1];
-        CelG &rightGasCell = state.gasCells[state.interfaceCell + 1];
-        double meanPressure = interfaceGasCell.pres;
-        double meanTemperature = interfaceGasCell.temp;
-        double interfaceFlowArea = interfaceGasCell.duto.area;
-        double gasDensity = interfaceGasCell.flui.MasEspGas(meanPressure, meanTemperature);
-        double liquidDensity = interfaceGasCell.MasEspFlu(meanPressure, meanTemperature);
-        interfaceGasCell.VGasR = interfaceGasCell.VGasR * gasDensity / liquidDensity;
-        interfaceGasCell.u1L = interfaceFlowArea * gasDensity;
-        leftGasCell.u1R = interfaceGasCell.u1L;
-        leftGasCell.VGasRR = interfaceGasCell.VGasR;
-        rightGasCell.u1LL = interfaceGasCell.u1L;
-        rightGasCell.VGasL = interfaceGasCell.VGasR;
+    CelG &leftGasCell = state.gasCells[state.interfaceCell - 1];
+    // The interface cell is the last but one: its right neighbour is the end of the gas line.
+    CelG &rightGasCell = state.gasCells[state.interfaceCell + 1];
 
-        interfaceGasCell.razInter = 1.0;
-        rightGasCell.razInter = 1.0;
+    const double interfaceGasDensity = interfaceGasCell.flui.MasEspGas(interfaceGasCell.pres, interfaceGasCell.temp);
+    const double interfaceLiquidDensity = interfaceGasCell.MasEspFlu(interfaceGasCell.pres, interfaceGasCell.temp);
+    interfaceGasCell.VGasR = interfaceGasCell.VGasR * interfaceGasDensity / interfaceLiquidDensity;
+    interfaceGasCell.u1L = interfaceGasCell.duto.area * interfaceGasDensity;
+    leftGasCell.u1R = interfaceGasCell.u1L;
+    leftGasCell.VGasRR = interfaceGasCell.VGasR;
+    rightGasCell.u1LL = interfaceGasCell.u1L;
+    rightGasCell.VGasL = interfaceGasCell.VGasR;
 
-        state.interfaceCell++;
-        CelG &outletGasCell = state.gasCells[state.interfaceCell];
+    interfaceGasCell.razInter = 1.0;
+    rightGasCell.razInter = 1.0;
 
-        outletGasCell.presini = outletGasCell.pres;
-        meanPressure = outletGasCell.pres;
-        meanTemperature = outletGasCell.temp;
-        interfaceFlowArea = outletGasCell.duto.area;
-        gasDensity = outletGasCell.flui.MasEspGas(meanPressure, meanTemperature);
-        liquidDensity = outletGasCell.MasEspFlu(meanPressure, meanTemperature);
-        outletGasCell.VGasR = 0 * outletGasCell.VGasR * gasDensity / liquidDensity;
-        outletGasCell.u1L = interfaceFlowArea * gasDensity;
-        outletGasCell.u1R = interfaceFlowArea * gasDensity;
-        state.gasCells[state.interfaceCell - 1].u1R = outletGasCell.u1L;
-        state.gasCells[state.interfaceCell - 1].VGasRR = outletGasCell.VGasR;
+    rightGasCell.presini = rightGasCell.pres;
+    const double outletGasDensity = rightGasCell.flui.MasEspGas(rightGasCell.pres, rightGasCell.temp);
+    const double outletLiquidDensity = rightGasCell.MasEspFlu(rightGasCell.pres, rightGasCell.temp);
+    rightGasCell.VGasR = 0 * rightGasCell.VGasR * outletGasDensity / outletLiquidDensity;
+    rightGasCell.u1L = rightGasCell.duto.area * outletGasDensity;
+    rightGasCell.u1R = rightGasCell.duto.area * outletGasDensity;
+    interfaceGasCell.u1R = rightGasCell.u1L;
+    interfaceGasCell.VGasRR = rightGasCell.VGasR;
 
-        state.interfaceCell = kNoInterfaceCell;
-        state.input.descarga = 0;
-    }
-
-    if (state.input.descarga == 1) {
-        const double tiny = state.globals->localtiny;
-        CelG &cell = state.gasCells[state.interfaceCell];
-        if (cell.razInter <= tiny && cell.razInter >= -tiny)
-            cell.razInter = 0;
-        else if (cell.razInter < -tiny) {
-            const double interfaceCrossingTimeStep = -cell.razInterIni * cell.dx0 / state.interfaceVelocity;
-            if (interfaceCrossingTimeStep > tiny)
-                state.interfaceTimeStep = interfaceCrossingTimeStep;
-            cell.razInter = 0.;
-        } else if (cell.razInter >= 1. - tiny && cell.razInter <= 1. + tiny) {
-            cell.razInter = 1.;
-        } else if (cell.razInter > 1. + tiny) {
-            const double interfaceCrossingTimeStep = (1. - cell.razInterIni) * cell.dx0 / state.interfaceVelocity;
-            if (interfaceCrossingTimeStep > tiny)
-                state.interfaceTimeStep = interfaceCrossingTimeStep;
-            cell.razInter = 1.;
-        }
-
-        if (fabs(cell.razInter) < tiny && state.interfaceVelocity < -fabs(tiny)) {
-            cell.razInter = 0.;
-            if (state.interfaceCell > 0) {
-                state.interfaceCell--;
-                state.gasCells[state.interfaceCell].razInter = 1.;
-            }
-        } else if (fabs(cell.razInter - 1.) < tiny && state.interfaceVelocity > tiny) {
-            cell.razInter = 1.;
-            if (state.interfaceCell < state.lastGasCell) {
-                state.interfaceCell++;
-                state.gasCells[state.interfaceCell].razInter = 0.;
-            }
-        }
-    }
+    state.interfaceCell = kNoInterfaceCell;
+    state.input.descarga = 0;
 }
 
 double unloadingStartPressure(const GasLiftState &state) {
