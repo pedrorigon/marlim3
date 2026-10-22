@@ -325,6 +325,10 @@ void storePreviousSources(const TransientStepState &state);
 /// then moves the pigs and receives those that reach their receiver cell.
 void storePreviousFractionsAndMovePigs(const TransientStepState &state);
 
+/// Caches the densities and viscosities of every cell and face, so the step does
+/// not recompute them.
+void cacheCellAndFaceDensities(const TransientStepState &state);
+
 // =============================================================== the solve ====
 
 /// What SolveTrans needs from outside itself: module functions it reaches with the solve
@@ -350,7 +354,6 @@ struct TransientSolveUpdaters {
     void connectTubing() const;
     void marchTransientEnergy(int ciclo, int ciclomax) const;
     void updateMolarFractions(const ProFlu *fluiRev) const;
-    void updateDensities() const;
     void updateGasOilRatioAndCo2(const ProFlu *fluiRev) const;
     void updateTemperatures() const;
     void updateThermal(int aflu = 0) const;

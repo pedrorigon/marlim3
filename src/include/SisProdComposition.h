@@ -58,9 +58,6 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev);
 /// the water density with them. The one the transient step calls.
 void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev);
 
-/// Caches cell and face densities so the step does not recompute them.
-void cacheCellAndFaceDensities(const CompositionState &state);
-
 /// Evaluates wax deposition in every cell and applies its effect on the pipe
 /// wall and its heat transfer.
 void evaluateWaxDeposition(const CompositionState &state);

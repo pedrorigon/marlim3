@@ -184,9 +184,6 @@ void sisprod::transient::TransientSolveUpdaters::marchTransientEnergy(int ciclo,
 void sisprod::transient::TransientSolveUpdaters::updateMolarFractions(const ProFlu *fluiRev) const {
     sisprod::composition::transportPhaseMolarFractions(context.composition(), reverseFlowFluid(fluiRev));
 }
-void sisprod::transient::TransientSolveUpdaters::updateDensities() const {
-    sisprod::composition::cacheCellAndFaceDensities(context.composition());
-}
 void sisprod::transient::TransientSolveUpdaters::updateGasOilRatioAndCo2(const ProFlu *fluiRev) const {
     sisprod::composition::transportBlackOilProperties(context.composition(), reverseFlowFluid(fluiRev));
 }
