@@ -34,49 +34,7 @@ struct FluidProperties {
     double viscosityCentipoise;
 };
 
-/// The diameter a Reynolds number is formed on: the bore when the segment is
-/// bare, the hydraulic diameter when it is cased.
-[[nodiscard]] double characteristicDiameter(int cased, double bore, double area, double perimeter);
-
-/// The opening fraction of a calibrated gas-lift valve, from the state already primed on its choke, converted to
-/// the units of the valve correlation.
-[[nodiscard]] double calibratedValveOpening(const ChokeGas &choke);
-
-/// Primes the choke from the two cells it spans and returns the mass source it
-/// delivers, already scaled by the calibrated opening when the valve is one.
-template <ValveFluids fluids>
-[[nodiscard]] double primeValveMassSource(const GasLiftState &state, int valveIndex, const CelG &gasCell,
-                                          const Cel &productionCell);
-
-/// Calls visit(productionCellIndex, gasCellIndex) for each pair of cells the column-annulus thermal coupling joins,
-/// from tubingCouplingStart down to tubingCouplingEnd.
-template <typename Visit>
-void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit);
-
-/// Publishes the transport properties of the gas line's fluid onto the production
-/// cell that faces it, as that cell's external fluid.
-void publishExternalFluid(Cel &productionCell, const FluidProperties &fluid);
-
-/// The cell across the column-annulus coupling from this one: the gas cell that faces a production cell, or the
-/// production cell that faces a gas cell.
-[[nodiscard]] int facingCouplingCell(const GasLiftState &state, int cellIndex);
-
-/// The temperature of the gas a valve injects into its production cell: the valve's discharge temperature while the
-/// valve flows, the cell's own otherwise, and never below kMinimumTemperatureCelsius.
-[[nodiscard]] double injectedGasTemperature(const GasLiftState &state, int valveIndex, const Cel &productionCell);
-
 // Unloading the completion fluid through the gas-lift valves.
-
-/// Gas-lift valve geometry. The bore threshold and the two spring rates are
-/// imperial, as the whole valve correlation is.
-inline constexpr double kLargeBoreValveInches = 1.1;
-inline constexpr double kLargeBoreSpringRate = 500.0;
-inline constexpr double kSmallBoreSpringRate = 1950.0;
-
-/// The bellows of a calibrated valve: the temperature its dome charge is referred to, in degrees Fahrenheit, and
-/// the fractional change of the dome pressure per degree Fahrenheit.
-inline constexpr double kBellowsReferenceTemperatureFahrenheit = 80.;
-inline constexpr double kBellowsPressureChangePerFahrenheit = 0.00215;
 
 /// The unloading controller corrects the injection or the separator pressure when the completion-fluid flow
 /// through the selected valve leaves the band from 1 - kUnloadingLowerBandMargin to 1 - kUnloadingUpperBandMargin
@@ -123,42 +81,6 @@ inline constexpr double kInterfaceHandoverRatio = 0.99;
 /// At or below this mixture velocity, in m/s, the unloading column counts as still and takes no wall friction.
 inline constexpr double kStillMixtureVelocity = 1e-15;
 
-/// Walks a pressure towards a target by kRelaxationDownFactor or kRelaxationUpFactor per step, without overshooting
-/// it. The two factors are not each other's inverse.
-void relaxTowards(double &pressure, double target);
-
-/// A pressure correction of the unloading control, limited to kMaximumUnloadingCorrectionPerSecond of the pressure
-/// it corrects per second of the step, with its sign.
-[[nodiscard]] double limitedCorrection(double correction, double pressure, double timeStep);
-
-/// Clears a production cell's mass sources.
-void clearMassSources(Cel &cell);
-
-/// Gives a production cell the phases of the unloading's initial state, completion fluid below the interface and
-/// gas above it, with the copies the march and the pigs start from.
-void setUnloadingPhase(Cel &cell, bool belowInterface);
-
-/// Copies a production cell's phases to the face values its neighbours hold of it.
-void copyPhaseToLeftNeighbour(const Cel &cell, Cel &left);
-void copyPhaseToRightNeighbour(const Cel &cell, Cel &right);
-
-/// The volume flow of a gas cell's source during the unloading: gas once the
-/// interface is past the cell's middle, completion fluid before.
-[[nodiscard]] double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity);
-
-/// The pressure the unloading hydrostatics start the gas line from when the
-/// injection pressure does not give it: the unloading's own initial pressure when
-/// the unloading is controlled, kDefaultUnloadingStartPressure otherwise.
-[[nodiscard]] double defaultUnloadingStartPressure(const GasLiftState &state);
-
-/// The unloading starts from the configured injection pressure, unless the
-/// unloading is controlled.
-[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition);
-[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition);
-
-/// The hydrostatic head across a half cell of the unloading's initial state, in kgf/cm^2.
-[[nodiscard]] double unloadingHalfCellHead(double density, double halfLength, double inclination);
-
 /// The valve the unloading control follows: the largest completion-fluid volume flow among the valves behind the
 /// interface, and the valve's index.
 struct UnloadingValve {
@@ -174,30 +96,20 @@ struct UnloadingValve {
 /// when the window holds more samples than its capacity or spans more time than the averaging window.
 void recordUnloadingSample(const GasLiftState &state, double maximumFlowRate);
 
+/// Recomputes presMaxDesc along the production column and moves the injection pressure towards the unloading
+/// flow band.
+void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex);
+
 /// Corrects the separator pressure towards the unloading flow band through the selected valve, within the
 /// unloading's pressures, while the column's last cell but one holds completion fluid; once it holds none, lets the
 /// separator pressure decay towards the unloading's minimum.
 void correctSeparatorPressure(const GasLiftState &state, double flowRate, int valveIndex);
-
-/// The opening of a calibrated gas-lift valve as a fraction of its throat area, at most 1; a closed valve is not a
-/// special case. The correlation is imperial: the calibration pressure, the valve opening pressure (the casing's) and
-/// the tubing pressure are gauge pressures in psi, and the bottom-hole temperature is in degrees Fahrenheit; the
-/// calibration temperature comes in degrees Celsius and the external diameter in metres. valveRatio is the throat
-/// area over the bellows area.
-[[nodiscard]] double calibratedValveOpeningFraction(double calibrationPressure, double calibrationTemperature,
-                                                    double valveOpeningPressure, double tubingPressure,
-                                                    double externalDiameter, double throatArea, double valveRatio,
-                                                    double bottomHoleTemperatureFahrenheit);
 
 /// The pressure correction the unloading control applies for one valve, in kgf/cm^2 and with the given sign: the
 /// dynamic pressure, at the valve's throat, of the completion-fluid flow that separates maximumFlowRate from factor
 /// times the controlled unloading flow rate. Primes the valve's choke with its gas cell's pressure and temperature.
 [[nodiscard]] double unloadingPressureCorrection(const GasLiftState &state, double maximumFlowRate, int valveIndex,
                                                  double factor, int sign);
-
-/// Recomputes presMaxDesc along the production column and moves the injection pressure towards the unloading
-/// flow band.
-void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex);
 
 /// Solves one unloading step from the interface cell to the end of the gas line: marches the pressure through the
 /// friction and the head of each half cell's gas and completion-fluid parts, updates the discharge temperatures, and
@@ -208,6 +120,42 @@ void solveUnloading(const GasLiftState &state);
 /// is shortened to the crossing and the interface moves to the next or the previous cell; at the end of the gas line
 /// it is handed over and the unloading ends (interfaceCell becomes kNoInterfaceCell, input.descarga 0).
 void advanceInterface(const GasLiftState &state);
+
+/// The pressure the unloading hydrostatics start the gas line from when the
+/// injection pressure does not give it: the unloading's own initial pressure when
+/// the unloading is controlled, kDefaultUnloadingStartPressure otherwise.
+[[nodiscard]] double defaultUnloadingStartPressure(const GasLiftState &state);
+
+/// The unloading starts from the configured injection pressure, unless the
+/// unloading is controlled.
+[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition);
+[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition);
+
+/// The hydrostatic head across a half cell of the unloading's initial state, in kgf/cm^2.
+[[nodiscard]] double unloadingHalfCellHead(double density, double halfLength, double inclination);
+
+/// Clears a production cell's mass sources.
+void clearMassSources(Cel &cell);
+
+/// Gives a production cell the phases of the unloading's initial state, completion fluid below the interface and
+/// gas above it, with the copies the march and the pigs start from.
+void setUnloadingPhase(Cel &cell, bool belowInterface);
+
+/// Copies a production cell's phases to the face values its neighbours hold of it.
+void copyPhaseToLeftNeighbour(const Cel &cell, Cel &left);
+void copyPhaseToRightNeighbour(const Cel &cell, Cel &right);
+
+/// Walks a pressure towards a target by kRelaxationDownFactor or kRelaxationUpFactor per step, without overshooting
+/// it. The two factors are not each other's inverse.
+void relaxTowards(double &pressure, double target);
+
+/// A pressure correction of the unloading control, limited to kMaximumUnloadingCorrectionPerSecond of the pressure
+/// it corrects per second of the step, with its sign.
+[[nodiscard]] double limitedCorrection(double correction, double pressure, double timeStep);
+
+/// The volume flow of a gas cell's source during the unloading: gas once the
+/// interface is past the cell's middle, completion fluid before.
+[[nodiscard]] double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDensity);
 
 // The gas line in the transient.
 
@@ -223,6 +171,22 @@ inline constexpr double kReverseFlowOutletTemperatureCelsius = 20.;
 inline constexpr double kMaster2ThrottlingAreaFraction = 0.01;
 inline constexpr double kMaster2ClosedAreaFraction = 1e-5;
 
+/// Clears the gas cells' sources from the interface cell on, primes each gas-lift valve's choke and sets the mass
+/// source it gives its gas cell (completion fluid behind the interface, gas ahead of it), then the sources of the
+/// master2 valve's two cells, which only flow while it throttles.
+void updateTransientGasValves(const GasLiftState &state);
+
+/// The mass sources the gas line's master2 valve gives its cell and the next one while it throttles, from the
+/// pressure difference across it; none otherwise.
+void updateMaster2Source(const GasLiftState &state);
+
+/// Opens the injection choke if it is throttling, assembles the band system from every gas cell and solves it.
+void assembleAndSolveGasSystem(const GasLiftState &state);
+
+/// Copies the solved pressure-flow system into the gas cells: each cell's pressure and right-face mass flow, and the
+/// values its neighbours' faces hold of them.
+void updateGasLine(const GasLiftState &state);
+
 /// The opening the injection choke presents to the gas line. Under a pressure
 /// condition it is the choke's own, and a choke throttling the line also sets
 /// the inlet mass source through it; under a flow-rate condition the source is
@@ -233,22 +197,6 @@ inline constexpr double kMaster2ClosedAreaFraction = 1e-5;
 /// Copies a gas-lift valve's choke state onto its gas cell: the stagnation and throat pressures and temperatures, the
 /// throat flow and the throat area.
 void recordValveState(CelG &gasCell, const ChokeGas &choke);
-
-/// The mass sources the gas line's master2 valve gives its cell and the next one while it throttles, from the
-/// pressure difference across it; none otherwise.
-void updateMaster2Source(const GasLiftState &state);
-
-/// Clears the gas cells' sources from the interface cell on, primes each gas-lift valve's choke and sets the mass
-/// source it gives its gas cell (completion fluid behind the interface, gas ahead of it), then the sources of the
-/// master2 valve's two cells, which only flow while it throttles.
-void updateTransientGasValves(const GasLiftState &state);
-
-/// Opens the injection choke if it is throttling, assembles the band system from every gas cell and solves it.
-void assembleAndSolveGasSystem(const GasLiftState &state);
-
-/// Copies the solved pressure-flow system into the gas cells: each cell's pressure and right-face mass flow, and the
-/// values its neighbours' faces hold of them.
-void updateGasLine(const GasLiftState &state);
 
 // The gas line in the steady state.
 
@@ -264,16 +212,12 @@ inline constexpr double kMinimumMarchDiameterRatio = 0.5;
 /// passes this value.
 inline constexpr double kThermalSubstepLength = 1000.;
 
-/// The flow area of a bore of this diameter.
-[[nodiscard]] double boreArea(double diameter);
+/// The steady gas temperature of a cell outside the column-annulus coupling, marched from its left neighbour.
+void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex);
 
-/// Clamps a gas cell's temperature to the physical range and copies it to the
-/// neighbours that face it.
-void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex);
-
-/// Gives a gas cell's heat transfer the gas flowing inside it, at this temperature and superficial velocity, and
-/// computes the cell's heat flux.
-void publishInternalGas(CelG &cell, double temperature, double velocity, const FluidProperties &gas);
+/// The steady gas temperature of a cell inside the column-annulus coupling, and the properties its heat
+/// transfer is computed with.
+void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex);
 
 /// One valve's gas mass source at steady state. Under a flow-rate condition,
 /// an equal share of the injection flow rate; under a pressure condition, what
@@ -284,12 +228,70 @@ void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int 
 void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int valveCount, double casingTemperature,
                                  InjectionPressureCondition);
 
-/// The steady gas temperature of a cell outside the column-annulus coupling, marched from its left neighbour.
-void marchSteadyGasTemperature(const GasLiftState &state, int cellIndex);
+/// Clamps a gas cell's temperature to the physical range and copies it to the
+/// neighbours that face it.
+void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex);
 
-/// The steady gas temperature of a cell inside the column-annulus coupling, and the properties its heat
-/// transfer is computed with.
-void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex);
+/// Gives a gas cell's heat transfer the gas flowing inside it, at this temperature and superficial velocity, and
+/// computes the cell's heat flux.
+void publishInternalGas(CelG &cell, double temperature, double velocity, const FluidProperties &gas);
+
+/// The flow area of a bore of this diameter.
+[[nodiscard]] double boreArea(double diameter);
+
+// What every phase uses: the gas-lift valves, the column-annulus coupling and the Reynolds diameter.
+
+/// Gas-lift valve geometry. The bore threshold and the two spring rates are
+/// imperial, as the whole valve correlation is.
+inline constexpr double kLargeBoreValveInches = 1.1;
+inline constexpr double kLargeBoreSpringRate = 500.0;
+inline constexpr double kSmallBoreSpringRate = 1950.0;
+
+/// The bellows of a calibrated valve: the temperature its dome charge is referred to, in degrees Fahrenheit, and
+/// the fractional change of the dome pressure per degree Fahrenheit.
+inline constexpr double kBellowsReferenceTemperatureFahrenheit = 80.;
+inline constexpr double kBellowsPressureChangePerFahrenheit = 0.00215;
+
+/// Primes the choke from the two cells it spans and returns the mass source it
+/// delivers, already scaled by the calibrated opening when the valve is one.
+template <ValveFluids fluids>
+[[nodiscard]] double primeValveMassSource(const GasLiftState &state, int valveIndex, const CelG &gasCell,
+                                          const Cel &productionCell);
+
+/// The opening fraction of a calibrated gas-lift valve, from the state already primed on its choke, converted to
+/// the units of the valve correlation.
+[[nodiscard]] double calibratedValveOpening(const ChokeGas &choke);
+
+/// The opening of a calibrated gas-lift valve as a fraction of its throat area, at most 1; a closed valve is not a
+/// special case. The correlation is imperial: the calibration pressure, the valve opening pressure (the casing's) and
+/// the tubing pressure are gauge pressures in psi, and the bottom-hole temperature is in degrees Fahrenheit; the
+/// calibration temperature comes in degrees Celsius and the external diameter in metres. valveRatio is the throat
+/// area over the bellows area.
+[[nodiscard]] double calibratedValveOpeningFraction(double calibrationPressure, double calibrationTemperature,
+                                                    double valveOpeningPressure, double tubingPressure,
+                                                    double externalDiameter, double throatArea, double valveRatio,
+                                                    double bottomHoleTemperatureFahrenheit);
+
+/// The temperature of the gas a valve injects into its production cell: the valve's discharge temperature while the
+/// valve flows, the cell's own otherwise, and never below kMinimumTemperatureCelsius.
+[[nodiscard]] double injectedGasTemperature(const GasLiftState &state, int valveIndex, const Cel &productionCell);
+
+/// Calls visit(productionCellIndex, gasCellIndex) for each pair of cells the column-annulus thermal coupling joins,
+/// from tubingCouplingStart down to tubingCouplingEnd.
+template <typename Visit>
+void forEachCoupledCellPair(const GasLiftState &state, Visit &&visit);
+
+/// The cell across the column-annulus coupling from this one: the gas cell that faces a production cell, or the
+/// production cell that faces a gas cell.
+[[nodiscard]] int facingCouplingCell(const GasLiftState &state, int cellIndex);
+
+/// Publishes the transport properties of the gas line's fluid onto the production
+/// cell that faces it, as that cell's external fluid.
+void publishExternalFluid(Cel &productionCell, const FluidProperties &fluid);
+
+/// The diameter a Reynolds number is formed on: the bore when the segment is
+/// bare, the hydraulic diameter when it is cased.
+[[nodiscard]] double characteristicDiameter(int cased, double bore, double area, double perimeter);
 
 }  // namespace sisprod::gaslift
 
