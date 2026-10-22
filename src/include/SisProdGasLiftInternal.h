@@ -121,15 +121,10 @@ void solveUnloading(const GasLiftState &state);
 /// it is handed over and the unloading ends (interfaceCell becomes kNoInterfaceCell, input.descarga 0).
 void advanceInterface(const GasLiftState &state);
 
-/// The pressure the unloading hydrostatics start the gas line from when the
-/// injection pressure does not give it: the unloading's own initial pressure when
-/// the unloading is controlled, kDefaultUnloadingStartPressure otherwise.
-[[nodiscard]] double defaultUnloadingStartPressure(const GasLiftState &state);
-
-/// The unloading starts from the configured injection pressure, unless the
-/// unloading is controlled.
-[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition);
-[[nodiscard]] double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition);
+/// The pressure the unloading hydrostatics start the gas line from: the unloading's own initial pressure when the
+/// unloading is controlled; the configured injection pressure when it is not and the gas inlet is under a pressure
+/// condition; kDefaultUnloadingStartPressure otherwise.
+[[nodiscard]] double unloadingStartPressure(const GasLiftState &state);
 
 /// The hydrostatic head across a half cell of the unloading's initial state, in kgf/cm^2.
 [[nodiscard]] double unloadingHalfCellHead(double density, double halfLength, double inclination);

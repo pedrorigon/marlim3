@@ -19,11 +19,7 @@ namespace sisprod::gaslift {
 // Unloading the completion fluid through the gas-lift valves.
 
 void computeGasUnloadingHydrostatics(const GasLiftState &state) {
-    // The configured condition, not the first gas cell's: the cells are being
-    // given their initial state here.
-    double meanPressure = withGasInletCondition(
-        state.input.gasinj.tipoCC,
-        [&](auto condition) { return unloadingStartPressure(state, condition); });
+    double meanPressure = unloadingStartPressure(state);
     if (state.input.controDesc == 1)
         state.injectionPressure = state.input.presIniDescG;
 
@@ -512,18 +508,14 @@ void advanceInterface(const GasLiftState &state) {
     }
 }
 
-double defaultUnloadingStartPressure(const GasLiftState &state) {
-    return state.input.controDesc == 1 ? state.input.presIniDescG : kDefaultUnloadingStartPressure;
-}
-
-double unloadingStartPressure(const GasLiftState &state, InjectionPressureCondition) {
-    if (state.input.controDesc == 0)
-        return state.input.gasinj.presinj[0];
-    return defaultUnloadingStartPressure(state);
-}
-
-double unloadingStartPressure(const GasLiftState &state, InjectionFlowRateCondition) {
-    return defaultUnloadingStartPressure(state);
+double unloadingStartPressure(const GasLiftState &state) {
+    const Ler &input = state.input;
+    if (input.controDesc == 1)
+        return input.presIniDescG;
+    // The configured condition, not the first gas cell's: the cells are being given their initial state here.
+    if (input.controDesc == 0 && input.gasinj.tipoCC == kGasInletInjectionPressure)
+        return input.gasinj.presinj[0];
+    return kDefaultUnloadingStartPressure;
 }
 
 double unloadingHalfCellHead(double density, double halfLength, double inclination) {
