@@ -1,0 +1,339 @@
+#ifndef SISPRODTHERMALINTERNAL_H_
+#define SISPRODTHERMALINTERNAL_H_
+
+#include "SisProdThermal.h"
+
+class ProFlu;
+template <typename T> class Vcr;
+
+namespace sisprod::thermal {
+namespace {
+
+struct SourceEnthalpy {
+    double temperature;
+    double gasEnthalpy;
+    double liquidEnthalpy;
+    /// Complementary-fluid enthalpy approximated as cp(P, T) * T.
+    double hcF;
+};
+struct CellFlowBasis {
+    double flowArea;
+    double voidFraction;
+    double betmed;
+    double gasSuperficialVelocity;
+    double liquidSuperficialVelocity;
+};
+
+struct TemperatureBalance {
+    double cellLength;
+    double meanCellLength;
+    double flowArea;
+    double voidFraction;
+    double bet;
+    double gasSuperficialVelocity;
+    double liquidSuperficialVelocity;
+    double referenceMixtureVelocity;
+    double rp;
+    double rc;
+    double liquidDensity;
+    double gasDensity;
+    double liquidHeatCapacity;
+    double liquidIsochoricHeatCapacity;
+    double gasHeatCapacity;
+    double gasIsochoricHeatCapacity;
+    double liquidJouleThomson;
+    double gasJouleThomson;
+    double hydrostaticPower;
+    double heatFlux;
+    double timeCoefficient;
+    double pressureTimeCoefficient;
+    double temperatureSpatialCoefficient;
+    double pressureSpatialCoefficient;
+};
+
+struct TemperatureSourceTerms {
+    double gas;
+    double liquid;
+};
+
+struct DistributedMassTransferProperties {
+    double leftFaceWaterCut;
+    double leftCellLeftFaceWaterCut;
+    double leftCellWaterCut;
+    double liquidDensity;
+    double gasDensity;
+    double leftFaceComposition;
+    double leftCellLeftFaceComposition;
+    double mixtureLiquidDensity;
+    double leftFaceOilVolumeFactor;
+    double leftFaceSolutionGasRatio;
+    double leftFaceSolutionGasPressureDerivative;
+    double leftCellOilVolumeFactor;
+    double leftCellSolutionGasRatio;
+    double leftCellSolutionGasPressureDerivative;
+    double leftCellSolutionGasTemperatureDerivative;
+};
+struct InletMassTransferSeed {
+    double liquidDensity;
+    double oilVolumeFactor;
+    double solutionGasRatio;
+    double solutionGasPressureDerivative;
+};
+
+struct DistributedMassTransferCoefficients {
+    double activeDerivative;
+    double spatialCoupling;
+    double flowArea;
+};
+struct UpstreamFaceBasis {
+    double gasDensity;
+    double flowArea;
+    double noSlipLiquidHoldup;
+};
+
+/// Inlet closure policy for the instantaneous pass.
+struct InletBoundaryRegime {
+    /// Applies the two ordered inlet boundary overrides.
+    static void applyInletOverrides(const ThermalState &state, int cellIndex,
+                                    int &branchFlag, double superficialGasVelocity,
+                                    double superficialLiquidVelocity);
+
+    /// Evaluates and stores the instantaneous inlet closure.
+    static void updateClosure(const ThermalState &state, int cellIndex, double &c0,
+                              double &ud);
+};
+
+/// Inlet closure policy for the buffered pass.
+struct BufferedInletRegime {
+    /// Leaves the buffered branch flag unchanged.
+    static void applyInletOverrides(const ThermalState &, int, int &, double, double);
+
+    /// Evaluates the buffered inlet closure without storing it in the cell.
+    static void updateClosure(const ThermalState &state, int cellIndex, double &c0,
+                              double &ud);
+};
+
+/// Bisects an increasing table axis and returns the lower bracketing index.
+/// The probe offset is 0 for pressure and -1 for temperature; equality and
+/// endpoint tests select the table interval, and an unsuccessful search returns 0.
+template <typename Axis>
+[[nodiscard]] int bracketingIndex(double value, int divisionCount, Axis &&axis,
+                                  int descendProbeOffset);
+
+/// Evaluates the enthalpies carried by the cell accessory or its upstream accessory.
+/// Property evaluations use the corresponding source fluid and pressure.
+[[nodiscard]] SourceEnthalpy sourceEnthalpyOf(const ThermalState &state, int cellIndex);
+
+/// Tests whether the accessory requires extrapolating the downstream pressure.
+[[nodiscard]] bool accessoryImposesPressureJump(const ThermalState &state,
+                                                int cellIndex);
+
+/// Selects this cell or its downstream neighbour as the flow donor.
+/// Phase presence and flow area always belong to this cell.
+[[nodiscard]] CellFlowBasis cellFlowBasisOf(const ThermalState &state, int cellIndex);
+
+/// Prepares heat-transfer state and energy coefficients using previous pressure
+/// and current temperature, and publishes the mean cell heat flux.
+TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
+                                             int cellIndex,
+                                             int steadyStateMode);
+
+/// Computes the transient kinetic-energy term where both cells have no accessory.
+/// Also replaces the balance velocities with downstream face velocities for the
+/// subsequent interfacial-work calculation.
+double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
+                                     TemperatureBalance &balance);
+
+/// Sets inert source properties: zero specific heats and unit adiabatic ratio.
+void clearSourceSpecificHeats(double &sourceGasSpecificHeat,
+                              double &sourceSpecificHeatRatio,
+                              double &sourceLiquidSpecificHeat);
+
+/// Computes source heating for the temperature balance, using previous pressure
+/// and source-specific temperature and accessory rules.
+TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
+                                                      int cellIndex,
+                                                      double cellLength);
+
+/// Computes source heating for thermal mass transfer at current pressure.
+/// The volumetric-pump path retains a zero source specific-heat ratio.
+TemperatureSourceTerms computeThermalMassTransferSourceTerms(
+    const ThermalState &state, int cellIndex, double cellLength);
+
+/// Refreshes inlet sources, saves their previous face values, and seeds the
+/// liquid density and solution-gas properties for the distributed sweep.
+InletMassTransferSeed initializeDistributedMassTransferInlet(
+    const ThermalState &state, int cellIndex);
+
+/// Selects liquid-flow donors for a face with cellIndex >= 1 and prepares
+/// water cuts, densities, and pressure/temperature solution-gas derivatives.
+/// Compositional pressure perturbation updates leftFaceFluid in place.
+DistributedMassTransferProperties prepareDistributedMassTransferProperties(
+    const ThermalState &state, int cellIndex, double meanTemperature, ProFlu &leftCellLeftFaceFluid,
+    ProFlu &leftFaceFluid);
+
+/// Evaluates the last cell pressure derivative using its fluid and, when needed,
+/// a compositional copy. Fluid-property calls and copy lifetime are significant.
+[[nodiscard]] double lastCellSolutionGasPressureDerivative(const ThermalState &state,
+                                                           int cellIndex);
+
+/// Publishes pressure and temperature derivatives on both sides of a face.
+/// At the last cell the thermal path also evaluates the pressure derivative,
+/// then uses the supplied temperature derivative in DTransDtT.
+DistributedMassTransferCoefficients updateDistributedMassTransferDerivatives(
+    const ThermalState &state, int cellIndex, double leftCellWaterCut, const ProFlu &leftFaceFluid,
+    double leftCellSolutionGasPressureDerivative, double leftCellSolutionGasTemperatureDerivative);
+
+/// Applies ordered model overrides for the upstream cell and clears the
+/// last cell phase-change source.
+void selectDistributedMassTransferModel(
+    const ThermalState &state, int cellIndex, double &meanTemperature, double &leftMeanTemperature,
+    double leftAbsoluteSuperficialVelocity);
+
+/// Saves face mass-transfer terms and derivatives in their previous-iteration fields.
+void snapshotMassTransferState(const ThermalState &state, int cellIndex);
+
+/// Selects and applies the upstream cell phase-change model, preserving its
+/// model-specific derivative resets and previous-face dependencies.
+void applyDistributedMassTransferModel(
+    const ThermalState &state, int cellIndex, double &meanTemperature, double &leftMeanTemperature,
+    double leftAbsoluteSuperficialVelocity, const ProFlu &leftCellLeftFaceFluid, const ProFlu &leftFaceFluid,
+    const DistributedMassTransferProperties &properties,
+    double activeDerivative, double spatialCoupling, double coefficientFlowArea, double leftCellLeftFaceMixtureLiquidDensity, double leftCellLeftFaceOilVolumeFactor,
+    double leftCellLeftFaceSolutionGasRatio, double leftCellLeftFaceSolutionGasPressureDerivative);
+
+/// Zeros face mass-transfer derivatives. Temperature derivatives are reset
+/// only when their disabling flag is active; the mass source is left to the caller.
+void clearMassTransferDerivatives(const ThermalState &state, int cellIndex);
+
+/// Selects upstream gas density and area by the sign of the gas flow rate.
+[[nodiscard]] UpstreamFaceBasis upstreamFaceBasisOf(const ThermalState &state, int cellIndex);
+
+/// Sets the liquid partition, zeros its drift term, and assigns the branch flag.
+void setFlowPartitionTerms(const ThermalState &state, int cellIndex, double term1,
+                           int &branchFlag, int flagValue);
+
+/// Sets unit distribution, zero drift velocity, and no flow-pattern label.
+void clearDriftClosure(const ThermalState &state, int cellIndex);
+
+/// Classifies an interior face, applies ordered regime overrides, then computes
+/// the closure and partition terms for the surviving branch.
+void selectAndApplyInteriorFlowRegime(
+    const ThermalState &state, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
+    double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity, double rightSuperficialLiquidVelocity,
+    double rightGasDensity, double rightLiquidDensity, double gasDensity, double liquidDensity, double flowArea);
+
+/// Prepares both face properties, propagates left-face state, and applies
+/// the interior regime unless the valve flag blocks it.
+void updateInteriorFlowPartitionCell(
+    const ThermalState &state, int cellIndex, Vcr<int> &bif, Vcr<int> &valv);
+
+/// Applies outlet-specific regime rules and propagates its closure to the left face.
+void updateOutletBoundaryFlowPartition(
+    const ThermalState &state, int cellIndex, Vcr<int> &bif);
+
+/// Blends closure values into the supplied buffers according to inclination
+/// and flow-pattern differences; blendIndex identifies the destination entry.
+void blendNeighbourDriftClosure(const ThermalState &state, int cellIndex,
+                                int neighbourIndex, int blendIndex,
+                                const Vcr<int> &bif,
+                                Vcr<double> &c0V, Vcr<double> &udV);
+
+/// Prepares neighbour closure buffers, corrects flow signs, and publishes
+/// mixture partition terms using the cell closure state.
+void finalizeFlowPartitionTerms(
+    const ThermalState &state, const Vcr<int> &bif, const Vcr<int> &valv);
+
+/// Applies the no-slip partition while retaining zero products with the supplied
+/// closure values, including their non-finite floating-point behavior.
+void applyNoSlipClosure(const ThermalState &state, int cellIndex, double term1,
+                        int &branchFlag, double distributionCoefficient,
+                        double driftVelocity);
+
+/// Classifies the inlet, applies the selected inlet policy, and computes
+/// the partition after all branch-flag overrides.
+template <typename Regime>
+void selectAndApplyInletRegime(
+    const ThermalState &state, int cellIndex, int &branchFlag, double distributionCoefficient,
+    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity,
+    double rightLiquidDensity, double gasDensity, double liquidDensity, double flowArea);
+
+/// Applies the instantaneous inlet policy using the cell branch-flag entry.
+void selectAndApplyInletBoundaryFlowRegime(
+    const ThermalState &state, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
+    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity,
+    double rightLiquidDensity, double gasDensity, double liquidDensity, double flowArea);
+
+/// Applies the buffered outlet rules, closure, and final choke override.
+void selectAndApplyBufferedOutletFlowRegime(
+    const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
+    double superficialGasVelocity, double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity,
+    double rightSuperficialLiquidVelocity, double rightGasDensity, double rightLiquidDensity, double gasDensity, double liquidDensity,
+    double flowArea);
+
+/// Applies the buffered inlet policy with a local branch flag.
+void selectAndApplyBufferedInletFlowRegime(
+    const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
+    double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double rightGasDensity, double rightLiquidDensity,
+    double gasDensity, double liquidDensity, double flowArea);
+
+/// Advances one cell temperature and stores its rate using the global time step.
+/// Indices beyond lastCell use the external boundary or gas surface temperature.
+void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex);
+
+/// Refreshes the Poisson-2D cells and then the production column in separate
+/// OpenMP loops with their completion barriers.
+void refreshTemperatureField(const ThermalState &state);
+
+/// Computes steady source heating from the left cell accessory.
+TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
+                                                int cellIndex,
+                                                double meanPressure,
+                                                double meanTemperature,
+                                                double cellLength);
+
+/// Prepares the left cell external thermal state and returns annulus wall
+/// resistance, including casing and formation on the initial steady iteration.
+double applySteadyAnnulusCoupling(const ThermalState &state, int cellIndex,
+                                  double interfaceMeanPressure,
+                                  double interfaceMeanTemperature,
+                                  double gasSpecificHeat,
+                                  double gasDensity);
+
+/// Computes the direct steady kinetic term with its phase and cell-length guards.
+double computeSteadyKineticTerm(const ThermalState &state, int cellIndex,
+                                double meanSuperficialGasVelocity,
+                                double meanSuperficialLiquidVelocity);
+
+/// Sanitizes and limits the left cell phase-change source, clears it at
+/// pressure-jump accessories, and evaluates its latent-heat contribution.
+double computeSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
+                                   double meanPressure, double meanTemperature);
+
+/// Computes reverse steady source heating from the right cell accessory.
+TemperatureSourceTerms computeReverseSteadySourceTerms(
+    const ThermalState &state, int cellIndex, double meanPressure,
+    double meanTemperature, double cellLength);
+
+/// Computes the reverse kinetic term using absolute phase velocities.
+double computeReverseSteadyKineticTerm(
+    const ThermalState &state, int cellIndex,
+    double meanSuperficialGasVelocity,
+    double meanSuperficialLiquidVelocity);
+
+/// Evaluates reverse latent heat from the right cell source without applying
+/// the direct march source sanitation or mass-transfer limit.
+double computeReverseSteadyLatentHeatTerm(const ThermalState &state, int cellIndex,
+                                          double meanPressure, double meanTemperature);
+
+/// Prepares the right cell external thermal state and returns annulus wall
+/// resistance using reverse-march coupling bounds.
+double applyReverseSteadyAnnulusCoupling(
+    const ThermalState &state, int cellIndex,
+    double interfaceMeanPressure, double interfaceMeanTemperature,
+    double gasSpecificHeat, double gasDensity);
+
+}  // namespace
+}  // namespace sisprod::thermal
+
+#endif  // SISPRODTHERMALINTERNAL_H_

@@ -19,6 +19,7 @@ namespace sisprod::thermal {
 struct ThermalSourceUpdater {
     SolveContext &context;
 
+    /// Refreshes mass and heat sources for the selected cell.
     void operator()(int cellIndex) const;
 };
 
@@ -27,12 +28,16 @@ struct ThermalSourceUpdater {
 struct ThermalClosureUpdater {
     SolveContext &context;
 
+    /// Evaluates the instantaneous drift closure.
     void instantaneous(int cellIndex, double &distribution,
                        double &driftVelocity) const;
+    /// Evaluates the buffered drift closure.
     void buffered(int cellIndex, double &distribution,
                   double &driftVelocity) const;
+    /// Evaluates the instantaneous inlet closure.
     void initialization(int cellIndex, double &distribution,
                         double &driftVelocity) const;
+    /// Evaluates the buffered inlet closure.
     void bufferedInitialization(int cellIndex, double &distribution,
                                 double &driftVelocity) const;
 };
@@ -42,12 +47,13 @@ struct ThermalClosureUpdater {
 struct ThermalEvolutionUpdater {
     SolveContext &context;
 
+    /// Solves the pressure/velocity coupling for one cycle.
     void solvePressureVelocityCoupling(int cycle) const;
+    /// Refreshes the transient step state after thermal coupling.
     void renew() const;
 };
 
-/// The slice of SProd's state this module reads, so it can be called without
-/// access to all of SProd.
+/// State and callbacks read and updated by the thermal and phase-transfer steps.
 struct ThermalState {
     Cel *const &cells;
     CelG *const &gasCells;
@@ -120,6 +126,8 @@ void updateTemperatureFromEnthalpy(const ThermalState &state, int cellIndex);
 void computeThermalMassTransfer(const ThermalState &state, int cellIndex);
 
 /// Updates one control-volume temperature from the thermal energy balance.
+/// previousTemperature does not participate in the calculation.
+/// Uses previous pressure, current temperature, and prior face temperatures.
 void computeTemperature(const ThermalState &state, int cellIndex,
                         double previousTemperature, int steadyStateMode = 0);
 
@@ -127,6 +135,7 @@ void computeTemperature(const ThermalState &state, int cellIndex,
 void updateDistributedMassTransfer(const ThermalState &state);
 
 /// Computes the mixture-flow partition terms along the production cells.
+/// inflowMode does not affect the sweep, which uses the outlet boundary.
 void updateFlowPartitionTerms(const ThermalState &state, int inflowMode);
 
 /// Computes mixture-flow partition terms at an internal-section outlet.
@@ -147,11 +156,13 @@ void advanceTransientEnergy(const ThermalState &state, int cycle,
 void advanceSteadyTemperature(const ThermalState &state, int cellIndex,
                               int rungeKuttaStage);
 
-/// Advances the steady-state temperature march in reverse, a march of its own.
+/// Advances the reverse steady temperature march with its directional source
+/// and coupling rules.
 void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex,
                                      int rungeKuttaStage);
 
-/// Solves the gas-line temperature for one cell.
+/// Solves the gas-line temperature for one cell and publishes face temperatures.
+/// previousTemperature does not participate in the calculation.
 void computeGasTemperature(const ThermalState &state, int cellIndex,
                            double previousTemperature, int steadyMode);
 
@@ -168,103 +179,6 @@ void updateProductionTemperaturePeriphery(const ThermalState &state,
 
 /// Surface temperature at the end of the production line.
 void computeOutletTemperature(const ThermalState &state);
-
-
-// Values passed between the kernels inside SisProdThermal.cpp. Not part of the
-// module's interface -- nothing outside the .cpp constructs or reads them.
-
-/// The enthalpy the source term carries into the cell, and the temperature it
-/// arrives at. Produced by the accessory dispatch in sourceEnthalpyOf.
-struct SourceEnthalpy {
-    double temperature;
-    double gasEnthalpy;
-    double liquidEnthalpy;
-    /// Complementary-fluid heat (hcF). Three assignment sites carry a comment
-    /// saying it is still to be corrected.
-    double hcF;
-};
-
-/// Cell geometry and superficial velocities. They come from this cell unless the
-/// upstream neighbour is a throttled choke, in which case from the downstream one.
-struct CellFlowBasis {
-    double flowArea;
-    double voidFraction;
-    double betmed;
-    double gasSuperficialVelocity;
-    double liquidSuperficialVelocity;
-};
-
-struct TemperatureBalance {
-    double cellLength;
-    double meanCellLength;
-    double flowArea;
-    double voidFraction;
-    double bet;
-    double gasSuperficialVelocity;
-    double liquidSuperficialVelocity;
-    double referenceMixtureVelocity;
-    double rp;
-    double rc;
-    double liquidDensity;
-    double gasDensity;
-    double liquidHeatCapacity;
-    double liquidIsochoricHeatCapacity;
-    double gasHeatCapacity;
-    double gasIsochoricHeatCapacity;
-    double liquidJouleThomson;
-    double gasJouleThomson;
-    double hydrostaticPower;
-    double heatFlux;
-    double timeCoefficient;
-    double pressureTimeCoefficient;
-    double temperatureSpatialCoefficient;
-    double pressureSpatialCoefficient;
-};
-
-struct TemperatureSourceTerms {
-    double gas;
-    double liquid;
-};
-
-struct DistributedMassTransferProperties {
-    double leftFaceWaterCut;
-    double leftCellLeftFaceWaterCut;
-    double leftCellWaterCut;
-    double liquidDensity;
-    double gasDensity;
-    double leftFaceComposition;
-    double leftCellLeftFaceComposition;
-    double mixtureLiquidDensity;
-    double leftFaceOilVolumeFactor;
-    double leftFaceSolutionGasRatio;
-    double leftFaceSolutionGasPressureDerivative;
-    double leftCellOilVolumeFactor;
-    double leftCellSolutionGasRatio;
-    double leftCellSolutionGasPressureDerivative;
-    double leftCellSolutionGasTemperatureDerivative;
-};
-
-/// Left-cell-left-face values seeded from the inlet cell before the mass-transfer sweep.
-struct InletMassTransferSeed {
-    double liquidDensity;
-    double oilVolumeFactor;
-    double solutionGasRatio;
-    double solutionGasPressureDerivative;
-};
-
-struct DistributedMassTransferCoefficients {
-    double activeDerivative;
-    double spatialCoupling;
-    double flowArea;
-};
-
-/// Which face the upstream properties come from, decided by the sign of the
-/// gas flow rate, for the two drift-closure selectors that share the choice.
-struct UpstreamFaceBasis {
-    double gasDensity;
-    double flowArea;
-    double noSlipLiquidHoldup;
-};
 
 }  // namespace sisprod::thermal
 
