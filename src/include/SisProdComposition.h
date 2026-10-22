@@ -1,8 +1,6 @@
 #ifndef SISPRODCOMPOSITION_H_
 #define SISPRODCOMPOSITION_H_
 
-#include <vector>
-
 // Declared, not included: the state holds only references, so the
 // definitions are needed where it is built and not here, and the header
 // compiles on its own with nothing but -Isrc/include.
@@ -42,16 +40,11 @@ struct CompositionState {
     int &endNode;                         // noextremo
     double &inletPressure;                // presE
     double &inletTemperature;             // tempE
-    double &inletQuality;                 // titE
     double &inletComplementaryFraction;      // betaE
     int &trackGasOilRatio;                // trackRGO
     int &trackGasGravity;                 // trackDeng
     int &compositionalRefreshCounter;     // kontaRenovaComp
     int &surfaceChokeMassFlag;            // masChkSup
-    int &movingPigCount;                  // indpigP
-    int &previousMovingPigCount;          // indpigPini
-    int scheduledPigCount;                // receb.size()
-    std::vector<int> &pigReceiverCells;   // receb
 
     CompositionUpdaters updaters;
 };
@@ -64,10 +57,6 @@ void transportBlackOilProperties(const CompositionState &state, ProFlu fluiRev);
 /// Transports the molar fractions of the oil and the gas phases separately, and
 /// the water density with them. The one the transient step calls.
 void transportPhaseMolarFractions(const CompositionState &state, ProFlu fluiRev);
-
-/// Stores the void and complementary-liquid fractions of the time level just finished,
-/// then moves the pigs and receives those that reach their receiver cell.
-void storePreviousFractionsAndMovePigs(const CompositionState &state);
 
 /// Caches cell and face densities so the step does not recompute them.
 void cacheCellAndFaceDensities(const CompositionState &state);

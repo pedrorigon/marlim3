@@ -193,9 +193,6 @@ void sisprod::transient::TransientSolveUpdaters::updateGasOilRatioAndCo2(const P
 void sisprod::transient::TransientSolveUpdaters::updateTemperatures() const {
     sisprod::thermal::updateDistributedMassTransfer(context.thermal());
 }
-void sisprod::transient::TransientSolveUpdaters::updateInitialFractions() const {
-    sisprod::composition::storePreviousFractionsAndMovePigs(context.composition());
-}
 void sisprod::transient::TransientSolveUpdaters::updateThermal(int aflu) const {
     sisprod::thermal::updateFlowPartitionTerms(context.thermal(), aflu);
 }
@@ -346,6 +343,8 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
         .masterRatio1 = system.transient.masterValveRatiosActive.data(),
         .masterCriticalRatio = system.transient.masterValveCriticalRatios.data(),
         .interfaceVelocity = system.gasLift.interfaceVelocity,
+        .movingPigCount = system.transient.movingPigCount,
+        .previousMovingPigCount = system.transient.previousMovingPigCount,
         .masterOpenSchedule = system.transient.masterValveOpenTimes,
         .input = system.arq,
         .initialInterfaceCell = system.gasLift.previousInterfaceCell,
@@ -380,12 +379,14 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
         .inletTemperature = system.tempE,
         .reverseQuality = system.networkCoupling.reverseQuality,
         .initialInterfaceVelocity = system.gasLift.previousInterfaceVelocity,
+        .pigReceiverCells = system.transient.pigReceiverCells,
+        .scheduledPigCount = static_cast<int>(system.transient.pigReceiverCells.size()),
         .globals = system.vg1dSP,
         .updaters = {context},
     };
 }
 
-/// The composition module's view of SProd: seventeen members by reference.
+/// The composition module's view of SProd: twelve members by reference.
 sisprod::composition::CompositionState compositionStateOf(SProd &system, SolveContext &context) {
     return sisprod::composition::CompositionState{
         .cells = system.celula,
@@ -395,16 +396,11 @@ sisprod::composition::CompositionState compositionStateOf(SProd &system, SolveCo
         .endNode = system.noextremo,
         .inletPressure = system.presE,
         .inletTemperature = system.tempE,
-        .inletQuality = system.titE,
         .inletComplementaryFraction = system.betaE,
         .trackGasOilRatio = system.transient.trackGasOilRatio,
         .trackGasGravity = system.transient.trackGasGravity,
         .compositionalRefreshCounter = system.transient.compositionalRefreshCounter,
         .surfaceChokeMassFlag = system.masChkSup,
-        .movingPigCount = system.transient.movingPigCount,
-        .previousMovingPigCount = system.transient.previousMovingPigCount,
-        .scheduledPigCount = static_cast<int>(system.transient.pigReceiverCells.size()),
-        .pigReceiverCells = system.transient.pigReceiverCells,
         .updaters = {context},
     };
 }

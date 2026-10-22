@@ -134,6 +134,10 @@ struct TransientStepState {
     double *masterCriticalRatio;
     /// SProd::gasLift.interfaceVelocity -- written.
     double &interfaceVelocity;
+    /// SProd::transient.movingPigCount -- written.
+    int &movingPigCount;
+    /// SProd::transient.previousMovingPigCount -- written.
+    int &previousMovingPigCount;
     /// SProd::transient.masterValveOpenTimes -- read only.
     std::vector<double> &masterOpenSchedule;
     /// SProd::arq -- read only.
@@ -202,6 +206,10 @@ struct TransientStepState {
     const double &reverseQuality;
     /// SProd::gasLift.previousInterfaceVelocity -- read only.
     const double &initialInterfaceVelocity;
+    /// SProd::transient.pigReceiverCells -- read only.
+    std::vector<int> &pigReceiverCells;
+    /// The number of pigs, each with its receiver cell: SProd::transient.pigReceiverCells.size().
+    int scheduledPigCount;
     /// SProd::vg1dSP -- read only.
     varGlob1D *const &globals;
     /// Everything the step needs that is not its own.
@@ -313,6 +321,10 @@ void generateFluidMiniTables(const TransientStepState &state);
 void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui);
 void storePreviousSources(const TransientStepState &state);
 
+/// Stores the void and complementary-liquid fractions of the time level just finished,
+/// then moves the pigs and receives those that reach their receiver cell.
+void storePreviousFractionsAndMovePigs(const TransientStepState &state);
+
 // =============================================================== the solve ====
 
 /// What SolveTrans needs from outside itself: module functions it reaches with the solve
@@ -341,7 +353,6 @@ struct TransientSolveUpdaters {
     void updateDensities() const;
     void updateGasOilRatioAndCo2(const ProFlu *fluiRev) const;
     void updateTemperatures() const;
-    void updateInitialFractions() const;
     void updateThermal(int aflu = 0) const;
     void solveGasLine() const;
 };
