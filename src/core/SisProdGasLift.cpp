@@ -87,16 +87,13 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
     copyPhaseToRightNeighbour(inletCell, secondCell);
     double meanPressure = inletCell.acsr.ipr.Pres;
     inletCell.presL = meanPressure;
-    secondCell.presL = meanPressure;
     inletCell.pres = meanPressure;
     inletCell.presini = meanPressure;
-    secondCell.presLini = meanPressure;
     inletCell.presauxL = meanPressure;
     double meanTemperature = inletCell.calor.Textern1;
     inletCell.tempL = meanTemperature;
     inletCell.temp = meanTemperature;
     inletCell.tempini = meanTemperature;
-    secondCell.tempL = meanTemperature;
     double leftDensity = inletBelowInterface ? inletCell.fluicol.MasEspFlu(meanPressure, meanTemperature)
                                              : inletCell.flui.MasEspGas(meanPressure, meanTemperature);
     double localDensity = inletCell.fluicol.MasEspFlu(meanPressure, meanTemperature);
@@ -110,10 +107,8 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
     inletCell.QG = 0;
     inletCell.rpL = localDensity;
     inletCell.rpC = localDensity;
-    secondCell.rpL = inletCell.rpC;
     inletCell.rcL = localDensity;
     inletCell.rcC = localDensity;
-    secondCell.rcL = inletCell.rcC;
 
     inletCell.MC = 0.;
     inletCell.ML = 0.;
@@ -139,7 +134,6 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
             (leftHalfLength * left.temp + localHalfLength * meanTemperature) / (leftHalfLength + localHalfLength);
         cell.presaux = meanPressure;
         left.presauxR = cell.presaux;
-        cell.presauxL = left.presaux;
         if (belowInterface)
             localDensity = cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
         else
@@ -185,10 +179,7 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state) {
 
         if (cellIndex < state.lastCell) {
             Cel &right = state.cells[cellIndex + 1];
-            right.tempL = meanTemperature;
             right.QLL = cell.QL;
-            right.rpL = cell.rpC;
-            right.rcL = cell.rcC;
             right.rpLi = interpolatedDensity;
             right.rcLi = interpolatedDensity;
             copyPhaseToRightNeighbour(cell, right);
