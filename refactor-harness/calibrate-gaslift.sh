@@ -114,8 +114,8 @@ probe 'resolveDescarga: liquid hydrostatic' \
 # Splits the gas/liquid share of every control volume. Moving the threshold
 # changes which side of the interface each cell is counted on.
 probe 'resolveDescarga: interface split' \
-    'if (cell.razInter <= kMidCellInterfaceRatio)' \
-    'if (cell.razInter <= 0.6)' \
+    'cell.razInter <= kMidCellInterfaceRatio ? 2 * cell.razInter' \
+    'cell.razInter <= 0.6 ? 2 * cell.razInter' \
     "$target_gaslift"
 
 # SC-012 moved the throttling test into injectionChokeOpening, the overload for
