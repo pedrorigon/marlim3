@@ -891,53 +891,55 @@ void connectTubingSteady(const GasLiftState &state) {
 void updateSteadyGasPressure(const GasLiftState &state, int cellIndex) {
     CelG &cell = state.gasCells[cellIndex];
     CelG &left = state.gasCells[cellIndex - 1];
-    double dx = 0.5 * cell.dxL;
-    double diameter = cell.dutoL.a;
-    double area = boreArea(diameter);
-    double perimeter = cell.dutoL.peri;
-    double gasDensity = left.flui.MasEspGas(left.pres, left.temp);
-
     const double leftFaceGasMassFlowRate = left.VGasR;
-    double gasVelocity = leftFaceGasMassFlowRate / left.u1L;
 
-    double gasViscosity = left.flui.ViscGas(left.pres, left.temp);
+    // The left neighbour's half, at its pressure and temperature; its friction and hydrostatic gradients are recorded
+    // on it.
+    double meanPressure;
+    {
+        const double dx = 0.5 * cell.dxL;
+        const double diameter = cell.dutoL.a;
+        const double area = boreArea(diameter);
+        const double perimeter = cell.dutoL.peri;
+        const double gasDensity = left.flui.MasEspGas(left.pres, left.temp);
+        const double gasVelocity = leftFaceGasMassFlowRate / left.u1L;
+        const double gasViscosity = left.flui.ViscGas(left.pres, left.temp);
+        const double reynolds = left.Rey(characteristicDiameter(cell.dutoL.revest, cell.dutoL.a, area, perimeter),
+                                         gasVelocity, gasDensity, gasViscosity);
+        const double frictionFactor = left.fric(reynolds, cell.dutoL.rug / diameter);
+        const double frictionGradient = left.dPdLFric * 0.5 * frictionFactor * gasDensity *
+                                        (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area;
+        const double hydrostaticGradient = left.dPdLHidro * kGravity * sin(cell.dutoL.teta) * gasDensity * dx;
+        left.termoFric = frictionGradient / dx;
+        left.termoHidro = hydrostaticGradient / dx;
+        meanPressure = left.pres - (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    }
 
-    double reynolds = left.Rey(characteristicDiameter(cell.dutoL.revest, cell.dutoL.a, area, perimeter), gasVelocity,
-                               gasDensity, gasViscosity);
-    double frictionFactor = left.fric(reynolds, cell.dutoL.rug / diameter);
-    double frictionGradient =
-        left.dPdLFric * 0.5 * frictionFactor * gasDensity * (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area;
-    double hydrostaticGradient = left.dPdLHidro * kGravity * sin(cell.dutoL.teta) * gasDensity * dx;
-    left.termoFric = frictionGradient / dx;
-    left.termoHidro = hydrostaticGradient / dx;
-
-    const double meanPressure = left.pres - (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
-
-    const double meanTemperature = left.temp;
-
-    dx = 0.5 * cell.dx0;
-    diameter = cell.duto.a;
-    area = boreArea(diameter);
-    perimeter = cell.duto.peri;
-    gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
-    const double leftFlowArea = cell.dutoL.area;
-    const double flowArea = cell.duto.area;
-    const double areaVariation = 1 / (leftFlowArea * leftFlowArea) - 1 / (flowArea * flowArea);
-    const double dynamicPressureTerm = 0.5 * leftFaceGasMassFlowRate * leftFaceGasMassFlowRate * areaVariation / gasDensity;
-
-    gasVelocity = leftFaceGasMassFlowRate / (gasDensity * area);
-
-    gasViscosity = cell.flui.ViscGas(meanPressure, meanTemperature);
-
-    reynolds = cell.Rey(characteristicDiameter(cell.duto.revest, cell.duto.a, area, perimeter), gasVelocity, gasDensity,
-                        gasViscosity);
-    frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
-    frictionGradient =
-        cell.dPdLFric * 0.5 * frictionFactor * gasDensity * (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area;
-    hydrostaticGradient = cell.dPdLHidro * kGravity * sin(cell.duto.teta) * gasDensity * dx;
-
-    cell.pres =
-        meanPressure - (frictionGradient + hydrostaticGradient - dynamicPressureTerm) / units::kPascalPerKgfPerCm2;
+    // The cell's own half, from the pressure the left half reaches, with the dynamic pressure of the change of flow
+    // area between the two cells.
+    {
+        const double meanTemperature = left.temp;
+        const double dx = 0.5 * cell.dx0;
+        const double diameter = cell.duto.a;
+        const double area = boreArea(diameter);
+        const double perimeter = cell.duto.peri;
+        const double gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
+        const double leftFlowArea = cell.dutoL.area;
+        const double flowArea = cell.duto.area;
+        const double areaVariation = 1 / (leftFlowArea * leftFlowArea) - 1 / (flowArea * flowArea);
+        const double dynamicPressureTerm =
+            0.5 * leftFaceGasMassFlowRate * leftFaceGasMassFlowRate * areaVariation / gasDensity;
+        const double gasVelocity = leftFaceGasMassFlowRate / (gasDensity * area);
+        const double gasViscosity = cell.flui.ViscGas(meanPressure, meanTemperature);
+        const double reynolds = cell.Rey(characteristicDiameter(cell.duto.revest, cell.duto.a, area, perimeter),
+                                         gasVelocity, gasDensity, gasViscosity);
+        const double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
+        const double frictionGradient = cell.dPdLFric * 0.5 * frictionFactor * gasDensity *
+                                        (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area;
+        const double hydrostaticGradient = cell.dPdLHidro * kGravity * sin(cell.duto.teta) * gasDensity * dx;
+        cell.pres =
+            meanPressure - (frictionGradient + hydrostaticGradient - dynamicPressureTerm) / units::kPascalPerKgfPerCm2;
+    }
     left.presR = cell.pres;
     if (cellIndex < state.lastGasCell)
         state.gasCells[cellIndex + 1].presL = cell.pres;
@@ -1136,93 +1138,95 @@ void initializeSteadyValveGasFlowRate(const GasLiftState &state, int cellIndex) 
 double steadyGasPressureDrop(const GasLiftState &state, int cellIndex) {
     CelG &cell = state.gasCells[cellIndex];
     CelG &left = state.gasCells[cellIndex - 1];
-    double dx = 0.5 * cell.dx0;
-    double diameter = cell.duto.a;
-    double area = boreArea(diameter);
-    double perimeter = cell.duto.peri;
-    double gasDensity = cell.flui.MasEspGas(cell.pres, cell.temp);
-
     const double leftFaceGasMassFlowRate = left.VGasR;
 
-    double gasVelocity = leftFaceGasMassFlowRate / cell.u1L;
+    // The cell's own half, at its pressure and temperature.
+    double pressureDrop;
+    {
+        const double dx = 0.5 * cell.dx0;
+        const double diameter = cell.duto.a;
+        const double area = boreArea(diameter);
+        const double perimeter = cell.duto.peri;
+        const double gasDensity = cell.flui.MasEspGas(cell.pres, cell.temp);
+        const double gasVelocity = leftFaceGasMassFlowRate / cell.u1L;
+        const double gasViscosity = cell.flui.ViscGas(cell.pres, cell.temp);
+        const double reynolds = cell.Rey(characteristicDiameter(cell.duto.revest, cell.duto.a, area, perimeter),
+                                         gasVelocity, gasDensity, gasViscosity);
+        const double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
+        const double frictionGradient = cell.dPdLFric * (0.5 * frictionFactor * gasDensity *
+                                                         (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area);
+        const double hydrostaticGradient = cell.dPdLHidro * (kGravity * sin(cell.duto.teta) * gasDensity * dx);
+        pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    }
 
-    double gasViscosity = cell.flui.ViscGas(cell.pres, cell.temp);
-
-    double reynolds = cell.Rey(characteristicDiameter(cell.duto.revest, cell.duto.a, area, perimeter), gasVelocity,
-                               gasDensity, gasViscosity);
-    double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
-    double frictionGradient =
-        cell.dPdLFric * (0.5 * frictionFactor * gasDensity * (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area);
-    double hydrostaticGradient = cell.dPdLHidro * (kGravity * sin(cell.duto.teta) * gasDensity * dx);
-
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    // The left neighbour's half, at the pressure the cell's half reaches and the mean temperature of the two cells.
     const double meanPressure = cell.pres + pressureDrop;
-
     const double meanTemperature = (cell.dx0 * cell.temp + cell.dxL * cell.tempL) / (cell.dx0 + cell.dxL);
-
-    dx = 0.5 * cell.dxL;
-    diameter = cell.dutoL.a;
-    area = boreArea(diameter);
-    perimeter = cell.dutoL.peri;
-    gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
-
-    gasVelocity = leftFaceGasMassFlowRate / (gasDensity * area);
-
-    gasViscosity = left.flui.ViscGas(meanPressure, meanTemperature);
-
-    reynolds = cell.Rey(characteristicDiameter(cell.dutoL.revest, cell.dutoL.a, area, perimeter), gasVelocity,
-                        gasDensity, gasViscosity);
-    frictionFactor = left.fric(reynolds, cell.dutoL.rug / diameter);
-    frictionGradient =
-        left.dPdLFric * (0.5 * frictionFactor * gasDensity * (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area);
-    hydrostaticGradient = left.dPdLHidro * (kGravity * sin(cell.dutoL.teta) * gasDensity * dx);
-    pressureDrop += (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    {
+        const double dx = 0.5 * cell.dxL;
+        const double diameter = cell.dutoL.a;
+        const double area = boreArea(diameter);
+        const double perimeter = cell.dutoL.peri;
+        const double gasDensity = cell.flui.MasEspGas(meanPressure, meanTemperature);
+        const double gasVelocity = leftFaceGasMassFlowRate / (gasDensity * area);
+        const double gasViscosity = left.flui.ViscGas(meanPressure, meanTemperature);
+        const double reynolds = cell.Rey(characteristicDiameter(cell.dutoL.revest, cell.dutoL.a, area, perimeter),
+                                         gasVelocity, gasDensity, gasViscosity);
+        const double frictionFactor = left.fric(reynolds, cell.dutoL.rug / diameter);
+        const double frictionGradient = left.dPdLFric * (0.5 * frictionFactor * gasDensity *
+                                                         (fabs(gasVelocity) * gasVelocity) * perimeter * dx / area);
+        const double hydrostaticGradient = left.dPdLHidro * (kGravity * sin(cell.dutoL.teta) * gasDensity * dx);
+        pressureDrop += (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    }
     return pressureDrop;
 }
 
 double steadyInjectionPressureDrop(const GasLiftState &state, int cellIndex) {
     Cel &cell = state.cells[cellIndex];
     Cel &left = state.cells[cellIndex - 1];
-    double dx = 0.5 * cell.dx;
-    double diameter = cell.duto.a;
-    double area = boreArea(diameter);
-    double perimeter = cell.duto.peri;
-    double meanTemperature = (cell.dx * cell.temp + cell.dxL * left.temp) / (cell.dx + cell.dxL);
-    double injectedFluidDensity = cell.fluicol.MasEspFlu(cell.presaux, meanTemperature);
 
-    double fluidVelocity = left.QL / area;
+    // The cell's own half, at its auxiliary pressure and the mean temperature of the two cells, with the flow from the
+    // left neighbour.
+    double pressureDrop;
+    double fluidVelocity;
+    {
+        const double dx = 0.5 * cell.dx;
+        const double diameter = cell.duto.a;
+        const double area = boreArea(diameter);
+        const double perimeter = cell.duto.peri;
+        const double meanTemperature = (cell.dx * cell.temp + cell.dxL * left.temp) / (cell.dx + cell.dxL);
+        const double injectedFluidDensity = cell.fluicol.MasEspFlu(cell.presaux, meanTemperature);
+        fluidVelocity = left.QL / area;
+        const double fluidViscosity = cell.fluicol.VisFlu(cell.presaux, meanTemperature);
+        const double reynolds = cell.Rey(characteristicDiameter(cell.duto.revest, cell.duto.a, area, perimeter),
+                                         fluidVelocity, injectedFluidDensity, fluidViscosity);
+        const double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
+        const double frictionGradient = cell.dPdLFric * 0.5 * frictionFactor * injectedFluidDensity *
+                                        (fabs(fluidVelocity) * fluidVelocity) * perimeter * dx / area;
+        const double hydrostaticGradient = cell.dPdLHidro * kGravity * sin(cell.duto.teta) * injectedFluidDensity * dx;
+        pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    }
 
-    double fluidViscosity = cell.fluicol.VisFlu(cell.presaux, meanTemperature);
-
-    double reynolds = cell.Rey(characteristicDiameter(cell.duto.revest, cell.duto.a, area, perimeter), fluidVelocity,
-                               injectedFluidDensity, fluidViscosity);
-    double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
-    double frictionGradient = cell.dPdLFric * 0.5 * frictionFactor * injectedFluidDensity *
-                              (fabs(fluidVelocity) * fluidVelocity) * perimeter * dx / area;
-    double hydrostaticGradient = cell.dPdLHidro * kGravity * sin(cell.duto.teta) * injectedFluidDensity * dx;
-
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    // The left neighbour's half, at its pressure and temperature, with the flow from the cell before it.
     const double meanPressure = left.pres;
-
-    dx = 0.5 * cell.dxL;
-    diameter = cell.dutoL.a;
-    area = boreArea(diameter);
-    perimeter = cell.dutoL.peri;
-    meanTemperature = left.temp;
-    injectedFluidDensity = cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
-
-    if (cellIndex > 1)
-        fluidVelocity = state.cells[cellIndex - 2].QL / area;
-
-    fluidViscosity = cell.fluicol.VisFlu(meanPressure, meanTemperature);
-
-    reynolds = cell.Rey(characteristicDiameter(cell.dutoL.revest, cell.dutoL.a, area, perimeter), fluidVelocity,
-                        injectedFluidDensity, fluidViscosity);
-    frictionFactor = left.fric(reynolds, cell.dutoL.rug / diameter);
-    frictionGradient = left.dPdLFric * 0.5 * frictionFactor * injectedFluidDensity *
-                       (fabs(fluidVelocity) * fluidVelocity) * perimeter * dx / area;
-    hydrostaticGradient = left.dPdLHidro * kGravity * sin(cell.dutoL.teta) * injectedFluidDensity * dx;
-    pressureDrop += (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    {
+        const double dx = 0.5 * cell.dxL;
+        const double diameter = cell.dutoL.a;
+        const double area = boreArea(diameter);
+        const double perimeter = cell.dutoL.peri;
+        const double meanTemperature = left.temp;
+        const double injectedFluidDensity = cell.fluicol.MasEspFlu(meanPressure, meanTemperature);
+        // Cell 1 has no cell before its left neighbour: its left half keeps the velocity of its own half.
+        const double leftFluidVelocity = cellIndex > 1 ? state.cells[cellIndex - 2].QL / area : fluidVelocity;
+        const double fluidViscosity = cell.fluicol.VisFlu(meanPressure, meanTemperature);
+        const double reynolds = cell.Rey(characteristicDiameter(cell.dutoL.revest, cell.dutoL.a, area, perimeter),
+                                         leftFluidVelocity, injectedFluidDensity, fluidViscosity);
+        const double frictionFactor = left.fric(reynolds, cell.dutoL.rug / diameter);
+        const double frictionGradient = left.dPdLFric * 0.5 * frictionFactor * injectedFluidDensity *
+                                        (fabs(leftFluidVelocity) * leftFluidVelocity) * perimeter * dx / area;
+        const double hydrostaticGradient = left.dPdLHidro * kGravity * sin(cell.dutoL.teta) * injectedFluidDensity * dx;
+        pressureDrop += (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;
+    }
     return pressureDrop;
 }
 

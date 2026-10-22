@@ -138,11 +138,9 @@ probe 'delpGasPerm: hydrostatic constant' 'double hydrostaticGradient = cell.dPd
 # Both steady drops divide by 98066.5; the hydrostatic line above pins this one
 # to delpGasPerm.
 probe 'delpGasPerm: pressure unit'        'double hydrostaticGradient = cell.dPdLHidro * (kGravity * sin(cell.duto.teta) * gasDensity * dx);
-
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;' \
+        pressureDrop = (frictionGradient + hydrostaticGradient) / units::kPascalPerKgfPerCm2;' \
                                           'double hydrostaticGradient = cell.dPdLHidro * (kGravity * sin(cell.duto.teta) * gasDensity * dx);
-
-    double pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.52;' \
+        pressureDrop = (frictionGradient + hydrostaticGradient) / 98066.52;' \
                                           "$target_gaslift"
 probe 'delpInjPerm: interpolation weight' 'meanTemperature = (cell.dx * cell.temp + cell.dxL * left.temp) / (cell.dx + cell.dxL);' \
                                           'meanTemperature = (cell.dxL * cell.temp + cell.dx * left.temp) / (cell.dx + cell.dxL);' \
