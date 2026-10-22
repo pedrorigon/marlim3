@@ -341,6 +341,14 @@ run_t064_decomposition_case renova-missing-helper \
     'void selectDistributedMassTransferModel(' \
     'void removedDistributedMassTransferModel('
 
+run_t064_decomposition_case renova-carry-binding \
+    'previousFace.solutionGasRatio = leftFaceSolutionGasRatio;' \
+    'previousFace.solutionGasRatio = leftFaceOilVolumeFactor;'
+
+run_t064_decomposition_case renova-donor-property \
+    'leftFaceDonorOilVolumeFactor = leftFaceFluid.BOFunc(cell.pres, cell.temp);' \
+    'leftFaceDonorOilVolumeFactor = leftFaceFluid.BAFunc(cell.pres, cell.temp);'
+
 # The T065 decomposition control is RETIRED, and the reason is worth stating so
 # nobody reinstates it and then silences the failure.
 #

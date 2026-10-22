@@ -78,6 +78,8 @@ probe computeReverseSteadySourceTerms 's/cellIndex + 1/cellIndex - 1/'     'marc
 probe computeReverseSteadyLatentHeatTerm 's/latentHeatTerm = 0\./latentHeatTerm = 0.1/' 'initial value, reverse latent term'
 probe applyReverseSteadyAnnulusCoupling 's/annulusResistance = 0\./annulusResistance = 1./' 'reverse annulus resistance'
 probe advanceSteadyTemperature   's/temperatureSpatialCoefficient/pressureSpatialCoefficient/' 'coefficient swapped in the coordinator'
+probe advanceSteadyTemperatureSubsteps 's/subStepCount = 1;/subStepCount = 2;/' 'direct substep count'
+probe advanceReverseSteadyTemperatureSubsteps 's/meanPressure = step.meanPressure/meanPressure = step.meanCellLength/' 'reverse substep property binding'
 
 # The checker normalises away breakpoint anchors -- guards whose entire body is
 # an int declaration and an assignment of zero -- because fourteen of them were

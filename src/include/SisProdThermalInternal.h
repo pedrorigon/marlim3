@@ -4,10 +4,30 @@
 #include "SisProdThermal.h"
 
 class ProFlu;
-template <typename T> class Vcr;
+template <typename T>
+class Vcr;
 
 namespace sisprod::thermal {
 namespace {
+
+/// Fluid properties and transport coefficients held fixed during one steady cell advance.
+struct SteadyTemperatureStep {
+    double meanPressure;
+    double meanVoidFraction;
+    double betmed;
+    double liquidDensity;
+    double gasDensity;
+    double liquidSpecificHeat;
+    double gasSpecificHeat;
+    double meanSuperficialGasVelocity;
+    double meanSuperficialLiquidVelocity;
+    double meanCellLength;
+    double meanTemperatureGradientCorrection;
+    double temperatureSpatialCoefficient;
+    double annulusResistance;
+    double mixtureFluxSign;
+    double sourceTemperatureGradient;
+};
 
 struct SourceEnthalpy {
     double gasEnthalpy;
@@ -48,6 +68,13 @@ struct TemperatureSourceTerms {
     double liquid;
 };
 
+/// Water cuts evaluated while copying the two liquid-flow donors.
+struct MassTransferWaterCuts {
+    double leftFaceWaterCut;
+    double leftCellLeftFaceWaterCut;
+    double leftCellWaterCut;
+};
+
 struct DistributedMassTransferProperties {
     double leftFaceWaterCut;
     double leftCellLeftFaceWaterCut;
@@ -65,7 +92,8 @@ struct DistributedMassTransferProperties {
     double leftCellSolutionGasPressureDerivative;
     double leftCellSolutionGasTemperatureDerivative;
 };
-struct InletMassTransferSeed {
+/// Mixture liquid density and solution-gas state carried from the previous face.
+struct MassTransferFaceState {
     double liquidDensity;
     double oilVolumeFactor;
     double solutionGasRatio;
@@ -143,8 +171,8 @@ void clearSourceSpecificHeats(double &sourceGasSpecificHeat,
 /// Computes source heating for the temperature balance, using previous pressure
 /// and source-specific temperature and accessory rules.
 TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
-                                                      int cellIndex,
-                                                      double cellLength);
+                                                     int cellIndex,
+                                                     double cellLength);
 
 /// Computes source heating for thermal mass transfer at current pressure.
 /// The volumetric-pump path retains a zero source specific-heat ratio.
@@ -153,7 +181,7 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
 
 /// Refreshes inlet sources, saves their previous face values, and seeds the
 /// liquid density and solution-gas properties for the distributed sweep.
-InletMassTransferSeed initializeDistributedMassTransferInlet(
+MassTransferFaceState initializeDistributedMassTransferInlet(
     const ThermalState &state, int cellIndex);
 
 /// Selects liquid-flow donors for a face with cellIndex >= 1 and prepares
@@ -183,13 +211,12 @@ void selectDistributedMassTransferModel(
 /// Saves face mass-transfer terms and derivatives in their previous-iteration fields.
 void snapshotMassTransferState(const ThermalState &state, int cellIndex);
 
-/// Selects and applies the upstream cell phase-change model, preserving its
+/// Selects and applies the upstream cell phase-change model with its
 /// model-specific derivative resets and previous-face dependencies.
 void applyDistributedMassTransferModel(
     const ThermalState &state, int cellIndex, double leftAbsoluteSuperficialVelocity, const ProFlu &leftCellLeftFaceFluid, const ProFlu &leftFaceFluid,
     const DistributedMassTransferProperties &properties,
-    double activeDerivative, double spatialCoupling, double coefficientFlowArea, double leftCellLeftFaceMixtureLiquidDensity, double leftCellLeftFaceOilVolumeFactor,
-    double leftCellLeftFaceSolutionGasRatio, double leftCellLeftFaceSolutionGasPressureDerivative);
+    const DistributedMassTransferCoefficients &coefficients, const MassTransferFaceState &previousFace);
 
 /// Zeros face mass-transfer derivatives. Temperature derivatives are reset
 /// only when their disabling flag is active; the mass source is left to the caller.
@@ -332,7 +359,89 @@ int thermalCouplingIndexOf(const ThermalState &state, int cellIndex);
 void updateInletBoundaryFlowPartition(
     const ThermalState &state, int cellIndex, Vcr<int> &bifurcationFlags);
 
-}  // namespace
-}  // namespace sisprod::thermal
+/// Evaluates transient, steady, or 3D-coupled heat flux after the cell heat-transfer
+/// state is prepared. Unsupported diffusion modes retain zero heat flux.
+double temperatureHeatFluxOf(const ThermalState &state, int cellIndex, int steadyStateMode);
 
-#endif  // SISPRODTHERMALINTERNAL_H_
+/// Computes the temperature-balance pressure gradient with ordered boundary
+/// and pressure-jump accessory overrides.
+double temperaturePressureGradientOf(const ThermalState &state, int cellIndex,
+                                     const TemperatureBalance &balance);
+
+/// Computes the upwind temperature gradient and the subsequent volumetric-pump
+/// pressure override. Retains zero products for non-finite face values.
+double temperatureSpatialGradientOf(const ThermalState &state, int cellIndex,
+                                    const TemperatureBalance &balance, double &pressureGradient);
+
+/// Limits the phase-change mass rate locally and evaluates the temperature
+/// balance latent heat using previous pressure and the configured latent switches.
+double computeTemperatureLatentHeatTerm(const ThermalState &state, int cellIndex);
+
+/// Computes thermal mass-transfer kinetic work using the left cell face velocities.
+/// This calculation uses current-pressure mass-transfer data.
+double computeThermalMassTransferKineticTerm(
+    const ThermalState &state, int cellIndex, double meanSuperficialGasVelocity,
+    double meanSuperficialLiquidVelocity);
+
+/// Advances the direct march over thermally stable substeps, recalculating
+/// heat flow and the leftCell external annulus temperature at each step.
+/// Publishes the cell temperature and average wall heat flux in evaluation order.
+void advanceSteadyTemperatureSubsteps(const ThermalState &state, int cellIndex,
+                                      const SteadyTemperatureStep &step, double heatFluxTemperatureGradient);
+
+/// Advances the reverse march over thermally stable substeps, recalculating
+/// heat flow and the rightCell external annulus temperature at each step.
+/// Publishes the cell temperature and average wall heat flux in evaluation order.
+void advanceReverseSteadyTemperatureSubsteps(const ThermalState &state, int cellIndex,
+                                             const SteadyTemperatureStep &step, double heatFluxTemperatureGradient);
+
+/// Applies outlet backflow rules before advancing thermal state.
+/// The two boundary modes retain their distinct mixture mass-flow assignments.
+void prepareTransientOutletFlow(const ThermalState &state);
+
+/// Prepares coupled-cell interface data in parallel, advances the 3D Poisson
+/// thermal solver when the cycle requires it, and refreshes the temperature field.
+void advanceCoupledThermalField(const ThermalState &state, int cycle, int maximumCycle);
+
+/// Copies the two donors selected by liquid-flow direction and evaluates their
+/// water cuts and the upstream cell water cut in property-call order.
+MassTransferWaterCuts prepareMassTransferDonors(
+    const ThermalState &state, int cellIndex, bool leftCellHasNegativeLiquidMassFlowRate,
+    ProFlu &leftCellLeftFaceFluid, ProFlu &leftFaceFluid);
+
+/// Updates model-0 spatial and time derivatives and its corrected left mass source.
+/// Model-1 and hydrate derivative resets are handled by their own branches.
+void updateEquilibriumMassTransferDerivatives(
+    const ThermalState &state, int cellIndex,
+    const ProFlu &leftCellLeftFaceFluid, const ProFlu &leftFaceFluid,
+    const DistributedMassTransferProperties &properties,
+    const DistributedMassTransferCoefficients &coefficients, const MassTransferFaceState &previousFace);
+
+/// Refreshes sources, prepares one face, updates derivatives and model terms,
+/// then publishes the state carried to the next face before fluid copies are destroyed.
+void updateDistributedMassTransferCell(
+    const ThermalState &state, int cellIndex, MassTransferFaceState &previousFace);
+
+/// Applies the hydrate model, disabled-model reset, and ordered phase-availability
+/// limits without sharing reset sets between distinct models.
+void finalizeDistributedMassTransferFace(
+    const ThermalState &state, int cellIndex, const DistributedMassTransferProperties &properties,
+    const DistributedMassTransferCoefficients &coefficients);
+
+/// Evaluates the interior drift closure after regime selection and applies
+/// its velocity cap and outlet-only partition corrections in their evaluation order.
+void applyInteriorDriftPartition(
+    const ThermalState &state, int cellIndex, double superficialGasVelocity,
+    double superficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
+
+/// Corrects one interior partition using cell closure values. Candidate phase
+/// masses are evaluated before drift and shut-in corrections and retain that
+/// time level throughout the ordered tests.
+void finalizeFlowPartitionCell(
+    const ThermalState &state, int cellIndex, int isShutIn,
+    const Vcr<int> &bif, const Vcr<int> &valv);
+
+} // namespace
+} // namespace sisprod::thermal
+
+#endif // SISPRODTHERMALINTERNAL_H_

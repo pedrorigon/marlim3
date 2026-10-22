@@ -8,7 +8,9 @@ class CelG;
 class ChokeGas;
 class Ler;
 class SProd;
-namespace sisprod { class SolveContext; }
+namespace sisprod {
+class SolveContext;
+}
 class choke;
 class solverP3D;
 struct varGlob1D;
@@ -180,6 +182,6 @@ void updateProductionTemperaturePeriphery(const ThermalState &state,
 /// Surface temperature at the end of the production line.
 void computeOutletTemperature(const ThermalState &state);
 
-}  // namespace sisprod::thermal
+} // namespace sisprod::thermal
 
-#endif  // SISPRODTHERMAL_H_
+#endif // SISPRODTHERMAL_H_

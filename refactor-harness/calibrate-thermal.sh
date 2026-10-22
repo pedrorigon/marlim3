@@ -130,16 +130,16 @@ fi
 # targeted SisProd.cpp with the Portuguese names and stopped matching, which the
 # runner reported honestly as CORRUPTION NOT INJECTED rather than as a pass.
 queue_case latent-blend-order SisProdThermal.cpp \
-    'latentHeat = (1 - temperatureRatio) * latentHeatAtTemperatureIndex + temperatureRatio * latentHeatAtNextTemperatureIndex;' \
-    'latentHeat = (1 - temperatureRatio) * latentHeatAtNextTemperatureIndex + temperatureRatio * latentHeatAtTemperatureIndex;' caught
+    'return (1 - temperatureRatio) * latentHeatAtTemperatureIndex + temperatureRatio * latentHeatAtNextTemperatureIndex;' \
+    'return (1 - temperatureRatio) * latentHeatAtNextTemperatureIndex + temperatureRatio * latentHeatAtTemperatureIndex;' caught
 
 queue_case mixture-energy-sign SisProdThermal.cpp \
     'return previousMixtureInternalEnergy - (enthalpyFluxDivergence' \
     'return previousMixtureInternalEnergy + (enthalpyFluxDivergence' caught
 
 queue_case boundary-temperature-write SisProdThermal.cpp \
-    $'    if (cellIndex > 0)\n        leftCell.tempR = cell.temp;' \
-    $'    if (cellIndex > 0)\n        leftCell.tempR = cell.temp + 1.;' caught
+    $'    if (cellIndex > 0)\n        state.cells[cellIndex - 1].tempR = cell.temp;' \
+    $'    if (cellIndex > 0)\n        state.cells[cellIndex - 1].tempR = cell.temp + 1.;' caught
 
 queue_case outlet-temperature-source SisProdThermal.cpp \
     'state.surfaceTemperature = state.cells[state.lastCell - 1].temp;' \
@@ -169,11 +169,9 @@ queue_case outlet-boundary-index SisProdThermal.cpp \
     $'void updateOutletFlowPartitionTerms(const ThermalState &state) {\n\n    int cellIndex = state.lastCell;' \
     $'void updateOutletFlowPartitionTerms(const ThermalState &state) {\n\n    int cellIndex = state.lastCell - 1;' caught
 
-# The breakpoint anchor that used to pin this pattern was deleted with the other
-# thirteen, so the preamble is now two blank lines.
 queue_case inlet-boundary-propagation SisProdThermal.cpp \
-    $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n\n    int cellIndex = 0;' \
-    $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n\n    int cellIndex = 1;' caught
+    $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n    int cellIndex = 0;' \
+    $'void updateInletFlowPartitionTerms(const ThermalState &state) {\n\n    int cellIndex = 1;' caught
 
 queue_case forward-hot-guard SisProdThermal.cpp \
     'if (fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) > 0.05 && state.thermalSourceDisabled == 0) {' \

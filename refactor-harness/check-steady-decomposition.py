@@ -10,8 +10,9 @@ T071 split the two marches to satisfy SC-004. Obtain it with
 
 
 A decomposition is exact only if inlining every helper call reproduces the
-pre-decomposition body token for token. This expands the four calls in each
-march, strips the scaffolding the split introduced (the helper's own
+pre-decomposition body token for token. The directional substeps are first
+expanded with checked value bindings by thermal-steady-layout.py. This expands
+the four original calls in each march and strips scalar scaffolding (the helper's own
 declaration of the value it returns, its return statement, and the struct
 unpacking at the call site) and compares against the body as it stood before.
 """
@@ -51,6 +52,12 @@ def helper_body(text, name, drop_leading=None):
 
 
 cur = open('src/core/SisProdThermal.cpp', encoding='utf-8').read()
+if 'advanceSteadyTemperatureSubsteps' in cur:
+    layout_spec = importlib.util.spec_from_file_location(
+        'thermal_steady_layout', 'refactor-harness/thermal-steady-layout.py')
+    layout = importlib.util.module_from_spec(layout_spec)
+    layout_spec.loader.exec_module(layout)
+    cur = layout.restore(cur)
 base = tm.MAYBE_UNUSED.sub('', open(sys.argv[1], encoding='utf-8').read())
 
 # The baseline also predates the fix that made the liquid velocity cap keep its sign, as the gas cap
@@ -141,7 +148,7 @@ for march, helpers in SPECS:
     verdict = tm.compare_tokens(a, b)
     if verdict != "differs":
         note = "" if verdict == "exact" else " modulo renames and named constants"
-        print(f"OK       {march} reconstituida <- 4 helpers ({len(a)} tokens{note})")
+        print(f"OK       {march} reconstituida <- helpers e subpassos ({len(a)} tokens{note})")
     else:
         pos = tm.first_difference(a, b)
         print(f"DIFFERS  {march} no token {pos}")

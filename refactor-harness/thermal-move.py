@@ -41,6 +41,7 @@ Usage:
 from __future__ import annotations
 
 import functools
+import importlib.util
 import pathlib
 import re
 import sys
@@ -1483,6 +1484,9 @@ def thermal_mass_source_block(body: str) -> str:
 def check_t063_decomposition(baseline_path: str, current_path: str) -> int:
     old_name = "calcTransMassTermo"
     baseline = require_t063(baseline_path, old_name)
+    raw_current = pathlib.Path(current_path).read_text()
+    if 'computeThermalMassTransferKineticTerm' in raw_current:
+        return current_extraction_layout().check_thermal_source(raw_current)
     expected_main = forward_t063(old_name, baseline[2])
     expected_block = thermal_mass_source_block(expected_main)
 
@@ -2104,10 +2108,22 @@ def inline_leaf_helpers(source: str, names: tuple[str, ...] = LEAF_HELPERS) -> s
     return source
 
 
+def current_extraction_layout():
+    """Load the literal checks anchored after the scalar/interface cleanup."""
+    spec = importlib.util.spec_from_file_location(
+        'thermal_extraction_layout', pathlib.Path(__file__).with_name('thermal-extraction-layout.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def check_renova_temp_decomposition(
     baseline_path: str, current_path: str
 ) -> int:
     baseline = require_renova_temp(baseline_path)
+    raw_current = pathlib.Path(current_path).read_text()
+    if 'updateDistributedMassTransferCell' in raw_current:
+        return current_extraction_layout().check_mass(raw_current)
     expected_main = forward_renova_temp(baseline[2])
     current_source = read_current(current_path)
 
