@@ -688,14 +688,14 @@ void advanceGasSubStep(const GasLiftState &state) {
     }
 
     for (int gasCellIndex = 0; gasCellIndex <= state.lastGasCell; gasCellIndex++) {
-        state.gasCells[gasCellIndex].dt = state.timeStep;
+        CelG &cell = state.gasCells[gasCellIndex];
+        cell.dt = state.timeStep;
+        cell.dTdt = 0;
     }
 
     // The temperature, density and flow loops below stop before this cell: past the last one without an interface,
     // at the interface cell's left neighbour otherwise.
     const int gasLoopEnd = state.interfaceCell <= state.lastGasCell ? state.interfaceCell - 1 : state.lastGasCell + 1;
-    for (int gasCellIndex = 0; gasCellIndex <= state.lastGasCell; gasCellIndex++)
-        state.gasCells[gasCellIndex].dTdt = 0;
 
     const int maximumThermalCouplingCycles = state.input.cicloAcopTerm;
     for (int thermalCouplingCycle = 0; thermalCouplingCycle <= maximumThermalCouplingCycles; thermalCouplingCycle++) {
