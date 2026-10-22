@@ -96,9 +96,15 @@ struct UnloadingValve {
 /// when the window holds more samples than its capacity or spans more time than the averaging window.
 void recordUnloadingSample(const GasLiftState &state, double maximumFlowRate);
 
-/// Recomputes presMaxDesc along the production column and moves the injection pressure towards the unloading
-/// flow band.
-void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex);
+/// Marches the mixture pressure from the separator down the production column and sets presMaxDesc, the highest
+/// separator pressure the unloading allows: the smallest, over the IPR accessories, of the reservoir pressure less the
+/// column's pressure difference from the separator down to the accessory.
+void computeMaximumSeparatorPressure(const GasLiftState &state);
+
+/// Moves the injection pressure towards the unloading flow band through the selected valve, within the unloading's
+/// injection pressures: down when the flow is above the band with the separator pressure at its maximum and gas
+/// entering the gas line, up when the flow is below the band with the separator pressure at its minimum.
+void correctInjectionPressure(const GasLiftState &state, double flowRate, int valveIndex);
 
 /// Corrects the separator pressure towards the unloading flow band through the selected valve, within the
 /// unloading's pressures, while the column's last cell but one holds completion fluid; once it holds none, lets the

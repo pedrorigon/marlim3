@@ -196,7 +196,8 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
             const double controlledFlowRate =
                 kCurrentFlowWeight * valve.flowRate +
                 (1. - kCurrentFlowWeight) * state.accumulatedUnloadingVolume / state.unloadingAveragingInterval;
-            computeUnloadingValvePressure(state, controlledFlowRate, valve.index);
+            computeMaximumSeparatorPressure(state);
+            correctInjectionPressure(state, controlledFlowRate, valve.index);
             if (state.gasValveCellIndices[valve.index] >= state.interfaceCell)
                 correctSeparatorPressure(state, controlledFlowRate, valve.index);
         } else {
@@ -250,9 +251,9 @@ void recordUnloadingSample(const GasLiftState &state, double maximumFlowRate) {
     state.unloadingAveragingInterval += state.timeStep;
 }
 
-void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowRate, int valveIndex) {
+void computeMaximumSeparatorPressure(const GasLiftState &state) {
     double meanPressure = state.separatorPressure;
-    state.input.presMaxDesc = kUnboundedUnloadingPressure;
+    double maximumPressure = kUnboundedUnloadingPressure;
     for (int cellIndex = state.lastCell; cellIndex >= 0; cellIndex--) {
         Cel &cell = state.cells[cellIndex];
         const double meanTemperature = cell.temp;
@@ -285,21 +286,27 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
                         cellLength / units::kPascalPerKgfPerCm2;
         if (cell.acsr.tipo == kAccessoryInflowPerformance) {
             const double candidateMaximumPressure = cell.acsr.ipr.Pres - (meanPressure - state.separatorPressure);
-            state.input.presMaxDesc = std::min(state.input.presMaxDesc, candidateMaximumPressure);
+            maximumPressure = std::min(maximumPressure, candidateMaximumPressure);
         }
     }
-    if (state.separatorPressure >= state.input.presMaxDesc * kReachedMaximumPressureFactor &&
-        throatFlowRate > kUnloadingUpperBandEdge * state.input.vazDescControl && state.gasCells[0].VGasR > 0.) {
-        const double pressureCorrection = limitedCorrection(
-            unloadingPressureCorrection(state, throatFlowRate, valveIndex, kUnloadingUpperBandEdge, -1),
-            state.injectionPressure, state.cells[0].dt);
-        state.injectionPressure = std::max(state.injectionPressure + pressureCorrection, state.input.presMinDescG);
-    } else if (throatFlowRate <= kUnloadingLowerBandEdge * state.input.vazDescControl &&
-               state.separatorPressure <= state.input.presMinDesc * kReachedMinimumPressureFactor) {
-        const double pressureCorrection = limitedCorrection(
-            unloadingPressureCorrection(state, throatFlowRate, valveIndex, kUnloadingLowerBandEdge, 1),
-            state.injectionPressure, state.cells[0].dt);
-        state.injectionPressure = std::min(state.injectionPressure + pressureCorrection, state.input.presMaxDescG);
+    state.input.presMaxDesc = maximumPressure;
+}
+
+void correctInjectionPressure(const GasLiftState &state, double flowRate, int valveIndex) {
+    const Ler &input = state.input;
+    const bool separatorAtMaximum = state.separatorPressure >= input.presMaxDesc * kReachedMaximumPressureFactor;
+    const bool separatorAtMinimum = state.separatorPressure <= input.presMinDesc * kReachedMinimumPressureFactor;
+    if (separatorAtMaximum && flowRate > kUnloadingUpperBandEdge * input.vazDescControl &&
+        state.gasCells[0].VGasR > 0.) {
+        const double pressureCorrection =
+            limitedCorrection(unloadingPressureCorrection(state, flowRate, valveIndex, kUnloadingUpperBandEdge, -1),
+                              state.injectionPressure, state.cells[0].dt);
+        state.injectionPressure = std::max(state.injectionPressure + pressureCorrection, input.presMinDescG);
+    } else if (flowRate <= kUnloadingLowerBandEdge * input.vazDescControl && separatorAtMinimum) {
+        const double pressureCorrection =
+            limitedCorrection(unloadingPressureCorrection(state, flowRate, valveIndex, kUnloadingLowerBandEdge, 1),
+                              state.injectionPressure, state.cells[0].dt);
+        state.injectionPressure = std::min(state.injectionPressure + pressureCorrection, input.presMaxDescG);
     }
 }
 

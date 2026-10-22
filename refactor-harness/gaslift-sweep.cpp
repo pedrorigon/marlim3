@@ -492,7 +492,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     // whose LVisL/LVisH/TempL/TempH this harness never seeds, so it takes
     // log10 of a negative number and returns NaN. The NaN then propagates to
     // the mixture viscosity, Reynolds is NaN, the friction factor comes back 0,
-    // and the wall-shear term of computeUnloadingValvePressure vanishes -- a
+    // and the wall-shear term of computeMaximumSeparatorPressure vanishes -- a
     // whole term of the pressure march silently absent from the table. The
     // product wires this the same way, at Leitura.cpp:12648.
     for (int index = -1; index < kCells; ++index) {
@@ -516,7 +516,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
         cell.duto.peri = M_PI * cell.duto.a;
     }
 
-    // The control band computeUnloadingValvePressure corrects against. Both of
+    // The control band correctInjectionPressure corrects against. Both of
     // its branches compare the surface pressure against these, so leaving them
     // at zero pins the routine to its do-nothing path.
     system.arq.vazDescControl = 0.5;
@@ -667,21 +667,20 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     printGas("HidroDescargaG", scenario.name, system.gasLift.cells[0]);
     printGas("HidroDescargaG-mid", scenario.name, system.gasLift.cells[kInterfaceCell]);
 
-    // computeUnloadingValvePressure returns velmax, which it sets to 0 and never
-    // assigns again -- the return is a constant, in the product as much as here,
-    // so a row carrying only that value can never fail. What the routine
-    // actually does is move presiniG and lower arq.presMaxDesc, so those are
-    // what get published.
+    // computeMaximumSeparatorPressure lowers arq.presMaxDesc and
+    // correctInjectionPressure moves presiniG, so those are what get published.
     //
     // Two calls with throat rates on either side of vazDescControl, to drive the
     // raise branch and the lower branch rather than one of them twice.
     seed();
-    sisprod::gaslift::computeUnloadingValvePressure(sisprod::SolveContext(system).gasLift(), 4.0 * system.arq.vazDescControl, 0);
+    sisprod::gaslift::computeMaximumSeparatorPressure(sisprod::SolveContext(system).gasLift());
+    sisprod::gaslift::correctInjectionPressure(sisprod::SolveContext(system).gasLift(), 4.0 * system.arq.vazDescControl, 0);
     printUnloadingControl("CalcPresValvDesc-high", scenario.name, system);
 
     seed();
     system.gasLift.separatorPressure = system.arq.presMinDesc * 0.99;
-    sisprod::gaslift::computeUnloadingValvePressure(sisprod::SolveContext(system).gasLift(), 0.1 * system.arq.vazDescControl, 1);
+    sisprod::gaslift::computeMaximumSeparatorPressure(sisprod::SolveContext(system).gasLift());
+    sisprod::gaslift::correctInjectionPressure(sisprod::SolveContext(system).gasLift(), 0.1 * system.arq.vazDescControl, 1);
     printUnloadingControl("CalcPresValvDesc-low", scenario.name, system);
 
     // Two rows again. The search corrects the surface pressure through the
