@@ -67,8 +67,8 @@ probe 'areaValvCali: calibration blend'   'domePressure = (domePressure + units:
                                           'domePressure = (domePressure + units::kAtmosphereInPsi) *
                        (kBellowsReferenceTemperatureFahrenheit + 0.01 + units::kZeroFahrenheitInRankine) /' \
                                           "$target_gaslift"
-probe 'areaValvCali: opening cap'         'if (openingArea > throatArea)' \
-                                          'if (openingArea > 2. * throatArea)' \
+probe 'areaValvCali: opening cap'         'std::min(openingArea, throatArea)' \
+                                          'std::min(openingArea, 2. * throatArea)' \
                                           "$target_gaslift"
 # updateGasLine reads each cell's left neighbour's pressure from the solved
 # system; reading that neighbour's right-face flow instead has to be caught.
@@ -95,8 +95,8 @@ probe 'CalcPresValvDesc: wall shear' \
     "$target_gaslift"
 
 probe 'BuscaPresInjDesc: pressure decay' \
-    'state.separatorPressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);' \
-    'state.separatorPressure *= (1 - 2 * kSeparatorPressureDecayPerSecond * state.timeStep);' \
+    'state.separatorPressure * (1 - kSeparatorPressureDecayPerSecond * state.timeStep)' \
+    'state.separatorPressure * (1 - 2 * kSeparatorPressureDecayPerSecond * state.timeStep)' \
     "$target_gaslift"
 
 # The hand-over branch, which only the second advancInter row reaches. If that

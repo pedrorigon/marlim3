@@ -10,6 +10,7 @@
 #include "chokegas.h"
 #include "UnitConversions.h"
 
+#include <algorithm>
 #include <cmath>
 #include <numbers>
 
@@ -222,9 +223,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
             state.injectionPressure = state.input.presIniDescG;
         }
     } else {
-        state.separatorPressure *= kRelaxationDownFactor;
-        if (state.separatorPressure < state.input.presMinDesc)
-            state.separatorPressure = state.input.presMinDesc;
+        state.separatorPressure = std::max(state.separatorPressure * kRelaxationDownFactor, state.input.presMinDesc);
         relaxTowards(state.injectionPressure, state.input.presIniDesc);
     }
     return instantaneousMaximumFlowRate;
@@ -301,8 +300,7 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
                         cellLength / units::kPascalPerKgfPerCm2;
         if (cell.acsr.tipo == kAccessoryInflowPerformance) {
             const double candidateMaximumPressure = cell.acsr.ipr.Pres - (meanPressure - state.separatorPressure);
-            if (candidateMaximumPressure < state.input.presMaxDesc)
-                state.input.presMaxDesc = candidateMaximumPressure;
+            state.input.presMaxDesc = std::min(state.input.presMaxDesc, candidateMaximumPressure);
         }
     }
     if (state.separatorPressure >= state.input.presMaxDesc * kReachedMaximumPressureFactor &&
@@ -310,20 +308,13 @@ void computeUnloadingValvePressure(const GasLiftState &state, double throatFlowR
         const double pressureCorrection = limitedCorrection(
             unloadingPressureCorrection(state, throatFlowRate, valveIndex, kUnloadingUpperBandEdge, -1),
             state.injectionPressure, state.cells[0].dt);
-        state.injectionPressure += pressureCorrection;
-        if (state.injectionPressure < state.input.presMinDescG) {
-            state.injectionPressure = state.input.presMinDescG;
-        }
-
+        state.injectionPressure = std::max(state.injectionPressure + pressureCorrection, state.input.presMinDescG);
     } else if (throatFlowRate <= kUnloadingLowerBandEdge * state.input.vazDescControl &&
                state.separatorPressure <= state.input.presMinDesc * kReachedMinimumPressureFactor) {
         const double pressureCorrection = limitedCorrection(
             unloadingPressureCorrection(state, throatFlowRate, valveIndex, kUnloadingLowerBandEdge, 1),
             state.injectionPressure, state.cells[0].dt);
-        state.injectionPressure += pressureCorrection;
-        if (state.injectionPressure > state.input.presMaxDescG) {
-            state.injectionPressure = state.input.presMaxDescG;
-        }
+        state.injectionPressure = std::min(state.injectionPressure + pressureCorrection, state.input.presMaxDescG);
     }
 }
 
@@ -333,21 +324,16 @@ void correctSeparatorPressure(const GasLiftState &state, double flowRate, int va
             const double pressureCorrection = limitedCorrection(
                 unloadingPressureCorrection(state, flowRate, valveIndex, kUnloadingUpperBandEdge, -1),
                 state.separatorPressure, state.cells[0].dt);
-            state.separatorPressure -= pressureCorrection;
-            if (state.separatorPressure > state.input.presMaxDesc)
-                state.separatorPressure = state.input.presMaxDesc;
+            state.separatorPressure = std::min(state.separatorPressure - pressureCorrection, state.input.presMaxDesc);
         } else if (flowRate <= kUnloadingLowerBandEdge * state.input.vazDescControl) {
             const double pressureCorrection = limitedCorrection(
                 unloadingPressureCorrection(state, flowRate, valveIndex, kUnloadingLowerBandEdge, 1),
                 state.separatorPressure, state.cells[0].dt);
-            state.separatorPressure -= pressureCorrection;
-            if (state.separatorPressure < state.input.presMinDesc)
-                state.separatorPressure = state.input.presMinDesc;
+            state.separatorPressure = std::max(state.separatorPressure - pressureCorrection, state.input.presMinDesc);
         }
     } else {
-        state.separatorPressure *= (1 - kSeparatorPressureDecayPerSecond * state.timeStep);
-        if (state.separatorPressure < state.input.presMinDesc)
-            state.separatorPressure = state.input.presMinDesc;
+        state.separatorPressure = std::max(
+            state.separatorPressure * (1 - kSeparatorPressureDecayPerSecond * state.timeStep), state.input.presMinDesc);
     }
 }
 
@@ -596,15 +582,10 @@ void copyPhaseToRightNeighbour(const Cel &cell, Cel &right) {
 }
 
 void relaxTowards(double &pressure, double target) {
-    if (pressure > target) {
-        pressure *= kRelaxationDownFactor;
-        if (pressure < target)
-            pressure = target;
-    } else if (pressure < target) {
-        pressure *= kRelaxationUpFactor;
-        if (pressure > target)
-            pressure = target;
-    }
+    if (pressure > target)
+        pressure = std::max(pressure * kRelaxationDownFactor, target);
+    else if (pressure < target)
+        pressure = std::min(pressure * kRelaxationUpFactor, target);
 }
 
 double limitedCorrection(double correction, double pressure, double timeStep) {
@@ -670,9 +651,7 @@ void updateMaster2Source(const GasLiftState &state) {
     const int master2CellIndex = state.input.master2.posic;
     CelG &upstreamCell = state.gasCells[master2CellIndex];
     CelG &downstreamCell = state.gasCells[master2CellIndex + 1];
-    double master2FlowArea = upstreamCell.duto.area;
-    if (master2FlowArea > upstreamCell.dutoR.area)
-        master2FlowArea = upstreamCell.dutoR.area;
+    const double master2FlowArea = std::min(upstreamCell.duto.area, upstreamCell.dutoR.area);
     if (upstreamCell.chkcell.areagarg <= kMaster2ThrottlingAreaFraction * master2FlowArea &&
         upstreamCell.chkcell.areagarg >= kMaster2ClosedAreaFraction * master2FlowArea) {
         upstreamCell.chkcell.tempEstag = upstreamCell.temp;
@@ -1077,8 +1056,7 @@ void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
                                         (state.cells[secondConnectionIndex + 1].temp - left.temp) +
                                     state.cells[secondConnectionIndex].temp;
 
-            if (logTemperature < cell.temp)
-                cell.temp = logTemperature;
+            cell.temp = std::min(cell.temp, logTemperature);
         }
     }
 
@@ -1282,10 +1260,7 @@ void setSteadyValveGasMassSource(const GasLiftState &state, int valveIndex, int,
 
 void clampAndPropagateTemperature(const GasLiftState &state, int cellIndex) {
     CelG &cell = state.gasCells[cellIndex];
-    if (cell.temp < kMinimumTemperatureCelsius)
-        cell.temp = kMinimumTemperatureCelsius;
-    if (cell.temp > kMaximumTemperatureCelsius)
-        cell.temp = kMaximumTemperatureCelsius;
+    cell.temp = std::clamp(cell.temp, kMinimumTemperatureCelsius, kMaximumTemperatureCelsius);
 
     if (cellIndex > 0)
         state.gasCells[cellIndex - 1].tempR = cell.temp;
@@ -1360,12 +1335,10 @@ double calibratedValveOpeningFraction(double calibrationPressure, double calibra
     // The seat offset: the distance from the stem axis to where the bellows
     // meets the seat.
     const double seatOffset = sqrt(bellowsRadius * bellowsRadius - throatRadius * throatRadius);
-    double openingArea = std::numbers::pi * throatRadius * stemTravel * (stemTravel + 2.0 * seatOffset) /
-                         sqrt((stemTravel + seatOffset) * (stemTravel + seatOffset) + throatRadius * throatRadius);
-    if (openingArea > throatArea)
-        openingArea = throatArea;
-
-    return openingArea / throatArea;
+    const double openingArea =
+        std::numbers::pi * throatRadius * stemTravel * (stemTravel + 2.0 * seatOffset) /
+        sqrt((stemTravel + seatOffset) * (stemTravel + seatOffset) + throatRadius * throatRadius);
+    return std::min(openingArea, throatArea) / throatArea;
 }
 
 double injectedGasTemperature(const GasLiftState &state, int valveIndex, const Cel &productionCell) {
@@ -1373,7 +1346,7 @@ double injectedGasTemperature(const GasLiftState &state, int valveIndex, const C
     const double temperature = choke.presEstag > choke.presGarg
                                    ? state.temperatureUpdater.gasLiftDischargeTemperature(valveIndex)
                                    : productionCell.temp;
-    return temperature < kMinimumTemperatureCelsius ? kMinimumTemperatureCelsius : temperature;
+    return std::max(temperature, kMinimumTemperatureCelsius);
 }
 
 template <typename Visit>
