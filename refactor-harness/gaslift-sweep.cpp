@@ -459,7 +459,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     // Sliding windows. advanceGasSubStep push_backs at the tail and erases the
     // front once the window passes maxVecContDesc, so both must start non-empty
     // and the bound must be small enough that the erase branch is reachable.
-    system.gasLift.meanUnloadingFlowRate = 0.22 + scenario.gasFlow;
+    system.gasLift.accumulatedUnloadingVolume = 0.22 + scenario.gasFlow;
     system.gasLift.unloadingAveragingInterval = scenario.temperature + 3.;
     system.gasLift.unloadingAveragingWindow = scenario.temperature + 2.;
     system.gasLift.unloadingSampleCapacity = 3;
@@ -604,7 +604,7 @@ void printInterface(const char *method, const char *scenario, const SProd &syste
            "vazmedDesc=%a tempmedDEsc=%a\n",
            method, scenario, system.gasLift.interfaceCell, system.gasLift.interfaceVelocity,
            system.gasLift.interfaceTimeStep, system.gasLift.separatorPressure, system.gasLift.injectionPressure,
-           system.gasLift.meanUnloadingFlowRate, system.gasLift.unloadingAveragingInterval);
+           system.gasLift.accumulatedUnloadingVolume, system.gasLift.unloadingAveragingInterval);
 }
 
 void printUnloadingControl(const char *method, const char *scenario,

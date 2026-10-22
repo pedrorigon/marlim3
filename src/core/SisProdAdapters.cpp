@@ -247,7 +247,7 @@ sisprod::gaslift::GasLiftState gasLiftStateOf(SProd &system, SolveContext &conte
         .previousInterfaceCell = system.gasLift.previousInterfaceCell,
         .previousInterfaceVelocity = system.gasLift.previousInterfaceVelocity,
         .previousInterfaceTimeStep = system.gasLift.previousInterfaceTimeStep,
-        .meanUnloadingFlowRate = system.gasLift.meanUnloadingFlowRate,
+        .accumulatedUnloadingVolume = system.gasLift.accumulatedUnloadingVolume,
         .unloadingAveragingInterval = system.gasLift.unloadingAveragingInterval,
         .maximumUnloadingFlowSamples = system.gasLift.maximumUnloadingFlowSamples,
         .unloadingTimeStepSamples = system.gasLift.unloadingTimeStepSamples,

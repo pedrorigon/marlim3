@@ -48,13 +48,13 @@ void computeGasUnloadingHydrostatics(const GasLiftState &state) {
         CelG &cell = state.gasCells[gasCellIndex];
         CelG &left = state.gasCells[gasCellIndex - 1];
         double leftHalfLength = 0.5 * cell.dxL;
-        double halfLocalLength = 0.5 * cell.dx0;
+        double localHalfLength = 0.5 * cell.dx0;
         meanPressure -= unloadingHalfCellHead(leftDensity, leftHalfLength, left.duto.teta);
         meanTemperature = cell.calor.Textern1;
         const double localDensity = gasCellIndex < state.interfaceCell
                                         ? cell.flui.MasEspGas(meanPressure, meanTemperature)
                                         : cell.MasEspFlu(meanPressure, meanTemperature);
-        meanPressure -= unloadingHalfCellHead(localDensity, halfLocalLength, cell.duto.teta);
+        meanPressure -= unloadingHalfCellHead(localDensity, localHalfLength, cell.duto.teta);
         leftDensity = localDensity;
 
         cell.pres = meanPressure;
@@ -207,7 +207,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
             instantaneousMaximumFlowRate = valve.flowRate;
             const double controlledFlowRate =
                 kCurrentFlowWeight * valve.flowRate +
-                (1. - kCurrentFlowWeight) * state.meanUnloadingFlowRate / state.unloadingAveragingInterval;
+                (1. - kCurrentFlowWeight) * state.accumulatedUnloadingVolume / state.unloadingAveragingInterval;
             computeUnloadingValvePressure(state, controlledFlowRate, valve.index);
             if (state.gasValveCellIndices[valve.index] >= state.interfaceCell)
                 correctSeparatorPressure(state, controlledFlowRate, valve.index);
@@ -256,12 +256,12 @@ void recordUnloadingSample(const GasLiftState &state, double maximumFlowRate) {
         state.unloadingAveragingInterval > state.unloadingAveragingWindow) {
         state.unloadingAveragingInterval -= state.unloadingTimeStepSamples[0];
         state.unloadingTimeStepSamples.erase(state.unloadingTimeStepSamples.begin());
-        state.meanUnloadingFlowRate -= state.maximumUnloadingFlowSamples[0];
+        state.accumulatedUnloadingVolume -= state.maximumUnloadingFlowSamples[0];
         state.maximumUnloadingFlowSamples.erase(state.maximumUnloadingFlowSamples.begin());
     }
 
     state.maximumUnloadingFlowSamples.push_back(maximumFlowRate * state.timeStep);
-    state.meanUnloadingFlowRate += maximumFlowRate * state.timeStep;
+    state.accumulatedUnloadingVolume += maximumFlowRate * state.timeStep;
     state.unloadingTimeStepSamples.push_back(state.timeStep);
     state.unloadingAveragingInterval += state.timeStep;
 }
@@ -371,7 +371,7 @@ void solveUnloading(const GasLiftState &state) {
         CelG &cell = state.gasCells[gasCellIndex];
         CelG &left = state.gasCells[gasCellIndex - 1];
         double leftHalfLength = 0.5 * cell.dxL;
-        double halfLocalLength = 0.5 * cell.dx0;
+        double localHalfLength = 0.5 * cell.dx0;
         double localGasShare = 1.;
         if (cell.razInter <= kMidCellInterfaceRatio)
             localGasShare = 2 * cell.razInter;
@@ -379,9 +379,9 @@ void solveUnloading(const GasLiftState &state) {
         if (left.razInter >= kMidCellInterfaceRatio)
             leftGasShare = 2 * (left.razInter - kMidCellInterfaceRatio);
         double leftGasLength = leftHalfLength * leftGasShare;
-        double localGasLength = halfLocalLength * localGasShare;
+        double localGasLength = localHalfLength * localGasShare;
         double leftLiquidLength = leftHalfLength - leftGasLength;
-        double localLiquidLength = halfLocalLength - localGasLength;
+        double localLiquidLength = localHalfLength - localGasLength;
         double leftTemperature = left.temp;
         double leftCellPressure = left.pres;
         double liquidDensity = cell.MasEspFlu(leftCellPressure, leftTemperature);

@@ -96,13 +96,13 @@ struct GasLiftState {
     double &previousInterfaceVelocity;
     double &previousInterfaceTimeStep;
 
-    /// The unloading controller's moving average: the accumulated flow and the averaging interval,
+    /// The unloading controller's moving average: the accumulated volume and the averaging interval,
     /// the samples they sum, and the window and the sample capacity that bound them.
     ///
     /// The two vectors are sliding windows: searchUnloadingInjectionPressure appends each step's
     /// sample, and drops the oldest when they hold more samples than the capacity or span more time
     /// than the window.
-    double &meanUnloadingFlowRate;
+    double &accumulatedUnloadingVolume;
     double &unloadingAveragingInterval;
     std::vector<double> &maximumUnloadingFlowSamples;
     std::vector<double> &unloadingTimeStepSamples;

@@ -148,11 +148,12 @@ struct GasLiftLine {
     double unloadingAveragingWindow = kUnloadingAveragingWindow;
     /// Maximum number of flow samples retained by the unloading PI controller.
     int unloadingSampleCapacity = kUnloadingSampleCapacity;
-    /// Average maximum completion-fluid mass flow through the gas-lift valves.
-    double meanUnloadingFlowRate = 0;
-    /// Averaging interval used for gas-lift-valve mass flow.
+    /// The completion-fluid volume in the unloading controller's window: the sum of its volume samples.
+    double accumulatedUnloadingVolume = 0;
+    /// The time the unloading controller's window spans: the sum of its time-step samples.
     double unloadingAveragingInterval = 0;
-    /// Maximum valve mass-flow samples used by the unloading controller.
+    /// The window's volume samples: each step's largest completion-fluid volume flow through a gas-lift valve,
+    /// times the step's time step.
     std::vector<double> maximumUnloadingFlowSamples;
     /// Time-step samples associated with the unloading-flow average.
     std::vector<double> unloadingTimeStepSamples;
