@@ -188,6 +188,15 @@ void assembleAndSolveGasSystem(const GasLiftState &state);
 /// values its neighbours' faces hold of them.
 void updateGasLine(const GasLiftState &state);
 
+/// The gas temperatures of one thermal coupling cycle: the injection temperature at the inlet, the reverse-flow
+/// temperature at the outlet while the flow there runs backwards, and each cell before gasLoopEnd from its left
+/// neighbour's previous temperature; with the time derivative of each temperature it sets.
+void updateGasTemperatures(const GasLiftState &state, int gasLoopEnd);
+
+/// The gas density of each cell before gasLoopEnd, at its pressure and temperature, and its density times flow area,
+/// with the face values its neighbours hold of both.
+void updateGasDensities(const GasLiftState &state, int gasLoopEnd);
+
 /// The opening the injection choke presents to the gas line. Under a pressure
 /// condition it is the choke's own, and a choke throttling the line also sets
 /// the inlet mass source through it; under a flow-rate condition the source is

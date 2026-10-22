@@ -691,51 +691,21 @@ void advanceGasSubStep(const GasLiftState &state) {
         cell.dTdt = 0;
     }
 
-    // The temperature, density and flow loops below stop before this cell: past the last one without an interface,
-    // at the interface cell's left neighbour otherwise.
+    // The temperature and density updates below stop before this cell: past the last one without an interface, at
+    // the interface cell's left neighbour otherwise.
     const int gasLoopEnd = state.interfaceCell <= state.lastGasCell ? state.interfaceCell - 1 : state.lastGasCell + 1;
 
     const int maximumThermalCouplingCycles = state.input.cicloAcopTerm;
     for (int thermalCouplingCycle = 0; thermalCouplingCycle <= maximumThermalCouplingCycles; thermalCouplingCycle++) {
         assembleAndSolveGasSystem(state);
         updateGasLine(state);
-        CelG &inletCell = state.gasCells[0];
-        CelG &outletCell = state.gasCells[state.lastGasCell];
-        inletCell.temp = state.injectionTemperature;
-        inletCell.dTdt = (inletCell.temp - inletCell.tempini) / state.timeStep;
-        if (outletCell.VGasR < 0.)
-            outletCell.temp = kReverseFlowOutletTemperatureCelsius;
-#pragma omp parallel for num_threads(state.globals->ntrd)
-        for (int gasCellIndex = 1; gasCellIndex < gasLoopEnd; gasCellIndex++) {
-            CelG &cell = state.gasCells[gasCellIndex];
-            state.temperatureUpdater.computeGasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
-            cell.dTdt = (cell.temp - cell.tempini) / state.timeStep;
-        }
+        updateGasTemperatures(state, gasLoopEnd);
         if (thermalCouplingCycle < maximumThermalCouplingCycles)
             for (int renewedCellIndex = 0; renewedCellIndex <= state.lastGasCell; renewedCellIndex++)
                 state.gasCells[renewedCellIndex].FeiticoDoTempo();
     }
 
-#pragma omp parallel for num_threads(state.globals->ntrd)
-    for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++) {
-        CelG &cell = state.gasCells[gasCellIndex];
-        cell.rg = cell.flui.MasEspGas(cell.pres, cell.temp);
-    }
-
-    for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++) {
-        CelG &cell = state.gasCells[gasCellIndex];
-        cell.u1L = cell.rg * cell.duto.area;
-        // The inlet feeds itself; every other cell is fed by the one upstream.
-        cell.u1LL = gasCellIndex == 0 ? cell.u1L : state.gasCells[gasCellIndex - 1].u1L;
-        if (gasCellIndex > 0) {
-            state.gasCells[gasCellIndex - 1].rgR = cell.rg;
-            state.gasCells[gasCellIndex - 1].u1R = cell.u1L;
-        }
-        if (gasCellIndex == state.lastGasCell) {
-            cell.u1R = cell.u1L;
-            cell.rgR = cell.rg;
-        }
-    }
+    updateGasDensities(state, gasLoopEnd);
 
     for (int gasCellIndex = 0; gasCellIndex <= state.lastGasCell; gasCellIndex++)
         state.gasCells[gasCellIndex].presini = state.gasCells[gasCellIndex].pres;
@@ -784,6 +754,44 @@ void updateGasLine(const GasLiftState &state) {
             cell.VGasL = rightFaceFlowOf(gasCellIndex - 1);
         if (!last)
             cell.VGasRR = rightFaceFlowOf(gasCellIndex + 1);
+    }
+}
+
+void updateGasTemperatures(const GasLiftState &state, int gasLoopEnd) {
+    CelG &inletCell = state.gasCells[0];
+    CelG &outletCell = state.gasCells[state.lastGasCell];
+    inletCell.temp = state.injectionTemperature;
+    inletCell.dTdt = (inletCell.temp - inletCell.tempini) / state.timeStep;
+    if (outletCell.VGasR < 0.)
+        outletCell.temp = kReverseFlowOutletTemperatureCelsius;
+#pragma omp parallel for num_threads(state.globals->ntrd)
+    for (int gasCellIndex = 1; gasCellIndex < gasLoopEnd; gasCellIndex++) {
+        CelG &cell = state.gasCells[gasCellIndex];
+        state.temperatureUpdater.computeGasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
+        cell.dTdt = (cell.temp - cell.tempini) / state.timeStep;
+    }
+}
+
+void updateGasDensities(const GasLiftState &state, int gasLoopEnd) {
+#pragma omp parallel for num_threads(state.globals->ntrd)
+    for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++) {
+        CelG &cell = state.gasCells[gasCellIndex];
+        cell.rg = cell.flui.MasEspGas(cell.pres, cell.temp);
+    }
+
+    for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++) {
+        CelG &cell = state.gasCells[gasCellIndex];
+        cell.u1L = cell.rg * cell.duto.area;
+        // The inlet feeds itself; every other cell is fed by the one upstream.
+        cell.u1LL = gasCellIndex == 0 ? cell.u1L : state.gasCells[gasCellIndex - 1].u1L;
+        if (gasCellIndex > 0) {
+            state.gasCells[gasCellIndex - 1].rgR = cell.rg;
+            state.gasCells[gasCellIndex - 1].u1R = cell.u1L;
+        }
+        if (gasCellIndex == state.lastGasCell) {
+            cell.u1R = cell.u1L;
+            cell.rgR = cell.rg;
+        }
     }
 }
 
