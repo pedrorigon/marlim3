@@ -43,20 +43,18 @@ namespace trendoutput { struct TrendState; }
 
 namespace sisprod {
 
-class SolveContext;
 namespace fluidtracking { struct FluidTrackingState; }
 namespace gaslift { struct GasLiftState; }
 namespace sources { struct SourceState; }
-namespace steady { struct SteadyStateSearchState; struct SteadyStateState; struct SteadyStateUpdaters; }
+namespace steady { struct SteadyStateSearchState; struct SteadyStateState;  }
 namespace thermal { struct ThermalState; }
 namespace transient {
+class HydrateEnvelopeSolver;
 struct TransientSolveState;
-struct TransientSolveUpdaters;
+
 struct TransientStepState;
-struct TransientStepUpdaters;
+
 }  // namespace transient
-
-
 
 /// A pressure-temperature table the fluids read through a double **: its rows, and a pointer to each.
 struct GridTable {
@@ -551,10 +549,7 @@ struct Coupling3D {
 /// The class owns the production and gas-service-line state, fluid-property tables, boundary conditions,
 /// network-coupling data, transient buffers, and steady-state/transient solution procedures.
 class SProd {
-    friend class sisprod::SolveContext;
-    friend struct sisprod::steady::SteadyStateUpdaters;
-    friend struct sisprod::transient::TransientStepUpdaters;
-    friend struct sisprod::transient::TransientSolveUpdaters;
+    friend class sisprod::transient::HydrateEnvelopeSolver;
 
   public:
     /// What a system built from an already parsed input takes from the system that
@@ -793,24 +788,33 @@ class SProd {
     varGlob1D *vg1dSP = nullptr;
 
   private:
+    /// Per-call views shared by steady marches and their boundary searches.
+    struct SteadyCallState;
+    /// Per-call views shared by the transient solve and its collaborating models.
+    struct TransientCallState;
+    /// Prepares only the views used by a coupled steady calculation.
+    SteadyCallState steadyCallStateOf();
+    /// Prepares only the views used by a coupled transient calculation.
+    TransientCallState transientCallStateOf();
+
     /// Binds the current gasLift data without copying simulation state.
-    sisprod::gaslift::GasLiftState gasLiftStateOf(sisprod::SolveContext &context);
+    sisprod::gaslift::GasLiftState gasLiftStateOf();
     /// Binds the current steady data without copying simulation state.
-    sisprod::steady::SteadyStateState steadyStateOf(sisprod::SolveContext &context);
+    sisprod::steady::SteadyStateState steadyStateOf();
     /// Binds the current search data without copying simulation state.
-    sisprod::steady::SteadyStateSearchState searchStateOf(sisprod::SolveContext &context);
+    sisprod::steady::SteadyStateSearchState searchStateOf();
     /// Binds the current transient data without copying simulation state.
-    sisprod::transient::TransientStepState transientStateOf(sisprod::SolveContext &context);
+    sisprod::transient::TransientStepState transientStateOf();
     /// Binds the current fluidTracking data without copying simulation state.
-    sisprod::fluidtracking::FluidTrackingState fluidTrackingStateOf(sisprod::SolveContext &context);
+    sisprod::fluidtracking::FluidTrackingState fluidTrackingStateOf();
     /// Binds the current transientSolve data without copying simulation state.
-    sisprod::transient::TransientSolveState transientSolveStateOf(sisprod::SolveContext &context);
+    sisprod::transient::TransientSolveState transientSolveStateOf();
     /// Binds the current closure data without copying simulation state.
     driftflux::coefficient::ClosureState closureStateOf();
     /// Binds the current source data without copying simulation state.
     sisprod::sources::SourceState sourceStateOf();
     /// Binds the current thermal data without copying simulation state.
-    sisprod::thermal::ThermalState thermalStateOf(sisprod::SolveContext &context);
+    sisprod::thermal::ThermalState thermalStateOf();
     /// Binds the current trend data without copying simulation state.
     trendoutput::TrendState trendStateOf() const;
 

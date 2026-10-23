@@ -65,7 +65,7 @@ void advanceCouplingIteration(const TransientSolveState &state, const TransientD
 
     TimeStepPolicies::apply<TimeStepHook::CouplingIterationStart>(
         {state.step, kontaAcop, vExpli});
-    restartCouplingFractions(state, kontaAcop, alfRev, betRev);
+    restartCouplingFractions(state, dependencies, kontaAcop, alfRev, betRev);
     updatePig(state.step);
 
     if (kontaAcop == 0)
@@ -113,7 +113,7 @@ void advanceCouplingIteration(const TransientSolveState &state, const TransientD
         if (kontaAcop < 1 * state.step.fullModel)
             for (int i = 0; i <= state.step.lastCell; i++)
                 state.step.cells[i].dpdt = state.step.cells[i].d2pdt2;
-        state.updaters.marchTransientEnergy(kontaAcop, ciclomax);
+        thermal::advanceTransientEnergy(dependencies.thermal, state.step, kontaAcop, ciclomax);
     }
     restoreIntermediateCouplingState(state, kontaAcop, gasMassSource, liquidMassSource, complementaryMassSource);
 
@@ -1063,7 +1063,7 @@ void prepareCouplingModelFlags(const TransientSolveState &state, int celpos) {
     }
 }
 
-void restartCouplingFractions(const TransientSolveState &state, int kontaAcop,
+void restartCouplingFractions(const TransientSolveState &state, const TransientDependencies &dependencies, int kontaAcop,
                               double alfRev, double betRev) {
     if (state.step.restart == -1) {
         restartFractionEvolutionInitial(state.step);
@@ -1083,7 +1083,7 @@ void restartCouplingFractions(const TransientSolveState &state, int kontaAcop,
             }
         }
         state.step.finalAuxiliaryTimeStep = state.step.timeStep;
-        restartFractionEvolution(state.step);
+        restartFractionEvolution(state.step, dependencies.gasLift, dependencies.thermal);
         evolveFractions(state.step, alfRev, betRev, kontaAcop);
         state.step.restart = 0;
         for (int i = 0; i <= state.step.lastCell; i++) {
@@ -2105,7 +2105,7 @@ void restartFractionEvolutionSub(const TransientStepState &state) {
     }
 }
 
-void restartFractionEvolution(const TransientStepState &state) {
+void restartFractionEvolution(const TransientStepState &state, const gaslift::GasLiftState &gasLiftDependencies, const thermal::ThermalState &thermalDependencies) {
     assignCellTimeSteps(state);
     if (state.input.lingas > 0) {
         for (int i = 0; i <= state.lastGasCell; i++)
@@ -2115,7 +2115,7 @@ void restartFractionEvolution(const TransientStepState &state) {
             state.interfaceTimeStep = state.initialInterfaceTimeStep;
             state.interfaceVelocity = state.initialInterfaceVelocity;
         }
-        state.updaters.advanceGasSubStep();
+        gaslift::advanceGasSubStep(gasLiftDependencies, thermalDependencies);
     }
     restartFractionEvolutionSub(state);
     for (int i = 0; i <= state.lastCell; i++) {
@@ -2290,7 +2290,7 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
 
     if ((*state.step.globals).chaverede == 0) {
 
-        state.updaters.solveHydrateEnvelopes();
+        dependencies.hydrates();
 
         if (state.step.input.flashCompleto == 2 && (*state.step.globals).lixo5 < 1e-15 && state.step.input.miniTabAtraso>0) {
             refreshFluidMiniTable(state.step);
@@ -2346,7 +2346,7 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
 
         if (state.step.fullModel == 0 || state.step.input.cicloAcopTerm == 0) {
             for (int ciclo = 0; ciclo <= ciclomax; ciclo++) {
-                state.updaters.marchTransientEnergy(ciclo, ciclomax);
+                thermal::advanceTransientEnergy(dependencies.thermal, state.step, ciclo, ciclomax);
             }
         }
     }

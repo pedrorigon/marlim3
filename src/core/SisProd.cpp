@@ -1,9 +1,4 @@
-/*
- * SisProd.cpp
- *
- *  Created on: 21 Dec 2016
- *      Author: Eduardo
- */
+#include "DriftFluxClosure.h"
 #include "SisProd.h"
 #include "FA_Hidratos.h"
 #include "FA_Hidratos_Servico.h"
@@ -14,12 +9,40 @@
 #include "SisProdSteadyStateSearch.h"
 #include "SisProdTransient.h"
 #include "SisProdFluidTracking.h"
-#include "SisProdSolveContext.h"
 #include "SisProdThermal.h"
 #include "SisProdTrendOutput.h"
 #include <stdexcept>
 
 using namespace sisprod;
+
+struct SProd::SteadyCallState {
+    driftflux::coefficient::ClosureState closure;
+    sources::SourceState sources;
+    thermal::ThermalState thermal;
+    gaslift::GasLiftState gasLift;
+    steady::SteadyStateSearchState search;
+
+    thermal::ThermalDependencies thermalDependencies() const { return {sources, closure}; }
+    steady::SteadyDependencies dependencies(const thermal::ThermalDependencies &thermalModels) const {
+        return {sources, closure, thermal, thermalModels, gasLift, search};
+    }
+};
+
+struct SProd::TransientCallState {
+    driftflux::coefficient::ClosureState closure;
+    sources::SourceState sources;
+    thermal::ThermalState thermal;
+    gaslift::GasLiftState gasLift;
+    fluidtracking::FluidTrackingState fluidTracking;
+    trendoutput::TrendState trends;
+    transient::TransientSolveState solve;
+
+    thermal::ThermalDependencies thermalDependencies() const { return {sources, closure}; }
+    transient::TransientDependencies dependencies(const thermal::ThermalDependencies &thermalModels,
+                                                 transient::HydrateEnvelopeSolver hydrates) const {
+        return {thermal, thermalModels, gasLift, fluidTracking, trends, hydrates};
+    }
+};
 
 SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidation,
              tipoSimulacao_t simulationType, varGlob1D *globals, int dynamicTableOverride, int blocking,
@@ -60,285 +83,297 @@ SProd::CarriedState SProd::carriedState() const {
 }
 
 void SProd::renova(int explicitScheme) {
-    SolveContext context(*this);
-    transient::updateCells(context.transientStep(), explicitScheme);
+    const auto transientStep = transientStateOf();
+    transient::updateCells(transientStep, explicitScheme);
 }
 
 void SProd::renovaBuffer() {
-    SolveContext context(*this);
-    transient::updateBufferFromSolution(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::updateBufferFromSolution(transientStep);
 }
 
 void SProd::renovaBufferCego() {
-    SolveContext context(*this);
-    transient::updateBufferFromCells(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::updateBufferFromCells(transientStep);
 }
 
 void SProd::renovaTemp() {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies dependencies{context.sources(), context.closure()};
-    thermal::updateDistributedMassTransfer(context.thermal(), dependencies);
+    const auto state = thermalStateOf();
+    const auto sources = sourceStateOf();
+    const auto closure = closureStateOf();
+    const thermal::ThermalDependencies dependencies{sources, closure};
+    thermal::updateDistributedMassTransfer(state, dependencies);
 }
 
 void SProd::renovaterm(int inflowMode) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies dependencies{context.sources(), context.closure()};
-    thermal::updateFlowPartitionTerms(context.thermal(), dependencies, inflowMode);
+    const auto state = thermalStateOf();
+    const auto sources = sourceStateOf();
+    const auto closure = closureStateOf();
+    const thermal::ThermalDependencies dependencies{sources, closure};
+    thermal::updateFlowPartitionTerms(state, dependencies, inflowMode);
 }
 
 void SProd::renovatermAfluFim() {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies dependencies{context.sources(), context.closure()};
-    thermal::updateOutletFlowPartitionTerms(context.thermal(), dependencies);
+    const auto state = thermalStateOf();
+    const auto sources = sourceStateOf();
+    const auto closure = closureStateOf();
+    const thermal::ThermalDependencies dependencies{sources, closure};
+    thermal::updateOutletFlowPartitionTerms(state, dependencies);
 }
 
 void SProd::renovatermColIni() {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies dependencies{context.sources(), context.closure()};
-    thermal::updateInletFlowPartitionTerms(context.thermal(), dependencies);
+    const auto state = thermalStateOf();
+    const auto sources = sourceStateOf();
+    const auto closure = closureStateOf();
+    const thermal::ThermalDependencies dependencies{sources, closure};
+    thermal::updateInletFlowPartitionTerms(state, dependencies);
 }
 
 void SProd::calcCCpres(double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction) {
-    SolveContext context(*this);
-    transient::applyOutletPressureCondition(context.transientStep(), reverseQuality, reverseVoidFraction,
+    const auto transientStep = transientStateOf();
+    transient::applyOutletPressureCondition(transientStep, reverseQuality, reverseVoidFraction,
                                             reverseLiquidFraction);
 }
 
 void SProd::calcCCBuffer(double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction) {
-    SolveContext context(*this);
-    transient::applyOutletBufferCondition(context.transientStep(), reverseQuality, reverseVoidFraction,
+    const auto transientStep = transientStateOf();
+    transient::applyOutletBufferCondition(transientStep, reverseQuality, reverseVoidFraction,
                                           reverseLiquidFraction);
 }
 
 void SProd::determinaDT(int explicitScheme) {
-    SolveContext context(*this);
-    transient::computeTimeStep(context.transientStep(), explicitScheme);
+    const auto transientStep = transientStateOf();
+    transient::computeTimeStep(transientStep, explicitScheme);
 }
 
 void SProd::atenuaDtMax() {
-    SolveContext context(*this);
-    transient::dampMaximumTimeStep(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::dampMaximumTimeStep(transientStep);
 }
 
 void SProd::avaliaVariaDpDt(int explicitScheme) {
-    SolveContext context(*this);
-    transient::evaluatePressureRateOfChange(context.transientStep(), explicitScheme);
+    const auto transientStep = transientStateOf();
+    transient::evaluatePressureRateOfChange(transientStep, explicitScheme);
 }
 
 void SProd::aberturaVal1() {
-    SolveContext context(*this);
-    transient::valveOpeningHigh(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::valveOpeningHigh(transientStep);
 }
 
 void SProd::aberturaVal0() {
-    SolveContext context(*this);
-    transient::valveOpeningLow(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::valveOpeningLow(transientStep);
 }
 
 void SProd::restringeDTporValv() {
-    SolveContext context(*this);
-    transient::restrictTimeStepByValve(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::restrictTimeStepByValve(transientStep);
 }
 
 void SProd::solveLinGas() {
-    SolveContext context(*this);
-    gaslift::solveGasLine(context.gasLift(), context.thermal());
+    const auto gasLift = gasLiftStateOf();
+    const auto thermal = thermalStateOf();
+    gaslift::solveGasLine(gasLift, thermal);
 }
 
 void SProd::EvoluiFrac(double reverseVoidFraction, double reverseLiquidFraction, int cycle) {
-    SolveContext context(*this);
-    transient::evolveFractions(context.transientStep(), reverseVoidFraction, reverseLiquidFraction, cycle);
+    const auto transientStep = transientStateOf();
+    transient::evolveFractions(transientStep, reverseVoidFraction, reverseLiquidFraction, cycle);
 }
 
 void SProd::ReiniEvolFrac0() {
-    SolveContext context(*this);
-    transient::restartFractionEvolutionInitial(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::restartFractionEvolutionInitial(transientStep);
 }
 
 void SProd::ReiniEvolFrac() {
-    SolveContext context(*this);
-    transient::restartFractionEvolution(context.transientStep());
+    const auto state = transientStateOf();
+    const auto gasLift = gasLiftStateOf();
+    const auto thermal = thermalStateOf();
+    transient::restartFractionEvolution(state, gasLift, thermal);
 }
 
 void SProd::AtualizaPig() {
-    SolveContext context(*this);
-    transient::updatePig(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::updatePig(transientStep);
 }
 
 void SProd::SolveAcopPV(int explicitScheme, int cycle) {
-    SolveContext context(*this);
-    transient::solvePressureVolumeCoupling(context.transientStep(), explicitScheme, cycle);
+    const auto transientStep = transientStateOf();
+    transient::solvePressureVolumeCoupling(transientStep, explicitScheme, cycle);
 }
 
 void SProd::marchaEnergTrans(int cycle, int maximumCycle) {
-    SolveContext context(*this);
-    thermal::advanceTransientEnergy(context.thermal(), cycle, maximumCycle);
+    const auto state = thermalStateOf();
+    const auto step = transientStateOf();
+    thermal::advanceTransientEnergy(state, step, cycle, maximumCycle);
 }
 
 void SProd::atualizaMiniTab() {
-    SolveContext context(*this);
-    transient::refreshFluidMiniTable(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::refreshFluidMiniTable(transientStep);
 }
 
 void SProd::atualizaCC1() {
-    SolveContext context(*this);
-    transient::refreshInletCondition(context.transientStep());
+    const auto transientStep = transientStateOf();
+    transient::refreshInletCondition(transientStep);
 }
 
 void SProd::SolveTrans(double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction, int network,
                        const ProFlu *collectorFluid) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const transient::TransientDependencies dependencies{context.thermal(), thermalDependencies, context.gasLift(), context.fluidTracking(), context.trends()};
-    transient::solveTransientStep(context.transientSolve(), dependencies, reverseQuality, reverseVoidFraction, reverseLiquidFraction,
+    const auto models = transientCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies, transient::HydrateEnvelopeSolver{*this});
+    transient::solveTransientStep(models.solve, dependencies, reverseQuality, reverseVoidFraction, reverseLiquidFraction,
                                   network, collectorFluid);
 }
 
 void SProd::ImprimeTrendP(int trend, int network) {
-    SolveContext context(*this);
-    trendoutput::writeProductionTrendRows(context.trends(), trend, network);
+    const auto trends = trendStateOf();
+    trendoutput::writeProductionTrendRows(trends, trend, network);
 }
 
 void SProd::ImprimeTrendPCab(int trend, int network) {
-    SolveContext context(*this);
-    trendoutput::writeProductionTrendHeader(context.trends(), trend, network);
+    const auto trends = trendStateOf();
+    trendoutput::writeProductionTrendHeader(trends, trend, network);
 }
 
 void SProd::ImprimeTrendG(int trend, int network) {
-    SolveContext context(*this);
-    trendoutput::writeGasLineTrendRows(context.trends(), trend, network);
+    const auto trends = trendStateOf();
+    trendoutput::writeGasLineTrendRows(trends, trend, network);
 }
 
 void SProd::ImprimeTrendGCab(int trend, int network) {
-    SolveContext context(*this);
-    trendoutput::writeGasLineTrendHeader(context.trends(), trend, network);
+    const auto trends = trendStateOf();
+    trendoutput::writeGasLineTrendHeader(trends, trend, network);
 }
 
 double SProd::marchaProdPerm1(double pressureGuess) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::marchProductionSteady(context.steady(), dependencies, pressureGuess);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::marchProductionSteady(models.search.march, dependencies, pressureGuess);
 }
 
 double SProd::buscaProdPfundoPerm(double guess, int attemptCount) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchProductionBottomHolePressure(context.search(), dependencies, guess, attemptCount);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchProductionBottomHolePressure(models.search, dependencies, guess, attemptCount);
 }
 
 double SProd::buscaProdPfundoPermRev(double guess) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchReverseProductionBottomHolePressure(context.search(), dependencies, guess);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchReverseProductionBottomHolePressure(models.search, dependencies, guess);
 }
 
 double SProd::buscaProdPfundoPerm2(double guess, int attemptCount) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchProductionBottomHolePressureSecondary(context.search(), dependencies, guess, attemptCount);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchProductionBottomHolePressureSecondary(models.search, dependencies, guess, attemptCount);
 }
 
 double SProd::buscaProdPfundoPerm3(double inletPressure) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchProductionBottomHolePressureTertiary(context.search(), dependencies, inletPressure);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchProductionBottomHolePressureTertiary(models.search, dependencies, inletPressure);
 }
 
 double SProd::marchaProdPresPres1(double massFlowRateGuess) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::marchProductionPressureToPressure(context.steady(), dependencies, massFlowRateGuess);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::marchProductionPressureToPressure(models.search.march, dependencies, massFlowRateGuess);
 }
 
 double SProd::buscaProdPresPresPerm(double massFlowRateGuess, double maximumFlowRate, int iterationCount) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchProductionPressureToPressure(context.search(), dependencies, massFlowRateGuess, maximumFlowRate,
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchProductionPressureToPressure(models.search, dependencies, massFlowRateGuess, maximumFlowRate,
                                                       iterationCount);
 }
 
 double SProd::buscaProdPresPresPermRev(double massFlowRateGuess, double maximumFlowRate, int iterationCount) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchReverseProductionPressureToPressure(context.search(), dependencies, massFlowRateGuess, maximumFlowRate,
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchReverseProductionPressureToPressure(models.search, dependencies, massFlowRateGuess, maximumFlowRate,
                                                              iterationCount);
 }
 
 double SProd::buscaProdPresPresPerm2(double massFlowRateGuess, double maximumFlowRate) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchProductionPressureToPressureSecondary(context.search(), dependencies, massFlowRateGuess, maximumFlowRate);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchProductionPressureToPressureSecondary(models.search, dependencies, massFlowRateGuess, maximumFlowRate);
 }
 
 double SProd::buscaProdPresPresPerm3(double massFlowRateGuess, double maximumFlowRate) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchProductionPressureToPressureTertiary(context.search(), dependencies, massFlowRateGuess, maximumFlowRate);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchProductionPressureToPressureTertiary(models.search, dependencies, massFlowRateGuess, maximumFlowRate);
 }
 
 double SProd::buscaInjPfundoPerm1(double guess) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchInjectionBottomHolePressure1(context.search(), dependencies, guess);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchInjectionBottomHolePressure1(models.search, dependencies, guess);
 }
 
 double SProd::buscaInjPfundoPerm2(double guess) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchInjectionBottomHolePressure2(context.search(), dependencies, guess);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchInjectionBottomHolePressure2(models.search, dependencies, guess);
 }
 
 double SProd::buscaInjPfundoPerm3(double guess) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchInjectionBottomHolePressure3(context.search(), dependencies, guess);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchInjectionBottomHolePressure3(models.search, dependencies, guess);
 }
 
 double SProd::buscaInjPfundoPerm4() {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchInjectionBottomHolePressure4(context.search(), dependencies);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchInjectionBottomHolePressure4(models.search, dependencies);
 }
 
 double SProd::buscaInjPfundoPerm5(double guess) {
-    SolveContext context(*this);
-    const thermal::ThermalDependencies thermalDependencies{context.sources(), context.closure()};
-    const steady::SteadyDependencies dependencies{context.sources(), context.closure(), context.thermal(), thermalDependencies, context.gasLift()};
-    return steady::searchInjectionBottomHolePressure5(context.search(), dependencies, guess);
+    const auto models = steadyCallStateOf();
+    const auto thermalDependencies = models.thermalDependencies();
+    const auto dependencies = models.dependencies(thermalDependencies);
+    return steady::searchInjectionBottomHolePressure5(models.search, dependencies, guess);
 }
 
 double SProd::hidroreverso(double liquidHoldup, double liquidFlowRate, double gasFlowRate) {
-    SolveContext context(*this);
-    return steady::reverseHydrostatic(context.steady(), liquidHoldup, liquidFlowRate, gasFlowRate);
+    const auto steady = steadyStateOf();
+    return steady::reverseHydrostatic(steady, liquidHoldup, liquidFlowRate, gasFlowRate);
 }
 
 double SProd::hidroreversoInj(double liquidHoldup, double liquidFlowRate) {
-    SolveContext context(*this);
-    return steady::reverseInjectionHydrostatic(context.steady(), liquidHoldup, liquidFlowRate);
+    const auto steady = steadyStateOf();
+    return steady::reverseInjectionHydrostatic(steady, liquidHoldup, liquidFlowRate);
 }
 
 double SProd::hidroTramoSecundario(double quality) {
-    SolveContext context(*this);
-    return steady::secondaryBranchHydrostatic(context.steady(), quality);
+    const auto steady = steadyStateOf();
+    return steady::secondaryBranchHydrostatic(steady, quality);
 }
 
 void SProd::calcTempFim() {
-    SolveContext context(*this);
-    thermal::computeOutletTemperature(context.thermal());
+    const auto thermal = thermalStateOf();
+    thermal::computeOutletTemperature(thermal);
 }
 
 void SProd::assemble(const CarriedState &carried, double *extraSourceLengths, int *extraSourceCells,
@@ -371,13 +406,13 @@ void SProd::applyCarriedState(const CarriedState &carried) {
 }
 
 void SProd::HidroDescargaG() {
-    SolveContext context(*this);
-    gaslift::computeGasUnloadingHydrostatics(context.gasLift());
+    const auto gasLift = gasLiftStateOf();
+    gaslift::computeGasUnloadingHydrostatics(gasLift);
 }
 
 void SProd::HidroDescargaP() {
-    SolveContext context(*this);
-    gaslift::computeProductionUnloadingHydrostatics(context.gasLift());
+    const auto gasLift = gasLiftStateOf();
+    gaslift::computeProductionUnloadingHydrostatics(gasLift);
 }
 
 bool SProd::hydrateEnvelopeDue() const {
@@ -405,7 +440,7 @@ static_assert(bindsToTheMember());
 
 }  // namespace
 
-sisprod::gaslift::GasLiftState SProd::gasLiftStateOf(sisprod::SolveContext &context) {
+sisprod::gaslift::GasLiftState SProd::gasLiftStateOf() {
     return sisprod::gaslift::GasLiftState{
         .gasCells = gasLift.cells,
         .cells = celula,
@@ -444,7 +479,7 @@ sisprod::gaslift::GasLiftState SProd::gasLiftStateOf(sisprod::SolveContext &cont
     };
 }
 
-sisprod::steady::SteadyStateState SProd::steadyStateOf(sisprod::SolveContext &context) {
+sisprod::steady::SteadyStateState SProd::steadyStateOf() {
     return sisprod::steady::SteadyStateState{
         .cells = celula,
         .gasCells = gasLift.cells,
@@ -473,26 +508,19 @@ sisprod::steady::SteadyStateState SProd::steadyStateOf(sisprod::SolveContext &co
         .casingTemperature = steadySearch.reverseFlowTemperature,
         .inletQuality = titE,
         .productionFluidCount = steadySearch.productionFluidCount,
-        .updaters = {context},
     };
 }
 
-/// The state a boundary-condition search reads.
-///
-/// It composes the march state rather than rebuilding it: the two halves read
-/// many of the same SProd members, and two bindings of one member could
-/// disagree silently.
-sisprod::steady::SteadyStateSearchState SProd::searchStateOf(sisprod::SolveContext &context) {
+sisprod::steady::SteadyStateSearchState SProd::searchStateOf() {
     return sisprod::steady::SteadyStateSearchState{
-        .march = steadyStateOf(context),
+        .march = steadyStateOf(),
         .holdupGuess = steadySearch.holdupGuess,
         .reverseNetworkFluid = steadySearch.reverseNetworkFluid,
         .reverseSteady = steadySearch.steadyReverseFlow,
     };
 }
 
-/// The state one transient step reads.
-sisprod::transient::TransientStepState SProd::transientStateOf(sisprod::SolveContext &context) {
+sisprod::transient::TransientStepState SProd::transientStateOf() {
     return sisprod::transient::TransientStepState{
         .meanMaximumTemperatureRate = transient.meanMaximumTemperatureRate,
         .meanMaximumPressureRate = transient.meanMaximumPressureRate,
@@ -571,12 +599,10 @@ sisprod::transient::TransientStepState SProd::transientStateOf(sisprod::SolveCon
         .pigReceiverCells = transient.pigReceiverCells,
         .scheduledPigCount = static_cast<int>(transient.pigReceiverCells.size()),
         .globals = vg1dSP,
-        .updaters = {context},
     };
 }
 
-/// The fluid tracking module's view of SProd: eleven members by reference.
-sisprod::fluidtracking::FluidTrackingState SProd::fluidTrackingStateOf(sisprod::SolveContext &context) {
+sisprod::fluidtracking::FluidTrackingState SProd::fluidTrackingStateOf() {
     return sisprod::fluidtracking::FluidTrackingState{
         .cells = celula,
         .lastCell = ncel,
@@ -593,12 +619,9 @@ sisprod::fluidtracking::FluidTrackingState SProd::fluidTrackingStateOf(sisprod::
     };
 }
 
-
-/// The state SolveTrans reads: the step state, composed rather than rebuilt,
-/// plus the members only the solve touches.
-sisprod::transient::TransientSolveState SProd::transientSolveStateOf(sisprod::SolveContext &context) {
+sisprod::transient::TransientSolveState SProd::transientSolveStateOf() {
     return sisprod::transient::TransientSolveState{
-        .step = transientStateOf(context),
+        .step = transientStateOf(),
         .defaultInletTemperature = temperatura,
         .annulusDrift = derivaAnel,
         .closingSubtitles = saidaSubTextoSis,
@@ -651,13 +674,9 @@ sisprod::transient::TransientSolveState SProd::transientSolveStateOf(sisprod::So
         .trackGasOilRatio = transient.trackGasOilRatio,
         .unitCellTimeCounters = trends.singleCellOutputTimeIndices,
         .voidFractionHistory = transient.voidFractionSamples,
-        .updaters = {context},
     };
 }
 
-
-
-/// The state the five drift-flux closure variants read.
 driftflux::coefficient::ClosureState SProd::closureStateOf() {
     return driftflux::coefficient::ClosureState{
         .cells = celula,
@@ -674,7 +693,6 @@ driftflux::coefficient::ClosureState SProd::closureStateOf() {
     };
 }
 
-/// The state the source terms of a cell read and write.
 sisprod::sources::SourceState SProd::sourceStateOf() {
     return sisprod::sources::SourceState{
         .cells = celula,
@@ -691,7 +709,7 @@ sisprod::sources::SourceState SProd::sourceStateOf() {
     };
 }
 
-sisprod::thermal::ThermalState SProd::thermalStateOf(sisprod::SolveContext &context) {
+sisprod::thermal::ThermalState SProd::thermalStateOf() {
     return sisprod::thermal::ThermalState{
         .cells = celula,
         .gasCells = gasLift.cells,
@@ -717,7 +735,6 @@ sisprod::thermal::ThermalState SProd::thermalStateOf(sisprod::SolveContext &cont
         .inletQuality = titE,
         .inletVoidFraction = alfE,
         .inletComplementaryFraction = betaE,
-        .evolutionUpdater = {.context = context},
         .surfaceChokeOpen = transient.surfaceChokeOpen,
         .defaultInletTemperature = temperatura,
         .timeStep = dt,
@@ -742,15 +759,6 @@ sisprod::thermal::ThermalState SProd::thermalStateOf(sisprod::SolveContext &cont
     };
 }
 
-/// Binds the state the trend writers are allowed to read.
-///
-/// Designated initialisers, not positional: the four series have identical
-/// types, so a positional swap would compile in silence and hand a writer
-/// another line's buffer. Naming each one makes that a compile error.
-///
-/// Every field is a reference, never a copy -- the caller advances the counters
-/// between the header call and the row call, so a copy would be read at the
-/// wrong moment.
 trendoutput::TrendState SProd::trendStateOf() const {
     return trendoutput::TrendState{
         .input = arq,
@@ -766,19 +774,15 @@ trendoutput::TrendState SProd::trendStateOf() const {
                                 trends.gasWallTrendBufferedCounts}};
 }
 
-namespace sisprod {
+SProd::SteadyCallState SProd::steadyCallStateOf() {
+    return {closureStateOf(), sourceStateOf(), thermalStateOf(), gasLiftStateOf(), searchStateOf()};
+}
 
-SolveContext::SolveContext(SProd &system)
-    : system_(system),
-      gasLift_(system.gasLiftStateOf(*this)),
-      steady_(system.steadyStateOf(*this)),
-      search_(system.searchStateOf(*this)),
-      transientStep_(system.transientStateOf(*this)),
-      fluidTracking_(system.fluidTrackingStateOf(*this)),
-      transientSolve_(system.transientSolveStateOf(*this)),
-      closure_(system.closureStateOf()),
-      sources_(system.sourceStateOf()),
-      thermal_(system.thermalStateOf(*this)),
-      trends_(system.trendStateOf()) {}
+SProd::TransientCallState SProd::transientCallStateOf() {
+    return {closureStateOf(), sourceStateOf(), thermalStateOf(), gasLiftStateOf(), fluidTrackingStateOf(),
+            trendStateOf(), transientSolveStateOf()};
+}
 
-}  // namespace sisprod
+void transient::HydrateEnvelopeSolver::operator()() const {
+    system_.solveHydrateEnvelopes();
+}

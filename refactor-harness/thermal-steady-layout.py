@@ -7,6 +7,12 @@ or state writes visible to check-steady-decomposition.py.
 import pathlib
 import re
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from module_dependencies_layout import verified_snapshot, candidate_text
+
+
 
 def tokens(text):
     text = re.sub(r'//[^\n]*|/\*[\s\S]*?\*/', '', text)
@@ -41,6 +47,7 @@ def once(text, old, new):
 
 
 def restore(text):
+    text = verified_snapshot({'src/core/SisProdThermal.cpp': text})['src/core/SisProdThermal.cpp']
     internal = pathlib.Path('src/include/SisProdThermalInternal.h').read_text()
     struct = re.search(r'struct SteadyTemperatureStep\s*\{([^}]*)\}', internal)[1]
     assert tokens(struct) == tokens(''.join('double ' + f + ';' for f in FIELDS)), 'steady step scalar types'

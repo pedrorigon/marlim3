@@ -9,7 +9,7 @@
  */
 #include "Leitura.h"
 #include "SisProd.h"
-#include "SisProdSolveContext.h"
+#include "SisProdThermal.h"
 #include "SisProdThermal.h"
 #include "estruturas.h"
 #include "variaveisGlobais1D.h"
@@ -414,7 +414,7 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
                  const char *caseName, int cellIndex, int RK, PermMode mode) {
     resetCells(system, cells, scenario);
     configurePermCase(system, cells, scenario, cellIndex, mode);
-    sisprod::thermal::advanceSteadyTemperature(sisprod::SolveContext(system).thermal(), cellIndex, RK);
+    sisprod::thermal::advanceSteadyTemperature(system.thermalStateOf(), cellIndex, RK);
     const CelG *forwardGas = system.arq.lingas == 1
                                  ? &system.gasLift.cells[system.gasLift.tubingCouplingStart +
                                                   system.gasLift.annulusCouplingStart -
@@ -425,7 +425,7 @@ void runPermCase(SProd &system, Cel *cells, const Scenario &scenario,
 
     resetCells(system, cells, scenario);
     configurePermCase(system, cells, scenario, cellIndex, mode);
-    sisprod::thermal::advanceReverseSteadyTemperature(sisprod::SolveContext(system).thermal(), cellIndex, RK);
+    sisprod::thermal::advanceReverseSteadyTemperature(system.thermalStateOf(), cellIndex, RK);
     const CelG *reverseGas = system.arq.lingas == 1
                                  ? &system.gasLift.cells[system.gasLift.tubingCouplingStart +
                                                   system.gasLift.annulusCouplingStart -
@@ -520,7 +520,7 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
     system.gasLift.cells[gasIndex].razInter = currentRatio;
     system.gasLift.cells[gasIndex - 1].razInter = previousRatio;
 
-    sisprod::thermal::computeDischargeTemperature(sisprod::SolveContext(system).thermal(), gasIndex);
+    sisprod::thermal::computeDischargeTemperature(system.thermalStateOf(), gasIndex);
 
     const CelG &source = system.gasLift.cells[gasIndex - 1];
     const Cel &production = cells[gasIndex - 1];
@@ -533,16 +533,16 @@ void runDischargeCase(SProd &system, Cel *cells, const Scenario &scenario,
 
 void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetCells(system, cells, scenario);
-    const double latentHeat = sisprod::thermal::interpolateLatentHeat(sisprod::SolveContext(system).thermal(), 
+    const double latentHeat = sisprod::thermal::interpolateLatentHeat(system.thermalStateOf(),
         scenario.pressure, scenario.temperature);
     printf("%-20s %-15s value=%a\n", "interpolaHLatente", scenario.name, latentHeat);
 
     resetCells(system, cells, scenario);
-    const double mixtureEnthalpy = sisprod::thermal::computeMixtureEnthalpy(sisprod::SolveContext(system).thermal(), 2);
+    const double mixtureEnthalpy = sisprod::thermal::computeMixtureEnthalpy(system.thermalStateOf(), 2);
     printf("%-20s %-15s value=%a\n", "calcHmix", scenario.name, mixtureEnthalpy);
 
     resetCells(system, cells, scenario);
-    sisprod::thermal::updateProductionTemperaturePeriphery(sisprod::SolveContext(system).thermal(), 2);
+    sisprod::thermal::updateProductionTemperaturePeriphery(system.thermalStateOf(), 2);
     printf("%-20s %-15s prevR=%a nextL=%a currentIni=%a\n",
            "atualizaPeriTempProd", scenario.name,
            cells[1].tempR, cells[3].tempL, cells[2].tempini);
@@ -552,7 +552,7 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     printf("%-20s %-15s tempSup=%a\n", "calcTempFim", scenario.name, system.networkCoupling.chokeOutletTemperature);
 
     resetCells(system, cells, scenario);
-    sisprod::thermal::prepareNonDimensionalHeatDiffusion(sisprod::SolveContext(system).thermal(), 2);
+    sisprod::thermal::prepareNonDimensionalHeatDiffusion(system.thermalStateOf(), 2);
     const TransCal &heat = cells[2].calor;
     printf("%-20s %-15s Tint=%a dtL=%a Vint=%a dt=%a k=%a cp=%a rho=%a visc=%a beta=%a\n",
            "prepDifusCalorND", scenario.name, heat.Tint, heat.dtL, heat.Vint,
@@ -560,13 +560,13 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
 
     resetCells(system, cells, scenario);
     initializePropertyTables(cells[2], scenario);
-    const double tabulatedEnergy = sisprod::thermal::interpolateMixtureEnergy(sisprod::SolveContext(system).thermal(), 2, 1, 2, 0.35);
+    const double tabulatedEnergy = sisprod::thermal::interpolateMixtureEnergy(system.thermalStateOf(), 2, 1, 2, 0.35);
     printf("%-20s %-15s value=%a\n", "energmix", scenario.name, tabulatedEnergy);
 
     if (scenario.pressure >= 60. && scenario.pressure < 140.) {
         resetCells(system, cells, scenario);
         initializePropertyTables(cells[2], scenario);
-        sisprod::thermal::updateTemperatureFromEnthalpy(sisprod::SolveContext(system).thermal(), 2);
+        sisprod::thermal::updateTemperatureFromEnthalpy(system.thermalStateOf(), 2);
         printf("%-20s %-15s temp=%a\n", "calcTempEntalp", scenario.name, cells[2].temp);
     }
 

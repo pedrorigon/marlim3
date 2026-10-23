@@ -22,6 +22,12 @@ LEXEME = re.compile(
     r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|//[^\n]*|/\*[\s\S]*?\*/'
     r'|[A-Za-z_]\w*|\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\S')
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from module_dependencies_layout import verified_snapshot, candidate_text
+
+
 
 def tokens(text):
     return [m[0] for m in LEXEME.finditer(text) if not m[0].startswith(("//", "/*"))]
@@ -91,6 +97,7 @@ def replace_sequence(sequence, needle, replacement):
 
 
 def verify(reference, candidate):
+    candidate = verified_snapshot(candidate)
     _, no_flow = function(reference[STATE], "finalizeSteadyMassNoFlow")
     start = no_flow.index("state.cells[i].alfini =")
     end = no_flow.index("if (i < state.lastCell) {", start)
@@ -189,7 +196,7 @@ def main():
     paths = (STATE, SEARCH, *INTERFACES)
     reference = {path: subprocess.check_output(
         ["git", "show", f"{REFERENCE}:{path}"], cwd=ROOT, text=True) for path in paths}
-    candidate = {path: (ROOT / path).read_text() for path in paths}
+    candidate = {path: candidate_text(path) for path in paths}
     verify(reference, candidate)
     print("109 definitions reconstructed; 3 helper interfaces and 31 call bindings checked.")
     if args.calibrate:

@@ -51,7 +51,10 @@ trap 'rm -rf "$work_dir"' EXIT
 objects_dir="${MARLIM_BUILD:-$project_root/build}/CMakeFiles/Marlim3.dir"
 mapfile -t objects < <(find "$objects_dir/src" -name '*.o' \
                             ! -name 'Num4Main.cpp.o' \
-                            ! -name 'DriftFluxClosure.cpp.o' | sort)
+                            ! -name 'DriftFluxClosure.cpp.o' | sort | while IFS= read -r object_path; do
+    object_source="${object_path#"$objects_dir/"}"
+    [[ -f "$project_root/${object_source%.o}" ]] && printf '%s\n' "$object_path"
+done)
 if (( ${#objects[@]} == 0 )); then
     printf '%sno objects under %s -- build the project first%s\n' \
            "$red" "$objects_dir" "$reset" >&2

@@ -16,7 +16,7 @@
  */
 #include "Leitura.h"
 #include "SisProd.h"
-#include "SisProdSolveContext.h"
+#include "SisProdThermal.h"
 #include "SisProdGasLift.h"
 #include "SisProdGasLiftInternal.h"
 #include "estruturas.h"
@@ -673,14 +673,14 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // Two calls with throat rates on either side of vazDescControl, to drive the
     // raise branch and the lower branch rather than one of them twice.
     seed();
-    sisprod::gaslift::computeMaximumSeparatorPressure(sisprod::SolveContext(system).gasLift());
-    sisprod::gaslift::correctInjectionPressure(sisprod::SolveContext(system).gasLift(), 4.0 * system.arq.vazDescControl, 0);
+    sisprod::gaslift::computeMaximumSeparatorPressure(system.gasLiftStateOf());
+    sisprod::gaslift::correctInjectionPressure(system.gasLiftStateOf(), 4.0 * system.arq.vazDescControl, 0);
     printUnloadingControl("CalcPresValvDesc-high", scenario.name, system);
 
     seed();
     system.gasLift.separatorPressure = system.arq.presMinDesc * 0.99;
-    sisprod::gaslift::computeMaximumSeparatorPressure(sisprod::SolveContext(system).gasLift());
-    sisprod::gaslift::correctInjectionPressure(sisprod::SolveContext(system).gasLift(), 0.1 * system.arq.vazDescControl, 1);
+    sisprod::gaslift::computeMaximumSeparatorPressure(system.gasLiftStateOf());
+    sisprod::gaslift::correctInjectionPressure(system.gasLiftStateOf(), 0.1 * system.arq.vazDescControl, 1);
     printUnloadingControl("CalcPresValvDesc-low", scenario.name, system);
 
     // Two rows again. The search corrects the surface pressure through the
@@ -690,11 +690,11 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // resetCells' seeding, so the decay ramp was never executed at all.
     seed();
     system.celula[system.ncel - 1].MC = -1.;
-    printValue("BuscaPresInjDesc-decay", scenario.name, sisprod::gaslift::searchUnloadingInjectionPressure(sisprod::SolveContext(system).gasLift()));
+    printValue("BuscaPresInjDesc-decay", scenario.name, sisprod::gaslift::searchUnloadingInjectionPressure(system.gasLiftStateOf()));
     printInterface("BuscaPresInjDesc-decay-state", scenario.name, system);
 
     seed();
-    printValue("BuscaPresInjDesc", scenario.name, sisprod::gaslift::searchUnloadingInjectionPressure(sisprod::SolveContext(system).gasLift()));
+    printValue("BuscaPresInjDesc", scenario.name, sisprod::gaslift::searchUnloadingInjectionPressure(system.gasLiftStateOf()));
     printInterface("BuscaPresInjDesc-state", scenario.name, system);
     printValve("BuscaPresInjDesc-valve", scenario.name, system.gasLift.valveChokes[0]);
 
@@ -702,21 +702,21 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     // ordinary advance, and the hand-over that fires only when the interface is
     // in the last cell AND has filled it. Driving one leaves the other blind.
     seed();
-    sisprod::gaslift::advanceInterface(sisprod::SolveContext(system).gasLift());
+    sisprod::gaslift::advanceInterface(system.gasLiftStateOf());
     printGas("avancInter", scenario.name, system.gasLift.cells[kInterfaceCell]);
 
     seed();
     system.gasLift.interfaceCell = system.gasLift.cellCount - 1;
     system.gasLift.cells[system.gasLift.interfaceCell].razInterIni = 0.995;
     system.gasLift.cells[system.gasLift.interfaceCell].razInter = 0.995;
-    sisprod::gaslift::advanceInterface(sisprod::SolveContext(system).gasLift());
+    sisprod::gaslift::advanceInterface(system.gasLiftStateOf());
     printGas("avancInter-handover", scenario.name, system.gasLift.cells[system.gasLift.cellCount - 1]);
     printRatios("avancInter-ratios", scenario.name, system.gasLift.cells[system.gasLift.cellCount - 1]);
     // The hand-over writes the cell AHEAD of the interface as well.
     printRatios("avancInter-ahead", scenario.name, system.gasLift.cells[system.gasLift.cellCount]);
 
     seed();
-    sisprod::gaslift::solveUnloading(sisprod::SolveContext(system).gasLift());
+    sisprod::gaslift::solveUnloading(system.gasLiftStateOf(), system.thermalStateOf());
     printGas("resolveDescarga", scenario.name, system.gasLift.cells[kInterfaceCell]);
     printGas("resolveDescarga-last", scenario.name, system.gasLift.cells[kGasCells]);
 
@@ -742,7 +742,7 @@ void runUnloadingScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     system.gasLift.rightHandSide = Vcr<double>(3 * (kGasCells + 1), 0.);
     for (int index = 0; index <= system.gasLift.cellCount; ++index)
         system.gasLift.cells[index].dTdt = 0;
-    sisprod::gaslift::assembleAndSolveGasSystem(sisprod::SolveContext(system).gasLift());
+    sisprod::gaslift::assembleAndSolveGasSystem(system.gasLiftStateOf());
     printGas("subtempoGasBuf", scenario.name, system.gasLift.cells[kInterfaceCell]);
     printBuffered("subtempoGasBuf-buffer", scenario.name,
                   system.gasLift.cells[kInterfaceCell], system.gasLift.cells[0]);
@@ -776,33 +776,33 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    sisprod::gaslift::updateGasLine(sisprod::SolveContext(system).gasLift());
+    sisprod::gaslift::updateGasLine(system.gasLiftStateOf());
     printGas("renovaGas", scenario.name, system.gasLift.cells[2]);
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
     printValue("prescordesc", scenario.name,
-               sisprod::gaslift::unloadingPressureCorrection(sisprod::SolveContext(system).gasLift(), 0.4, 0, 1.1, 1));
+               sisprod::gaslift::unloadingPressureCorrection(system.gasLiftStateOf(), 0.4, 0, 1.1, 1));
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    printValue("delpGasPerm", scenario.name, sisprod::gaslift::steadyGasPressureDrop(sisprod::SolveContext(system).gasLift(), 2));
+    printValue("delpGasPerm", scenario.name, sisprod::gaslift::steadyGasPressureDrop(system.gasLiftStateOf(), 2));
 
     resetCells(system, cells, scenario);
-    printValue("delpInjPerm", scenario.name, sisprod::gaslift::steadyInjectionPressureDrop(sisprod::SolveContext(system).gasLift(), 2));
+    printValue("delpInjPerm", scenario.name, sisprod::gaslift::steadyInjectionPressureDrop(system.gasLiftStateOf(), 2));
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    sisprod::gaslift::updateSteadyGasPressure(sisprod::SolveContext(system).gasLift(), 2);
+    sisprod::gaslift::updateSteadyGasPressure(system.gasLiftStateOf(), 2);
     printGas("RenovaPresGasPerm", scenario.name, system.gasLift.cells[2]);
 
     resetCells(system, cells, scenario);
     resetGasLine(system, scenario);
     resetValves(system);
-    sisprod::gaslift::updateSteadyGasTemperature(sisprod::SolveContext(system).gasLift(), 2);
+    sisprod::gaslift::updateSteadyGasTemperature(system.gasLiftStateOf(), 2);
     printGas("RenovaTempGasPerm", scenario.name, system.gasLift.cells[2]);
 }
 

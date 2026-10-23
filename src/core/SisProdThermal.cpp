@@ -1,3 +1,4 @@
+#include "SisProdTransient.h"
 #include "DriftFluxClosure.h"
 #include "SisProdSources.h"
 #include "SisProdThermalInternal.h"
@@ -3444,7 +3445,7 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex
     cell.calor.betint = -(1 / cell.calor.rhoint) * (liquidDensityChange * (1 - meanVoidFraction) + gasDensityChange * meanVoidFraction) / (temperaturePerturbation);
 }
 
-void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCycle) {
+void advanceTransientEnergy(const ThermalState &state, const transient::TransientStepState &transientStep, int cycle, int maximumCycle) {
     prepareTransientOutletFlow(state);
 
     state.cells[0].tempini = state.cells[0].temp;
@@ -3484,8 +3485,8 @@ void advanceTransientEnergy(const ThermalState &state, int cycle, int maximumCyc
         state.poissonSolver3D.renova();
     if (state.fullModel == 0) {
         if (cycle < maximumCycle) {
-            state.evolutionUpdater.solvePressureVelocityCoupling(cycle);
-            state.evolutionUpdater.renew();
+            transient::solvePressureVolumeCoupling(transientStep, 0, cycle);
+            transient::updateCells(transientStep, 0);
         }
     }
 }

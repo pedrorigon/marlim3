@@ -1,3 +1,4 @@
+#include "SisProdSteadyStateSearch.h"
 #include "DriftFluxClosure.h"
 #include "SisProdSources.h"
 #include "SisProdGasLift.h"
@@ -2191,11 +2192,11 @@ void solveGasLineSteady(const SteadyStateState &state, const SteadyDependencies 
     if (state.input.chokes.abertura[0] >= 0.2) { // injection choke inactive
         marchGasSteady(state, dependencies);
     } else
-        state.updaters.searchGasPressureSteadyTertiary(); // injection choke active
+        steady::searchGasPressureSteadyTertiary(dependencies.search, dependencies); // injection choke active
 }
 
 void solveGasLineSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, InjectionFlowRateCondition) {
-    state.updaters.searchGasPressureSteadySecondary(); // gas-line march for the injection-flow-rate case
+    steady::searchGasPressureSteadySecondary(dependencies.search, dependencies); // gas-line march for the injection-flow-rate case
 }
 
 /// Before the first march, a pressure condition lets the gas-line pressure at

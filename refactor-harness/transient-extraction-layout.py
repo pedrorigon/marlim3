@@ -80,6 +80,12 @@ PREDICATES = {'currentOutletUsesPressureDrop', 'currentOutletCanRemainOpen',
               'bufferedOutletUsesPressureDrop'}
 USED = set()
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from module_dependencies_layout import verified_snapshot, candidate_text
+
+
 
 def masked(text):
     pattern = r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\''
@@ -309,6 +315,10 @@ def reference(path):
 
 
 def check(current, header):
+    snapshot = verified_snapshot({'src/core/SisProdTransient.cpp': current,
+                                  'src/include/SisProdTransientInternal.h': header})
+    current = snapshot['src/core/SisProdTransient.cpp']
+    header = snapshot['src/include/SisProdTransientInternal.h']
     USED.clear()
     old = reference('src/core/SisProdTransient.cpp')
     old_header = reference('src/include/SisProdTransientInternal.h')

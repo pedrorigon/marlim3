@@ -11,9 +11,7 @@ class SProd;
 namespace driftflux::coefficient { struct ClosureState; }
 namespace sisprod::sources { struct SourceState; }
 
-namespace sisprod {
-class SolveContext;
-}
+namespace sisprod::transient { struct TransientStepState; }
 class choke;
 class solverP3D;
 struct varGlob1D;
@@ -26,19 +24,7 @@ struct ThermalDependencies {
     const driftflux::coefficient::ClosureState &closure;
 };
 
-
-/// The transient coupling the thermal steps call, with the solve context's view of the
-/// transient step.
-struct ThermalEvolutionUpdater {
-    SolveContext &context;
-
-    /// Solves the pressure/velocity coupling for one cycle.
-    void solvePressureVelocityCoupling(int cycle) const;
-    /// Refreshes the transient step state after thermal coupling.
-    void renew() const;
-};
-
-/// State and callbacks read and updated by the thermal and phase-transfer steps.
+/// Live data read and updated by the thermal and phase-transfer steps.
 struct ThermalState {
     Cel *const &cells;
     CelG *const &gasCells;
@@ -65,7 +51,6 @@ struct ThermalState {
     const double &inletQuality;
     double &inletVoidFraction;
     const double &inletComplementaryFraction;
-    ThermalEvolutionUpdater evolutionUpdater;
     const int &surfaceChokeOpen;
     const double &defaultInletTemperature;
     const double &timeStep;
@@ -132,7 +117,7 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state,
                                         int cellIndex);
 
 /// Advances the transient thermal-energy solution by one coupling cycle.
-void advanceTransientEnergy(const ThermalState &state, int cycle,
+void advanceTransientEnergy(const ThermalState &state, const transient::TransientStepState &transientStep, int cycle,
                             int maximumCycle);
 
 /// Advances the steady-state temperature march in the direct direction.

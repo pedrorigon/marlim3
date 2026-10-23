@@ -56,7 +56,7 @@
  */
 #include "Leitura.h"
 #include "SisProd.h"
-#include "SisProdSolveContext.h"
+#include "DriftFluxClosure.h"
 #include "estruturas.h"
 #include "variaveisGlobais1D.h"
 
@@ -533,19 +533,19 @@ int main(int argc, char **argv) {
             double c0, ud;
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            driftflux::coefficient::instantaneous(sisprod::SolveContext(sp).closure(), ind, c0, ud);        record("CalcC0Ud", s, ind, c0, ud, cells);
+            driftflux::coefficient::instantaneous(sp.closureStateOf(), ind, c0, ud);        record("CalcC0Ud", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            driftflux::coefficient::buffered(sisprod::SolveContext(sp).closure(), ind, c0, ud);     record("CalcC0UdBuf", s, ind, c0, ud, cells);
+            driftflux::coefficient::buffered(sp.closureStateOf(), ind, c0, ud);     record("CalcC0UdBuf", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            driftflux::coefficient::initialization(sisprod::SolveContext(sp).closure(), ind, c0, ud);     record("CalcC0UdIni", s, ind, c0, ud, cells);
+            driftflux::coefficient::initialization(sp.closureStateOf(), ind, c0, ud);     record("CalcC0UdIni", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            driftflux::coefficient::bufferedInitialization(sisprod::SolveContext(sp).closure(), ind, c0, ud);  record("CalcC0UdIniBuf", s, ind, c0, ud, cells);
+            driftflux::coefficient::bufferedInitialization(sp.closureStateOf(), ind, c0, ud);  record("CalcC0UdIniBuf", s, ind, c0, ud, cells);
 
             resetCells(sp, cells, s, ind); c0 = -7.; ud = -7.;
-            driftflux::coefficient::steadyState(sisprod::SolveContext(sp).closure(), ind, c0, ud);    record("CalcC0UdPerm", s, ind, c0, ud, cells);
+            driftflux::coefficient::steadyState(sp.closureStateOf(), ind, c0, ud);    record("CalcC0UdPerm", s, ind, c0, ud, cells);
         }
     }
     return 0;

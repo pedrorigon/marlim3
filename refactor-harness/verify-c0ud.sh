@@ -66,7 +66,10 @@ done
 mapfile -t objects < <(find "$objects_dir/src" -name '*.o' \
                             ! -name 'Num4Main.cpp.o' \
                             ! -name 'SisProd.cpp.o' \
-                            ! -name 'DriftFluxClosure.cpp.o' | sort)
+                            ! -name 'DriftFluxClosure.cpp.o' | sort | while IFS= read -r object_path; do
+    object_source="${object_path#"$objects_dir/"}"
+    [[ -f "$project_root/${object_source%.o}" ]] && printf '%s\n' "$object_path"
+done)
 (( ${#objects[@]} > 0 )) || {
     printf '%sno objects under %s -- build the project first%s\n' "$red" "$objects_dir" "$reset" >&2
     exit 2

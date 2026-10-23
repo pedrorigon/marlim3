@@ -69,7 +69,7 @@ mutations=[
  ('outlet-direction','updateBlackOilOutletProperties','state.cells[state.lastCell].Mliqini > -(*state.globals).localtiny','state.cells[state.lastCell].Mliqini >= -(*state.globals).localtiny'),
  ('omp-configuration','transportBlackOilProperties','#pragma omp parallel for num_threads((*state.globals).ntrd)','#pragma omp parallel for num_threads(1)'),
  ('buffer-construction','transportPhaseMolarFractions','Vcr<double> fracMolF(ncomp);','Vcr<double> fracMolF(ncomp + 1);'),
- ('gas-density-callback','publishBlackOilCellProperties','state.updaters.correctGasSpecificGravity(i);','state.updaters.correctGasSpecificGravity(i + 1);'),
+ ('gas-density-callback','publishBlackOilCellProperties','correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);','correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i + 1);'),
 ]
 records=[]
 with tempfile.TemporaryDirectory(prefix='marlim-fluid-proof-') as temporary:

@@ -11,7 +11,6 @@ class Ler;
 class ProFlu;
 class choke;
 struct varGlob1D;
-namespace sisprod { class SolveContext; }
 
 namespace driftflux::coefficient { struct ClosureState; }
 namespace sisprod::sources { struct SourceState; }
@@ -20,6 +19,8 @@ namespace sisprod::gaslift { struct GasLiftState; }
 
 namespace sisprod::steady {
 
+struct SteadyStateSearchState;
+
 /// Physical-model views used by steady marches and boundary searches.
 struct SteadyDependencies {
     const sources::SourceState &sources;
@@ -27,24 +28,7 @@ struct SteadyDependencies {
     const thermal::ThermalState &thermal;
     const thermal::ThermalDependencies &thermalDependencies;
     const gaslift::GasLiftState &gasLift;
-};
-
-
-
-/// Operations on closure, source, thermal and gas-line states supplied by the solve context.
-struct SteadyStateUpdaters {
-    SolveContext &context;
-
-    // --- drift closure and sources -----------------------------------------
-
-    // --- thermal ------------------------------------------------------------
-
-    // --- gas line -----------------------------------------------------------
-
-    /// Solves the gas-line pressure for a prescribed injection flow rate.
-    void searchGasPressureSteadySecondary() const;
-    /// Solves the gas-line pressure with an active injection choke.
-    void searchGasPressureSteadyTertiary() const;
+    const SteadyStateSearchState &search;
 };
 
 /// References to the cells, configuration and mutable state used by the steady marches.
@@ -113,8 +97,6 @@ struct SteadyStateState {
     /// Number of production fluids -- SProd::steadySearch.productionFluidCount. Read only.
     const int &productionFluidCount;
 
-    /// Operations on the coupled physical models and gas-line searches.
-    SteadyStateUpdaters updaters;
 };
 
 /// Advances the forward black-oil mass balance and publishes cell and face fractions.

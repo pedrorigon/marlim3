@@ -3,7 +3,7 @@
 
 #include "SisProdSteadyState.h"
 
-// Searches compose the march state and invoke the coupled models through its updaters.
+// Searches compose the march state and receive coupled-model views explicitly.
 
 namespace sisprod::steady {
 

@@ -10,6 +10,12 @@ import subprocess
 
 CHECKPOINT = '339df28'
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from module_dependencies_layout import verified_snapshot, candidate_text
+
+
 
 def canonical(text):
     text = re.sub(r'//[^\n]*|/\*[\s\S]*?\*/', '', text)
@@ -67,6 +73,7 @@ def split_aliases(body):
 
 
 def check_mass(current):
+    current = verified_snapshot({'src/core/SisProdThermal.cpp': current})['src/core/SisProdThermal.cpp']
     old = reference()
     rebuilt = {name: parts(current, name) for name in (
         'initializeDistributedMassTransferInlet', 'prepareDistributedMassTransferProperties',
@@ -142,6 +149,7 @@ def check_mass(current):
 
 
 def check_thermal_source(current):
+    current = verified_snapshot({'src/core/SisProdThermal.cpp': current})['src/core/SisProdThermal.cpp']
     old = reference()
     sig, kinetic = parts(current, 'computeThermalMassTransferKineticTerm')
     equal('thermal kinetic inputs', canonical('double computeThermalMassTransferKineticTerm(const ThermalState &state, int cellIndex, double meanSuperficialGasVelocity, double meanSuperficialLiquidVelocity)'), sig)

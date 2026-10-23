@@ -21,8 +21,6 @@ template <class T> class BandMtx;
 #include <string>
 #include <vector>
 
-namespace driftflux::coefficient { struct ClosureState; }
-namespace sisprod::sources { struct SourceState; }
 namespace sisprod::thermal { struct ThermalState; struct ThermalDependencies; }
 namespace sisprod::gaslift { struct GasLiftState; }
 
@@ -31,9 +29,18 @@ namespace trendoutput { struct TrendState; }
 
 namespace sisprod {
 
-class SolveContext;
-
 namespace transient {
+
+/// Invokes the hydrate-envelope solvers of the owning production system.
+class HydrateEnvelopeSolver {
+  public:
+    explicit HydrateEnvelopeSolver(SProd &system) : system_(system) {}
+    /// Runs the production and service-line solvers at the current step position.
+    void operator()() const;
+
+  private:
+    SProd &system_;
+};
 
 /// Views of the physical models and trend writer used by transient orchestration.
 struct TransientDependencies {
@@ -42,20 +49,11 @@ struct TransientDependencies {
     const gaslift::GasLiftState &gasLift;
     const fluidtracking::FluidTrackingState &fluidTracking;
     const trendoutput::TrendState &trends;
-};
-
-
-/// Gas-line sub-step operations resolved through the solve context.
-struct TransientStepUpdaters {
-    SolveContext &context;
-
-    /// Advances the gas-line sub-step using the current gas-lift state.
-    void advanceGasSubStep() const;
+    HydrateEnvelopeSolver hydrates;
 };
 
 /// Live non-owning bindings used by transient cell and time-step operations.
 /// Scalar and pointer references observe updates made by collaborating modules;
-
 /// array pointers address storage owned by the production system.
 struct TransientStepState {
     /// SProd::transient.meanMaximumTemperatureRate -- written.
@@ -289,8 +287,6 @@ struct TransientStepState {
     /// SProd::vg1dSP -- fixed pointer binding with mutable global-state access.
     varGlob1D *const &globals;
 
-    /// Everything the step needs that is not its own.
-    TransientStepUpdaters updaters;
 };
 
 /// Updates cells in increasing index order, using the first, interior, and outlet rules.
@@ -368,7 +364,7 @@ void restartFractionEvolutionSub(const TransientStepState &state);
 
 /// Propagates the reduced increment, advances the restored gas sub-step,
 /// and restores void, complementary-liquid, and pig fractions in order.
-void restartFractionEvolution(const TransientStepState &state);
+void restartFractionEvolution(const TransientStepState &state, const gaslift::GasLiftState &gasLiftDependencies, const thermal::ThermalState &thermalDependencies);
 
 /// Snapshots pig movement state, transfers pigs between cells, and prepares face liquid fractions.
 void updatePig(const TransientStepState &state);
@@ -400,33 +396,7 @@ void storePreviousFractionsAndMovePigs(const TransientStepState &state);
 /// Caches cell and upwind-face densities and cell viscosities before serial face propagation.
 void cacheCellAndFaceDensities(const TransientStepState &state);
 
-/// Operations delegated to collaborating modules through the live solve context.
-struct TransientSolveUpdaters {
-    SolveContext &context;
-
-    /// Solves hydrate envelopes using the production system.
-    void solveHydrateEnvelopes() const;
-
-
-
-
-
-
-
-
-
-
-
-    /// Advances transient thermal energy for the specified coupling cycle.
-    void marchTransientEnergy(int ciclo, int ciclomax) const;
-
-
-
-
-
-};
-
-/// Live step bindings and the additional histories, output buffers, and collaborators
+/// Live step bindings and the additional histories and output buffers
 /// required to orchestrate one transient solve. References retain their owner storage.
 struct TransientSolveState {
     /// State shared with cell, fraction, and time-step operations.
@@ -588,8 +558,6 @@ struct TransientSolveState {
     /// SProd::transient.voidFractionSamples -- written or read by the solve; not promised const.
     std::vector<double> &voidFractionHistory;
 
-    /// Everything the solve needs that is not its own.
-    TransientSolveUpdaters updaters;
 };
 
 /// Advances and reports one transient step, preserving the ordered coupling,

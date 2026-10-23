@@ -226,7 +226,7 @@ void updateBufferedNetworkSources(const TransientStepState &state, double betRev
 void prepareCouplingModelFlags(const TransientSolveState &state, int celpos);
 
 /// Restarts porous and fraction evolution at the reduced step, then applies porous corrections.
-void restartCouplingFractions(const TransientSolveState &state, int kontaAcop,
+void restartCouplingFractions(const TransientSolveState &state, const TransientDependencies &dependencies, int kontaAcop,
                               double alfRev, double betRev);
 
 /// Restores intermediate cell, porous, outlet-source and choke state between coupling iterations.

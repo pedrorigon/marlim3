@@ -75,6 +75,12 @@ SIGNATURES = {'computePhaseLiquidVolumeBalances': 'void computePhaseLiquidVolume
                                 'temperatureLow)'}
 
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from module_dependencies_layout import verified_snapshot, candidate_text
+
+
 
 def masked(text):
     pattern = r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\''
@@ -203,7 +209,10 @@ def main():
                                          cwd=root, text=True)
     old_public = subprocess.check_output(['git', 'show', CHECKPOINT+':src/include/SisProdFluidTracking.h'],
                                          cwd=root, text=True)
-    new = cpp.read_text()
+    snapshot = verified_snapshot({'src/core/SisProdFluidTracking.cpp': cpp.read_text(),
+                                  'src/include/SisProdFluidTrackingInternal.h': header.read_text(),
+                                  'src/include/SisProdFluidTracking.h': public.read_text()})
+    new = snapshot['src/core/SisProdFluidTracking.cpp']
     names = re.findall(r'(?m)^[\w:<>]+\s+(\w+)\s*\(', masked(old))
     new_names = re.findall(r'(?m)^[\w:<>]+\s+(\w+)\s*\(', masked(new))
     assert len(names) == 33
@@ -221,7 +230,7 @@ def main():
             expected = canonical(expected).replace('> 1 - 1e-3', '> 1. - 1e-3')
         equal(name, expected, actual)
     assert USED == set(SIGNATURES), ('unused helper', set(SIGNATURES)-USED)
-    current_header = header.read_text()
+    current_header = snapshot['src/include/SisProdFluidTrackingInternal.h']
     structures = re.findall(r'(?m)^struct (\w+) \{', old_header)
     assert len(structures) == 9
     assert re.findall(r'(?m)^struct (\w+) \{', current_header) == structures
@@ -231,7 +240,7 @@ def main():
     for name, signature in SIGNATURES.items():
         declaration = canonical(signature + ';')
         assert canonical(current_header).count(declaration) == 1, name + ' declaration'
-    equal('public header contract', old_public, public.read_text())
+    equal('public header contract', old_public, snapshot['src/include/SisProdFluidTracking.h'])
     # The defaults predate the cleanup and retain their original scalar values.
     baseline = subprocess.check_output(['git', 'show', 'beff16e:src/core/SisProdFluidTracking.cpp'],
                                        cwd=root, text=True)

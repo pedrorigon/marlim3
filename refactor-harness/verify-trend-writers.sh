@@ -44,7 +44,10 @@ module_source="${MARLIM_TREND_SOURCE:-$project_root/src/core/SisProdTrendOutput.
 
 mapfile -t objects < <(find "$objects_dir/src" -name '*.o' \
                             ! -name 'Num4Main.cpp.o' \
-                            ! -name 'SisProdTrendOutput.cpp.o' | sort)
+                            ! -name 'SisProdTrendOutput.cpp.o' | sort | while IFS= read -r object_path; do
+    object_source="${object_path#"$objects_dir/"}"
+    [[ -f "$project_root/${object_source%.o}" ]] && printf '%s\n' "$object_path"
+done)
 (( ${#objects[@]} > 0 )) || { echo "${red}no objects under $objects_dir -- build first${reset}" >&2; exit 2; }
 
 scratch="$(mktemp -d -t marlim3-trend-XXXXXX)"
