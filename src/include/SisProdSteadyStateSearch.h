@@ -4,25 +4,13 @@
 #include "RootFindingSolvers.h"
 #include "SisProdSteadyState.h"
 
-// SisProdSteadyState.h does not include this header, and must not. The march
-// does reach two searches -- marchProductionSteady and
-// marchProductionSteadySecondary march the gas line after the column
-// converges, through searchGasPressureSteadySecondary and
-// searchGasPressureSteadyTertiary -- but it reaches them through
-// SteadyStateUpdaters, back via SProd, the same way it reaches calctemp. The
-// cycle between the two halves is in the data, not in the build, and the
-// include stays one-way.
+// Searches compose the march state and invoke the coupled models through its updaters.
 
 namespace sisprod::steady {
 
-/// The state a boundary-condition search reads.
-///
-/// It COMPOSES the march state rather than restating it: the two halves read
-/// many of the same SProd members, and two bindings of one member could
-/// disagree silently. The three members below belong to the searches alone.
+/// March state and additional inputs used by boundary-condition searches.
 struct SteadyStateSearchState {
-    /// Everything the march reads. A search passes this straight through when
-    /// it calls one.
+    /// Shared state passed to the selected steady march.
     SteadyStateState march;
 
     /// Holdup guess carried between search attempts -- SProd::steadySearch.holdupGuess.
@@ -34,70 +22,78 @@ struct SteadyStateSearchState {
     bool &reverseSteady;
 };
 
-// ------------------------------------------------------ dispatch table ----
-
-/// Runs whichever march the pair (production flag, boundary-condition kind)
-/// selects, and returns its residual.
-///
-/// This is the seam between the two halves: the searches know it by name, the
-/// marches do not know it exists. It lives here, with the callers, and not in
-/// the march module -- a dispatch table belongs on the side that dispatches.
+/// Runs the march selected by well type, boundary conditions and reverse-flow state.
+/// The production selector is 0 for gas, 1 for bottom-hole pressure and otherwise pressure-to-pressure.
 [[nodiscard]] double dispatchMarch(const SteadyStateSearchState &state, double guess,
                                    int isProduction, int boundaryConditionKind);
 
-/// Drives dispatchMarch to a root between two bracketing guesses.
-///
-/// The generic half lives in rootfinding::zriddr and knows nothing about
-/// production. The domain half stays here: reading acopColAnulPermForte to
-/// decide the minimum iteration count, and normalising the residual against
-/// the convergence monitor.
+/// Solves the bracketed march residual with zriddr.
+/// Normalizes residuals by the reference convergence monitor and updates the production monitor.
+/// Strong tubing-annulus coupling requires at least ten root iterations.
 [[nodiscard]] double solveSteadyRoot(const SteadyStateSearchState &state, double x1, double x2,
                                      int isProduction, int boundaryConditionKind);
 
-// -------------------------------------------- production bottom-hole search --
-
-/// Searches the bottom-hole pressure that closes the production balance.
-/// A guess of -1 means "bracket it yourself"; a negative attempt count means
-/// "this is the first attempt".
+/// Searches bottom-hole pressure in kgf/cm2 for the production balance.
+/// Any negative guess requests an automatic estimate; a negative attemptCount identifies the initial attempt.
 [[nodiscard]] double searchProductionBottomHolePressure(const SteadyStateSearchState &state,
                                                         double guess = -1., int attemptCount = -1);
+
+/// Searches bottom-hole pressure in kgf/cm2 using the reverse production march.
+/// Any negative guess requests an automatic estimate.
 [[nodiscard]] double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &state,
                                                                double guess = -1.);
+
+/// Searches bottom-hole pressure in kgf/cm2 with a surface choke.
+/// Any negative guess requests an automatic estimate; attemptCount does not affect this search.
 [[nodiscard]] double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState &state,
                                                                  double guess = -1., int attemptCount = -1);
+
+/// Iterates the production and gas-line marches from the supplied inlet pressure in kgf/cm2.
+/// Updates the corrected surface pressure and returns the last-cell pressure before that correction.
 [[nodiscard]] double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &state,
                                                                 double inletPressure);
 
-// ----------------------------------------- production pressure-to-pressure --
-
-/// Searches the mass flow that connects two fixed pressures.
+/// Searches the standard source flow rate in m3/day between fixed production pressures.
+/// Uses maximumFlowRate when positive and carries the network iteration count.
 [[nodiscard]] double searchProductionPressureToPressure(const SteadyStateSearchState &state, double massFlowRateGuess,
                                                         double maximumFlowRate = 0., int iterationCount = 0);
+
+/// Searches the standard source flow rate in m3/day between fixed pressures using the reverse march.
 [[nodiscard]] double searchReverseProductionPressureToPressure(const SteadyStateSearchState &state,
                                                                double massFlowRateGuess, double maximumFlowRate = 0.,
                                                                int iterationCount = 0);
+
+/// Searches the standard source flow rate in m3/day between fixed pressures with a surface choke.
 [[nodiscard]] double searchProductionPressureToPressureSecondary(const SteadyStateSearchState &state,
                                                                  double massFlowRateGuess, double maximumFlowRate = 0.);
+
+/// Searches the standard source flow rate in m3/day between fixed pressures with a closed outlet.
 [[nodiscard]] double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &state,
                                                                 double massFlowRateGuess, double maximumFlowRate = 0.);
 
-// --------------------------------------------------------- gas-line search --
-
-/// Searches the gas-line pressure that closes the injection balance. Not
-/// [[nodiscard]]: the march runs them for their effect on the gas line and
-/// drops the value.
+/// Searches gas-line pressure in kgf/cm2 for a prescribed injection flow rate.
+/// Updates gas-line state and returns the pressure or a convergence failure sentinel.
 double searchGasPressureSteadySecondary(const SteadyStateSearchState &state);
+
+/// Searches gas-line pressure in kgf/cm2 with an active injection choke.
+/// Updates gas-line state and returns the pressure or a convergence failure sentinel.
 double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state);
 
-// -------------------------------------------- injection bottom-hole search --
-
-/// Five variants of the injection bottom-hole search; the well's boundary
-/// condition selects one. The first, second and fifth search a root, the third
-/// iterates to a fixed point and the fourth is a march.
+/// Searches the injection flow-rate guess that closes the prescribed pressure balance.
 [[nodiscard]] double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, double guess = -1.);
+
+/// Searches injection surface pressure in kgf/cm2 for the prescribed flow rate.
+/// A negative guess requests an automatic hydrostatic estimate.
 [[nodiscard]] double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, double guess = -1.);
+
+/// Iterates the injection flow and pressure boundary to a fixed point.
 [[nodiscard]] double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, double guess = -1.);
+
+/// Marches the injection column and returns its total mass flow.
 [[nodiscard]] double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state);
+
+/// Searches injection surface pressure in kgf/cm2 with the fifth boundary-condition variant.
+/// A negative guess requests an automatic hydrostatic estimate.
 [[nodiscard]] double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, double guess = -1.);
 
 }  // namespace sisprod::steady

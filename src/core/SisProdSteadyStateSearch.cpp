@@ -14,9 +14,7 @@ namespace sisprod::steady {
 
 namespace {
 
-/// The nine rows of the steady-state march dispatch table, named after the
-/// SProd methods that run each march (SProd::marchaProdPerm1 runs
-/// marchProductionSteady, and so on), so that each row reads against them.
+/// Identifies the steady march selected by the well type and boundary conditions.
 enum class SteadyMarch {
     marchaInjPerm1,
     marchaGasPerm2,
@@ -49,13 +47,7 @@ SteadyMarch selectSteadyMarch(int injectorWell, int prod, int tipoCC, int revers
                                  : SteadyMarch::marchaProdPerm1Rev;
     }
     if (tipoCC != 0) {
-        // Both arms select the same march, and that is correct: the secondary
-        // pressure-to-pressure march already reduces to the tertiary one when the
-        // choke is shut. The throat area is `abertura[0] * area`, so vazmaxSachd and
-        // vazmassSachd both go to zero with it, and the residual becomes the same
-        // `0. - MR` that marchProductionPressureToPressureTertiary returns literally.
-        // Routing the else there would swap a guarded, general march for a narrower
-        // one.
+        // The secondary march handles both open and closed surface chokes.
         return productionChokeOpening[0] > 1e-15 ? SteadyMarch::marchaProdPresPres2
                                                  : SteadyMarch::marchaProdPresPres2;
     }
@@ -76,25 +68,20 @@ double dispatchMarch(const SteadyStateSearchState &state, double chute, int prod
     case SteadyMarch::marchaProdPresPres1:    return marchProductionPressureToPressure(state.march, chute);
     case SteadyMarch::marchaProdPresPres1Rev: return marchReverseProductionPressureToPressure(state.march, chute);
     case SteadyMarch::marchaProdPresPres2:    return marchProductionPressureToPressureSecondary(state.march, chute);
-    // Falls out of the switch rather than returning inside it: an exhaustive
-    // switch over a scoped enum still trips -Wreturn-type on GCC 11, and a
-    // default: label would add an unreachable path.
+    // The injection case uses the return after the switch to satisfy GCC 11 return analysis.
     case SteadyMarch::marchaInjPerm1:         break;
     }
     return marchInjectionSteady(state.march, chute);
 }
 
 double solveSteadyRoot(const SteadyStateSearchState &state, double lowerBracket, double upperBracket, int prod, int tipoCC) {
-    // Read here rather than in the solver: arq is input-deck configuration, and a
-    // generic root finder has no business reading it. minit gates three early
-    // returns inside the solver.
+    // Strong coupling sets the minimum root-finding iteration count.
     int minit=0;
     if(state.march.input.acopColAnulPermForte == 1)minit=10;
     return rootfinding::zriddr(
         lowerBracket, upperBracket,
         [&](double guess) { return dispatchMarch(state, guess, prod, tipoCC); },
-        // Domain feedback, kept on the domain side: the solver composes it as
-        // monitor(objective(x)).
+        // Normalize the residual before the root solver evaluates convergence.
         [&](double residual) {
             double normalized = residual / state.march.baseConvergenceMonitor;
             if (prod != 0) {
@@ -130,8 +117,7 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state) {
         // and the friction
     }
 
-    double delmas = 10;
-    delmas = marchGasSteadySecondary(state.march, pchute); // march with the estimated injection pressure and the defined injection
+    double delmas = marchGasSteadySecondary(state.march, pchute); // march with the estimated injection pressure and the defined injection
     // flow rate; returns the difference between the sum of the valve flow rates computed in the march
     // and the defined injection flow rate: negative -> pchute low, positive -> pchute high
     double pchute2 = pchute;
@@ -286,8 +272,7 @@ namespace {
 
 /// Brackets and solves the root for the reverse search.
 ///
-/// Unlike the forward search this is one block rather than two arms: the reverse
-/// march's residual does not split on sign the same way.
+/// Handles both residual signs using the reverse march boundary conditions.
 double bracketReverseRoot(const SteadyStateSearchState &state, double aumenta, double reduz, double &guessLowerBound, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute) {
     if (marchResidual < 0.) { // case where the upstream choke pressure < the pressure of the last cell computed by the
         // march: the pressure guess is high, so now look for
@@ -604,7 +589,7 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             double liquidDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(pchute, taux);
             double gasDensityAtGuess = state.march.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, taux);
             rmis = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
-            double rlpA = state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
+            state.march.cells[0].acsr.injl.FluidoPro.MasEspLiq(1., 15.);
             double rlcA = state.march.cells[0].acsr.injl.fluidocol.MasEspFlu(1.001, 15.);
             // rough estimate of the complementary-liquid mass flow rate
             double massicC = rlcA * state.march.cells[0].acsr.injl.QLiq * state.march.cells[0].acsr.injl.bet / units::kSecondsPerDay;
@@ -899,9 +884,7 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, doubl
 
 /// Brackets the root upward when the first march came back positive.
 ///
-/// One arm of the sign split that ends searchProductionBottomHolePressure. Its
-/// twin is bracketFromHighGuess; the two are not each other's mirror, which is
-/// why they are two functions and not one with a sign parameter.
+/// Applies the upward-search pressure limits and convergence criteria.
 bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica, double &reduz, int &reversao, double &val0, double &guessLowerBound, double &positiveResidualGuess, double &negativeResidualGuess, int &kontaiter, double &marchResidual, double &pchuteAux, double &pchute2, double pchute, double chute, int kontaTenta, double &abortValue) {
     // computed by the
     // march: the pressure guess is low, so now look for
@@ -974,7 +957,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
                 }
                 iterpres++;
             }
-            if (iterpres >= 10)
+            if (iterpres >= 10) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
@@ -998,6 +981,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, double &amplifica,
                             return true;
                         }
                 }
+            }
         }
         if (marchResidual > 0 && marchResidual < 0.9e10) {
             positiveResidualGuess = pchute2; // updating positiveResidualGuess
@@ -2279,10 +2263,7 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             double Rhols = (1000 * 141.5 / (131.5 + state.march.cells[0].acsr.injl.FluidoPro.API)) * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW) + 1000. * state.march.cells[0].acsr.injl.FluidoPro.Denag * state.march.cells[0].acsr.injl.FluidoPro.BSW;
             // multiplier of the standard flow rate giving the produced gas+liquid mass flow rate
             double multiplicador = (Rhols + state.march.cells[0].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.march.cells[0].acsr.injl.FluidoPro.BSW));
-            if ((*state.march.globals).chaverede == 1)
-                massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / units::kSecondsPerDay;
-            else
-                massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / units::kSecondsPerDay;
+            massic = 1 * multiplicador * state.march.cells[0].acsr.injl.QLiq * (1. - state.march.cells[0].acsr.injl.bet) / units::kSecondsPerDay;
             // gas quality relative to the oil+water+gas mixture
             double fracmasshidra = state.march.cells[0].acsr.injl.FluidoPro.FracMassHidra(pchute, taux);
             double massicP = (1. - fracmasshidra) * massic; // produced liquid mass flow rate
@@ -2508,10 +2489,9 @@ namespace {
 
 /// Walks the column cell by cell for the tertiary search.
 ///
-/// The same shape as advanceProductionCells in the march module, and not the
-/// same function.
+/// Applies the tertiary search pressure limits and coupled thermal updates.
 bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &abortValue) {
-    
+
                 advanceUpstreamSteadyPressure(state.march, i, 0); // march step to get the pressure at the left boundary
                 // of cell i
                 // checks whether something went wrong:
@@ -2564,8 +2544,7 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                 // of the cells to the left and right
                 for (int j = 0; j < state.march.input.nvalvgas; j++) { // re-evaluates the gas-lift valve flow rate, when
                     // the cell has one.
-                    // P.S. this looks unnecessary, maybe even a complication
-                    // that is not needed; under evaluation
+
                     if (state.march.productionValveCellIndices[j] == i) {
                         int k = state.march.gasValveCellIndices[j];
                         state.march.updaters.computeSteadyGasFlowRate(k);
@@ -2598,14 +2577,14 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
                     else
                         advanceSteadyGasMassTransfer(state.march, i - 1);
                 }
-    
+
                 // once the pressure at the centre of cell i is reached, on the first march iteration
                 // checks whether there is a gas-lift valve in i and makes an initial estimate of the gas-lift
                 // flow rate (when there is a gas line). Note that this is done only on iteration zero.
                 if (state.march.input.lingas > 0 && state.march.input.nvalvgas > 0 && state.march.steadyIteration == 0)
                     state.march.updaters.initializeSteadyValveGasFlowRate(i);
                 i++;
-    
+
                 // checks whether the cell-centre pressure went above
                 // the static pressure of an IPR, if any
                 if (marchPressureTooLow(state.march.cells[i - 1].pres) ||
@@ -2641,10 +2620,8 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, int &i, double &a
 /// Not a search: it calls no solver and no march, and inlines a march of its
 /// own.
 bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, int &guessNeedsCorrection, int &i, double betini, double alfini, double pentrada, double &abortValue) {
-    while (guessNeedsCorrection == 1) { // old option, no longer has any effect
-        // in effect this while runs only once: when the march reaches
-        // the last cell without trouble; if something goes wrong, the march ends and
-        // leaves the method returning 1e10 or -1e10
+    while (guessNeedsCorrection == 1) {
+        // Complete the column march or return its failure sentinel.
 
         // initialising the pressures and volume fractions of the first cells, cell centre
         // and cell boundary
@@ -2742,9 +2719,7 @@ int acceleratedMarchesPerGuess(InjectionFlowRateCondition) {
 void solveGasLineForSearch(const SteadyStateSearchState &state, InjectionPressureCondition) {
     // march for the injection-pressure case
     if (state.march.input.chokes.abertura[0] >= 0.2) { // injection choke inactive
-        for (int iter = 0; iter < 1; iter++) {
-            marchGasSteady(state.march);
-        }
+        marchGasSteady(state.march);
     } else
         searchGasPressureSteadyTertiary(state); // injection choke active
 }
@@ -2821,9 +2796,8 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
             limIter = withGasInletCondition(
                 state.march.input.gasinj.tipoCC,
                 [](auto condition) { return acceleratedMarchesPerGuess(condition); }); // with
-        // a pressure boundary condition at the gas injection, the dynamic coupling
-        // between the gas and production lines was found to be harder; for a better coupled
-        // system, one more iterative march should be made
+
+        // A gas injection pressure condition requires an additional coupled march.
     }
     // arq.CriterioConvergPerm is a march convergence criterion; it only makes sense
     // when convergence acceleration is off. Note that this convergence is not
@@ -2954,7 +2928,6 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                 if (marchResidual < 0 && marchResidual > -0.9e10)
                     negativeResidualGuess = mchute2;
                 kontaiter++;
-                double velocityGuess = mchute2;
                 double complementaryFraction = state.march.cells[1].bet;
                 double voidFraction = state.march.cells[1].alf;
                 double firstCellPressure = state.march.cells[0].pres;
@@ -2973,7 +2946,7 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
-                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+                double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
                 if (kontaiter > 200 && fabs(velocityGuess) > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3096,7 +3069,6 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                 if (marchResidual * sentido < 0 && marchResidual > -0.9e10)
                     negativeResidualGuess = mchute2;
                 kontaiter++;
-                double velocityGuess = mchute2;
                 double complementaryFraction = state.march.cells[1].bet;
                 double voidFraction = state.march.cells[1].alf;
                 double firstCellPressure = state.march.cells[0].pres;
@@ -3115,7 +3087,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
-                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+                double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3272,7 +3244,6 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                 if (marchResidual < 0 && marchResidual > -0.9e10)
                     negativeResidualGuess = mchute2;
                 kontaiter++;
-                double velocityGuess = mchute2;
                 double complementaryFraction = state.march.cells[1].bet;
                 double voidFraction = state.march.cells[1].alf;
                 double firstCellPressure = state.march.cells[0].pres;
@@ -3291,7 +3262,7 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     multiplica = rmisLst;
                 else
                     multiplica = rGst;
-                velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+                double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3399,7 +3370,6 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
             if (marchResidual < 0 && marchResidual > -0.9e10)
                 negativeResidualGuess = mchute2;
             kontaiter++;
-            double velocityGuess = mchute2;
             double complementaryFraction = state.march.cells[1].bet;
             double voidFraction = state.march.cells[1].alf;
             double firstCellPressure = state.march.cells[0].pres;
@@ -3418,7 +3388,7 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 multiplica = rmisLst;
             else
                 multiplica = rGst;
-            velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+            double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
             if (kontaiter > 200 && velocityGuess > 0.01) {
                 if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                     NumError(
@@ -3815,8 +3785,7 @@ namespace {
 /// The second and the fifth injection searches bracket their root the same way
 /// except here: the second refuses such a guess -- it steps back to 99 % of the
 /// previous one instead of 90 %, and gives up if even that is below
-/// atmospheric -- and the fifth hands it to the march. Nothing in the code says
-/// why.
+/// atmospheric -- and the fifth passes it to the march.
 enum class SubAtmosphericGuess {
     refused,
     marched,
@@ -4233,8 +4202,6 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, d
 
 double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state) {
 
-    int guessNeedsCorrection = 1;
-
     if (state.march.input.flashCompleto < 1)
         state.march.cells[0].temp = state.march.cells[0].acsr.injl.temp;
     else
@@ -4289,7 +4256,7 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state) {
     double masfim = 0.;
 
     int i;
-    guessNeedsCorrection = 1;
+    int guessNeedsCorrection = 1;
     while (guessNeedsCorrection == 1) {
         state.march.cells[0].presauxL = state.march.gasSurfacePressure;
         state.march.cells[0].presLini = state.march.gasSurfacePressure;

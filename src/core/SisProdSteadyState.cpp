@@ -77,7 +77,6 @@ void correctGasSpecificGravity(const SteadyStateState &state, int i) {
         } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) { // ipr
             state.cells[i].acsr.ipr.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
             state.cells[i].acsr.ipr.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
-            ;
         } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) { // generic mass source
             state.cells[i].acsr.injm.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
             state.cells[i].acsr.injm.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
@@ -143,8 +142,6 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
         if (i < state.lastCell) {
             state.cells[i + 1].betL = state.cells[i].bet;
             state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betLI = state.cells[i].bet;
         }
         state.cells[i].betini = state.cells[i].bet;
@@ -170,8 +167,6 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
         state.cells[i].alfPigE = state.cells[i].alf;
         state.cells[i].alfPigEini = state.cells[i].alf;
         if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betL = state.cells[i].bet;
             state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betLI = state.cells[i].bet;
@@ -201,8 +196,6 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
         state.cells[i].c0 = 1.;
         state.cells[i].ud = 0.;
         if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betL = state.cells[i].bet;
             state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betLI = state.cells[i].bet;
@@ -265,8 +258,6 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
             if (state.cells[i].alf > (1 - (*state.globals).localtiny))
                 state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
         } else {
-            c0 = 1.;
-            ud = 0.;
             state.cells[i].alf = 1.;
         }
         if (state.cells[i].alf < 0.)
@@ -291,8 +282,6 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
         if (i < state.lastCell) {
             state.cells[i + 1].betL = state.cells[i].bet;
             state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betLI = state.cells[i].bet;
         }
         state.cells[i].betini = state.cells[i].bet;
@@ -310,9 +299,6 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
 }  // namespace
 
 void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
-    int mudaRGO = 1;
-    if (state.input.flashCompleto == 1)
-        mudaRGO = 1;
     ProFlu fluF;
     double residenceTimeSource = 0.;
     if (i == 1) {
@@ -423,7 +409,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         waterFlowRate = MasLiqProd / state.cells[i].flui.MasEspAgua(pmed, tmed);
     double complementaryFlowRate;
     complementaryFlowRate = state.cells[i].MComp / state.cells[i].rcCi;
-    //////////////////////// wait//////////////////////////////////////
+
     state.cells[i].bet = complementaryFlowRate / (oilFlowRate + waterFlowRate + complementaryFlowRate);
 
     state.cells[i].Mliqini = MasLiqProd;
@@ -440,9 +426,6 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
     state.cells[i - 1].QLR = state.cells[i].QL;
     state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / rhog;
 
-    if (i < state.lastCell)
-        state.cells[i + 1].QLL = state.cells[i].QL;
-    state.cells[i - 1].QLR = state.cells[i].QL;
 
     // maximum and minimum temperatures for a possible re-evaluation of the
     // ASTM method when fluids mix and the dead-oil viscosity model, if it is
@@ -542,9 +525,6 @@ void refreshCompositionalFlashFromNeighbour(const SteadyStateState &state, int i
 }  // namespace
 
 void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i) {
-    int mudaRGO = 1;
-    if (state.input.flashCompleto == 1)
-        mudaRGO = 1;
     ProFlu fluF;
     double residenceTimeSource = 0.;
     if (i == 1) {
@@ -664,7 +644,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         waterFlowRate = MasLiqProd / state.cells[i].flui.MasEspAgua(pmed, tmed);
     double complementaryFlowRate;
     complementaryFlowRate = state.cells[i].MComp / state.cells[i].rcCi;
-    //////////////////////// wait//////////////////////////////////////
+
     state.cells[i].bet = complementaryFlowRate / (oilFlowRate + waterFlowRate + complementaryFlowRate);
 
     state.cells[i].Mliqini = MasLiqProd;
@@ -681,9 +661,6 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
     state.cells[i - 1].QLR = state.cells[i].QL;
     state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / rhog;
 
-    if (i < state.lastCell)
-        state.cells[i + 1].QLL = state.cells[i].QL;
-    state.cells[i - 1].QLR = state.cells[i].QL;
 
     // maximum and minimum temperatures for a possible re-evaluation of the
     // ASTM method when fluids mix and the dead-oil viscosity model, if it is
@@ -783,8 +760,6 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
             else if (state.cells[i].alf > (1 - (*state.globals).localtiny))
                 state.cells[i].alf = 1.;
         } else {
-            c0 = 1.;
-            ud = 0.;
             state.cells[i].alf = 1.;
         }
     } else {
@@ -827,8 +802,6 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
     if (i < state.lastCell) {
         state.cells[i + 1].betL = state.cells[i].bet;
         state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
         state.cells[i + 1].betLI = state.cells[i].bet;
     }
     state.cells[i].betini = state.cells[i].bet;
@@ -848,10 +821,7 @@ namespace {
 
 /// Resolves the phase fractions of cell i for the compositional mass march.
 ///
-/// Same four regimes as applyReverseSteadyPhaseFractions and NOT the same
-/// function: this one compares against localtiny * 1e-5 where the reverse
-/// variants compare against localtiny. Five orders of magnitude, with nothing
-/// in the code saying why.
+/// Uses localtiny * 1e-5 for the no-flow and phase-presence thresholds.
 void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double rhol, double rhog) {
     if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny * 1e-5) {
         if (state.input.tipoFluido == 1) {
@@ -871,8 +841,6 @@ void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double 
         state.cells[i].alfPigE = state.cells[i].alf;
         state.cells[i].alfPigEini = state.cells[i].alf;
         if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betL = state.cells[i].bet;
             state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betLI = state.cells[i].bet;
@@ -902,8 +870,6 @@ void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double 
         if (i < state.lastCell) {
             state.cells[i + 1].betL = state.cells[i].bet;
             state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betLI = state.cells[i].bet;
         }
         state.cells[i].betini = state.cells[i].bet;
@@ -931,8 +897,6 @@ void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double 
         state.cells[i].c0 = 1.;
         state.cells[i].ud = 0.;
         if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betL = state.cells[i].bet;
             state.cells[i + 1].betLini = state.cells[i].bet;
             state.cells[i + 1].betLI = state.cells[i].bet;
@@ -1181,8 +1145,7 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * left.oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e6)
@@ -1319,7 +1282,6 @@ void carryUpstreamCompositionIntoCell(const SteadyStateState &state, SteadyFace 
         double complementaryFlowRate;
         complementaryFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, left.tmed);
 
-        //////////////////////// wait//////////////////////////////////////
         if (fabs(oilFlowRate + waterFlowRate + complementaryFlowRate) > 1e-15)
             state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
         else
@@ -1420,13 +1382,10 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     double titulo = state.cells[i].flui.dVaporMassFraction;
 
     ProFlu fluI;
-    ProFluCol fluCI;
     if (state.cells[i].MC >= 0 && i > 0) {
         fluI = state.cells[i - 1].flui;
-        fluCI = state.cells[i - 1].fluicol;
     } else {
         fluI = state.cells[i].flui;
-        fluCI = state.cells[i].fluicol;
     }
     if (state.input.tipoFluido == 0) {
         left.solutionGasRatio = state.cells[i].flui.RS(pmed, left.tmed);
@@ -1534,8 +1493,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
         state.cells[i - 1].VolLeveST = 0.;
 
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e7)
@@ -1579,7 +1537,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
             complementaryFlowRate = state.cells[i - 1].QL * (state.cells[i - 1].bet) * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp) / state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
         else
             complementaryFlowRate = 0.;
-        //////////////////////// wait//////////////////////////////////////
+
         if ((fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate)) > 0)
             state.cells[i].bet = fabs(complementaryFlowRate) / (fabs(oilFlowRate) + fabs(waterFlowRate) + fabs(complementaryFlowRate));
         else
@@ -1589,7 +1547,6 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, int muda
 }
 
 void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     waterCutInSitu = 0.;
     // standard oil flow rate
@@ -1623,8 +1580,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e7)
@@ -1675,7 +1631,6 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, int mu
 }
 
 void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boinjl;
@@ -1727,8 +1682,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1 && state.cells[i].flui.RGO < 1e7)
@@ -1834,7 +1788,6 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, int mu
 }
 
 void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boinjl;
@@ -1878,8 +1831,7 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
 
     if (fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15) {
         if (state.input.trackRGO == -1) {
-            // this switch is not used and is kept here in reserve; this
-            // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+            // Accounts for dissolved gas in the gas-oil ratio.
             if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
                 state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
             if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
@@ -1988,7 +1940,6 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, int mu
 }
 
 void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boipr;
@@ -2030,8 +1981,7 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if ((state.cells[i - 1].fontemassLR) > 1e-15 && (state.cells[i - 1].fontemassGR) > 1e-15) {
             if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
                 mudaRGO == 1 && fabs(state.cells[i - 1].fontemassLR) > 1e-15)
@@ -2141,7 +2091,6 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, int 
 }
 
 void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boinjl;
@@ -2184,8 +2133,7 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, int mud
         state.cells[i - 1].VolLeveST = 0.;
 
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if ((state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP) > 1e-15) {
             if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
                 state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
@@ -2309,7 +2257,6 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
     } else {
         fluF = state.cells[i - 1].acsr.fontechk.fluidoPamb;
     }
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF = fluF.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double boinjl = fluF.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -2345,8 +2292,7 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
         state.cells[i - 1].VolLeveST = 0.;
 
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny * 1e-6) && bsw < (1. - (*state.globals).localtiny) && mudaRGO == 1)
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
         if (state.cells[i].flui.RGO > (*state.globals).RGOMax && mudaRGO == 1)
@@ -2444,7 +2390,6 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, int mudaRGO
 }
 
 void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boipr;
@@ -2486,8 +2431,7 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if (fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
             if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
                 mudaRGO == 1 && fabs(state.cells[i - 1].fontemassLR) > 1e-15)
@@ -2597,7 +2541,6 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, int mudaR
 }
 
 void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, double temperatureLow, double temperatureHigh, double oilVolumeFactor, double waterVolumeFactor, double solutionGasRatio, double tmed, double &residenceTimeSource, double &oilVolumeFactorInSitu, double &waterVolumeFactorInSitu, double &waterCutInSitu) {
-    double apiGravity = state.cells[i - 1].flui.API;
     double rholis = state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp);
     double rholisF;
     double boipr;
@@ -2639,8 +2582,7 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, int mudaRGO, 
     if (state.cells[i - 1].VolLeveST < 1e-15)
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
-        // this switch is not used and is kept here in reserve; this
-        // calculation does not work at present; note that arq.trackRGO only takes 2 values, 0 or 1
+        // Accounts for dissolved gas in the gas-oil ratio.
         if (fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
             if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
                 mudaRGO == 1 && fabs(state.cells[i - 1].fontemassLR) > 1e-15)
@@ -2821,8 +2763,6 @@ void finalizeSteadyMassNoFlow(const SteadyStateState &state, int i) {
     if (i < state.lastCell) {
         state.cells[i + 1].betL = state.cells[i].bet;
         state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
         state.cells[i + 1].betLI = state.cells[i].bet;
     }
     state.cells[i].betini = state.cells[i].bet;
@@ -2850,8 +2790,6 @@ void finalizeSteadyMassLiquidOnly(const SteadyStateState &state, int i) {
     state.cells[i].alfPigE = state.cells[i].alf;
     state.cells[i].alfPigEini = state.cells[i].alf;
     if (i < state.lastCell) {
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
         state.cells[i + 1].betL = state.cells[i].bet;
         state.cells[i + 1].betLini = state.cells[i].bet;
         state.cells[i + 1].betLI = state.cells[i].bet;
@@ -2883,8 +2821,6 @@ void finalizeSteadyMassGasOnly(const SteadyStateState &state, int i) {
     state.cells[i].c0 = 1.;
     state.cells[i].ud = 0.;
     if (i < state.lastCell) {
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
         state.cells[i + 1].betL = state.cells[i].bet;
         state.cells[i + 1].betLini = state.cells[i].bet;
         state.cells[i + 1].betLI = state.cells[i].bet;
@@ -2981,8 +2917,6 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
             state.cells[i].alf = 1. - holdup;
         }
     } else {
-        c0 = 1.;
-        ud = 0.;
         state.cells[i].alf = 1.;
     }
     if (state.cells[i].alf < 0.)
@@ -3007,8 +2941,6 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
     if (i < state.lastCell) {
         state.cells[i + 1].betL = state.cells[i].bet;
         state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
         state.cells[i + 1].betLI = state.cells[i].bet;
     }
     state.cells[i].betini = state.cells[i].bet;
@@ -3026,8 +2958,6 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
 
 void advanceSteadyMass(const SteadyStateState &state, int i) {
     int mudaRGO = 1;
-    if (state.input.flashCompleto == 1)
-        mudaRGO = 1;
 
     if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection && state.cells[i - 1].acsr.injg.QGas < 0) {
         state.cells[i - 1].acsr.injg.FluidoPro = state.cells[i - 1].flui;
@@ -3330,7 +3260,6 @@ void advanceUpstreamSteadyPressure(const SteadyStateState &state, int i, int run
         unsigned char flowType;
 
         double dx = 0.5 * state.cells[i].dxL;
-        double diameter = state.cells[i].dutoL.a;
         executarCorrelacao(state.cells, i, 1, state.input.AceleraConvergPerm,
                            state.cells[i - 1].correlacaoMR2,
                            holdup, frictionGrad, gravityGrad, totalGrad,
@@ -3385,7 +3314,7 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
             else
                 tmed = state.cells[i - 1].temp;
             double pmed = state.cells[i].presaux + state.cells[i - 1].dpB / units::kPascalPerKgfPerCm2;
-            rhog = state.cells[i].rgCi; // celula[i].flui.MasEspGas(pmed, tmed);
+            rhog = state.cells[i].rgCi;
             rhol = (1. - betmed) * state.cells[i].rpCi + betmed * state.cells[i].rcCi;
             ugsmed = (state.cells[i].QG) / (area);
             ulsmed = state.cells[i].QL / (area);
@@ -3406,9 +3335,9 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int i, int r
             }
             frictionFactor = state.cells[i].fric(mixtureReynolds, state.cells[i].duto.rug / diameter);
             if (state.cells[i].fluicol.tipoF == 2) {
-                double ulmed = 0.;
                 double liquidReynolds;
                 if (fabs(state.cells[i].MComp) > 1e-15) {
+                    double ulmed;
                     if (alfmed < 1 - 1e-15)
                         ulmed = ulsmed / (1 - alfmed);
                     else
@@ -3506,7 +3435,6 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
     double waterVolumeFactorLeftCell;
     double solutionGasRatioLeftFace;
     double oilVolumeFactorLeftFace;
-    double waterVolumeFactorLeftFace;
     double dengD = state.cells[i].flui.Deng;
     double dengE;
     double dissolvedGasGravityRatio = state.cells[i].flui.rDgD;
@@ -3517,7 +3445,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
         waterCutLeftCell = state.cells[i - 1].flui.BSW * waterVolumeFactorLeftCell / (oilVolumeFactorLeftCell + waterVolumeFactorLeftCell * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * oilVolumeFactorLeftCell);
         solutionGasRatioLeftFace = state.cells[i - 1].flui.RS(state.cells[i].presaux, tmed0);
         oilVolumeFactorLeftFace = state.cells[i - 1].flui.BOFunc(state.cells[i].presaux, tmed0);
-        waterVolumeFactorLeftFace = state.cells[i - 1].flui.BAFunc(state.cells[i].presaux, tmed0);
+        state.cells[i - 1].flui.BAFunc(state.cells[i].presaux, tmed0);
         dengE = state.cells[i - 1].flui.Deng;
         freeGasGravityRatio = state.cells[i - 1].flui.rDgD;
     } else {
@@ -3527,7 +3455,7 @@ void advanceSteadyMassTransfer(const SteadyStateState &state, int i) {
         waterCutLeftCell = state.cells[i].flui.BSW * waterVolumeFactorLeftCell / (oilVolumeFactorLeftCell + waterVolumeFactorLeftCell * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorLeftCell);
         solutionGasRatioLeftFace = state.cells[i].flui.RS(state.cells[i].presaux, tmed0);
         oilVolumeFactorLeftFace = state.cells[i].flui.BOFunc(state.cells[i].presaux, tmed0);
-        waterVolumeFactorLeftFace = state.cells[i].flui.BAFunc(state.cells[i].presaux, tmed0);
+        state.cells[i].flui.BAFunc(state.cells[i].presaux, tmed0);
         dengE = state.cells[i].flui.Deng;
         freeGasGravityRatio = state.cells[i].flui.rDgD;
     }
@@ -3765,10 +3693,10 @@ void gasLineHydrostatic(const SteadyStateState &state) {
     double taux;
     taux = state.input.celg[0].textern;
     state.cells[0].temp = taux;
-    double rhog = state.gasCells[0].flui.MasEspGas(state.gasCells[0].pres, taux);
+    state.gasCells[0].flui.MasEspGas(state.gasCells[0].pres, taux);
     for (int i = 0; i < state.lastGasCell; i++) {
         taux = state.input.celg[i].textern;
-        rhog = state.gasCells[i].flui.MasEspGas(pchute, taux);
+        double rhog = state.gasCells[i].flui.MasEspGas(pchute, taux);
         double dxmed = 0.5 * (state.gasCells[i].dx0 + state.gasCells[i + 1].dx0);
         pchute -= ((rhog * 9.81 * sinl(state.gasCells[i].duto.teta) * dxmed) / units::kPascalPerKgfPerCm2);
         state.gasCells[i + 1].pres = pchute;
@@ -4020,9 +3948,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
 void solveGasLineSteady(const SteadyStateState &state, InjectionPressureCondition) {
     // march for the injection-pressure case
     if (state.input.chokes.abertura[0] >= 0.2) { // injection choke inactive
-        for (int iter = 0; iter < 1; iter++) {
-            marchGasSteady(state);
-        }
+        marchGasSteady(state);
     } else
         state.updaters.searchGasPressureSteadyTertiary(); // injection choke active
 }
@@ -4129,8 +4055,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
         // of the cells to the left and right
         for (int j = 0; j < state.input.nvalvgas; j++) { // re-evaluates the gas-lift valve flow rate, when
             // the cell has one.
-            // P.S. this looks unnecessary, maybe even a complication
-            // that is not needed; under evaluation
+
             if (state.productionValveCellIndices[j] == i) {
                 int k = state.gasValveCellIndices[j];
                 state.updaters.computeSteadyGasFlowRate(k);
@@ -4375,8 +4300,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
         // of the cells to the left and right
         for (int j = 0; j < state.input.nvalvgas; j++) { // re-evaluates the gas-lift valve flow rate, when
             // the cell has one.
-            // P.S. this looks unnecessary, maybe even a complication
-            // that is not needed; under evaluation
+
             if (state.productionValveCellIndices[j] == i) {
                 int k = state.gasValveCellIndices[j];
                 state.updaters.computeSteadyGasFlowRate(k);
@@ -4450,7 +4374,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
 }
 
 double surfaceChokeMassFlowRate(const SteadyStateState &state) {
-    double maxSup = 0.;
+    double maxSup;
     if (state.annulusDrift != 0 && state.cells[state.lastCell].pres > state.gasSurfacePressure) { // for the gas-lift ring, the flow rate at the end must be zero
         double tESup = state.cells[state.lastCell].temp;
         double alfSup = state.cells[state.lastCell].alf;
@@ -4461,7 +4385,7 @@ double surfaceChokeMassFlowRate(const SteadyStateState &state) {
 
         double quality;
         state.outletPressure = state.cells[state.lastCell].pres;
-        double rholp = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
+        state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         quality = fabs(massgas / masentrada);
 
@@ -4496,7 +4420,6 @@ double surfaceChokeMassFlowRate(const SteadyStateState &state) {
 
 double marchProductionSteady(const SteadyStateState &state, double pchute) {
 
-    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
 
@@ -4535,13 +4458,7 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
     // when the branch is part of a network
     if (state.input.AceleraConvergPerm == 1) { // convergence acceleration on
         limIter = 1;                   // usually only two march iterations are made for a given guess
-        // The extra march the note below describes is made only by
-        // searchProductionBottomHolePressureTertiary.
-        //
-        // with
-        // a pressure boundary condition at the gas injection, the dynamic coupling
-        // between the gas and production lines was found to be harder; for a better coupled
-        // system, one more iterative march should be made
+
     }
     // arq.CriterioConvergPerm is a march convergence criterion; it only makes sense
     // when convergence acceleration is off. Note that this convergence is not
@@ -4563,11 +4480,9 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             state.updaters.connectTubingSteady(); // thermal coupling with the pressure and temperature
         // obtained in the first march iteration
         int i;
-        guessNeedsCorrection = 1;
-        while (guessNeedsCorrection == 1) { // old option, no longer has any effect
-            // in effect this while runs only once: when the march reaches
-            // the last cell without trouble; if something goes wrong, the march ends and
-            // leaves the method returning 1e10 or -1e10
+        int guessNeedsCorrection = 1;
+        while (guessNeedsCorrection == 1) {
+            // Complete the column march or return its failure sentinel.
 
             // initialising the pressures and volume fractions of the first cells, cell centre
             // and cell boundary
@@ -4653,7 +4568,6 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
 
 double marchReverseProductionSteady(const SteadyStateState &state, double pchute) {
 
-    int guessNeedsCorrection = 1;
     double alfini = 0.;
     double betini = 0.;
     state.slowHeatTransferThreshold = 0.1;
@@ -4690,13 +4604,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     // when the branch is part of a network
     if (state.input.AceleraConvergPerm == 1) { // convergence acceleration on
         limIter = 1;                   // usually only two march iterations are made for a given guess
-        // The extra march the note below describes is made only by
-        // searchProductionBottomHolePressureTertiary.
-        //
-        // with
-        // a pressure boundary condition at the gas injection, the dynamic coupling
-        // between the gas and production lines was found to be harder; for a better coupled
-        // system, one more iterative march should be made
+
     }
     // arq.CriterioConvergPerm is a march convergence criterion; it only makes sense
     // when convergence acceleration is off. Note that this convergence is not
@@ -4719,11 +4627,9 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
             state.updaters.connectTubingSteady(); // thermal coupling with the pressure and temperature
         // obtained in the first march iteration
         int i;
-        guessNeedsCorrection = 1;
-        while (guessNeedsCorrection == 1) { // old option, no longer has any effect
-            // in effect this while runs only once: when the march reaches
-            // the last cell without trouble; if something goes wrong, the march ends and
-            // leaves the method returning 1e10 or -1e10
+        int guessNeedsCorrection = 1;
+        while (guessNeedsCorrection == 1) {
+            // Complete the column march or return its failure sentinel.
 
             // initialising the pressures and volume fractions of the first cells, cell centre
             // and cell boundary
@@ -4809,7 +4715,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                     state.updaters.updateProductionTemperaturePeriphery(ktemp); // just updates the left and right temperature fields
                 }
             }
-            tempteste = state.cells[0].temp; // 0.5*(celula[0].temp+tempteste);
+            tempteste = state.cells[0].temp;
         } else {
             refreshProperties(state);
             refreshSteadyThermalVelocities(state);
@@ -4842,8 +4748,6 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
 }
 
 double marchProductionSteadySecondary(const SteadyStateState &state, double pchute) {
-
-    int guessNeedsCorrection = 1;
 
     double alfini = 0.;
     double betini = 0.;
@@ -4879,13 +4783,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     // when the branch is part of a network
     if (state.input.AceleraConvergPerm == 1) { // convergence acceleration on
         limIter = 1;                   // usually only two march iterations are made for a given guess
-        // The extra march the note below describes is made only by
-        // searchProductionBottomHolePressureTertiary.
-        //
-        // with
-        // a pressure boundary condition at the gas injection, the dynamic coupling
-        // between the gas and production lines was found to be harder; for a better coupled
-        // system, one more iterative march should be made
+
     }
     // arq.CriterioConvergPerm is a march convergence criterion; it only makes sense
     // when convergence acceleration is off. Note that this convergence is not
@@ -4906,11 +4804,9 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             state.updaters.connectTubingSteady(); // thermal coupling with the pressure and temperature
         // obtained in the first march iteration
         int i;
-        guessNeedsCorrection = 1;
-        while (guessNeedsCorrection == 1) { // old option, no longer has any effect
-            // in effect this while runs only once: when the march reaches
-            // the last cell without trouble; if something goes wrong, the march ends and
-            // leaves the method returning 1e10 or -1e10
+        int guessNeedsCorrection = 1;
+        while (guessNeedsCorrection == 1) {
+            // Complete the column march or return its failure sentinel.
 
             // initialising the pressures and volume fractions of the first cells, cell centre
             // and cell boundary
@@ -5535,11 +5431,9 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
 
         double masentrada = state.cells[state.lastCell - 1].MR;
         double massgas = state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR;
-        maxSup = 0.;
-
         double quality;
         state.outletPressure = state.cells[state.lastCell].pres;
-        double rholp = state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
+        state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         quality = fabs(massgas / masentrada);
 
@@ -5772,8 +5666,6 @@ double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
 
 double marchInjectionSteady(const SteadyStateState &state, double chute) {
 
-    int guessNeedsCorrection = 1;
-
     if (state.input.flashCompleto < 1)
         state.cells[0].temp = state.cells[0].acsr.injl.temp;
     else
@@ -5869,7 +5761,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
     double masfim = 0.;
 
     int i;
-    guessNeedsCorrection = 1;
+    int guessNeedsCorrection = 1;
     while (guessNeedsCorrection == 1) {
         state.cells[0].presauxL = state.gasSurfacePressure - delp;
         state.cells[0].presLini = state.gasSurfacePressure - delp;
