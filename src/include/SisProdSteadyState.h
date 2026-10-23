@@ -122,8 +122,6 @@ struct SteadyStateState {
     /// Time step -- SProd::dt. Written: the pseudo-transient step shortens it.
     double &timeStep;
 
-    /// Ambient temperature -- SProd::temperatura. Read only.
-    const double &defaultInletTemperature;
     /// Casing temperature -- SProd::steadySearch.reverseFlowTemperature. Read only.
     const double &casingTemperature;
     /// Inlet quality -- SProd::titE. Read only.

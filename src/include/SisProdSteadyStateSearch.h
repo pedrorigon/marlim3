@@ -1,7 +1,6 @@
 #ifndef SISPRODSTEADYSTATESEARCH_H_
 #define SISPRODSTEADYSTATESEARCH_H_
 
-#include "RootFindingSolvers.h"
 #include "SisProdSteadyState.h"
 
 // Searches compose the march state and invoke the coupled models through its updaters.

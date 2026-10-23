@@ -274,7 +274,6 @@ sisprod::steady::SteadyStateState steadyStateOf(SProd &system, SolveContext &con
         .initialGasTemperature = system.gasLift.injectionTemperature,
         .outletPressure = system.presfim,
         .timeStep = system.dt,
-        .defaultInletTemperature = system.temperatura,
         .casingTemperature = system.steadySearch.reverseFlowTemperature,
         .inletQuality = system.titE,
         .productionFluidCount = system.steadySearch.productionFluidCount,

@@ -51,6 +51,19 @@ inline constexpr bool marchPressureTooLow(double pressure) {
     return !(pressure > kMarchMinimumPressure);
 }
 
+/// Magnitude of the low/high pressure failure sentinels returned by steady marches.
+inline constexpr double kSteadyMarchLimit = 1e10;
+
+/// Magnitude separating ordinary residuals from steady march failure sentinels.
+inline constexpr double kSteadyMarchSentinelThreshold = 0.9e10;
+
+/// Magnitude separating march limits from steady convergence failures.
+inline constexpr double kSteadyConvergenceFailureThreshold = 1.01e10;
+
+/// Magnitude returned when a steady search or march fails to converge.
+/// Its sign follows the network iteration policy at the call site.
+inline constexpr double kSteadyConvergenceFailure = 1.1e10;
+
 /// The temperature marches of the production column and of the gas line keep a
 /// cell's kinetic term only while the line is shorter than this many times the
 /// cell's length.
@@ -219,6 +232,10 @@ static_assert(kPhaseChangeFloor == 1e-25);
 static_assert(kMinimumTemperatureCelsius == -50.);
 static_assert(kMaximumTemperatureCelsius == 200.);
 static_assert(kMarchMinimumPressure == 0.1);
+static_assert(kSteadyMarchLimit == 1e10);
+static_assert(kSteadyMarchSentinelThreshold == 0.9e10);
+static_assert(kSteadyConvergenceFailureThreshold == 1.01e10);
+static_assert(kSteadyConvergenceFailure == 1.1e10);
 static_assert(marchPressureTooLow(0.1) && !marchPressureTooLow(0.2));
 static_assert(kKineticTermMaximumLengthRatio == 1e6);
 
