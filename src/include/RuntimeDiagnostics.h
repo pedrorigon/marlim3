@@ -3,13 +3,13 @@
 
 /// Warnings the solution gathers while it runs, for conditions that can recur at
 /// every cell of every time step. One log entry per occurrence would flood the
-/// log, so each kind keeps a count, its first occurrence and the range it
-/// covered, and becomes one entry when the log is written.
+/// log, so each recorded key keeps counts and state or time information and
+/// becomes one entry when the log is written.
 ///
-/// Recording is thread-safe, and a caller pays for it only when the condition
-/// occurs: it tests the condition first. The entries reach the logger only
-/// through flushTo, which runs on the thread that writes the log, so the shared
-/// logger is never called from inside a parallel region.
+/// Recording is thread-safe. Callers test the triggering conditions before
+/// recording; the recording functions aggregate the occurrences they receive.
+/// The registry is shared by all callers and loggers. Entries reach the logger
+/// only through flushTo.
 
 #include <string>
 
@@ -28,7 +28,10 @@ enum class FlashRoutine {
 };
 
 /// A flash returned a nonzero general error code, and the caller used its results
-/// as returned. Pressure in kgf/cm2, temperature in C, simulation time in s.
+/// as returned. Groups calls by routine and errorCode, retaining the first
+/// recorded state and the pressure and temperature ranges. Pressure in kgf/cm2,
+/// temperature in C, simulation time in s. A NaN first time is omitted from the
+/// message, even if later calls provide a known time.
 void recordFlashError(FlashRoutine routine, int errorCode, double pressure, double temperature, double time);
 
 /// What the caller of the stock-tank flash puts in place of a result it cannot use.
@@ -40,10 +43,16 @@ enum class StockTankDefault {
 };
 
 /// The stock-tank flash's caller applied `kind` at simulation time `time`.
+/// Groups calls by kind and retains the first recorded time, in s. A NaN first
+/// time is omitted from the message.
 void recordStockTankDefault(StockTankDefault kind, double time);
 
 /// A mixture flash failed with a positive code and, the mixture being light, the
 /// caller replaced its results with vapor of the feed composition.
+/// Groups calls by errorCode, retaining the first recorded state and the ranges
+/// of pressure, temperature and mixture molar mass. Pressure in kgf/cm2,
+/// temperature in C, simulation time in s. A NaN first time is omitted from the
+/// message. The caller determines when the fallback applies.
 void recordLightMixtureFallback(int errorCode, double pressure, double temperature, double mixtureMolarMass,
                                 double time);
 
@@ -60,11 +69,25 @@ struct ArtificialGasAddition {
 
 /// An accepted time step, `step` of `system`'s run, that started at `time` and
 /// lasted `timeStep` seconds with `addition` in its sources.
+/// Groups additions by system, valve and cell. Each call increments the step
+/// count. An episode starts at the first call or when step does not immediately
+/// follow the last recorded step; repeated step numbers are counted separately.
+/// Retains the first recorded start time and the last recorded time + timeStep,
+/// accumulates addition.massRate * timeStep in kg, and tracks the peak mass rate.
+/// The caller records additions only after accepting the time step.
 void recordArtificialGas(const std::string &system, const ArtificialGasAddition &addition, int step, double time,
                          double timeStep);
 
-/// Moves every gathered warning into `logger` and forgets it, so a second call
-/// adds nothing.
+/// Writes one warning per recorded key to logger: flash errors, stock-tank
+/// defaults, light-mixture fallbacks, then artificial gas, in ascending key order
+/// within each category. Counts use the singular only for one occurrence;
+/// otherwise the plural appends s unless a specific plural is supplied.
+/// Holds the registry lock through logging and clears all entries after every
+/// logger call completes successfully. A second call without new records adds
+/// nothing. If logging throws, the exception propagates and the registry is
+/// retained; entries already written to logger are not rolled back.
+/// The caller must invoke this on the thread writing the log, outside parallel
+/// regions, and prevent concurrent access to the same logger.
 void flushTo(Logger &logger);
 
 } // namespace diagnostics

@@ -80,7 +80,6 @@ std::string formatted(const char *pattern, Values... values) {
     return text;
 }
 
-/// "1 call", "2 calls"; the plural is the noun with an s unless given.
 std::string countOf(long count, const char *noun, const char *plural = nullptr) {
     if (count == 1)
         return formatted("%ld %s", count, noun);
@@ -104,7 +103,8 @@ std::string describeStates(const StateRange &states) {
         text += formatted("; pressure from %.6g to %.6g kgf/cm2, temperature from %.6g to %.6g C",
                           states.minimumPressure, states.maximumPressure, states.minimumTemperature,
                           states.maximumTemperature);
-    return text + ".";
+    text.push_back('.');
+    return text;
 }
 
 std::string describeTime(double time) {
