@@ -19,6 +19,7 @@
 namespace sisprod::transient {
 
 namespace {
+
 double flowQuality(double gasMassFlow, double totalMassFlow) {
     return fabs(gasMassFlow / totalMassFlow);
 }
@@ -179,52 +180,41 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
 
 void writeProfiles(const TransientSolveState &state, int nrede) {
     if (state.step.input.nperfisp > 0) {
-        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.profp.tempo[state.productionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.profp.tempo[state.productionProfileTimeCounter])) {
+        if (profileIsDue(state.step, state.step.input.profp.tempo, state.productionProfileTimeCounter)) {
             state.step.input.imprimeProfile(state.step.cells, state.step.productionFreeTerms, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
             state.step.input.profp.tempo[state.productionProfileTimeCounter] = (*state.step.globals).lixo5;
-            state.productionProfileTimeCounter++;
-            if (state.productionProfileTimeCounter >= state.step.input.profp.n)
-                state.productionProfileTimeCounter--;
+            advanceProfileIndex(state.productionProfileTimeCounter, state.step.input.profp.n);
         }
     }
     if (state.step.input.nperfisg > 0 && state.step.input.lingas > 0) {
-        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.profg.tempo[state.gasProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.profg.tempo[state.gasProfileTimeCounter])) {
+        if (profileIsDue(state.step, state.step.input.profg.tempo, state.gasProfileTimeCounter)) {
             state.step.input.imprimeProfileG(state.step.gasCells, state.step.gasFreeTerms, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
             state.step.input.profg.tempo[state.gasProfileTimeCounter] = (*state.step.globals).lixo5;
-            state.gasProfileTimeCounter++;
-            if (state.gasProfileTimeCounter >= state.step.input.profg.n)
-                state.gasProfileTimeCounter--;
+            advanceProfileIndex(state.gasProfileTimeCounter, state.step.input.profg.n);
         }
     }
     if (state.step.input.nperfistransp > 0) {
-        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter])) {
+        if (profileIsDue(state.step, state.step.input.proftransp.tempo, state.productionCrossSectionProfileTimeCounter)) {
             state.step.input.imprimeProfileTrans(state.step.cells, state.step.productionCrossSectionCount.data(), (*state.step.globals).lixo5, state.step.branchIndex, nrede);
             state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
-            state.productionCrossSectionProfileTimeCounter++;
-            if (state.productionCrossSectionProfileTimeCounter >= state.step.input.proftransp.n)
-                state.productionCrossSectionProfileTimeCounter--;
+            advanceProfileIndex(state.productionCrossSectionProfileTimeCounter, state.step.input.proftransp.n);
         }
     }
     if (state.step.input.nperfistransg > 0 && state.step.input.lingas > 0) {
-        if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] && (*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter])) {
+        if (profileIsDue(state.step, state.step.input.proftransg.tempo, state.gasCrossSectionProfileTimeCounter)) {
             state.step.input.imprimeProfileTransG(state.step.gasCells, state.gasCrossSectionCellCounts.data(), (*state.step.globals).lixo5, state.step.branchIndex, nrede);
             state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
-            state.gasCrossSectionProfileTimeCounter++;
-            if (state.gasCrossSectionProfileTimeCounter >= state.step.input.proftransg.n)
-                state.gasCrossSectionProfileTimeCounter--;
+            advanceProfileIndex(state.gasCrossSectionProfileTimeCounter, state.step.input.proftransg.n);
         }
     }
     if (state.step.input.nCelUnit>0) {
-    	for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++){
-    		if (((*state.step.globals).lixo5 > (*state.step.globals).localtiny && (*state.step.globals).lixo5 <= state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]] &&
-    				(*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]])) {
-    			state.step.input.relatorioCelulaUnitaria(state.step.cells,state.step.input.celUnit[iCelU].posicP, state.step.branchIndex,nrede);
-    			state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]] = (*state.step.globals).lixo5;
-    			state.unitCellTimeCounters[iCelU]++;
-    			if (state.unitCellTimeCounters[iCelU] >= state.step.input.celUnit[iCelU].parserie)
-    				state.unitCellTimeCounters[iCelU]--;
-    		}
-    	}
+        for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++){
+            if (profileIsDue(state.step, state.step.input.celUnit[iCelU].tempo, state.unitCellTimeCounters[iCelU])) {
+                state.step.input.relatorioCelulaUnitaria(state.step.cells,state.step.input.celUnit[iCelU].posicP, state.step.branchIndex,nrede);
+                state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]] = (*state.step.globals).lixo5;
+                advanceProfileIndex(state.unitCellTimeCounters[iCelU], state.step.input.celUnit[iCelU].parserie);
+            }
+        }
     }
 }
 
@@ -359,11 +349,7 @@ void writeEventLog(const TransientSolveState &state, int maxEvento) {
             time_t now = time(0);
             tm *ltm = localtime(&now);
             ostringstream saidaT;
-            if (state.step.branchIndex < 0) {
-                saidaT << state.logBuffer;
-            } else {
-                saidaT << "Tramo" << state.step.branchIndex << "-" << state.logBuffer;
-            }
+            appendLogPath(saidaT, state);
             string tmp = saidaT.str();
             ofstream escreveIni(tmp.c_str(), ios_base::app);
             escreveIni << "************************************************************************************************"
@@ -374,14 +360,7 @@ void writeEventLog(const TransientSolveState &state, int maxEvento) {
             escreveIni << state.step.input.logevento[state.logCounter].estIni << " ; ";
             escreveIni << state.step.input.logevento[state.logCounter].estFim << " ; ";
             escreveIni << state.step.input.logevento[state.logCounter].descricao << " ; ";
-            escreveIni << "datahora = ";
-            escreveIni << ltm->tm_mday << "/";
-            escreveIni << 1 + ltm->tm_mon << "/";
-            escreveIni << 1900 + ltm->tm_year << " ";
-            escreveIni << 0 + ltm->tm_hour << ":";
-            escreveIni << 0 + ltm->tm_min << ":";
-            escreveIni << 0 + ltm->tm_sec;
-            escreveIni << endl;
+            writeLogTimestamp(escreveIni, ltm);
             state.logCounter++;
 
             escreveIni.close();
@@ -390,16 +369,12 @@ void writeEventLog(const TransientSolveState &state, int maxEvento) {
 }
 
 void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
-    if ((fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal)) {
+    if (progressReportIsDue(state, MaxKontaImpres)) {
         if (state.step.input.saidaTela == 0)
             cout << (*state.step.globals).lixo5 * (100.) / state.step.input.tfinal << " % da simulacao alcancado" << endl;
         state.printCounter = 0;
         ostringstream saidaT;
-        if (state.step.branchIndex < 0) {
-            saidaT << state.logBuffer;
-        } else {
-            saidaT << "Tramo" << state.step.branchIndex << "-" << state.logBuffer;
-        }
+        appendLogPath(saidaT, state);
         string tmp = saidaT.str();
         ofstream escreveIni(tmp.c_str(), ios_base::app);
         escreveIni << "************************************************************************************************"
@@ -455,43 +430,11 @@ void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
                 }
             }
         }
-        if (fabs((*state.step.globals).lixo5 - state.step.input.tfinal) <= state.step.timeStep) {
-            time_t now = time(0);
-            tm *ltm = localtime(&now);
-            int diaFim = (ltm->tm_mday);
-            int horaFim;
-            if (diaFim == diaIni)
-                horaFim = ltm->tm_hour;
-            else
-                horaFim = ltm->tm_hour + 24;
-            horaFim *= 3600;
-            int minutoFim = 60 * ltm->tm_min;
-            int segundoFim = ltm->tm_sec;
-            int totalFim = horaFim + minutoFim + segundoFim;
-            int totalIni = horaIni * 3600 + minutoIni * 60 + segundoIni;
-            escreveIni << "     DURACAO    " << totalFim - totalIni << " segundos " << endl;
-            escreveIni << "     Versao    " << versao << endl;
-            if (state.step.input.saidaClassica == 1) {
-                srand(time(NULL));
-                int frase = rand() % 16;
-                escreveIni << "*******************************************************************************" << endl;
-                escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
-                escreveIni << state.closingTitles[frase] << endl;
-                escreveIni << state.closingSubtitles[frase] << endl;
-                escreveIni << "*******************************************************************************" << endl;
-            } else
-                escreveIni << "                                 FIM                                  " << endl;
-        }
+        writeRunCompletionReport(state, escreveIni);
+
         time_t now = time(0);
         tm *ltm = localtime(&now);
-        escreveIni << "datahora = ";
-        escreveIni << ltm->tm_mday << "/";
-        escreveIni << 1 + ltm->tm_mon << "/";
-        escreveIni << 1900 + ltm->tm_year << " ";
-        escreveIni << 0 + ltm->tm_hour << ":";
-        escreveIni << 0 + ltm->tm_min << ":";
-        escreveIni << 0 + ltm->tm_sec;
-        escreveIni << endl;
+        writeLogTimestamp(escreveIni, ltm);
 
         escreveIni.close();
     }
@@ -649,6 +592,80 @@ void fillMiniTableCornersAtMaxPressure(const TransientStepState &state, ProFlu &
         fluC.EntalpLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
     flui.miniTabDin.HgF[1][1] =
         fluC.EntalpGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+}
+
+void assignCellTimeSteps(const TransientStepState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        state.cells[i].dt = state.timeStep;
+        state.cells[i].dt1 = state.timeStep;
+        state.cells[i].dt2 = state.timeStep;
+        state.cells[i].dtPig = state.timeStep;
+    }
+}
+
+bool profileIsDue(const TransientStepState &state, double *const &times, const int &index) {
+    return (*state.globals).lixo5 > (*state.globals).localtiny &&
+           (*state.globals).lixo5 <= times[index] &&
+           (*state.globals).lixo5 + state.timeStep >= times[index];
+}
+
+void advanceProfileIndex(int &index, const int &limit) {
+    index++;
+    if (index >= limit)
+        index--;
+}
+
+void appendLogPath(std::ostringstream &saidaT, const TransientSolveState &state) {
+    if (state.step.branchIndex < 0) {
+        saidaT << state.logBuffer;
+    } else {
+        saidaT << "Tramo" << state.step.branchIndex << "-" << state.logBuffer;
+    }
+}
+
+void writeLogTimestamp(std::ostream &escreveIni, const std::tm *ltm) {
+    escreveIni << "datahora = ";
+    escreveIni << ltm->tm_mday << "/";
+    escreveIni << 1 + ltm->tm_mon << "/";
+    escreveIni << 1900 + ltm->tm_year << " ";
+    escreveIni << 0 + ltm->tm_hour << ":";
+    escreveIni << 0 + ltm->tm_min << ":";
+    escreveIni << 0 + ltm->tm_sec;
+    escreveIni << endl;
+}
+
+void writeRunCompletionReport(const TransientSolveState &state, std::ostream &escreveIni) {
+    if (fabs((*state.step.globals).lixo5 - state.step.input.tfinal) <= state.step.timeStep) {
+        time_t now = time(0);
+        tm *ltm = localtime(&now);
+        int diaFim = (ltm->tm_mday);
+        int horaFim;
+        if (diaFim == diaIni)
+            horaFim = ltm->tm_hour;
+        else
+            horaFim = ltm->tm_hour + 24;
+        horaFim *= 3600;
+        int minutoFim = 60 * ltm->tm_min;
+        int segundoFim = ltm->tm_sec;
+        int totalFim = horaFim + minutoFim + segundoFim;
+        int totalIni = horaIni * 3600 + minutoIni * 60 + segundoIni;
+        escreveIni << "     DURACAO    " << totalFim - totalIni << " segundos " << endl;
+        escreveIni << "     Versao    " << versao << endl;
+        if (state.step.input.saidaClassica == 1) {
+            srand(time(NULL));
+            int frase = rand() % 16;
+            escreveIni << "*******************************************************************************" << endl;
+            escreveIni << "                                  UFA!!!!!!!!                                  " << endl;
+            escreveIni << state.closingTitles[frase] << endl;
+            escreveIni << state.closingSubtitles[frase] << endl;
+            escreveIni << "*******************************************************************************" << endl;
+        } else
+            escreveIni << "                                 FIM                                  " << endl;
+    }
+}
+
+bool progressReportIsDue(const TransientSolveState &state, int MaxKontaImpres) {
+    return (fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal);
 }
 
 }  // namespace
@@ -1604,12 +1621,7 @@ void computeImplicitTimeStep(const TransientStepState &state) {
         }
     }
 
-    for (int i = 0; i <= state.lastCell; i++) {
-        state.cells[i].dt = state.timeStep;
-        state.cells[i].dt1 = state.timeStep;
-        state.cells[i].dt2 = state.timeStep;
-        state.cells[i].dtPig = state.timeStep;
-    }
+    assignCellTimeSteps(state);
 
     for (int i = 0; i <= state.lastCell; i++) {
         if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
@@ -1630,17 +1642,11 @@ void computeExplicitTimeStep(const TransientStepState &state) {
         double velMax = velpropag1;
         if (velpropag2 > velpropag1)
             velMax = velpropag2;
-        double dtaux;
-        dtaux = state.cells[i].dx / velMax;
+        double dtaux = state.cells[i].dx / velMax;
         if (dtaux < state.timeStep)
             state.timeStep = dtaux;
     }
-    for (int i = 0; i <= state.lastCell; i++) {
-        state.cells[i].dt = state.timeStep;
-        state.cells[i].dt1 = state.timeStep;
-        state.cells[i].dt2 = state.timeStep;
-        state.cells[i].dtPig = state.timeStep;
-    }
+    assignCellTimeSteps(state);
 }
 
 void computeTimeStep(const TransientStepState &state, int vexpli) {
@@ -1755,22 +1761,22 @@ void dampMaximumTimeStep(const TransientStepState &state) {
 
 void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli) {
     double dpdtRef = 2 * state.input.taxaDespre;
-    double modDpDt = 0.;
-    double modDTDt = 0.;
     double dpdtMax = 0.;
     double dTdtMax = 0.;
     if (state.fullModel == 1) {
         state.fullModel = 0;
-        int i = 0;
-        while (i < state.lastCell) {
+        int firstCell = 0;
+        while (firstCell < state.lastCell) {
+            double modDpDt = 0.;
+            double modDTDt = 0.;
             int nBloco = 10;
-            if (state.lastCell - i < nBloco)
-                nBloco = state.lastCell - i;
+            if (state.lastCell - firstCell < nBloco)
+                nBloco = state.lastCell - firstCell;
             for (int j = 0; j < nBloco; j++) {
-                modDpDt += fabs(state.cells[i + j].pres - state.cells[i + j].presini) / (state.timeStep);
-                modDTDt += fabs(state.cells[i + j].temp - state.cells[i + j].tempini) / (state.timeStep);
+                modDpDt += fabs(state.cells[firstCell + j].pres - state.cells[firstCell + j].presini) / (state.timeStep);
+                modDTDt += fabs(state.cells[firstCell + j].temp - state.cells[firstCell + j].tempini) / (state.timeStep);
             }
-            i += nBloco;
+            firstCell += nBloco;
             modDpDt /= nBloco;
             modDTDt /= nBloco;
             if (modDpDt > dpdtMax)
@@ -1779,8 +1785,6 @@ void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli) {
                 dTdtMax = modDTDt;
             if (modDpDt > dpdtRef)
                 state.fullModel = 1;
-            modDpDt = 0.;
-            modDTDt = 0.;
         }
         state.maximumPressureRates.push_back(dpdtMax);
         state.maximumTemperatureRates.push_back(dTdtMax);
@@ -1898,12 +1902,7 @@ void restartFractionEvolutionSub(const TransientStepState &state) {
 }
 
 void restartFractionEvolution(const TransientStepState &state) {
-    for (int i = 0; i <= state.lastCell; i++) {
-        state.cells[i].dt = state.timeStep;
-        state.cells[i].dt1 = state.timeStep;
-        state.cells[i].dt2 = state.timeStep;
-        state.cells[i].dtPig = state.timeStep;
-    }
+    assignCellTimeSteps(state);
     if (state.input.lingas > 0) {
         for (int i = 0; i <= state.lastGasCell; i++)
             state.gasCells[i].FeiticoDoTempo();
@@ -2054,37 +2053,29 @@ void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, in
         for (int j = 0; j < 6; j++) {
             state.productionMatrix[2 * i][j - 3] = state.cells[i].local[0][j];
             state.productionMatrix[2 * i + 1][j - 3] = state.cells[i].local[1][j];
-            state.productionSolution[2 * i] = state.cells[i].TL[0];
-            state.productionSolution[2 * i + 1] = state.cells[i].TL[1];
         }
+        state.productionSolution[2 * i] = state.cells[i].TL[0];
+        state.productionSolution[2 * i + 1] = state.cells[i].TL[1];
     }
 
     state.productionMatrix.GaussElimPP(state.productionSolution);
 }
 
 void refreshFluidMiniTable(const TransientStepState &state) {
-    	generateFluidMiniTables(state);
-    double betIV;
-    double solutionGasRatioInSitu;
-    double oilVolumeFactorInSitu;
-    double waterVolumeFactorInSitu;
-    double bswV;
-    double rhoOVol;
-    double rhoWVol;
-    double titVol;
+        generateFluidMiniTables(state);
     for (int i = 0; i < state.lastCell; i++) {
 
         double pres = state.cells[i].pres;
         double temp = state.cells[i].temp;
 
-        betIV = state.cells[i].bet;
-        solutionGasRatioInSitu = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
-        oilVolumeFactorInSitu = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionGasRatioInSitu);
-        waterVolumeFactorInSitu = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
-        bswV = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
-        rhoOVol = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
-        rhoWVol = state.cells[i].flui.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
-        titVol = (1 - bswV) * rhoOVol / ((1 - bswV) * rhoOVol + bswV * rhoWVol);
+        double betIV = state.cells[i].bet;
+        double solutionGasRatioInSitu = state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp);
+        double oilVolumeFactorInSitu = state.cells[i].flui.BOFunc(state.cells[i].pres, state.cells[i].temp, solutionGasRatioInSitu);
+        double waterVolumeFactorInSitu = state.cells[i].flui.BAFunc(state.cells[i].pres, state.cells[i].temp);
+        double bswV = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
+        double rhoOVol = state.cells[i].flui.MasEspoleo(state.cells[i].pres, state.cells[i].temp);
+        double rhoWVol = state.cells[i].flui.MasEspAgua(state.cells[i].pres, state.cells[i].temp);
+        double titVol = (1 - bswV) * rhoOVol / ((1 - bswV) * rhoOVol + bswV * rhoWVol);
 
         (void)state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp);
         (void)state.cells[i].flui.Zdran(state.cells[i].pres, state.cells[i].temp);
@@ -2098,29 +2089,30 @@ void refreshFluidMiniTable(const TransientStepState &state) {
 }
 
 void refreshInletCondition(const TransientStepState &state) {
-    if (state.input.ConContEntrada == 1) {
-        if (state.input.tipoFluido == 0 && state.input.flashCompleto == 2) {
-            (void)state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
-            double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
-            double titH = state.cells[0].flui.FracMassHidra(state.inletPressure, state.inletTemperature);
-            (void)state.cells[0].fluicol.standardDensity();
-            double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-            double rlMix = state.inletComplementaryFraction * complementaryDensity + (1. - state.inletComplementaryFraction) * liquidDensity;
-            double val1 = ((1. - state.inletComplementaryFraction) * liquidDensity * titH / (1. - titH));
-            state.inletQuality = val1 / (rlMix + val1);
-        } else if (state.input.tipoFluido == 1) {
-            double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
-            double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
-            double liquidDensity = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);
-            double quality = state.cells[0].flui.FracMass(state.inletPressure, state.inletTemperature);
-            double rcST = state.cells[0].fluicol.standardDensity();
-            double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-            double val1 = (rcST / complementaryDensity) * (gasDensity / rgST) * state.input.CCPres.bet[0] / quality;
-            double val2 = (gasDensity / liquidDensity) * (1 - quality) / quality;
-            double titT = gasDensity / (((1. - quality) / quality) * (gasDensity / liquidDensity) + gasDensity + val1);
-            state.inletQuality = titT;
-            state.inletComplementaryFraction = val1 / (val2 + val1);
-        }
+    if (state.input.ConContEntrada != 1)
+        return;
+
+    if (state.input.tipoFluido == 0 && state.input.flashCompleto == 2) {
+        (void)state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
+        double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
+        double titH = state.cells[0].flui.FracMassHidra(state.inletPressure, state.inletTemperature);
+        (void)state.cells[0].fluicol.standardDensity();
+        double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+        double rlMix = state.inletComplementaryFraction * complementaryDensity + (1. - state.inletComplementaryFraction) * liquidDensity;
+        double val1 = ((1. - state.inletComplementaryFraction) * liquidDensity * titH / (1. - titH));
+        state.inletQuality = val1 / (rlMix + val1);
+    } else if (state.input.tipoFluido == 1) {
+        double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
+        double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
+        double liquidDensity = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);
+        double quality = state.cells[0].flui.FracMass(state.inletPressure, state.inletTemperature);
+        double rcST = state.cells[0].fluicol.standardDensity();
+        double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+        double val1 = (rcST / complementaryDensity) * (gasDensity / rgST) * state.input.CCPres.bet[0] / quality;
+        double val2 = (gasDensity / liquidDensity) * (1 - quality) / quality;
+        double titT = gasDensity / (((1. - quality) / quality) * (gasDensity / liquidDensity) + gasDensity + val1);
+        state.inletQuality = titT;
+        state.inletComplementaryFraction = val1 / (val2 + val1);
     }
 }
 
@@ -2139,7 +2131,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         }
 
         if ((*state.step.globals).lixo5 < 1e-15) {
-        	for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++)state.unitCellTimeCounters[iCelU]=1;
+            for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++)state.unitCellTimeCounters[iCelU]=1;
             for (int i = 0; i < state.step.input.ntendp; i++) {
                 state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).lixo5, i, state.productionTrendCounts[i]);
             }
@@ -2266,7 +2258,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     int MaxKontaImpres = 1000;
     int ordemImpT = 0;
     if ((fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).lixo5) < state.step.timeStep) ||
-        (fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal) ||
+        progressReportIsDue(state, MaxKontaImpres) ||
         (*state.step.globals).lixo5 < 1e-15) {
         state.printPassCount++;
         ordemImpT = 1;
@@ -2301,52 +2293,52 @@ void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
     std::pair<double, int> titVec[4];
 
     for(int j=0;j<2;j++){
-    	for(int k=0;k<2;k++){
-    		titVec[2*j+k]={flui.miniTabDin.tit[j][k],2*j+k};
-    	}
+        for(int k=0;k<2;k++){
+            titVec[2*j+k]={flui.miniTabDin.tit[j][k],2*j+k};
+        }
     }
     std::sort(titVec, titVec + 4);
     if(titVec[0].first<1e-3){
-    	int busca=1;
-    	while(busca<4 && titVec[busca].first<1e-3)busca++;
-    	if(busca<4){
-			const int jtroca = titVec[busca].second / 2;
-			const int ktroca = titVec[busca].second % 2;
-    	    for(int j=0;j<2;j++){
-    	    	for(int k=0;k<2;k++){
-    	    		if(flui.miniTabDin.tit[j][k]<1e-3){
-    	    			flui.miniTabDin.rhogF[j][k]=flui.miniTabDin.rhogF[jtroca][ktroca];
-    	    			flui.miniTabDin.DrhogDpF[j][k]=flui.miniTabDin.DrhogDpF[jtroca][ktroca];
-    	    			flui.miniTabDin.DrhogDtF[j][k]=flui.miniTabDin.DrhogDtF[jtroca][ktroca];
-    	    			flui.miniTabDin.valZ[j][k]=flui.miniTabDin.valZ[jtroca][ktroca];
-    	    			flui.miniTabDin.valdZdT[j][k]=flui.miniTabDin.valdZdT[jtroca][ktroca];
-    	    			flui.miniTabDin.valdZdP[j][k]=flui.miniTabDin.valdZdP[jtroca][ktroca];
-    	    			flui.miniTabDin.cpgF[j][k]=flui.miniTabDin.cpgF[jtroca][ktroca];
-    	    			flui.miniTabDin.HgF[j][k]=flui.miniTabDin.HgF[jtroca][ktroca];
-    	    		}
-    	    	}
-    	    }
-    	}
+        int busca=1;
+        while(busca<4 && titVec[busca].first<1e-3)busca++;
+        if(busca<4){
+            const int jtroca = titVec[busca].second / 2;
+            const int ktroca = titVec[busca].second % 2;
+            for(int j=0;j<2;j++){
+                for(int k=0;k<2;k++){
+                    if(flui.miniTabDin.tit[j][k]<1e-3){
+                        flui.miniTabDin.rhogF[j][k]=flui.miniTabDin.rhogF[jtroca][ktroca];
+                        flui.miniTabDin.DrhogDpF[j][k]=flui.miniTabDin.DrhogDpF[jtroca][ktroca];
+                        flui.miniTabDin.DrhogDtF[j][k]=flui.miniTabDin.DrhogDtF[jtroca][ktroca];
+                        flui.miniTabDin.valZ[j][k]=flui.miniTabDin.valZ[jtroca][ktroca];
+                        flui.miniTabDin.valdZdT[j][k]=flui.miniTabDin.valdZdT[jtroca][ktroca];
+                        flui.miniTabDin.valdZdP[j][k]=flui.miniTabDin.valdZdP[jtroca][ktroca];
+                        flui.miniTabDin.cpgF[j][k]=flui.miniTabDin.cpgF[jtroca][ktroca];
+                        flui.miniTabDin.HgF[j][k]=flui.miniTabDin.HgF[jtroca][ktroca];
+                    }
+                }
+            }
+        }
     }
     if(titVec[3].first>1.-1e-3){
-    	int busca=2;
-    	while(busca>=0 && titVec[busca].first>1.-1e-3)busca--;
-    	if(busca>=0){
-			const int jtroca = titVec[busca].second / 2;
-			const int ktroca = titVec[busca].second % 2;
-    	    for(int j=0;j<2;j++){
-    	    	for(int k=0;k<2;k++){
-    	    		if(flui.miniTabDin.tit[j][k]>1.-1e-3){
-    	    			flui.miniTabDin.rholF[j][k]=flui.miniTabDin.rholF[jtroca][ktroca];
-    	    			flui.miniTabDin.valBO[j][k]=flui.miniTabDin.valBO[jtroca][ktroca];
-    	    			flui.miniTabDin.DrholDtF[j][k]=flui.miniTabDin.DrholDtF[jtroca][ktroca];
-    	    			flui.miniTabDin.rs[j][k]=flui.miniTabDin.rs[jtroca][ktroca];
-    	    			flui.miniTabDin.cplF[j][k]=flui.miniTabDin.cplF[jtroca][ktroca];
-    	    			flui.miniTabDin.HlF[j][k]=flui.miniTabDin.HlF[jtroca][ktroca];
-    	    		}
-    	    	}
-    	    }
-    	}
+        int busca=2;
+        while(busca>=0 && titVec[busca].first>1.-1e-3)busca--;
+        if(busca>=0){
+            const int jtroca = titVec[busca].second / 2;
+            const int ktroca = titVec[busca].second % 2;
+            for(int j=0;j<2;j++){
+                for(int k=0;k<2;k++){
+                    if(flui.miniTabDin.tit[j][k]>1.-1e-3){
+                        flui.miniTabDin.rholF[j][k]=flui.miniTabDin.rholF[jtroca][ktroca];
+                        flui.miniTabDin.valBO[j][k]=flui.miniTabDin.valBO[jtroca][ktroca];
+                        flui.miniTabDin.DrholDtF[j][k]=flui.miniTabDin.DrholDtF[jtroca][ktroca];
+                        flui.miniTabDin.rs[j][k]=flui.miniTabDin.rs[jtroca][ktroca];
+                        flui.miniTabDin.cplF[j][k]=flui.miniTabDin.cplF[jtroca][ktroca];
+                        flui.miniTabDin.HlF[j][k]=flui.miniTabDin.HlF[jtroca][ktroca];
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -2412,9 +2404,9 @@ void generateFluidMiniTables(const TransientStepState &state) {
                 state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
             if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.ipr.FluidoPro);
         } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-        	if(state.input.miniTabAtraso > 0)state.cells[i].acsr.radialPoro.geraMiniTabFlu();
+            if(state.input.miniTabAtraso > 0)state.cells[i].acsr.radialPoro.geraMiniTabFlu();
         } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
-        	if(state.input.miniTabAtraso > 0)state.cells[i].acsr.poroso2D.geraMiniTabFlu();
+            if(state.input.miniTabAtraso > 0)state.cells[i].acsr.poroso2D.geraMiniTabFlu();
         } else if (state.cells[i].acsr.tipo == kAccessoryLeak) {
             state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
             state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
