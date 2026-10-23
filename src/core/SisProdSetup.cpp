@@ -13,7 +13,7 @@ namespace {
 
 template <typename Apply>
 void forEachSourceFluid(Cel &cell, Apply &&apply) {
-    auto visit = [&](ProFlu &fluid, double pressure, double temperature) {
+    auto visit = [&](ProFlu &fluid, const double &pressure, const double &temperature) {
         if constexpr (std::invocable<Apply &, ProFlu &>)
             apply(fluid);
         else
@@ -75,6 +75,60 @@ void writeTable(const string &path, const FullMtx<double> &table, const string &
     if (!header.empty())
         file << "# " << header << "\n";
     file << table;
+}
+
+double reducedSolutionGasRatio(double pressure, double temperature, double bubblePressure, const ProFlu &fluid) {
+    double TFa = 1.8 * temperature + 32;
+
+    constexpr double A0 = 6542.69213 * 1e-11;
+    constexpr double A1 = 2.60464618;
+    constexpr double A2 = 1.21334544;
+    constexpr double A3 = 0.16464125;
+    constexpr double A4 = 1.19382967;
+    constexpr double B0 = 87 * 1e-8;
+    constexpr double B1 = 4.77390016;
+    constexpr double B2 = 1.77267703;
+    constexpr double B3 = -0.73072038;
+    constexpr double B4 = 1.58093857;
+    constexpr double C0 = 3226.09 * 1e-6;
+    constexpr double C1 = 0.09281075;
+    constexpr double C2 = 0.13633665;
+    constexpr double C3 = 0.09634381;
+    constexpr double C4 = 0.53238728;
+    constexpr double D0 = 1.00544053;
+    constexpr double D1 = -0.00134177;
+    constexpr double D2 = 0.51839397;
+
+    double yco2 = fluid.yco2;
+    double Deng = fluid.Deng;
+    double API = fluid.API;
+    double multCor = (D0 + D1 * yco2 * pow(TFa, D2));
+    double pbtemp = bubblePressure;
+
+    double pcor = pressure * units::kPsiPerKgfPerCm2 * multCor;
+    double pr = pcor / pbtemp;
+
+    double a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
+    double a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
+    double a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
+
+    double Rsr = a1 * pow(pr, a2) + (1. - a1) * pow(pr, a3);
+    double rstemp = Rsr;
+    if (rstemp < 0.)
+        rstemp = 0.;
+    else if (pressure * units::kPsiPerKgfPerCm2 > pbtemp)
+        rstemp = 1.;
+    else if (rstemp > 1.)
+        rstemp = 1.;
+    return rstemp;
+}
+
+sisprod::AccessoryKind inletSourceKind(int fluidType) {
+    if (fluidType == 1)
+        return kAccessoryGasInjection;
+    if (fluidType == 0)
+        return kAccessoryLiquidInjection;
+    return kAccessoryMultipleSource;
 }
 
 void attachEmptySources(Cel &cell, Cel &inlet) {
@@ -140,49 +194,10 @@ void SProd::loadPvtSimSaturationTables() {
             tables.liviaSolutionGasRatioTable[i][0] = PresPVTSim[i - 1];
             for (int j = 1; j <= bubbleCount; j++) {
                 if (tables.pvtSimBubbleTemperatures[j - 1] > -10) {
-                    double TFa = 1.8 * tables.pvtSimBubbleTemperatures[j - 1] + 32;
-
-                    constexpr double A0 = 6542.69213 * 1e-11;
-                    constexpr double A1 = 2.60464618;
-                    constexpr double A2 = 1.21334544;
-                    constexpr double A3 = 0.16464125;
-                    constexpr double A4 = 1.19382967;
-                    constexpr double B0 = 87 * 1e-8;
-                    constexpr double B1 = 4.77390016;
-                    constexpr double B2 = 1.77267703;
-                    constexpr double B3 = -0.73072038;
-                    constexpr double B4 = 1.58093857;
-                    constexpr double C0 = 3226.09 * 1e-6;
-                    constexpr double C1 = 0.09281075;
-                    constexpr double C2 = 0.13633665;
-                    constexpr double C3 = 0.09634381;
-                    constexpr double C4 = 0.53238728;
-                    constexpr double D0 = 1.00544053;
-                    constexpr double D1 = -0.00134177;
-                    constexpr double D2 = 0.51839397;
-
-                    double yco2 = celula[0].flui.yco2;
-                    double Deng = celula[0].flui.Deng;
-                    double API = celula[0].flui.API;
-                    double multCor = (D0 + D1 * yco2 * pow(TFa, D2));
-                    double pbtemp = tables.pvtSimBubblePressures[j - 1];
-
-                    double pcor = tables.liviaSolutionGasRatioTable[i][0] * units::kPsiPerKgfPerCm2 * multCor;
-                    double pr = pcor / pbtemp;
-
-                    double a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
-                    double a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
-                    double a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
-
-                    double Rsr = a1 * pow(pr, a2) + (1. - a1) * pow(pr, a3);
-                    double rstemp = Rsr;
-                    if (rstemp < 0.)
-                        rstemp = 0.;
-                    else if (tables.liviaSolutionGasRatioTable[i][0] * units::kPsiPerKgfPerCm2 > pbtemp)
-                        rstemp = 1.;
-                    else if (rstemp > 1.)
-                        rstemp = 1.;
-                    tables.liviaSolutionGasRatioTable[i][j] = rstemp;
+                    tables.liviaSolutionGasRatioTable[i][j] =
+                        reducedSolutionGasRatio(tables.liviaSolutionGasRatioTable[i][0],
+                                                tables.pvtSimBubbleTemperatures[j - 1],
+                                                tables.pvtSimBubblePressures[j - 1], celula[0].flui);
                 } else
                     tables.liviaSolutionGasRatioTable[i][j] = 0;
             }
@@ -301,10 +316,12 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
     (*vg1dSP).localtiny = arq.mono;
     (*vg1dSP).CritCond = arq.critcond;
     networkCoupling.reverseQuality = -1;
-    if (injPoc >= 1 && arq.nipr == 0 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5)
+    const bool requiresLastCellIpr = injPoc >= 1 && arq.condpocinj.CC != 3 &&
+                                     arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5;
+    if (requiresLastCellIpr && arq.nipr == 0)
         NumError(
             "O simulador esta no modo Injecao de Agua em uma condicao de contorno que pede uma IPR e nao foi incluido nenhuma IPR no sistema");
-    else if (injPoc >= 1 && arq.condpocinj.CC != 3 && arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5) {
+    else if (requiresLastCellIpr) {
         int testaIPR = 0;
         for (int i = 0; i < arq.nipr; i++)
             if (arq.IPRS[i].indcel == arq.ncelp - 1)
@@ -328,18 +345,16 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
     steadySearch.reverseNetworkFluid = arq.flup[0];
     if (arq.flashCompleto == 2)
         steadySearch.reverseNetworkFluid.atualizaPropCompStandard();
-    for (int i = 0; i < arq.nfluP; i++) {
-        arq.flup[i].npontos = arq.tabent.npont;
-        arq.flup[i].cpg = tables.gasSpecificHeatTable;
-        arq.flup[i].cpl = tables.liquidSpecificHeatTable;
-        arq.flup[i].drholdT = tables.liquidDensityTemperatureDerivative;
-        arq.flup[i].nfluP = steadySearch.productionFluidCount;
-    }
-    arq.flug.npontos = arq.tabent.npont;
-    arq.flug.cpg = tables.gasSpecificHeatTable;
-    arq.flug.cpl = tables.liquidSpecificHeatTable;
-    arq.flug.drholdT = tables.liquidDensityTemperatureDerivative;
-    arq.flug.nfluP = steadySearch.productionFluidCount;
+    auto bindThermalTables = [&](ProFlu &fluid) {
+        fluid.npontos = arq.tabent.npont;
+        fluid.cpg = tables.gasSpecificHeatTable;
+        fluid.cpl = tables.liquidSpecificHeatTable;
+        fluid.drholdT = tables.liquidDensityTemperatureDerivative;
+        fluid.nfluP = steadySearch.productionFluidCount;
+    };
+    for (int i = 0; i < arq.nfluP; i++)
+        bindThermalTables(arq.flup[i]);
+    bindThermalTables(arq.flug);
 
     arq.fluc.npontos = arq.tabent.npont;
     arq.fluc.RhoInj = arq.RhoInj;
@@ -389,28 +404,20 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
                    "Foi escolhida uma condicao de contorno de pressao no inicio da tubulacao e foi colocada uma fonte de massa neste inicio, isto pode causar inconsistencias",
                    "", "");
     }
-    if ((arq.perm == 1 || (*vg1dSP).chaverede > 0) && celula[0].acsr.tipo == kAccessoryNone) {
+    const bool needsInletSource = (arq.perm == 1 || (*vg1dSP).chaverede > 0) &&
+                                  celula[0].acsr.tipo == kAccessoryNone;
+    if (needsInletSource) {
         if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*vg1dSP).chaverede == 0)) {
             NumError("O simulador pede calculo de permanente com condicao de vazao na entrada, mas sem nenhuma fonte na entrada");
         }
         if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*vg1dSP).chaverede > 0) ||
             arq.CCPres.tit[0] < (1 - (*vg1dSP).localtiny)) {
-            if (arq.tipoFluido == 1)
-                celula[0].acsr.tipo = kAccessoryGasInjection;
-            else if (arq.tipoFluido == 0)
-                celula[0].acsr.tipo = kAccessoryLiquidInjection;
-            else
-                celula[0].acsr.tipo = kAccessoryMultipleSource;
+            celula[0].acsr.tipo = inletSourceKind(arq.tipoFluido);
             attachEmptySources(celula[0], celula[0]);
         } else if (extraSourceCount == 0 || arq.ConContEntrada == 1) {
             attachEmptySources(celula[0], celula[0]);
             celula[0].acsr.injg.seco = 0;
-            if (arq.tipoFluido == 1)
-                celula[0].acsr.tipo = kAccessoryGasInjection;
-            else if (arq.tipoFluido == 0)
-                celula[0].acsr.tipo = kAccessoryLiquidInjection;
-            else
-                celula[0].acsr.tipo = kAccessoryMultipleSource;
+            celula[0].acsr.tipo = inletSourceKind(arq.tipoFluido);
         }
     }
     if (bloq == 1 && celula[1].acsr.tipo == kAccessoryNone) {
@@ -481,29 +488,32 @@ void SProd::buildGasLiftLine() {
             gasLift.gasValveCells = vector<int>(arq.nvalvgas);
         }
         for (int i = 0; i < arq.nvalvgas; i++) {
-            double diaG = arq.valvgl[i].diagarg;
-            double presEstag = gasLift.cells[arq.valvgl[i].posicG].pres;
-            double tempEstag = gasLift.cells[arq.valvgl[i].posicG].temp;
-            double presGarg = celula[arq.valvgl[i].posicP].pres;
-            gasLift.productionValveCells[i] = arq.valvgl[i].posicP;
-            gasLift.gasValveCells[i] = arq.valvgl[i].posicG;
-            gasLift.cells[gasLift.gasValveCells[i]].vgl = 1;
-            if (arq.valvgl[i].tipo == 2) {
-                arq.valvgl[i].frec = 0.;
-                arq.valvgl[i].cd = 1.;
+            auto &valve = arq.valvgl[i];
+            double diaG = valve.diagarg;
+            double presEstag = gasLift.cells[valve.posicG].pres;
+            double tempEstag = gasLift.cells[valve.posicG].temp;
+            double presGarg = celula[valve.posicP].pres;
+            gasLift.productionValveCells[i] = valve.posicP;
+            gasLift.gasValveCells[i] = valve.posicG;
+            auto &gasCell = gasLift.cells[gasLift.gasValveCells[i]];
+            gasCell.vgl = 1;
+            if (valve.tipo == 2) {
+                valve.frec = 0.;
+                valve.cd = 1.;
             }
             double throatArea = std::numbers::pi * diaG * diaG / 4.;
-            gasLift.valveChokes[i] = ChokeGas(arq.flug, throatArea,
-                                   arq.valvgl[i].diaexter, arq.valvgl[i].cd, presEstag, presGarg,
-                                   tempEstag, arq.valvgl[i].frec, arq.valvgl[i].tipo,
-                                   throatArea / arq.valvgl[i].razarea,
-                                   arq.valvgl[i].pcali, arq.valvgl[i].tcali, arq.valvgl[i].cdLiq, arq.valvgl[i].frecLiq);
-            gasLift.cells[gasLift.gasValveCells[i]].pEstag = gasLift.valveChokes[i].presEstag;
-            gasLift.cells[gasLift.gasValveCells[i]].tEstag = gasLift.valveChokes[i].tempEstag;
-            gasLift.cells[gasLift.gasValveCells[i]].pGarg = gasLift.valveChokes[i].presGarg;
-            gasLift.cells[gasLift.gasValveCells[i]].tGarg = gasLift.valveChokes[i].tempGarg;
-            gasLift.cells[gasLift.gasValveCells[i]].qGarg = gasLift.valveChokes[i].qGarg;
-            gasLift.cells[gasLift.gasValveCells[i]].areaGarg = gasLift.valveChokes[i].areagarg;
+            auto &valveChoke = gasLift.valveChokes[i];
+            valveChoke = ChokeGas(arq.flug, throatArea,
+                                  valve.diaexter, valve.cd, presEstag, presGarg,
+                                  tempEstag, valve.frec, valve.tipo,
+                                  throatArea / valve.razarea,
+                                  valve.pcali, valve.tcali, valve.cdLiq, valve.frecLiq);
+            gasCell.pEstag = valveChoke.presEstag;
+            gasCell.tEstag = valveChoke.tempEstag;
+            gasCell.pGarg = valveChoke.presGarg;
+            gasCell.tGarg = valveChoke.tempGarg;
+            gasCell.qGarg = valveChoke.qGarg;
+            gasCell.areaGarg = valveChoke.areagarg;
         }
         for (int i = 0; i <= gasLift.cellCount; i++) {
             gasLift.cells[i].celInter = &gasLift.interfaceCell;
@@ -518,7 +528,13 @@ void SProd::buildGasLiftLine() {
 }
 
 void SProd::validateSetupAndApplyInitialState() {
-    if (celula[0].acsr.tipo != kAccessoryGasInjection && celula[0].acsr.tipo != kAccessoryLiquidInjection && celula[0].acsr.tipo != kAccessoryInflowPerformance && celula[0].acsr.tipo != kAccessoryMultipleSource && celula[0].acsr.tipo != kAccessoryRadialPorous && celula[0].acsr.tipo != kAccessoryPorous2D) {
+    const bool hasInletMassSource = celula[0].acsr.tipo == kAccessoryGasInjection ||
+                                    celula[0].acsr.tipo == kAccessoryLiquidInjection ||
+                                    celula[0].acsr.tipo == kAccessoryInflowPerformance ||
+                                    celula[0].acsr.tipo == kAccessoryMultipleSource ||
+                                    celula[0].acsr.tipo == kAccessoryRadialPorous ||
+                                    celula[0].acsr.tipo == kAccessoryPorous2D;
+    if (!hasInletMassSource) {
         if (arq.perm == 0 && arq.ConContEntrada == 0) {
             // RN-300: No source is defined in the first production system cell. Report a warning.
             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -583,10 +599,14 @@ void SProd::buildDynamicTablesAndInclinations() {
     if (arq.tabelaDinamica == 1) {
         tables.dynamicTables.push_back(tabelaDinamica());
         for (int i = 1; i < ncel; i++) {
-            if ((celula[i].acsr.tipo == kAccessoryGasInjection) ||
-                (celula[i].acsr.tipo == kAccessoryLiquidInjection) ||
-                celula[i].acsr.tipo == kAccessoryInflowPerformance ||
-                (celula[i].acsr.tipo == kAccessoryMultipleSource) || celula[i].acsr.tipo == kAccessoryLeak || celula[i].acsr.tipo == kAccessoryRadialPorous || celula[i].acsr.tipo == kAccessoryPorous2D) {
+            const bool startsTableSegment = celula[i].acsr.tipo == kAccessoryGasInjection ||
+                                            celula[i].acsr.tipo == kAccessoryLiquidInjection ||
+                                            celula[i].acsr.tipo == kAccessoryInflowPerformance ||
+                                            celula[i].acsr.tipo == kAccessoryMultipleSource ||
+                                            celula[i].acsr.tipo == kAccessoryLeak ||
+                                            celula[i].acsr.tipo == kAccessoryRadialPorous ||
+                                            celula[i].acsr.tipo == kAccessoryPorous2D;
+            if (startsTableSegment) {
                 tabelaDinamica temp;
                 temp.celIni = i + 1;
                 tables.dynamicTables.back().celFim = i;
@@ -614,80 +634,73 @@ void SProd::buildDynamicTablesAndInclinations() {
 
 void SProd::configureLatentHeat() {
     CalcLat = arq.latente;
-    if (arq.latente > 0) {
-        if (arq.flashCompleto == 0) {
-            const string dadosMR = arq.pvtsimarq;
-            ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
-            string chave;
-            char *tenta;
-            double testatok;
-            int ndiv = arq.tabent.npont - 1;
-            Vcr<double> presPVTSim(ndiv + 1, 0.);
-            Vcr<double> tempPVTSim(ndiv + 1, 0.);
+    if (arq.latente <= 0 || arq.flashCompleto != 0)
+        return;
 
-            FullMtx<double> HLatTemp(ndiv + 2, ndiv + 2);
-            char line[4000];
+    const string dadosMR = arq.pvtsimarq;
+    ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
+    string chave;
+    char *tenta;
+    double testatok;
+    int ndiv = arq.tabent.npont - 1;
+
+    FullMtx<double> HLatTemp(ndiv + 2, ndiv + 2);
+    char line[4000];
+    lendoPVTSim.get(line, 4000);
+    tenta = strtok(line, " ,()=");
+    while (strcmp(tenta, "PHASE") != 0) {
+        tenta = strtok(NULL, " ,()=");
+    }
+    tenta = strtok(NULL, " ,()=");
+    int lacoleitura = 12;
+    if (strcmp(tenta, "THREE") == 0)
+        lacoleitura = 18;
+
+    vector<double> pressuresRead = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
+                                                 [](double value) { return value / units::kPascalPerKgfPerCm2; });
+    vector<double> temperaturesRead = readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", dadosMR,
+                                                    [](double value) { return value; });
+    if (static_cast<int>(pressuresRead.size()) <= ndiv || static_cast<int>(temperaturesRead.size()) <= ndiv)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       "PVTSim file with fewer table points than the input table", "pvtsimArq",
+                                       dadosMR);
+
+    for (int i = 1; i <= ndiv + 1; i++) {
+        HLatTemp[i][0] = pressuresRead[i - 1];
+        for (int j = 1; j <= ndiv + 1; j++) {
+            HLatTemp[0][j] = temperaturesRead[j - 1];
+            while (chave != "POINT")
+                lendoPVTSim >> chave;
             lendoPVTSim.get(line, 4000);
             tenta = strtok(line, " ,()=");
-            while (strcmp(tenta, "PHASE") != 0) {
-                tenta = strtok(NULL, " ,()=");
+            for (int kontaPVT = 0; kontaPVT < lacoleitura; kontaPVT++) {
+                tenta = strtok(NULL, " ,");
+                testatok = atof(tenta);
             }
-            tenta = strtok(NULL, " ,()=");
-            int lacoleitura = 12;
-            if (strcmp(tenta, "THREE") == 0)
-                lacoleitura = 18;
-
-            vector<double> pressuresRead = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
-                                                         [](double value) { return value / units::kPascalPerKgfPerCm2; });
-            vector<double> temperaturesRead = readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", dadosMR,
-                                                            [](double value) { return value; });
-            if (static_cast<int>(pressuresRead.size()) <= ndiv || static_cast<int>(temperaturesRead.size()) <= ndiv)
-                logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
-                                               "PVTSim file with fewer table points than the input table", "pvtsimArq",
-                                               dadosMR);
-            for (int k = 0; k <= ndiv; k++) {
-                presPVTSim[k] = pressuresRead[k];
-                tempPVTSim[k] = temperaturesRead[k];
-            }
-
-            for (int i = 1; i <= ndiv + 1; i++) {
-                HLatTemp[i][0] = presPVTSim[i - 1];
-                for (int j = 1; j <= ndiv + 1; j++) {
-                    HLatTemp[0][j] = tempPVTSim[j - 1];
-                    while (chave != "POINT")
-                        lendoPVTSim >> chave;
-                    lendoPVTSim.get(line, 4000);
-                    tenta = strtok(line, " ,()=");
-                    for (int kontaPVT = 0; kontaPVT < lacoleitura; kontaPVT++) {
-                        tenta = strtok(NULL, " ,");
-                        testatok = atof(tenta);
-                    }
-                    tenta = strtok(NULL, " ,");
-                    testatok = atof(tenta);
-                    HLatTemp[i][j] = testatok;
-                    tenta = strtok(NULL, " ,");
-                    testatok = atof(tenta);
-                    HLatTemp[i][j] -= testatok;
-                    if (i == ndiv + 1 && j == ndiv + 1)
-                        break;
-                    while (chave != "PVTTABLE")
-                        lendoPVTSim >> chave;
-                }
-            }
-            lendoPVTSim.close();
-            tables.latentHeatTable.allocate(ndiv + 2, ndiv + 2);
-            for (int i = 0; i < ndiv + 2; i++) {
-                for (int j = 0; j < ndiv + 2; j++)
-                    tables.latentHeatTable[i][j] = HLatTemp[i][j];
-            }
-            string tmp = pathPrefixoArqSaida + "perfilLatente.dat";
-            writeTable(tmp, HLatTemp);
-            // unless this is an injection-well (POCO_INJETOR) simulation
-            if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
-                arqRelatorioPerfis << tmp.c_str() << endl;
-                arqRelatorioPerfis.flush();
-            }
+            tenta = strtok(NULL, " ,");
+            testatok = atof(tenta);
+            HLatTemp[i][j] = testatok;
+            tenta = strtok(NULL, " ,");
+            testatok = atof(tenta);
+            HLatTemp[i][j] -= testatok;
+            if (i == ndiv + 1 && j == ndiv + 1)
+                break;
+            while (chave != "PVTTABLE")
+                lendoPVTSim >> chave;
         }
+    }
+    lendoPVTSim.close();
+    tables.latentHeatTable.allocate(ndiv + 2, ndiv + 2);
+    for (int i = 0; i < ndiv + 2; i++) {
+        for (int j = 0; j < ndiv + 2; j++)
+            tables.latentHeatTable[i][j] = HLatTemp[i][j];
+    }
+    string tmp = pathPrefixoArqSaida + "perfilLatente.dat";
+    writeTable(tmp, HLatTemp);
+    // unless this is an injection-well (POCO_INJETOR) simulation
+    if (arq.tipoSimulacao != tipoSimulacao_t::poco_injetor) {
+        arqRelatorioPerfis << tmp.c_str() << endl;
+        arqRelatorioPerfis.flush();
     }
 }
 
@@ -698,36 +711,10 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
             celula[i].flui.rDgL = 1.;
             celula[i].flui.PCis = celula[i].flui.PC;
             celula[i].flui.TCis = celula[i].flui.TC;
-            if (celula[i].acsr.tipo == kAccessoryLiquidInjection) {
-                celula[i].acsr.injl.FluidoPro.rDgD = 1.;
-                celula[i].acsr.injl.FluidoPro.rDgL = 1.;
-            } else if (celula[i].acsr.tipo == kAccessoryInflowPerformance) {
-                celula[i].acsr.ipr.FluidoPro.rDgD = 1.;
-                celula[i].acsr.ipr.FluidoPro.rDgL = 1.;
-            } else if (celula[i].acsr.tipo == kAccessoryMultipleSource) {
-                celula[i].acsr.injm.FluidoPro.rDgD = 1.;
-                celula[i].acsr.injm.FluidoPro.rDgL = 1.;
-            }
-            if (celula[i].acsr.tipo == kAccessoryRadialPorous) {
-                celula[i].acsr.radialPoro.flup.rDgD = 1.;
-                celula[i].acsr.radialPoro.flup.rDgL = 1.;
-                for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
-                    celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
-                    celula[i].acsr.radialPoro.celula[iRP].flup.rDgL = 1.;
-                }
-            }
-            if (celula[i].acsr.tipo == kAccessoryPorous2D) {
-                celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
-                celula[i].acsr.poroso2D.dados.flup.rDgL = 1.;
-                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
-                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgD = 1.;
-                    celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgL = 1.;
-                }
-                for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
-                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rDgD = 1.;
-                    celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rDgL = 1.;
-                }
-            }
+            forEachSourceFluid(celula[i], [](ProFlu &fluid) {
+                fluid.rDgD = 1.;
+                fluid.rDgL = 1.;
+            });
         } else {
             celula[i].flui.razDegD(celula[i].pres, celula[i].temp);
             celula[i].flui.rzDegL(celula[i].pres, celula[i].temp);
@@ -814,43 +801,20 @@ void SProd::allocateEventProfileAndTrendArrays() {
     }
 }
 
-void SProd::resetCouplingAndOutputState() {
-    gasLift.annulusThermalCoupling = 0;
-
-    if (arq.lingas > 0) {
-        gasLift.annulusCouplingStart = arq.anulcoluini();
-        gasLift.annulusCouplingEnd = arq.anulcolufim();
-        gasLift.tubingCouplingStart = arq.coluanulini();
-        gasLift.tubingCouplingEnd = arq.coluanulfim();
-        if (gasLift.tubingCouplingEnd == -1) {
-            gasLift.tubingCouplingEnd = 0;
-            gasLift.annulusCouplingEnd--;
+void SProd::initializeProfileOutputState() {
+    if (arq.AP == 0) {
+        if (arq.nperfisp > 0) {
+            arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
         }
-        if (gasLift.annulusCouplingStart >= 0 && gasLift.annulusCouplingEnd >= 0 && gasLift.tubingCouplingStart >= 0 &&
-            gasLift.tubingCouplingEnd >= 0)
-            gasLift.annulusThermalCoupling = 1;
-    }
-
-    networkCoupling.primaryThermalCoupling = 0;
-    networkCoupling.secondaryThermalCoupling = 0;
-    networkCoupling.secondaryCouplingStart = 0;
-    networkCoupling.secondaryCouplingEnd = 0;
-    networkCoupling.primaryCouplingStart = 0;
-    networkCoupling.primaryCouplingEnd = 0;
-
-    if(arq.AP==0){
-    	if (arq.nperfisp > 0) {
-    		arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
-    	}
-    	if (arq.nperfisg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileG(gasLift.cells, flutG, (*vg1dSP).lixo5, indTramo);
-    	}
-    	if (arq.nperfistransp > 0) {
-    		arq.imprimeProfileTrans(celula, trends.productionWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
-    	}
-    	if (arq.nperfistransg > 0 && arq.lingas > 0) {
-    		arq.imprimeProfileTransG(gasLift.cells, trends.gasWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
-    	}
+        if (arq.nperfisg > 0 && arq.lingas > 0) {
+            arq.imprimeProfileG(gasLift.cells, flutG, (*vg1dSP).lixo5, indTramo);
+        }
+        if (arq.nperfistransp > 0) {
+            arq.imprimeProfileTrans(celula, trends.productionWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
+        }
+        if (arq.nperfistransg > 0 && arq.lingas > 0) {
+            arq.imprimeProfileTransG(gasLift.cells, trends.gasWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
+        }
     }
     trends.productionProfileTimeIndex = 0;
     trends.gasProfileTimeIndex = 0;
@@ -872,7 +836,9 @@ void SProd::resetCouplingAndOutputState() {
         if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
             trends.gasWallProfileTimeIndex++;
     }
+}
 
+void SProd::writeInitialEventLog() {
     ostringstream saidaLog;
     saidaLog << pathPrefixoArqSaida << "LogEvento" << ".dat";
     tmpLog = saidaLog.str();
@@ -901,6 +867,34 @@ void SProd::resetCouplingAndOutputState() {
             escreveIni.close();
         }
     }
+}
+
+void SProd::resetCouplingAndOutputState() {
+    gasLift.annulusThermalCoupling = 0;
+
+    if (arq.lingas > 0) {
+        gasLift.annulusCouplingStart = arq.anulcoluini();
+        gasLift.annulusCouplingEnd = arq.anulcolufim();
+        gasLift.tubingCouplingStart = arq.coluanulini();
+        gasLift.tubingCouplingEnd = arq.coluanulfim();
+        if (gasLift.tubingCouplingEnd == -1) {
+            gasLift.tubingCouplingEnd = 0;
+            gasLift.annulusCouplingEnd--;
+        }
+        if (gasLift.annulusCouplingStart >= 0 && gasLift.annulusCouplingEnd >= 0 && gasLift.tubingCouplingStart >= 0 &&
+            gasLift.tubingCouplingEnd >= 0)
+            gasLift.annulusThermalCoupling = 1;
+    }
+
+    networkCoupling.primaryThermalCoupling = 0;
+    networkCoupling.secondaryThermalCoupling = 0;
+    networkCoupling.secondaryCouplingStart = 0;
+    networkCoupling.secondaryCouplingEnd = 0;
+    networkCoupling.primaryCouplingStart = 0;
+    networkCoupling.primaryCouplingEnd = 0;
+
+    initializeProfileOutputState();
+    writeInitialEventLog();
 
     transient.smallestCellLength = 1e10;
     for (int i = 0; i <= ncel; i++) {

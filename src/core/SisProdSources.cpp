@@ -147,36 +147,36 @@ void refreshChokeMultipleAndPorousSources(const SourceState &state, int cellInde
 }  // namespace
 
 void addMasterValveFlow(const SourceState &state, int cellIndex) {
-    if (state.cells[cellIndex].acsr.chk.AreaGarg < (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex].duto.area && state.cells[cellIndex].acsr.chk.AreaGarg > 1e-3 * state.cells[cellIndex].duto.area) {
-        double tE = state.cells[cellIndex].temp;
-        double alfE = state.cells[cellIndex].alf;
-        double betE = state.cells[cellIndex].bet;
-        double sense = 1.;
+    Cel &cell = state.cells[cellIndex];
+    if (cell.acsr.chk.AreaGarg < (1e-3 + state.input.master1.razareaativ) * cell.duto.area && cell.acsr.chk.AreaGarg > 1e-3 * cell.duto.area) {
+        Cel &nextCell = state.cells[cellIndex + 1];
+        const double tE = cell.temp;
+        const double alfE = cell.alf;
+        const double betE = cell.bet;
+        const double sense = 1.;
 
-        double maxSup;
-
-        double rholp = state.cells[cellIndex].flui.MasEspLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
-        double rholc = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
+        double rholp = cell.flui.MasEspLiq(cell.pres, cell.temp);
+        double rholc = cell.fluicol.MasEspFlu(cell.pres, cell.temp);
         double rholmix = (1 - betE) * rholp + betE * rholc;
 
-        double alfJ = state.cells[cellIndex + 1].alf;
-        double betJ = state.cells[cellIndex + 1].bet;
-        double rholpJ = state.cells[cellIndex + 1].flui.MasEspLiq(state.cells[cellIndex + 1].pres, state.cells[cellIndex + 1].temp);
-        double rholcJ = state.cells[cellIndex + 1].fluicol.MasEspFlu(state.cells[cellIndex + 1].pres, state.cells[cellIndex + 1].temp);
+        double alfJ = nextCell.alf;
+        double betJ = nextCell.bet;
+        double rholpJ = nextCell.flui.MasEspLiq(nextCell.pres, nextCell.temp);
+        double rholcJ = nextCell.fluicol.MasEspFlu(nextCell.pres, nextCell.temp);
         double rholmixJ = (1 - betJ) * rholpJ + betJ * rholcJ;
 
-        double hidroM = sin(state.cells[cellIndex].duto.teta) * (0.5 * state.cells[cellIndex].dx) * (rholmix * (1 - alfE) + alfE * state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp)) * kGravity / units::kPascalPerKgfPerCm2;
-        double hidroJ = sin(state.cells[cellIndex + 1].duto.teta) * (0.5 * state.cells[cellIndex + 1].dx) * (rholmixJ * (1 - alfJ) + alfJ * state.cells[cellIndex + 1].flui.MasEspGas(state.cells[cellIndex + 1].pres, state.cells[cellIndex + 1].temp)) * kGravity / units::kPascalPerKgfPerCm2;
+        double hidroM = sin(cell.duto.teta) * (0.5 * cell.dx) * (rholmix * (1 - alfE) + alfE * cell.flui.MasEspGas(cell.pres, cell.temp)) * kGravity / units::kPascalPerKgfPerCm2;
+        double hidroJ = sin(nextCell.duto.teta) * (0.5 * nextCell.dx) * (rholmixJ * (1 - alfJ) + alfJ * nextCell.flui.MasEspGas(nextCell.pres, nextCell.temp)) * kGravity / units::kPascalPerKgfPerCm2;
 
-        double masentrada = state.cells[cellIndex].MC;
-        double massgas = state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini;
+        double masentrada = cell.MC;
+        double massgas = cell.MC - cell.Mliqini;
         double tit;
         if (fabs(masentrada) < 1e-9 && fabs(massgas) < 1e-9) {
-            tit = alfE * state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp) / (state.cells[cellIndex].flui.MasEspGas(state.cells[cellIndex].pres, state.cells[cellIndex].temp) * alfE + rholmix * (1. - alfE));
+            tit = alfE * cell.flui.MasEspGas(cell.pres, cell.temp) / (cell.flui.MasEspGas(cell.pres, cell.temp) * alfE + rholmix * (1. - alfE));
         } else {
-            if ((massgas >= 0 && state.cells[cellIndex].Mliqini <= 0) || (massgas < 0 && state.cells[cellIndex].Mliqini == 0))
+            if ((massgas >= 0 && cell.Mliqini <= 0) || (massgas < 0 && cell.Mliqini == 0))
                 tit = 1.;
-            else if (massgas <= 0 && state.cells[cellIndex].Mliqini > 0)
+            else if (massgas <= 0 && cell.Mliqini > 0)
                 tit = 0.;
             else if (masentrada < 0)
                 tit = 1.;
@@ -186,46 +186,28 @@ void addMasterValveFlow(const SourceState &state, int cellIndex) {
                 tit = 1;
         }
 
-        double masChk;
+        const double ypres = (nextCell.pres + hidroJ) / (cell.pres - hidroM);
+        const double masChk = cell.acsr.chk.vazmassSachd(ypres, cell.pres - hidroM, tE, alfE,
+                                                      betE, tit, cell.flui, cell.fluicol);
+        double maxSup = cell.acsr.chk.vazmaxSachd(cell.pres - hidroM, tE, alfE,
+                                               betE, tit, cell.flui, cell.fluicol);
 
-        double ypres = (state.cells[cellIndex + 1].pres + hidroJ) / (state.cells[cellIndex].pres - hidroM);
-        int check = 1;
-        if (ypres < 1. || check == 1) {
-            masChk = state.cells[cellIndex].acsr.chk.vazmassSachd(ypres, state.cells[cellIndex].pres - hidroM, tE, alfE,
-                                                       betE, tit, state.cells[cellIndex].flui, state.cells[cellIndex].fluicol);
-            maxSup = state.cells[cellIndex].acsr.chk.vazmaxSachd(state.cells[cellIndex].pres - hidroM, tE, alfE,
-                                                      betE, tit, state.cells[cellIndex].flui, state.cells[cellIndex].fluicol);
-        } else {
-            tE = state.cells[cellIndex + 1].temp;
-            alfE = state.cells[cellIndex + 1].alf;
-            betE = state.cells[cellIndex + 1].bet;
-            ypres = 1. / ypres;
-            sense = -1;
-            masChk = state.cells[cellIndex].acsr.chk.vazmassSachd(ypres, state.cells[cellIndex + 1].pres + hidroJ, tE, alfE, betE, tit, state.cells[cellIndex + 1].flui,
-                                                       state.cells[cellIndex + 1].fluicol);
-            maxSup = state.cells[cellIndex].acsr.chk.vazmaxSachd(state.cells[cellIndex + 1].pres + hidroJ, tE, alfE, betE, tit, state.cells[cellIndex + 1].flui,
-                                                      state.cells[cellIndex + 1].fluicol);
-        }
-
-        if (fabs(ypres) > fabs(state.cells[cellIndex].acsr.chk.razpres))
+        if (fabs(ypres) > fabs(cell.acsr.chk.razpres))
             maxSup = masChk;
 
-        if (state.cells[cellIndex].acsr.chk.AreaGarg < (1e-3) * state.cells[cellIndex].duto.area || (state.cells[cellIndex].pres < state.cells[cellIndex + 1].pres && check == 1))
-            maxSup =
-                0.;
+        if (cell.acsr.chk.AreaGarg < (1e-3) * cell.duto.area || (cell.pres < nextCell.pres))
+            maxSup = 0.;
 
-        double masliq;
-        double masgas;
-        masliq = sense * maxSup * (1. - tit);
-        masgas = sense * maxSup * tit;
+        const double masliq = sense * maxSup * (1. - tit);
+        const double masgas = sense * maxSup * tit;
 
-        state.cells[cellIndex].fontemassLR += (-1 * masliq * (1 - betE) * rholp / rholmix);
-        state.cells[cellIndex].fontemassCR += (-1 * masliq * betE * rholc / rholmix);
-        state.cells[cellIndex].fontemassGR += (-1 * masgas);
+        cell.fontemassLR += (-1 * masliq * (1 - betE) * rholp / rholmix);
+        cell.fontemassCR += (-1 * masliq * betE * rholc / rholmix);
+        cell.fontemassGR += (-1 * masgas);
 
-        state.cells[cellIndex + 1].fontemassLR += (masliq * (1 - betE) * rholp / rholmix);
-        state.cells[cellIndex + 1].fontemassCR += (masliq * betE * rholc / rholmix);
-        state.cells[cellIndex + 1].fontemassGR += (masgas);
+        nextCell.fontemassLR += (masliq * (1 - betE) * rholp / rholmix);
+        nextCell.fontemassCR += (masliq * betE * rholc / rholmix);
+        nextCell.fontemassGR += (masgas);
     }
 }
 

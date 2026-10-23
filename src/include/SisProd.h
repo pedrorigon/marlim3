@@ -881,6 +881,12 @@ class SProd {
     /// production line, the gas line and the transient trends, sized to the longest simulated time and filled with
     /// kTrendSentinel.
     void allocateEventProfileAndTrendArrays();
+    /// Writes the requested initial profiles and initializes their next-time indices.
+    /// Profile output is suppressed in AP mode; index initialization is unconditional.
+    void initializeProfileOutputState();
+    /// Sets the event-log path and appends the events due at initialization,
+    /// recording a separate wall-clock timestamp for each event outside injection wells.
+    void writeInitialEventLog();
     /// Resets the column-annulus and network coupling flags, locates the
     /// column-annulus coupling range on the gas line, sets the steady and transient
     /// profile counters and their first output times, opens the event log with the
