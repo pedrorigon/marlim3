@@ -1,11 +1,9 @@
-/// How a production system is assembled from its input: the cells and their
-/// sources, the gas-lift line, the tables and the output bookkeeping, in the
-/// order montasistema runs them. These are SProd's own methods; SisProd.cpp
-/// holds its lifecycle.
 #include "SisProd.h"
+#include "SisProdSetupInternal.h"
 #include "OutputI18n.h"
 #include "SisProdConstants.h"
 #include "UnitConversions.h"
+#include <concepts>
 #include <math.h>
 #include <numbers>
 
@@ -13,11 +11,6 @@ using enum sisprod::AccessoryKind;
 
 namespace {
 
-/// Calls apply on each fluid the cell's source carries: that of a liquid,
-/// inflow-performance or multiple source, or, for a porous reservoir, its own
-/// and those of its cells. A gas injection's fluid is not visited. An apply that
-/// also takes a pressure and a temperature gets the cell's for the source's own
-/// fluid and each reservoir cell's for that cell's.
 template <typename Apply>
 void forEachSourceFluid(Cel &cell, Apply &&apply) {
     auto visit = [&](ProFlu &fluid, double pressure, double temperature) {
@@ -48,29 +41,6 @@ void forEachSourceFluid(Cel &cell, Apply &&apply) {
     }
 }
 
-}  // namespace
-
-/// Points every cell fluid, and every source fluid it carries, at the bubble-point
-/// tables read from the PVTSim file, with their size, and switches them to saturation
-/// model 4.
-void SProd::assignPvtSimBubbleTablesToCells() {
-    auto assignTables = [&](ProFlu &fluid) {
-        fluid.PBPVTSim = tables.pvtSimBubblePressures.data();
-        fluid.TBPVTSim = tables.pvtSimBubbleTemperatures.data();
-        fluid.npontosB = static_cast<int>(tables.pvtSimBubbleTemperatures.size());
-        fluid.corrSat = 4;
-        fluid.awaitingSaturationTable = false;
-    };
-    for (int i = 0; i <= ncel; i++) {
-        assignTables(celula[i].flui);
-        forEachSourceFluid(celula[i], assignTables);
-    }
-}
-
-namespace {
-
-/// Reads one row of a PVTSim table file: skips words up to `name`, then converts every number on the rest of that
-/// line. A missing row, or one with fewer than two numbers, ends the run naming the file.
 template <typename Convert>
 vector<double> readPvtSimRow(ifstream &file, string &word, const char *name, const string &fileName, Convert convert) {
     while (word != name && file >> word) {
@@ -93,7 +63,6 @@ vector<double> readPvtSimRow(ifstream &file, string &word, const char *name, con
     return values;
 }
 
-/// True when every value is above the one before it.
 bool strictlyIncreasing(const vector<double> &axis) {
     for (size_t k = 1; k < axis.size(); k++)
         if (!(axis[k] > axis[k - 1]))
@@ -101,23 +70,37 @@ bool strictlyIncreasing(const vector<double> &axis) {
     return true;
 }
 
-/// Writes a table to the file at `path`, replacing it, after a `# header` line naming the quantity when one is given.
-void writeTable(const string &path, const FullMtx<double> &table, const string &header = "") {
+void writeTable(const string &path, const FullMtx<double> &table, const string &header) {
     ofstream file(path.c_str(), ios_base::out);
     if (!header.empty())
         file << "# " << header << "\n";
     file << table;
 }
 
+void attachEmptySources(Cel &cell, Cel &inlet) {
+    cell.acsr.injm = InjMult(0, 0, 0, inlet.temp, inlet.flui, inlet.fluicol);
+    cell.acsr.injl = InjLiq(0, 0, 0, inlet.flui, inlet.fluicol);
+    cell.acsr.injg = InjGas(0, 0, inlet.flui, inlet.fluicol);
+}
+
 }  // namespace
 
-/// Reads the bubble-point curve from the PVTSim file, points the cell fluids at it
-/// and writes perfilBolha; with tabRSPB on, also reads the solution gas-oil ratio
-/// table and writes perfilRSLivia.
+void SProd::assignPvtSimBubbleTablesToCells() {
+    auto assignTables = [&](ProFlu &fluid) {
+        fluid.PBPVTSim = tables.pvtSimBubblePressures.data();
+        fluid.TBPVTSim = tables.pvtSimBubbleTemperatures.data();
+        fluid.npontosB = static_cast<int>(tables.pvtSimBubbleTemperatures.size());
+        fluid.corrSat = 4;
+        fluid.awaitingSaturationTable = false;
+    };
+    for (int i = 0; i <= ncel; i++) {
+        assignTables(celula[i].flui);
+        forEachSourceFluid(celula[i], assignTables);
+    }
+}
+
 void SProd::loadPvtSimSaturationTables() {
-    string impfile;
-    impfile = arq.pvtsimarq;
-    string dadosMR = impfile;
+    const string dadosMR = arq.pvtsimarq;
     ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
     string chave;
     char line[4000];
@@ -199,8 +182,6 @@ void SProd::loadPvtSimSaturationTables() {
                         rstemp = 1.;
                     else if (rstemp > 1.)
                         rstemp = 1.;
-                    else
-                        rstemp = Rsr;
                     tables.liviaSolutionGasRatioTable[i][j] = rstemp;
                 } else
                     tables.liviaSolutionGasRatioTable[i][j] = 0;
@@ -233,10 +214,6 @@ void SProd::loadPvtSimSaturationTables() {
     }
 }
 
-/// Builds the bubble-point curve and the solution gas-oil ratio table from the
-/// fluid correlations over the input table's pressure-temperature grid, writes
-/// perfilBolha and perfilRSLivia, and points the cell fluids at both, with the
-/// bubble curve's size.
 void SProd::generateSaturationTablesFromCorrelations() {
     int ndiv = arq.tabent.npont - 1;
     double pteste = arq.tabent.pmin;
@@ -294,11 +271,6 @@ void SProd::generateSaturationTablesFromCorrelations() {
 
 }
 
-/// Copies the run configuration into the members, checks that an injection well
-/// has the IPR its boundary condition needs, builds the Cp and JTL tables, hands
-/// the fluid constants to every fluid, generates the pipe and the production
-/// cells, and places every source -- including the extra gas sources at
-/// extraSourceLengths, whose cell indices it records in extraSourceCells.
 void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount) {
     indTramo = -1;
     transient.printCounter = 0;
@@ -410,24 +382,6 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
         arq.gerafPoro2DFonte(celula);
 }
 
-namespace {
-
-/// Gives `cell` a multiple, a liquid and a gas source, all with zero flow,
-/// carrying the fluids of `inlet` (and, for the multiple source, its
-/// temperature).
-void attachEmptySources(Cel &cell, Cel &inlet) {
-    cell.acsr.injm = InjMult(0, 0, 0, inlet.temp, inlet.flui, inlet.fluicol);
-    cell.acsr.injl = InjLiq(0, 0, 0, inlet.flui, inlet.fluicol);
-    cell.acsr.injg = InjGas(0, 0, inlet.flui, inlet.fluicol);
-}
-
-}  // namespace
-
-/// Gives the inlet the sources its boundary condition needs (and the second cell,
-/// under a blockage), then places the accessories -- pumps, volumetric pumps,
-/// pressure-drop requirements, heat sources, the master valve and the other
-/// valves -- and sets up the outlet pressure, the surface and injection chokes and
-/// the pigs.
 void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
     if (celula[0].acsr.tipo != kAccessoryNone && arq.ConContEntrada == 1) {
         // RN-302: The inlet has both a pressure boundary condition and a mass source. Report a warning.
@@ -510,16 +464,11 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
     }
 }
 
-/// Builds the gas-lift line when there is one: its cells, the second master valve,
-/// the injection choke, one gas-lift valve choke per valve with its position on
-/// both lines, and each gas cell's share of the annulus above the discharge cell.
-/// Without a gas line, only zeroes the index of the last gas cell.
 void SProd::buildGasLiftLine() {
     if (arq.lingas == 0)
         gasLift.cellCount = 0;
     else if (arq.lingas > 0) {
-        gasLift.cellCount = arq.ncelg;
-        gasLift.cellCount--;
+        gasLift.cellCount = arq.ncelg - 1;
         gasLift.interfaceCell = arq.celdescarga;
         gasLift.gasCells = vector<CelG>(gasLift.cellCount + 1);
         gasLift.cells = gasLift.gasCells.data();
@@ -568,11 +517,6 @@ void SProd::buildGasLiftLine() {
     }
 }
 
-/// Rejects or warns about source and boundary-condition combinations the run
-/// cannot honour (RN-300, RN-301, gas-lift discharge without an IPR, no outlet
-/// pressure, accessories in the last two cells), builds the gas-lift discharge
-/// hydrostatics and the event log, applies the initial state of a production
-/// well, and records the surface temperature and mass flow it starts from.
 void SProd::validateSetupAndApplyInitialState() {
     if (celula[0].acsr.tipo != kAccessoryGasInjection && celula[0].acsr.tipo != kAccessoryLiquidInjection && celula[0].acsr.tipo != kAccessoryInflowPerformance && celula[0].acsr.tipo != kAccessoryMultipleSource && celula[0].acsr.tipo != kAccessoryRadialPorous && celula[0].acsr.tipo != kAccessoryPorous2D) {
         if (arq.perm == 0 && arq.ConContEntrada == 0) {
@@ -600,9 +544,9 @@ void SProd::validateSetupAndApplyInitialState() {
     if (arq.saidaClassica == 1 && (arq.transiente == 1 || (*vg1dSP).chaveredeT == 1)) {
         cout << "------------------------------------------   Eventos no Tramo -------------------------------------------" << endl;
         int contaImp = 0;
-        for (int i = 0; i < arq.logevento.size(); i++)
-            if (arq.logevento[i].descricao != "Gravando Perfil Linha de Producao" && arq.logevento[i].descricao != "Gravando Perfil Linha de Gas") {
-                cout << contaImp << "  momento = " << arq.logevento[i].instante << " segundos " << " tipo de evento = " << arq.logevento[i].descricao << endl;
+        for (const auto &event : arq.logevento)
+            if (event.descricao != "Gravando Perfil Linha de Producao" && event.descricao != "Gravando Perfil Linha de Gas") {
+                cout << contaImp << "  momento = " << event.instante << " segundos " << " tipo de evento = " << event.descricao << endl;
                 contaImp++;
             }
     }
@@ -624,11 +568,10 @@ void SProd::validateSetupAndApplyInitialState() {
         transient.previousSeparatorPressure = gasLift.separatorPressure;
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
             transient.surfaceChokeOpen = 1;
-            transient.previousSurfaceChokeOpen = 1;
         } else {
             transient.surfaceChokeOpen = 0;
-            transient.previousSurfaceChokeOpen = 1;
         }
+        transient.previousSurfaceChokeOpen = 1;
     }
 
     networkCoupling.chokeOutletTemperature = celula[ncel].temp;
@@ -636,10 +579,6 @@ void SProd::validateSetupAndApplyInitialState() {
     tGSup = celula[ncel].calor.Textern1;
 }
 
-/// With the dynamic property table on, splits the pipe into table segments that
-/// end at every source cell. Then gives each cell its left and right inclination:
-/// its own, or, where its pipe is horizontal, the nearest inclined neighbour's on
-/// that side.
 void SProd::buildDynamicTablesAndInclinations() {
     if (arq.tabelaDinamica == 1) {
         tables.dynamicTables.push_back(tabelaDinamica());
@@ -673,16 +612,11 @@ void SProd::buildDynamicTablesAndInclinations() {
     }
 }
 
-/// Sets the latent-heat switch from the input and, when it is on and flashCompleto
-/// is 0, reads the latent-heat table from the PVTSim file into HLat and writes
-/// perfilLatente.
 void SProd::configureLatentHeat() {
     CalcLat = arq.latente;
     if (arq.latente > 0) {
         if (arq.flashCompleto == 0) {
-            string impfile;
-            impfile = arq.pvtsimarq;
-            string dadosMR = impfile;
+            const string dadosMR = arq.pvtsimarq;
             ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
             string chave;
             char *tenta;
@@ -757,10 +691,6 @@ void SProd::configureLatentHeat() {
     }
 }
 
-/// Sets the gas-density correction factors of every fluid in every cell -- the
-/// cell's, its source's and its reservoir cells' -- to 1 when the correction is
-/// off, or evaluates them at local pressure and temperature when it is on; then
-/// makes the first cell's fluid the fluid of its source.
 void SProd::applyDensityCorrectionsAndInletFluid() {
     for (int i = 0; i <= ncel; i++) {
         if (arq.corrDeng == 0) {
@@ -824,11 +754,6 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
     }
 }
 
-/// Lists the cells with two-dimensional heat diffusion, copies the master-valve
-/// opening and closing times, maps the transient profile positions to global
-/// thermal-node indices, and allocates the trend matrices of the production line,
-/// the gas line and the transient trends, sized to the longest simulated time and
-/// filled with kTrendSentinel.
 void SProd::allocateEventProfileAndTrendArrays() {
     for (int i = 0; i < ncel; i++) {
         if (celula[i].calor.difus2D == 1) {
@@ -842,10 +767,6 @@ void SProd::allocateEventProfileAndTrendArrays() {
         transient.masterValveOpenTimes[i] = arq.Tevento[i];
     for (int i = 0; i < arq.eventofecha; i++)
         transient.masterValveCloseTimes[i] = arq.Teventof[i];
-
-    int ntempGas = 0;
-    if (arq.lingas > 0)
-        ntempGas = gasLift.cellCount;
 
     if (arq.nperfistransp > 0) {
         trends.productionWallProfileCells = vector<int>(arq.nperfistransp);
@@ -867,7 +788,7 @@ void SProd::allocateEventProfileAndTrendArrays() {
     if (arq.ntendp > 0) {
         trends.productionTrendSet.allocate(
             arq.ntendp,
-            [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); }, // round(arq.tfinal / arq.trendp[i].dt);
+            [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); },
             [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; },
             trends.productionTrendMatrices, trends.productionTrendResetTimes, trends.productionTrendCounts,
             trends.productionTrendBufferedCounts);
@@ -893,11 +814,6 @@ void SProd::allocateEventProfileAndTrendArrays() {
     }
 }
 
-/// Resets the column-annulus and network coupling flags, locates the
-/// column-annulus coupling range on the gas line, sets the steady and transient
-/// profile counters and their first output times, opens the event log with the
-/// events known at start, finds the smallest cell length, and zeroes the
-/// moving-average and running-total state the transient loop starts from.
 void SProd::resetCouplingAndOutputState() {
     gasLift.annulusThermalCoupling = 0;
 
@@ -967,7 +883,7 @@ void SProd::resetCouplingAndOutputState() {
         while (transient.eventLogCount < nevent &&
                fabs(arq.logevento[transient.eventLogCount].instante - (*vg1dSP).lixo5) < dt) {
             time_t now = time(0);
-            tm *ltm = localtime(&now); // Taken from https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
+            tm *ltm = localtime(&now);
             ofstream escreveIni(tmpLog.c_str(), ios_base::app);
             escreveIni << "Evento Externo = ";
             escreveIni << arq.logevento[transient.eventLogCount].instante << " ; ";

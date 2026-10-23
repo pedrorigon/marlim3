@@ -1,4 +1,5 @@
 #include "SisProdSources.h"
+#include "SisProdSourcesInternal.h"
 
 #include "Leitura.h"
 #include "SisProdConstants.h"
@@ -17,10 +18,6 @@ using sisprod::kGravity;
 
 namespace {
 
-/// With the hydrate envelope on (models 2 and 3) and past the first 0.01 s, takes
-/// the water and gas that hydrate formation consumed in the cell during the step,
-/// hands them back through the two out-parameters, and lowers the cell's BSW for
-/// the free water that is gone.
 void consumeHydrateFormationMass(const SourceState &state, double &gas_consumido_Mg, double &agua_consumida_Mw, int cellIndex) {
     const bool model2 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 2 && (*state.globals).lixo5 > 0.01;
     const bool model3 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 3 && (*state.globals).lixo5 > 0.01;
@@ -45,40 +42,28 @@ void consumeHydrateFormationMass(const SourceState &state, double &gas_consumido
         double Vagua_new = Vagua - agua_consumida_Mw / rho_w;
         if (Vagua_new < 0.0) Vagua_new = 0.0;
 
-        double BSW_old = state.cells[cellIndex].flui.BSW;
         double den = Voil + Vagua_new;
         if (den > 1e-12) {
             state.cells[cellIndex].flui.BSW = Vagua_new / den;
-        } else {
-            state.cells[cellIndex].flui.BSW = BSW_old;
         }
 
-    } // hydrate change
+    }
 }
 
-/// In-situ water fraction of the fluid of fluidCell, at the pressure and
-/// temperature of cell.
 double inSituWaterFraction(const Cel &cell, Cel &fluidCell) {
-    double rs;
     double bo;
     double ba;
     if (cell.flui.RGO < 1e7) {
-        rs = fluidCell.flui.RS(cell.pres, cell.temp);
+        double rs = fluidCell.flui.RS(cell.pres, cell.temp);
         bo = fluidCell.flui.BOFunc(cell.pres, cell.temp, rs);
         ba = fluidCell.flui.BAFunc(cell.pres, cell.temp);
-        rs = rs * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
     } else {
         bo = 1;
-        rs = 0;
         ba = 0.;
     }
     return fluidCell.flui.BSW * ba / (bo + ba * fluidCell.flui.BSW - fluidCell.flui.BSW * bo);
 }
 
-/// Adds to the cell the mass its source delivers this step when the source is a
-/// choke source (type 9 -- on the first iteration of a parallel network, on its
-/// primary side, the flow recorded for that connection instead), a multiple
-/// source (10) or a radial or 2D porous medium (15, 16).
 void refreshChokeMultipleAndPorousSources(const SourceState &state, int cellIndex) {
     if (state.cells[cellIndex].acsr.tipo == kAccessoryLeak) {
         state.cells[cellIndex].acsr.fontechk.fluidoP = state.cells[cellIndex].flui;
@@ -129,7 +114,7 @@ void refreshChokeMultipleAndPorousSources(const SourceState &state, int cellInde
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryRadialPorous) {
         state.cells[cellIndex].acsr.radialPoro.pW.val[0] = state.cells[cellIndex].pres;
-        // in-situ BSW of the previous cell (in the march, cell i)
+        // Use the next array cell's fluid at this cell's pressure and temperature.
         double vfw = inSituWaterFraction(state.cells[cellIndex], state.cells[cellIndex + 1]);
         state.cells[cellIndex].acsr.radialPoro.sWPoc = vfw * (1. - state.cells[cellIndex].acsr.radialPoro.satAconat) + state.cells[cellIndex].acsr.radialPoro.satAconat;
         state.cells[cellIndex].acsr.radialPoro.Pint = state.cells[cellIndex].pres;
@@ -143,7 +128,7 @@ void refreshChokeMultipleAndPorousSources(const SourceState &state, int cellInde
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryPorous2D) {
         state.cells[cellIndex].acsr.poroso2D.dados.pW.val[0] = state.cells[cellIndex].pres;
-        // in-situ BSW of the previous cell (in the march, cell i)
+        // Use the next array cell's fluid at this cell's pressure and temperature.
         double vfw = inSituWaterFraction(state.cells[cellIndex], state.cells[cellIndex + 1]);
         state.cells[cellIndex].acsr.poroso2D.sWPoc = vfw * (1. - state.cells[cellIndex].acsr.poroso2D.dados.satAconat) + state.cells[cellIndex].acsr.poroso2D.dados.satAconat;
         state.cells[cellIndex].acsr.poroso2D.dados.transfer.sWPoc = state.cells[cellIndex].acsr.poroso2D.sWPoc;
@@ -168,7 +153,7 @@ void addMasterValveFlow(const SourceState &state, int cellIndex) {
         double betE = state.cells[cellIndex].bet;
         double sense = 1.;
 
-        double maxSup = 0.;
+        double maxSup;
 
         double rholp = state.cells[cellIndex].flui.MasEspLiq(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
         double rholc = state.cells[cellIndex].fluicol.MasEspFlu(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
@@ -296,7 +281,7 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
         double rlcA = state.cells[cellIndex].acsr.injl.fluidocol.standardDensity();
         state.cells[cellIndex].fontemassCR += rlcA * state.cells[cellIndex].acsr.injl.QLiq * state.cells[cellIndex].acsr.injl.bet / units::kSecondsPerDay;
         double massic = state.cells[cellIndex].acsr.injl.QLiq * (1. - state.cells[cellIndex].acsr.injl.bet) / units::kSecondsPerDay;
-        double Rhogs = state.cells[cellIndex].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions; // cel[cellIndex].acsr.injl.FluidoPro.MasEspGas(1, 15);
+        double Rhogs = state.cells[cellIndex].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions;
         double Rhols = (1000 * 141.5 / (131.5 + state.cells[cellIndex].acsr.injl.FluidoPro.API)) * (1 - state.cells[cellIndex].acsr.injl.FluidoPro.BSW) + 1000. * state.cells[cellIndex].acsr.injl.FluidoPro.Denag * state.cells[cellIndex].acsr.injl.FluidoPro.BSW;
         double multiplicador = (Rhols + state.cells[cellIndex].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.cells[cellIndex].acsr.injl.FluidoPro.BSW));
         massic *= multiplicador;

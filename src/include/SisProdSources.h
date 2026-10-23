@@ -36,7 +36,7 @@ struct SourceState {
     const int &parallelSecondaryBoundaryCondition;
     /// Leak-source cells whose flows are recorded for the first iteration of a
     /// parallel network, and those flows -- SProd::networkCoupling.parallelSourceCells,
-    /// fonteMpRedeParalelaIni, fonteMcRedeParalelaIni and fonteMgRedeParalelaIni.
+    /// parallelSourceProductionLiquid, parallelSourceComplementaryLiquid and parallelSourceGas.
     const std::vector<int> &parallelSourceCells;
     const std::vector<double> &parallelSourceProductionLiquid;
     const std::vector<double> &parallelSourceComplementaryLiquid;
@@ -45,13 +45,12 @@ struct SourceState {
 
 /// Calculates the flow through Master1 while it operates as a choke, and adds
 /// it to the source terms of cell cellIndex (leaving) and of the next cell
-/// (arriving). Called by SProd::FonteValv.
+/// (arriving).
 void addMasterValveFlow(const SourceState &state, int cellIndex);
 
 /// Renews the source terms of cell cellIndex: what its accessory delivers in
 /// the step (gas or liquid injection, IPR, master valve, volumetric pump, leak,
 /// multiple source, porous medium), less what hydrate formation consumed.
-/// Called by SProd::renovaFonte.
 void renewSourceTerms(const SourceState &state, int cellIndex);
 
 }  // namespace sisprod::sources

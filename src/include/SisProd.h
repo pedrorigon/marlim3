@@ -833,8 +833,8 @@ class SProd {
     /// saturation model 4.
     void assignPvtSimBubbleTablesToCells();
     /// Reads the bubble-point curve from the PVTSim file, points the cell fluids at
-    /// it and writes perfilBolha; with tabRSPB on, also reads the solution gas-oil
-    /// ratio table and writes perfilRSLivia.
+    /// it and writes perfilBolha; with tabRSPB on, computes the reduced solution
+    /// gas-oil ratio Rs/Rsb on the file's grid and writes perfilRSLivia.
     void loadPvtSimSaturationTables();
     /// Builds the bubble-point curve and the solution gas-oil ratio table from the
     /// fluid correlations over the input table's pressure-temperature grid, writes
@@ -855,7 +855,7 @@ class SProd {
     /// Builds the gas-lift line when there is one: its cells, the second master
     /// valve, the injection choke, one gas-lift valve choke per valve with its
     /// position on both lines, and each gas cell's share of the annulus above the
-    /// discharge cell.
+    /// discharge cell. Without a gas line, sets the last gas-cell index to zero.
     void buildGasLiftLine();
     /// Rejects or warns about source and boundary-condition combinations the run
     /// cannot honour (RN-300, RN-301, gas-lift discharge without an IPR, no outlet
@@ -864,16 +864,17 @@ class SProd {
     /// well, and records the surface temperature and mass flow it starts from.
     void validateSetupAndApplyInitialState();
     /// With the dynamic property table on, splits the pipe into table segments that
-    /// end at every source cell.
+    /// end at every source cell, including leaks. Propagates neighbouring
+    /// inclinations across horizontal cells in left and right passes.
     void buildDynamicTablesAndInclinations();
     /// Sets the latent-heat switch from the input and, when it is on and
     /// flashCompleto is 0, reads the latent-heat table from the PVTSim file into
-    /// HLat and writes perfilLatente.
+    /// tables.latentHeatTable and writes perfilLatente.
     void configureLatentHeat();
-    /// Sets the gas-density correction factors of every fluid in every cell -- the
-    /// cell's, its source's and its reservoir cells' -- to 1 when the correction is
-    /// off, or evaluates them at local pressure and temperature when it is on; then
-    /// makes the first cell's fluid the fluid of its source.
+    /// Resets or evaluates gas-density corrections for cell fluids and the liquid,
+    /// IPR, multiple-source and porous-reservoir fluids. Gas-injection fluids are
+    /// excluded from the source traversal. Updates critical properties only for
+    /// cell fluids, then copies the inlet source fluid into the first cell.
     void applyDensityCorrectionsAndInletFluid();
     /// Lists the cells with two-dimensional heat diffusion, copies the master-valve opening and closing times, maps
     /// the transient profile positions to global thermal-node indices, and allocates the trend matrices of the
@@ -886,7 +887,9 @@ class SProd {
     /// events known at start, finds the smallest cell length, and zeroes the
     /// moving-average and running-total state the transient loop starts from.
     void resetCouplingAndOutputState();
-    /// Builds the production section after input parsing.
+    /// Builds cells, accessories and the gas line, applies the initial state,
+    /// configures tables and fluid corrections, then initializes output and
+    /// coupling state. Each phase consumes the state established by its predecessors.
     void montasistema(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount);
 
     /// Initializes the gas service line for gas-lift unloading.
