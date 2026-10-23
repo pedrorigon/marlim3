@@ -73,12 +73,10 @@ struct BlackOilSource {
     double dgG;
     double yco2O;
     double yco2G;
-    double rgo;
     double viscL;
     double viscH;
     double rholST;
     double rhogST;
-    double razdgd;
     double razdgl;
     double stockTankQuality;
 };
@@ -114,7 +112,6 @@ struct PhaseFace {
     double denag;
     double viscL;
     double viscH;
-    double solutionGasRatio;
     double vazMasLiq;
     double vazMasGas;
     double titV;
@@ -164,11 +161,6 @@ struct PhaseSource {
     double denag;
     double viscL;
     double viscH;
-    double rhoW;
-    double rhoO;
-    double waterCut;
-    double waterVolumeFactor;
-    double oilVolumeFactor;
     double tit;
     double pesoMol;
 };
@@ -251,7 +243,7 @@ void phaseSourceStandardRatesByAccessory(const FluidTrackingState &state, PhaseS
 /// Advances mixture molar fractions through limCorrige ordered corrections,
 /// shifts negative trial fractions, normalizes, and refreshes enabled flash properties.
 /// The molecular-weight update uses the original cell composition.
-void solveCellPhaseMolarFractions(const FluidTrackingState &state, const PhaseFace &left, const PhaseFace &right, PhaseCell &cell, PhaseTransported &transported, const PhaseSource &source, int limCorrige, ProFlu &fluF, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, double dt, ProFlu *fluC, int ncomp);
+void solveCellPhaseMolarFractions(const FluidTrackingState &state, const PhaseFace &left, const PhaseFace &right, PhaseCell &cell, const PhaseSource &source, int limCorrige, ProFlu &fluF, int i, Vcr<double> &fracMol0, Vcr<double> &fracMol1, double dt, ProFlu *fluC, int ncomp);
 
 /// Refreshes accessory flash state before selecting the working source fluid.
 /// Both leak fluids are refreshed in pressure-side order; porous flashes use reservoir
@@ -275,6 +267,38 @@ void upwindLeftFacePhaseLiquidProperties(const FluidTrackingState &state, PhaseF
 /// Prepares phase and mixture donors, updates source flash state, advances trial
 /// mixture composition and mole inventory, then transports the liquid volume properties.
 void transportCellPhaseMolarFractions(const FluidTrackingState &state, int i, Vcr<double> &BSW, Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH, Vcr<double> &fracMol0, Vcr<double> &fracMol1, Vcr<double> &fracMol0O, Vcr<double> &fracMol1O, Vcr<double> &fracMol0G, Vcr<double> &fracMol1G, double temperatureHigh, double temperatureLow, double dt, ProFlu *fluC, int ncomp);
+
+/// Converts porous/IPR oil and water sources with the <= tiny and positive-oil-fraction rules.
+/// The source water cut is a live reference to its model-specific storage.
+void convertBlackOilPorousRates(const FluidTrackingState &state, BlackOilSource &source, const ProFlu &fluF, const double &sourceWaterCut, double solutionGasRatioSource, double temperatureHigh, double temperatureLow);
+
+/// Converts multiple-source and liquid-injection rates with the strict water-cut threshold.
+void convertBlackOilInjectionRates(const FluidTrackingState &state, BlackOilSource &source, const ProFlu &fluF, double solutionGasRatioSource, double temperatureHigh, double temperatureLow);
+
+/// Evaluates black-oil liquid face properties in RS, volume-factor, and viscosity order.
+/// The caller selects the donor and complementary fraction independently.
+void prepareBlackOilLiquidFace(BlackOilFace &face, const ProFlu &fluid, const double &pressure, const double &temperature, double temperatureHigh, double temperatureLow);
+
+/// Evaluates compositional liquid-face volume factors, water cut and viscosities.
+/// RS is working storage used only by the formation-volume-factor evaluation.
+void preparePhaseLiquidFace(PhaseFace &face, const ProFlu &fluid, const double &pressure, const double &temperature, double temperatureHigh, double temperatureLow);
+
+/// Converts configured liquid-injection and multiple-source oil/water rates.
+/// The configured fluid is used even when the working source donor is the cell.
+void convertPhaseInjectionRates(const FluidTrackingState &state, PhaseSource &source, const ProFlu &fluid, double solutionGasRatioSource, double temperatureHigh, double temperatureLow);
+
+/// Converts configured IPR and porous oil/water rates with their positive-oil-fraction rule.
+/// The water cut remains a live reference to the configured source or transfer storage.
+void convertPhasePorousRates(const FluidTrackingState &state, PhaseSource &source, const ProFlu &fluid, const double &sourceWaterCut, double solutionGasRatioSource, double temperatureHigh, double temperatureLow);
+
+/// Tests whether more than one production fluid or a network enables liquid-property transport.
+bool hasMultipleFluidsOrNetwork(const FluidTrackingState &state);
+
+/// Tests whether a production fluid or network enables the compositional source/copy path.
+bool hasProductionFluidOrNetwork(const FluidTrackingState &state);
+
+/// Tests the API/viscosity transport gate; a network enables it independently of the flash model.
+bool tracksBlackOilOilProperties(const FluidTrackingState &state);
 
 }  // namespace
 }  // namespace sisprod::fluidtracking
