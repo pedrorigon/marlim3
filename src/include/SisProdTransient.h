@@ -1,14 +1,7 @@
 #ifndef SISPRODTRANSIENT_H_
 #define SISPRODTRANSIENT_H_
 
-// Declared, not included. TransientStepState holds only references, and
-// pointers into arrays SProd holds by value, so the definitions are needed where
-// the state is built and not here, and this header compiles on its own with nothing but -Isrc/include.
-// Including Acidentes2.h for `choke` would pull in Log.h and through it
-// rapidjson, and the header would stop being self-contained.
-//
-// The template forward declarations are the same three SisProdGasLift.h makes,
-// for the same reason.
+// Non-owning state views use forward-declared model types.
 class Cel;
 class CelG;
 class Ler;
@@ -18,7 +11,6 @@ class ProFlu;
 class solverP3D;
 struct varGlob1D;
 class SProd;
-namespace sisprod { class SolveContext; }
 template <class T> class Vcr;
 template <class T> class FullMtx;
 template <class T> class BandMtx;
@@ -29,39 +21,28 @@ template <class T> class BandMtx;
 #include <string>
 #include <vector>
 
-namespace sisprod::transient {
+namespace sisprod {
 
-/// The time loop is driven by Num4Main.cpp, not by this module: it computes one
-/// step and the step size, and the caller decides when to call again.
+class SolveContext;
 
-/// The one thing the transient step needs from outside itself: the gas-line sub-step,
-/// which lives in the gas-lift module and takes the solve context's GasLiftState.
+namespace transient {
+
+/// Gas-line sub-step operations resolved through the solve context.
 struct TransientStepUpdaters {
     SolveContext &context;
 
+    /// Advances the gas-line sub-step using the current gas-lift state.
     void advanceGasSubStep() const;
 };
 
-/// What one transient step reads and writes.
-///
-/// Scalars are held by reference, not by value: a copy would read every one at
-/// construction, before the branch that decides whether it is read at all.
-///
-/// const marks what the step does not write, and it marks scalars only. A class
-/// or pointer field can be changed without an assignment to the field itself:
-/// `input.valTempChokeJus = ...` writes through it, and a non-const method call
-/// on `surfaceChoke` changes it. The fields SolveTrans writes, directly or by
-/// reference through Ler::atualiza (gasLift.separatorPressure, presE, tempE, titE,
-/// betaE), are not const either.
-///
-/// Pointer members of SProd are held by reference too. masterRatio0,
-/// masterRatio1 and masterCriticalRatio stay pointers: they point into arrays
-/// SProd holds by value, which do not move.
+/// Live non-owning bindings used by transient cell and time-step operations.
+/// Scalar and pointer references observe updates made by collaborating modules;
+/// array pointers address storage owned by the production system.
 struct TransientStepState {
     /// SProd::transient.meanMaximumTemperatureRate -- written.
-    double &meanMaximumTimeStep;
+    double &meanMaximumTemperatureRate;
     /// SProd::transient.meanMaximumPressureRate -- written.
-    double &meanMaximumPressureChange;
+    double &meanMaximumPressureRate;
     /// SProd::transient.masterValveState -- written.
     int &masterState;
     /// SProd::transient.surfaceChokeOpen -- written.
@@ -78,7 +59,7 @@ struct TransientStepState {
     int &interfaceCell;
     /// SProd::transient.masterValveCounter -- written.
     int &masterCounter;
-    /// SProd::tables.gasSpecificHeatTable -- written.
+    /// SProd::tables.gasSpecificHeatTable -- bound storage, not accessed by this implementation.
     double **const &gasSpecificHeatTable;
     /// SProd::dt -- written.
     double &timeStep;
@@ -140,25 +121,25 @@ struct TransientStepState {
     int &previousMovingPigCount;
     /// SProd::transient.masterValveOpenTimes -- read only.
     std::vector<double> &masterOpenSchedule;
-    /// SProd::arq -- read only.
+    /// SProd::arq -- mutable access.
     Ler &input;
     /// SProd::gasLift.previousInterfaceCell -- read only.
     const int &initialInterfaceCell;
-    /// SProd::celula -- read only.
+    /// SProd::celula -- fixed pointer binding with mutable cell access.
     Cel *const &cells;
-    /// SProd::gasLift.cells -- read only.
+    /// SProd::gasLift.cells -- fixed pointer binding with mutable cell access.
     CelG *const &gasCells;
-    /// SProd::chokeSup -- read only.
+    /// SProd::chokeSup -- mutable access.
     choke &surfaceChoke;
-    /// SProd::transient.cflTimeSteps -- read only.
+    /// SProd::transient.cflTimeSteps -- mutable access.
     std::vector<double> &cflTimeSteps;
     /// SProd::gasLift.previousInterfaceTimeStep -- read only.
     const double &initialInterfaceTimeStep;
-    /// SProd::transient.acceptedTimeSteps -- read only.
+    /// SProd::transient.acceptedTimeSteps -- mutable access.
     std::vector<double> &simulationTimeSteps;
-    /// SProd::transient.auxiliaryCflTimeStep -- read only.
+    /// SProd::transient.auxiliaryCflTimeStep -- mutable access.
     double &auxiliaryCflTimeStep;
-    /// SProd::transient.auxiliaryAcceptedTimeStep -- read only.
+    /// SProd::transient.auxiliaryAcceptedTimeStep -- mutable access.
     double &finalAuxiliaryTimeStep;
     /// SProd::transient.masterValveCloseTimes -- read only.
     std::vector<double> &masterCloseSchedule;
@@ -168,11 +149,11 @@ struct TransientStepState {
     FullMtx<double> &gasFreeTerms;
     /// SProd::indTramo -- read only.
     const int &branchIndex;
-    /// SProd::transient.movingMeanFlux -- read only.
+    /// SProd::transient.movingMeanFlux -- mutable access.
     double &movingMeanFlux;
-    /// SProd::transient.stepCount -- read only.
+    /// SProd::transient.stepCount -- mutable access.
     int &stepIndex;
-    /// SProd::transient.systemMatrix -- read only.
+    /// SProd::transient.systemMatrix -- mutable access.
     BandMtx<double> &productionMatrix;
     /// SProd::transient.smallestCellLength -- read only.
     const double &smallestCellLength;
@@ -188,19 +169,19 @@ struct TransientStepState {
     int masterCloseCount;
     /// SProd::noextremo -- read only.
     const int &endNode;
-    /// SProd::gasLift.separatorPressure -- read only.
+    /// SProd::gasLift.separatorPressure -- mutable access.
     double &gasSurfacePressure;
-    /// SProd::presE -- read only.
+    /// SProd::presE -- mutable access.
     double &inletPressure;
-    /// SProd::transient.movingMeanPressure -- read only.
+    /// SProd::transient.movingMeanPressure -- mutable access.
     double &movingMeanPressure;
     /// SProd::transient.movingMeanStartTime -- read only.
-    const double &movingMeanTemperature;
-    /// SProd::transient.maximumTemperatureRates -- read only.
-    std::vector<double> &maximumTimeStepRates;
-    /// SProd::transient.maximumPressureRates -- read only.
+    const double &movingMeanStartTime;
+    /// SProd::transient.maximumTemperatureRates -- mutable access.
+    std::vector<double> &maximumTemperatureRates;
+    /// SProd::transient.maximumPressureRates -- mutable access.
     std::vector<double> &maximumPressureRates;
-    /// SProd::tempE -- read only.
+    /// SProd::tempE -- mutable access.
     double &inletTemperature;
     /// SProd::networkCoupling.reverseQuality -- read only.
     const double &reverseQuality;
@@ -210,170 +191,142 @@ struct TransientStepState {
     std::vector<int> &pigReceiverCells;
     /// The number of pigs, each with its receiver cell: SProd::transient.pigReceiverCells.size().
     int scheduledPigCount;
-    /// SProd::vg1dSP -- read only.
+    /// SProd::vg1dSP -- fixed pointer binding with mutable global-state access.
     varGlob1D *const &globals;
     /// Everything the step needs that is not its own.
     TransientStepUpdaters updaters;
 };
 
-// ------------------------------------------------------------ cell update ----
-
-/// Updates every cell after a transient solve, in index order, which is
-/// load-bearing: the first, interior and last cells each have their own
-/// update, called from the one loop.
+/// Updates cells in increasing index order, using the first, interior, and outlet rules.
 void updateCells(const TransientStepState &state, int expli = 0);
+/// Updates an interior cell and its adjacent faces; i is an interior index.
 void updateInteriorCell(const TransientStepState &state, int i, int expli);
+/// Updates inlet state, snapshots, and flow properties; i is the inlet index zero.
 void updateFirstCell(const TransientStepState &state, int i, int expli);
+/// Updates outlet state, pressure correction, and flows; i equals lastCell.
 void updateLastCell(const TransientStepState &state, int i, int expli);
 
-/// Updates the flow rates. Writes a strict subset of what updateCells writes.
+/// Refreshes phase flow rates and adjacent faces without taking full cell snapshots.
 void updateFlowRates(const TransientStepState &state);
 
-// ---------------------------------------------------------- buffer update ----
-
-/// Fills the buffered state from the solver's free-term vector, and from the
-/// cells' own current values.
-///
-/// Two functions, not one: Num4Main.cpp picks between them in alternative
-/// branches of one if, and they differ by more than their source:
-/// updateBufferFromSolution propagates state to the last cell's right face and
-/// does not touch the mass sources, updateBufferFromCells does exactly the
-/// opposite. Nothing in the code says whether that asymmetry is intended.
+/// Copies solver values into the inlet, first interior, and outlet buffers,
+/// including the outlet right face; mass-source buffers are unchanged.
 void updateBufferFromSolution(const TransientStepState &state);
+/// Copies cell values into the inlet, first interior, and outlet buffers,
+/// then stores outlet mass sources; the outlet right-face buffers are unchanged.
 void updateBufferFromCells(const TransientStepState &state);
 
-// ------------------------------------------------- outlet boundary condition ----
-
-/// The surface choke is open: throat area above a thousandth of the pipe's.
-/// And shut: throat area BELOW that.
-///
-/// NOT each other's negation, and nothing should write them as if they were.
-/// `!(a > b)` is `a <= b`; the second of these is `a < b`. They differ at exact
-/// equality.
+/// Tests whether the throat area is strictly above one thousandth of the pipe area.
 [[nodiscard]] bool surfaceChokeIsOpen(const TransientStepState &state);
+/// Tests whether the throat area is strictly below one thousandth of the pipe area;
+/// equality satisfies neither this predicate nor surfaceChokeIsOpen.
 [[nodiscard]] bool surfaceChokeIsShut(const TransientStepState &state);
 
-/// Applies the outlet boundary condition, against the real state and against
-/// the buffered state.
-///
-/// The two differ by more than their source: the pressure form computes the
-/// Joule-Thomson temperature downstream of the choke and the buffer form does
-/// not; the buffer form propagates the mass sources and the pressure form does
-/// not.
-///
-/// SProdVap has its own calcCCpres and calcCCBuffer, taking two arguments
-/// instead of three: parallel implementations in another class, not
-/// overloads.
+/// Applies the current-state outlet condition and choke-temperature correction.
+/// titRev and alfRev are accepted but unused; betRev supplies the reverse liquid fraction.
 void applyOutletPressureCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
+/// Applies the buffered outlet condition with the supplied reverse-flow mixture.
 void applyOutletBufferCondition(const TransientStepState &state, double titRev, double alfRev, double betRev);
 
-// ------------------------------------------------------------- time step ----
-
-/// Decides the time step, explicitly or implicitly.
-///
-/// A last-bit change here does not make a small difference in the answer: it
-/// makes a different temporal discretisation, and from that step onward the run
-/// is a different simulation.
+/// Chooses and propagates the explicit or implicit time step after initial output
+/// and porous-flow restrictions; its exact value determines the temporal mesh.
 void computeTimeStep(const TransientStepState &state, int vexpli = 0);
+/// Limits the time step by the cell wave speeds and propagates cell increments.
 void computeExplicitTimeStep(const TransientStepState &state);
+/// Applies ordered choke, transport, event, and valve controls to the time step.
 void computeImplicitTimeStep(const TransientStepState &state);
 
-// ------------------------------------------------------ time-step policy ----
-
-/// The restrictions applied to the time step after computeTimeStep proposes it.
-/// valveOpeningLow and valveOpeningHigh are the two ends of the valve ramp.
-///
-/// The step this module runs applies the first three as policies of a registry
-/// (TimeStepPolicies in SisProdTransient.cpp), where a new restriction is added
-/// by listing it. They are declared here because SProd's methods for the same
-/// jobs delegate to them, and Num4Main.cpp calls those methods when it
-/// sequences a network run itself.
+/// Updates the accepted/CFL histories and their fixed-denominator restriction rule.
 void dampMaximumTimeStep(const TransientStepState &state);
+/// Assesses block pressure and temperature rates, their histories, and model selection.
 void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli);
+/// Restricts the inlet-cell increment during valve closing and records artificial gas additions.
 void restrictTimeStepByValve(const TransientStepState &state);
+/// Captures master and accessory valve area ratios before the boundary update.
 void valveOpeningLow(const TransientStepState &state);
+/// Captures master and accessory valve area ratios after the boundary update.
 void valveOpeningHigh(const TransientStepState &state);
 
-// ---------------------------------------------------- fraction evolution ----
-
-/// Advances the phase fractions in time, and the three ways of restarting that
-/// evolution. restartFractionEvolutionInitial and restartFractionEvolution are
-/// two functions because Num4Main.cpp selects between them.
+/// Advances void, complementary-liquid, and pig fractions in separate parallel sweeps.
+/// betrev and ciclo are accepted but unused; alfrev supplies the reverse void fraction.
 void evolveFractions(const TransientStepState &state, double alfrev = 1., double betrev = 0., int ciclo = 0);
+/// Selects the smallest current cell increment for restarting fraction evolution.
 void restartFractionEvolutionInitial(const TransientStepState &state);
+/// Restores void and pig void fractions where cell pressure exceeds -10.
 void restartFractionEvolutionSub(const TransientStepState &state);
+/// Propagates the reduced increment, advances the restored gas sub-step,
+/// and restores void, complementary-liquid, and pig fractions in order.
 void restartFractionEvolution(const TransientStepState &state);
 
-// ------------------------------------------------------ step bookkeeping ----
-
-/// Pig position, the pressure-volume coupling, the fluid mini-table and the
-/// inlet condition.
-///
-/// refreshFluidMiniTable invokes generateFluidMiniTables, below.
+/// Snapshots pig movement state, transfers pigs between cells, and prepares face liquid fractions.
 void updatePig(const TransientStepState &state);
+/// Builds cell pressure-volume equations in parallel and solves the assembled band system.
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli = 0, int ciclo = 0);
+/// Generates fluid mini-tables and initializes the interior-cell mole inventories.
 void refreshFluidMiniTable(const TransientStepState &state);
+/// Updates inlet quality and complementary fraction for the active pressure boundary model.
 void refreshInletCondition(const TransientStepState &state);
 
-/// The per-cell loops run every time step: recentring the fluid mini-tables,
-/// and storing the mass sources at the previous time level.
+/// Recentres cell and accessory mini-tables and evaluates enabled tables in parallel.
 void generateFluidMiniTables(const TransientStepState &state);
+/// Evaluates four ordered composition corners and supplies properties for nearly absent phases.
 void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui);
+/// Copies the three outlet-face mass sources to their previous-time-level fields in every cell.
 void storePreviousSources(const TransientStepState &state);
 
-/// Evaluates wax deposition in every cell and applies its effect on the pipe
-/// wall and its heat transfer.
+/// Evaluates cell wax deposition and updates outlet wall and heat-transfer properties.
 void evaluateWaxDeposition(const TransientStepState &state);
 
-/// Stores the void and complementary-liquid fractions of the time level just finished,
-/// then moves the pigs and receives those that reach their receiver cell.
+/// Stores previous fractions and pig state, computes pig velocities, and receives pigs.
 void storePreviousFractionsAndMovePigs(const TransientStepState &state);
 
-/// Caches the densities and viscosities of every cell and face, so the step does
-/// not recompute them.
+/// Caches cell and upwind-face densities and cell viscosities before serial face propagation.
 void cacheCellAndFaceDensities(const TransientStepState &state);
 
-// =============================================================== the solve ====
-
-/// What SolveTrans needs from outside itself: module functions it reaches with the solve
-/// context's views, and solveHydrateEnvelopes, which constructs the hydrate solvers from the
-/// whole SProd, which no state struct can supply, and so goes through the context's system.
-///
-/// Default arguments are carried only where a call relies on them:
-/// updateThermal is called with none.
+/// Operations delegated to collaborating modules through the live solve context.
 struct TransientSolveUpdaters {
     SolveContext &context;
 
+    /// Solves hydrate envelopes using the production system.
     void solveHydrateEnvelopes() const;
+    /// Finds the injection pressure used by unloading control.
     [[nodiscard]] double searchUnloadingInjectionPressure() const;
+    /// Writes a production trend header.
     void writeProductionTrendHeader(int i, int nrede) const;
+    /// Flushes production trend rows.
     void writeProductionTrendRows(int i, int nrede) const;
+    /// Writes a gas-line trend header.
     void writeGasTrendHeader(int i, int nrede) const;
+    /// Flushes gas-line trend rows.
     void writeGasTrendRows(int i, int nrede) const;
+    /// Writes a production-wall trend header.
     void writeProductionCrossSectionTrendHeader(int i) const;
+    /// Flushes production-wall trend rows.
     void writeProductionCrossSectionTrendRows(int i) const;
+    /// Writes a gas-wall trend header.
     void writeGasCrossSectionTrendHeader(int i) const;
+    /// Flushes gas-wall trend rows.
     void writeGasCrossSectionTrendRows(int i) const;
+    /// Updates tubing coupling through the gas-lift module.
     void connectTubing() const;
+    /// Advances transient thermal energy for the specified coupling cycle.
     void marchTransientEnergy(int ciclo, int ciclomax) const;
+    /// Transports phase molar fractions using the reverse-flow fluid.
     void updateMolarFractions(const ProFlu *fluiRev) const;
+    /// Transports tracked black-oil properties using the reverse-flow fluid.
     void updateBlackOilProperties(const ProFlu *fluiRev) const;
+    /// Updates distributed mass transfer through the thermal module.
     void updateTemperatures() const;
+    /// Updates flow-partition terms through the thermal module.
     void updateThermal(int aflu = 0) const;
+    /// Advances the gas-line solution.
     void solveGasLine() const;
 };
 
-/// The state SolveTrans reads.
-///
-/// It composes the step state rather than restating it, as
-/// SteadyStateSearchState does: the fields below are the members SolveTrans
-/// touches that none of the step's routines do.
-///
-/// None of them is const: writes through a field and by reference do not look
-/// like assignments to it. Pointers are held by reference (`T *&`), so the
-/// state stays exact even if the solve reseats one.
+/// Live step bindings and the additional histories, output buffers, and collaborators
+/// required to orchestrate one transient solve. References retain their owner storage.
 struct TransientSolveState {
-    /// Everything the step reads. SolveTrans hands this to every step routine.
+    /// State shared with cell, fraction, and time-step operations.
     TransientStepState step;
 
     /// SProd::temperatura -- written or read by the solve; not promised const.
@@ -465,7 +418,7 @@ struct TransientSolveState {
     /// SProd::noinicial -- written or read by the solve; not promised const.
     int &startNode;
     /// SProd::transient.timeSamples -- written or read by the solve; not promised const.
-    std::vector<double> &temperatureHistory;
+    std::vector<double> &timeStepHistory;
     /// SProd::transient.accumulatedFlux -- written or read by the solve; not promised const.
     double &totalFlux;
     /// SProd::transient.accumulatedPressure -- written or read by the solve; not promised const.
@@ -485,12 +438,13 @@ struct TransientSolveState {
     TransientSolveUpdaters updaters;
 };
 
-/// One transient step, in six parts that run in this order: hydrates,
-/// mini-table, the t = 0 trend, computeTimeStep, the coupling loop (fraction
-/// evolution, pig, pressure-volume coupling), then the output phases.
+/// Advances and reports one transient step, preserving the ordered coupling,
+/// property, history, and output phases. The caller drives the time loop;
+/// network time advancement is controlled by the network caller.
 void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev,
                         int nrede, const ProFlu *fluiRev);
 
-}  // namespace sisprod::transient
+}  // namespace transient
+}  // namespace sisprod
 
 #endif  // SISPRODTRANSIENT_H_

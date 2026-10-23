@@ -299,8 +299,8 @@ sisprod::steady::SteadyStateSearchState searchStateOf(SProd &system, SolveContex
 /// The state one transient step reads.
 sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveContext &context) {
     return sisprod::transient::TransientStepState{
-        .meanMaximumTimeStep = system.transient.meanMaximumTemperatureRate,
-        .meanMaximumPressureChange = system.transient.meanMaximumPressureRate,
+        .meanMaximumTemperatureRate = system.transient.meanMaximumTemperatureRate,
+        .meanMaximumPressureRate = system.transient.meanMaximumPressureRate,
         .masterState = system.transient.masterValveState,
         .surfaceChokeOpen = system.transient.surfaceChokeOpen,
         .initiallyOpen = system.transient.previousSurfaceChokeOpen,
@@ -367,8 +367,8 @@ sisprod::transient::TransientStepState transientStateOf(SProd &system, SolveCont
         .gasSurfacePressure = system.gasLift.separatorPressure,
         .inletPressure = system.presE,
         .movingMeanPressure = system.transient.movingMeanPressure,
-        .movingMeanTemperature = system.transient.movingMeanStartTime,
-        .maximumTimeStepRates = system.transient.maximumTemperatureRates,
+        .movingMeanStartTime = system.transient.movingMeanStartTime,
+        .maximumTemperatureRates = system.transient.maximumTemperatureRates,
         .maximumPressureRates = system.transient.maximumPressureRates,
         .inletTemperature = system.tempE,
         .reverseQuality = system.networkCoupling.reverseQuality,
@@ -448,7 +448,7 @@ sisprod::transient::TransientSolveState transientSolveStateOf(SProd &system, Sol
         .productionTrendMatrix = system.trends.productionTrendMatrices,
         .productionTrendResetTimers = system.trends.productionTrendResetTimes,
         .startNode = system.noinicial,
-        .temperatureHistory = system.transient.timeSamples,
+        .timeStepHistory = system.transient.timeSamples,
         .totalFlux = system.transient.accumulatedFlux,
         .totalPressure = system.transient.accumulatedPressure,
         .totalVoidFraction = system.transient.accumulatedVoidFraction,
