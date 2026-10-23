@@ -16,6 +16,29 @@ namespace sisprod::steady {
 
 namespace {
 
+/// Estimates inlet mixture velocity from the current cell properties and a standard source flow rate.
+double estimateInletMixtureVelocity(const SteadyStateSearchState &state, double standardFlowRateGuess) {
+    double complementaryFraction = state.march.cells[1].bet;
+    double voidFraction = state.march.cells[1].alf;
+    double firstCellPressure = state.march.cells[0].pres;
+    double firstCellTemperature = state.march.cells[0].temp;
+    double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
+    double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
+    double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
+    double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
+    double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
+    double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
+    double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
+    double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
+    double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
+    double multiplica;
+    if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
+        multiplica = rmisLst;
+    else
+        multiplica = rGst;
+    return standardFlowRateGuess * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+}
+
 /// Identifies the steady march selected by the well type and boundary conditions.
 enum class SteadyMarch {
     marchaInjPerm1,
@@ -2107,25 +2130,7 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
             if (marchResidual < 0 && marchResidual > -kSteadyMarchSentinelThreshold)
                 negativeResidualGuess = mchute2;
             kontaiter++;
-            double complementaryFraction = state.march.cells[1].bet;
-            double voidFraction = state.march.cells[1].alf;
-            double firstCellPressure = state.march.cells[0].pres;
-            double firstCellTemperature = state.march.cells[0].temp;
-            double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
-            double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
-            double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-            double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
-            double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
-            double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
-            double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
-            double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-            double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
-            double multiplica;
-            if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
-                multiplica = rmisLst;
-            else
-                multiplica = rGst;
-            double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+            double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
             if (kontaiter > 200 && velocityGuess > 0.01) {
                 if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                     NumError(
@@ -3137,25 +3142,7 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                 if (marchResidual < 0 && marchResidual > -kSteadyMarchSentinelThreshold)
                     negativeResidualGuess = mchute2;
                 kontaiter++;
-                double complementaryFraction = state.march.cells[1].bet;
-                double voidFraction = state.march.cells[1].alf;
-                double firstCellPressure = state.march.cells[0].pres;
-                double firstCellTemperature = state.march.cells[0].temp;
-                double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
-                double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
-                double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-                double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
-                double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
-                double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
-                double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
-                double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-                double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
-                double multiplica;
-                if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
-                    multiplica = rmisLst;
-                else
-                    multiplica = rGst;
-                double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+                double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
                 if (kontaiter > 200 && fabs(velocityGuess) > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3278,25 +3265,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, d
                 if (marchResidual * sentido < 0 && marchResidual > -kSteadyMarchSentinelThreshold)
                     negativeResidualGuess = mchute2;
                 kontaiter++;
-                double complementaryFraction = state.march.cells[1].bet;
-                double voidFraction = state.march.cells[1].alf;
-                double firstCellPressure = state.march.cells[0].pres;
-                double firstCellTemperature = state.march.cells[0].temp;
-                double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
-                double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
-                double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-                double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
-                double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
-                double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
-                double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
-                double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-                double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
-                double multiplica;
-                if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
-                    multiplica = rmisLst;
-                else
-                    multiplica = rGst;
-                double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+                double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(
@@ -3453,25 +3422,7 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                 if (marchResidual < 0 && marchResidual > -kSteadyMarchSentinelThreshold)
                     negativeResidualGuess = mchute2;
                 kontaiter++;
-                double complementaryFraction = state.march.cells[1].bet;
-                double voidFraction = state.march.cells[1].alf;
-                double firstCellPressure = state.march.cells[0].pres;
-                double firstCellTemperature = state.march.cells[0].temp;
-                double complementaryDensityAtGuess = state.march.cells[0].fluicol.MasEspFlu(firstCellPressure, firstCellTemperature);
-                double liquidDensityAtGuess = state.march.cells[0].flui.MasEspLiq(firstCellPressure, firstCellTemperature);
-                double gasDensityAtGuess = state.march.cells[0].flui.MasEspGas(firstCellPressure, firstCellTemperature);
-                double rmisL = (1 - complementaryFraction) * liquidDensityAtGuess + complementaryFraction * complementaryDensityAtGuess;
-                double rmis = (1 - voidFraction) * rmisL + voidFraction * gasDensityAtGuess;
-                double rCst = state.march.cells[0].fluicol.MasEspFlu(1., 20.);
-                double rPst = state.march.cells[0].flui.MasEspLiq(1., 20.);
-                double rGst = state.march.cells[0].flui.MasEspGas(1., 20.);
-                double rmisLst = (1 - complementaryFraction) * rPst + complementaryFraction * rCst;
-                double multiplica;
-                if (state.march.cells[0].acsr.tipo == kAccessoryLiquidInjection)
-                    multiplica = rmisLst;
-                else
-                    multiplica = rGst;
-                double velocityGuess = mchute2 * multiplica / (rmis * state.march.cells[0].duto.area * units::kSecondsPerDay);
+                double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
                     if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
                         NumError(

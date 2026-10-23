@@ -16,15 +16,47 @@ namespace sisprod::steady {
 
 namespace {
 
+/// Publishes cell complementary-liquid fraction to face, pig and initial transient values.
+void publishSteadyComplementaryFraction(const SteadyStateState &state, int i) {
+    if (i < state.lastCell) {
+        state.cells[i + 1].betL = state.cells[i].bet;
+        state.cells[i + 1].betLini = state.cells[i].bet;
+        state.cells[i + 1].betLI = state.cells[i].bet;
+    }
+    state.cells[i].betini = state.cells[i].bet;
+    state.cells[i - 1].betR = state.cells[i].bet;
+    state.cells[i - 1].betRini = state.cells[i].bet;
+    state.cells[i].betPigD = state.cells[i].bet;
+    state.cells[i].betPigDini = state.cells[i].bet;
+    state.cells[i].betPigE = state.cells[i].bet;
+    state.cells[i].betPigEini = state.cells[i].bet;
+    state.cells[i].betI = state.cells[i].bet;
+    state.cells[i - 1].betRI = state.cells[i].bet;
+}
+
+/// Publishes cell void fraction to face, pig and initial transient values.
+void publishSteadyVoidFraction(const SteadyStateState &state, int i) {
+    state.cells[i].alfini = state.cells[i].alf;
+    state.cells[i - 1].alfR = state.cells[i].alf;
+    state.cells[i - 1].alfRini = state.cells[i].alf;
+    if (i < state.lastCell)
+        state.cells[i + 1].alfL = state.cells[i].alf;
+    if (i < state.lastCell)
+        state.cells[i + 1].alfLini = state.cells[i].alf;
+    state.cells[i].alfPigD = state.cells[i].alf;
+    state.cells[i].alfPigDini = state.cells[i].alf;
+    state.cells[i].alfPigE = state.cells[i].alf;
+    state.cells[i].alfPigEini = state.cells[i].alf;
+}
+
 /// Resolves the phase fractions of cell i for the two reverse mass marches.
 ///
 /// Four regimes -- no flow, liquid only, gas only, two-phase -- and the drift
 /// closure the two-phase arm needs, shared by advanceReverseSteadyMass and
 /// advanceReverseCompositionalSteadyMass.
 ///
-/// What comes after this block in the two callers is not shared and must not
-/// be: advanceReverseSteadyMass zeroes the complementary-liquid residence time and
-/// advanceReverseCompositionalSteadyMass propagates it from the cell upstream.
+/// After publication, the reverse black-oil march zeroes the complementary-liquid
+/// residence time; the reverse compositional march propagates it from the upstream cell.
 void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, double rhol, double rhog) {
     if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
         if (state.input.tipoFluido == 1) {
@@ -32,87 +64,18 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
         } else {
             state.cells[i].alf = 1.;
         }
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        publishSteadyVoidFraction(state, i);
+        publishSteadyComplementaryFraction(state, i);
     } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny) { // liquid only:
         state.cells[i].alf = 0.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        publishSteadyVoidFraction(state, i);
+        publishSteadyComplementaryFraction(state, i);
     } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-6) { // gas only:
         state.cells[i].alf = 1.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
+        publishSteadyVoidFraction(state, i);
         state.cells[i].c0 = 1.;
         state.cells[i].ud = 0.;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        publishSteadyComplementaryFraction(state, i);
     } else { // two-phase
         double c0 = 1.;
         double ud = 0.;
@@ -126,17 +89,7 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
                     state.updaters.steadyDriftClosure(i, c0, ud);
                 } else
                     state.cells[i].alf = 0.;
-                state.cells[i].alfini = state.cells[i].alf;
-                state.cells[i - 1].alfR = state.cells[i].alf;
-                state.cells[i - 1].alfRini = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfL = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfLini = state.cells[i].alf;
-                state.cells[i].alfPigD = state.cells[i].alf;
-                state.cells[i].alfPigDini = state.cells[i].alf;
-                state.cells[i].alfPigE = state.cells[i].alf;
-                state.cells[i].alfPigEini = state.cells[i].alf;
+                publishSteadyVoidFraction(state, i);
             }
             if (fabs(rhog) / rhol > 0.9) {
                 c0 = 1.;
@@ -172,31 +125,8 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
         // other cells, including the "previous time" values, which do not
         // matter to the steady problem but do if the steady result
         // starts the transient solution:
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        publishSteadyVoidFraction(state, i);
+        publishSteadyComplementaryFraction(state, i);
     }
 }
 
@@ -265,17 +195,7 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
                 state.updaters.steadyDriftClosure(i, c0, ud);
             } else
                 state.cells[i].alf = 0.;
-            state.cells[i].alfini = state.cells[i].alf;
-            state.cells[i - 1].alfR = state.cells[i].alf;
-            state.cells[i - 1].alfRini = state.cells[i].alf;
-            if (i < state.lastCell)
-                state.cells[i + 1].alfL = state.cells[i].alf;
-            if (i < state.lastCell)
-                state.cells[i + 1].alfLini = state.cells[i].alf;
-            state.cells[i].alfPigD = state.cells[i].alf;
-            state.cells[i].alfPigDini = state.cells[i].alf;
-            state.cells[i].alfPigE = state.cells[i].alf;
-            state.cells[i].alfPigEini = state.cells[i].alf;
+            publishSteadyVoidFraction(state, i);
         }
         if (state.input.tipoModeloDrift == 1) {
             if (fabs(rhog) / rhol > 0.9) {
@@ -330,31 +250,8 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
     // other cells, including the "previous time" values, which do not
     // matter to the steady problem but do if the steady result
     // starts the transient solution:
-    state.cells[i].alfini = state.cells[i].alf;
-    state.cells[i - 1].alfR = state.cells[i].alf;
-    state.cells[i - 1].alfRini = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfL = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfLini = state.cells[i].alf;
-    state.cells[i].alfPigD = state.cells[i].alf;
-    state.cells[i].alfPigDini = state.cells[i].alf;
-    state.cells[i].alfPigE = state.cells[i].alf;
-    state.cells[i].alfPigEini = state.cells[i].alf;
-    if (i < state.lastCell) {
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betLI = state.cells[i].bet;
-    }
-    state.cells[i].betini = state.cells[i].bet;
-    state.cells[i - 1].betR = state.cells[i].bet;
-    state.cells[i - 1].betRini = state.cells[i].bet;
-    state.cells[i].betPigD = state.cells[i].bet;
-    state.cells[i].betPigDini = state.cells[i].bet;
-    state.cells[i].betPigE = state.cells[i].bet;
-    state.cells[i].betPigEini = state.cells[i].bet;
-    state.cells[i].betI = state.cells[i].bet;
-    state.cells[i - 1].betRI = state.cells[i].bet;
+    publishSteadyVoidFraction(state, i);
+    publishSteadyComplementaryFraction(state, i);
 
 }
 
@@ -368,87 +265,18 @@ void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double 
         } else {
             state.cells[i].alf = 1.;
         }
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        publishSteadyVoidFraction(state, i);
+        publishSteadyComplementaryFraction(state, i);
     } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny * 1e-5) { // liquid only:
         state.cells[i].alf = 0.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        publishSteadyVoidFraction(state, i);
+        publishSteadyComplementaryFraction(state, i);
     } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-5) { // gas only:
         state.cells[i].alf = 1.;
-        state.cells[i].alfini = state.cells[i].alf;
-        state.cells[i - 1].alfR = state.cells[i].alf;
-        state.cells[i - 1].alfRini = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfL = state.cells[i].alf;
-        if (i < state.lastCell)
-            state.cells[i + 1].alfLini = state.cells[i].alf;
-        state.cells[i].alfPigD = state.cells[i].alf;
-        state.cells[i].alfPigDini = state.cells[i].alf;
-        state.cells[i].alfPigE = state.cells[i].alf;
-        state.cells[i].alfPigEini = state.cells[i].alf;
+        publishSteadyVoidFraction(state, i);
         state.cells[i].c0 = 1.;
         state.cells[i].ud = 0.;
-        if (i < state.lastCell) {
-            state.cells[i + 1].betL = state.cells[i].bet;
-            state.cells[i + 1].betLini = state.cells[i].bet;
-            state.cells[i + 1].betLI = state.cells[i].bet;
-        }
-        state.cells[i].betini = state.cells[i].bet;
-        state.cells[i - 1].betR = state.cells[i].bet;
-        state.cells[i - 1].betRini = state.cells[i].bet;
-        state.cells[i].betPigD = state.cells[i].bet;
-        state.cells[i].betPigDini = state.cells[i].bet;
-        state.cells[i].betPigE = state.cells[i].bet;
-        state.cells[i].betPigEini = state.cells[i].bet;
-        state.cells[i].betI = state.cells[i].bet;
-        state.cells[i - 1].betRI = state.cells[i].bet;
+        publishSteadyComplementaryFraction(state, i);
     } else { // two-phase
         applyCompositionalTwoPhaseRegime(state, i, rhol, rhog);
     }
@@ -2101,91 +1929,22 @@ void finalizeSteadyMassNoFlow(const SteadyStateState &state, int i) {
     } else {
         state.cells[i].alf = 1.;
     }
-    state.cells[i].alfini = state.cells[i].alf;
-    state.cells[i - 1].alfR = state.cells[i].alf;
-    state.cells[i - 1].alfRini = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfL = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfLini = state.cells[i].alf;
-    state.cells[i].alfPigD = state.cells[i].alf;
-    state.cells[i].alfPigDini = state.cells[i].alf;
-    state.cells[i].alfPigE = state.cells[i].alf;
-    state.cells[i].alfPigEini = state.cells[i].alf;
-    if (i < state.lastCell) {
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betLI = state.cells[i].bet;
-    }
-    state.cells[i].betini = state.cells[i].bet;
-    state.cells[i - 1].betR = state.cells[i].bet;
-    state.cells[i - 1].betRini = state.cells[i].bet;
-    state.cells[i].betPigD = state.cells[i].bet;
-    state.cells[i].betPigDini = state.cells[i].bet;
-    state.cells[i].betPigE = state.cells[i].bet;
-    state.cells[i].betPigEini = state.cells[i].bet;
-    state.cells[i].betI = state.cells[i].bet;
-    state.cells[i - 1].betRI = state.cells[i].bet;
+    publishSteadyVoidFraction(state, i);
+    publishSteadyComplementaryFraction(state, i);
 }
 
 void finalizeSteadyMassLiquidOnly(const SteadyStateState &state, int i) {
     state.cells[i].alf = 0.;
-    state.cells[i].alfini = state.cells[i].alf;
-    state.cells[i - 1].alfR = state.cells[i].alf;
-    state.cells[i - 1].alfRini = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfL = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfLini = state.cells[i].alf;
-    state.cells[i].alfPigD = state.cells[i].alf;
-    state.cells[i].alfPigDini = state.cells[i].alf;
-    state.cells[i].alfPigE = state.cells[i].alf;
-    state.cells[i].alfPigEini = state.cells[i].alf;
-    if (i < state.lastCell) {
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betLI = state.cells[i].bet;
-    }
-    state.cells[i].betini = state.cells[i].bet;
-    state.cells[i - 1].betR = state.cells[i].bet;
-    state.cells[i - 1].betRini = state.cells[i].bet;
-    state.cells[i].betPigD = state.cells[i].bet;
-    state.cells[i].betPigDini = state.cells[i].bet;
-    state.cells[i].betPigE = state.cells[i].bet;
-    state.cells[i].betPigEini = state.cells[i].bet;
-    state.cells[i].betI = state.cells[i].bet;
-    state.cells[i - 1].betRI = state.cells[i].bet;
+    publishSteadyVoidFraction(state, i);
+    publishSteadyComplementaryFraction(state, i);
 }
 
 void finalizeSteadyMassGasOnly(const SteadyStateState &state, int i) {
     state.cells[i].alf = 1.;
-    state.cells[i].alfini = state.cells[i].alf;
-    state.cells[i - 1].alfR = state.cells[i].alf;
-    state.cells[i - 1].alfRini = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfL = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfLini = state.cells[i].alf;
-    state.cells[i].alfPigD = state.cells[i].alf;
-    state.cells[i].alfPigDini = state.cells[i].alf;
-    state.cells[i].alfPigE = state.cells[i].alf;
-    state.cells[i].alfPigEini = state.cells[i].alf;
+    publishSteadyVoidFraction(state, i);
     state.cells[i].c0 = 1.;
     state.cells[i].ud = 0.;
-    if (i < state.lastCell) {
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betLI = state.cells[i].bet;
-    }
-    state.cells[i].betini = state.cells[i].bet;
-    state.cells[i - 1].betR = state.cells[i].bet;
-    state.cells[i - 1].betRini = state.cells[i].bet;
-    state.cells[i].betPigD = state.cells[i].bet;
-    state.cells[i].betPigDini = state.cells[i].bet;
-    state.cells[i].betPigE = state.cells[i].bet;
-    state.cells[i].betPigEini = state.cells[i].bet;
-    state.cells[i].betI = state.cells[i].bet;
-    state.cells[i - 1].betRI = state.cells[i].bet;
+    publishSteadyComplementaryFraction(state, i);
 }
 
 void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rhog, double rhol) {
@@ -2203,17 +1962,7 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
                     state.updaters.steadyDriftClosure(i, c0, ud);
                 } else
                     state.cells[i].alf = 0.;
-                state.cells[i].alfini = state.cells[i].alf;
-                state.cells[i - 1].alfR = state.cells[i].alf;
-                state.cells[i - 1].alfRini = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfL = state.cells[i].alf;
-                if (i < state.lastCell)
-                    state.cells[i + 1].alfLini = state.cells[i].alf;
-                state.cells[i].alfPigD = state.cells[i].alf;
-                state.cells[i].alfPigDini = state.cells[i].alf;
-                state.cells[i].alfPigE = state.cells[i].alf;
-                state.cells[i].alfPigEini = state.cells[i].alf;
+                publishSteadyVoidFraction(state, i);
             }
             if (fabs(rhog) / rhol > 0.9) {
                 c0 = 1.;
@@ -2279,31 +2028,8 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
     // other cells, including the "previous time" values, which do not
     // matter to the steady problem but do if the steady result
     // starts the transient solution:
-    state.cells[i].alfini = state.cells[i].alf;
-    state.cells[i - 1].alfR = state.cells[i].alf;
-    state.cells[i - 1].alfRini = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfL = state.cells[i].alf;
-    if (i < state.lastCell)
-        state.cells[i + 1].alfLini = state.cells[i].alf;
-    state.cells[i].alfPigD = state.cells[i].alf;
-    state.cells[i].alfPigDini = state.cells[i].alf;
-    state.cells[i].alfPigE = state.cells[i].alf;
-    state.cells[i].alfPigEini = state.cells[i].alf;
-    if (i < state.lastCell) {
-        state.cells[i + 1].betL = state.cells[i].bet;
-        state.cells[i + 1].betLini = state.cells[i].bet;
-        state.cells[i + 1].betLI = state.cells[i].bet;
-    }
-    state.cells[i].betini = state.cells[i].bet;
-    state.cells[i - 1].betR = state.cells[i].bet;
-    state.cells[i - 1].betRini = state.cells[i].bet;
-    state.cells[i].betPigD = state.cells[i].bet;
-    state.cells[i].betPigDini = state.cells[i].bet;
-    state.cells[i].betPigE = state.cells[i].bet;
-    state.cells[i].betPigEini = state.cells[i].bet;
-    state.cells[i].betI = state.cells[i].bet;
-    state.cells[i - 1].betRI = state.cells[i].bet;
+    publishSteadyVoidFraction(state, i);
+    publishSteadyComplementaryFraction(state, i);
 }
 
 void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, double &alfini, double &betini) {

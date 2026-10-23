@@ -88,6 +88,7 @@ run calibrate-solver-move
 run calibrate-time-step-policies
 run calibrate-transient-extraction
 run calibrate-fluid-tracking-extraction
+run calibrate-steady-state-extraction
 run calibrate-dispatch
 run calibrate-performance-gate
 run calibrate-steady-decomposition "$pre_decomposition"
