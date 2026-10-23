@@ -1,90 +1,47 @@
 #ifndef ROOTFINDINGSOLVERS_H_
 #define ROOTFINDINGSOLVERS_H_
 
-/// Generic root-finding algorithms.
-///
-/// A solver sees only `objective(x)`: whatever else the residual depends on is
-/// captured by the caller in the callable.
-///
-/// Everything here lives in namespace rootfinding, and that is load-bearing
-/// rather than tidy. FerramentasNumericas.h already declares templates named
-/// zbrent and zriddr at global scope, and SisProd.h includes it. Free
-/// functions of those names would be ambiguous at best; at worst a call would
-/// resolve silently to the other overload, which takes `const T *const` and
-/// would compile.
-
-// fabs and sqrt, with the overload set <math.h> brings into the global
-// namespace, as everywhere else in SisProd.
 #include <math.h>
 
-// For the two concepts below. Both are lightweight and neither drags in
-// anything that could change overload resolution for fabs or sqrt.
 #include <concepts>
 #include <type_traits>
 
 namespace rootfinding {
 
-/// A residual function a solver drives to zero: position in, residual out.
-///
-/// Constrained rather than a bare `typename`: a caller that passes the wrong
-/// shape gets one line saying the argument does not satisfy ObjectiveFunction,
-/// instead of a page of diagnostics from inside the arithmetic.
+/// Callable accepting a double position and returning a value convertible to double.
 template <typename Function>
 concept ObjectiveFunction =
     std::invocable<Function, double> &&
     std::convertible_to<std::invoke_result_t<Function, double>, double>;
 
-/// Post-processing a solver applies to a residual before using it.
-///
-/// Same shape as ObjectiveFunction and a different role, which is why it has
-/// its own name: zriddr composes them as monitor(objective(x)), and reading
-/// that signature should not require working out which double means what.
+/// Transforms a residual into a value convertible to double.
 template <typename Function>
 concept ResidualMonitor = ObjectiveFunction<Function>;
 
-/// Magnitude of the first argument carrying the sign of the second.
-///
-/// inline, and defined here rather than in the .cpp, because zriddr calls it
-/// three times per iteration. Out of line it would become a cross-TU call in
-/// the one solver that is actually hot.
-/// \param magnitude   Value whose absolute value is taken.
-/// \param signSource  Value whose sign is applied; zero counts as positive.
-/// \return |magnitude|, signed like signSource.
+/// Applies a positive sign when signSource >= 0, otherwise a negative sign.
+/// \param magnitude   Value whose absolute value is used.
+/// \param signSource  Sign selector; +0.0 and -0.0 select the positive sign.
+/// \return fabs(magnitude) with the selected sign.
 [[nodiscard]] inline double SIGN(double magnitude, double signSource) {
     return (signSource >= 0 ? 1.0 : -1.0) * fabs(magnitude);
 }
 
-/// Sign of a value, as -1 or 1, with zero counting as negative. Nothing in the
-/// project calls it.
-///
 /// \param value  Value to inspect.
-/// \return -1 when value <= 0, otherwise 1.
+/// \return -1 when value <= 0, otherwise 1, including NaN.
 [[nodiscard]] int sign(double value);
 
-/// Reports that a solver exhausted its iteration budget.
-///
-/// A one-line forward to NumError, which is declared in FerramentasNumericas.h
-/// together with `using namespace std;` at file scope and the colliding
-/// zbrent/zriddr templates. Reaching it through the .cpp keeps all of that out
-/// of every translation unit that includes this header.
-///
+/// Reports iteration exhaustion through NumError, which logs the message and
+/// terminates the application.
 /// \param message  Text handed to NumError verbatim.
 void reportIterationLimit(const char *message);
 
-/// Finds a root by bisection: halve the bracket, keep the half that still
-/// straddles the sign change.
-///
-/// The loop's comment calls it falsacorda ("false chord", the regula falsi),
-/// but it takes the midpoint of the bracket, not the intercept of the secant;
-/// multFC below is the 0.5 the halving line hardcodes, and nothing reads it.
-///
-/// Reachable only from zbrent, which nothing calls.
+/// Bisects the interval using residual signs, for at most 100 iterations.
+/// Stops when the half-width or residual magnitude is below 0.001.
 /// \tparam Objective  Residual function; see the ObjectiveFunction concept.
-/// \param bracketLow   Interval endpoint the sign test treats as the low side.
-/// \param bracketHigh  Interval endpoint the sign test treats as the high side.
-/// \param objective    Evaluated once before the loop and once per iteration.
-/// \return The midpoint reached when the interval or the residual falls below
-///         its tolerance, or the last midpoint if the budget runs out.
+/// \param bracketLow   First interval endpoint.
+/// \param bracketHigh  Second interval endpoint.
+/// \param objective    Residual callable, evaluated at bracketLow and each midpoint.
+/// \return Stopping midpoint, or the last midpoint when the iteration limit is reached.
 template <ObjectiveFunction Objective>
 [[nodiscard]] double bisect(double bracketLow, double bracketHigh, Objective &&objective) {
     double lowValue = objective(bracketLow);
@@ -95,7 +52,7 @@ template <ObjectiveFunction Objective>
     double valueTolerance = 0.001;
     double multFC = 0.5;
 
-    for (int iteration = 1; iteration <= maximumIterations; iteration++) { // this block treats the 'falsacorda' properly
+    for (int iteration = 1; iteration <= maximumIterations; iteration++) {
         halfWidth = bracketHigh - bracketLow;
         halfWidth *= 0.5;
         midpoint = bracketLow + halfWidth;
@@ -107,21 +64,16 @@ template <ObjectiveFunction Objective>
     return midpoint;
 }
 
-/// Finds a root by Brent's method: bracketing with inverse quadratic
-/// interpolation, falling back to bisection when the interval does not bracket
-/// a sign change.
-///
-/// Nothing calls it. It is tuned for tolerances of 0.00001 and 100 iterations;
-/// they are not defaults, so a caller has to choose them.
+/// Finds a root using Brent's method. Endpoint residuals with the same nonzero
+/// sign select bisect. Iteration exhaustion calls reportIterationLimit.
 /// \tparam Objective          Residual function; see the ObjectiveFunction concept.
 /// \param bracketLow          Interval endpoint.
 /// \param bracketHigh         Interval endpoint.
-/// \param objective           Evaluated twice up front, then once per iteration.
-/// \param absoluteTolerance   Absolute half-width the bracket must reach.
-/// \param relativeTolerance   Relative precision scaling the working tolerance.
-/// \param maximumIterations   Iteration budget before reportIterationLimit fires.
-/// \return The root, or 1e10 when either endpoint evaluates beyond 1e9, or 0.0
-///         when the budget is exhausted.
+/// \param objective           Residual callable; may update caller state.
+/// \param absoluteTolerance   Absolute component of the convergence tolerance.
+/// \param relativeTolerance   Relative component of the convergence tolerance.
+/// \param maximumIterations   Iteration budget for Brent's loop.
+/// \return Root estimate, or 1e10 if an initial endpoint residual exceeds 1e9 in magnitude.
 template <ObjectiveFunction Objective>
 [[nodiscard]] double zbrent(double bracketLow, double bracketHigh, Objective &&objective, double absoluteTolerance, double relativeTolerance, int maximumIterations) {
     double relativePrecision = relativeTolerance;
@@ -199,37 +151,20 @@ template <ObjectiveFunction Objective>
     }
 }
 
-/// Finds a root by Ridders' method. The only solver here that runs.
-///
-/// Two callables, not one, because the objective is evaluated in two ways.
-/// Twelve of its fourteen evaluations are raw; two are divided by a
-/// convergence-monitor base and recorded in a member the outer pressure loops
-/// read back. That scaling and that write are domain feedback, so they travel
-/// in `monitor` and the solver keeps only the composition
-/// `monitor(objective(x))`.
-///
-/// `reverseMarch` selects nothing: the bracket evaluation and widening are the
-/// same for both march directions, which `objective` itself chooses. Three
-/// tests of it had identical arms (A2-02 to A2-04) and were collapsed. Were the
-/// arms ever to differ, it would have to be read inside the loop instead, since
-/// revPerm can change mid-solve.
-///
-/// `minimumIterations` is derived from the input deck at the binding site, which
-/// is safe because the flag it comes from is only assigned when the deck is
-/// read. It also gates three early returns that would otherwise be
-/// unconditional.
+/// Finds a root using Ridders' method with bracket adjustment.
+/// Endpoint and best-point residuals are evaluated directly; midpoint and trial
+/// residuals pass through monitor. Callbacks may update caller state.
 /// \tparam Objective          Residual function; see the ObjectiveFunction concept.
 /// \tparam Monitor            Residual post-processing; see ResidualMonitor.
 /// \param bracketLow          Endpoint where the residual is expected negative.
 /// \param bracketHigh         Endpoint where the residual is expected positive.
-/// \param objective           Evaluated twelve times per solve on the raw path.
-/// \param monitor             Applied to the two evaluations that feed the
-///                            convergence monitor, as monitor(objective(x)).
-/// \param reverseMarch        Selects nothing; see above.
-/// \param minimumIterations   Iterations that must pass before the three early
-///                            returns are honoured.
-/// \return The best position found, or 1e10 / -1e10 / 1.e10 sentinels for the
-///         out-of-range, no-bracket and budget-exhausted cases respectively.
+/// \param objective           Residual callable.
+/// \param monitor             Transforms midpoint and trial residuals.
+/// \param reverseMarch        Not used by this solver.
+/// \param minimumIterations   Three early returns require the zero-based iteration
+///                            index to exceed this value; other exits are unaffected.
+/// \return Best point found; 1e10 for an initial residual above 1e9 in magnitude or
+///         iteration exhaustion, -1e10 when bracketing fails.
 template <ObjectiveFunction Objective, ResidualMonitor Monitor>
 [[nodiscard]] double zriddr(double bracketLow, double bracketHigh, Objective &&objective, Monitor &&monitor,
               int reverseMarch, int minimumIterations) {
