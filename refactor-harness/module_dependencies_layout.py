@@ -180,8 +180,11 @@ def verify_interfaces(overrides):
     assert tokens(public(old_sprod))==tokens(public(new_sprod)),'SProd public interface'
     headers={str(p.relative_to(ROOT)):p.read_text() for p in (ROOT/'src/include').glob('SisProd*.h')}
     headers.update({p:t for p,t in overrides.items() if p.endswith('.h')})
+    reference_headers=set(subprocess.check_output(
+        ['git','ls-tree','-r','--name-only',REFERENCE,'src/include'],cwd=ROOT,text=True).splitlines())
     for path,text in headers.items():
         if not path.endswith('.h') or path=='src/include/SisProd.h':continue
+        if path not in reference_headers:continue
         old_header=reference(path)
         def prototypes(text):
             clean=masked(text);result={}

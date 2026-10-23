@@ -64,83 +64,195 @@ double inSituWaterFraction(const Cel &cell, Cel &fluidCell) {
     return fluidCell.flui.BSW * ba / (bo + ba * fluidCell.flui.BSW - fluidCell.flui.BSW * bo);
 }
 
-void refreshChokeMultipleAndPorousSources(const SourceState &state, int cellIndex) {
-    if (state.cells[cellIndex].acsr.tipo == kAccessoryLeak) {
-        state.cells[cellIndex].acsr.fontechk.fluidoP = state.cells[cellIndex].flui;
-        state.cells[cellIndex].acsr.fontechk.presT = state.cells[cellIndex].pres;
-        state.cells[cellIndex].acsr.fontechk.tempT = state.cells[cellIndex].temp;
-        double pres = state.cells[cellIndex].pres;
-        double temp = state.cells[cellIndex].temp;
-        double alf = state.cells[cellIndex].alf;
-        double bet = state.cells[cellIndex].bet;
-        double rhog = state.cells[cellIndex].flui.MasEspGas(pres, temp);
-        double rhoP = state.cells[cellIndex].flui.MasEspLiq(pres, temp);
-        double rhoC = state.cells[cellIndex].fluicol.MasEspFlu(pres, temp);
-        state.cells[cellIndex].acsr.fontechk.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
-        state.cells[cellIndex].acsr.fontechk.betIST = bet;
-        int iconex = -1;
-        if (!((*state.globals).chaveRedeParalela == 0 || (*state.globals).iterRede > 0 || state.parallelSecondaryBranch == 1 || state.parallelSecondaryBoundaryCondition == 1)) {
-            int nfonte = state.parallelSourceCells.size();
-            for (int ifonte = 0; ifonte < nfonte; ifonte++) {
-                if (state.parallelSourceCells[ifonte] == cellIndex) {
-                    iconex = ifonte;
-                    break;
-                }
+void refreshLeakSource(const SourceState &state, int cellIndex) {
+    Cel &cell = state.cells[cellIndex];
+    auto &source = cell.acsr.fontechk;
+    source.fluidoP = cell.flui;
+    source.presT = cell.pres;
+    source.tempT = cell.temp;
+    double pres = cell.pres;
+    double temp = cell.temp;
+    double alf = cell.alf;
+    double bet = cell.bet;
+    double rhog = cell.flui.MasEspGas(pres, temp);
+    double rhoP = cell.flui.MasEspLiq(pres, temp);
+    double rhoC = cell.fluicol.MasEspFlu(pres, temp);
+    source.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
+    source.betIST = bet;
+    int iconex = -1;
+    if (!((*state.globals).chaveRedeParalela == 0 || (*state.globals).iterRede > 0 || state.parallelSecondaryBranch == 1 || state.parallelSecondaryBoundaryCondition == 1)) {
+        int nfonte = state.parallelSourceCells.size();
+        for (int ifonte = 0; ifonte < nfonte; ifonte++) {
+            if (state.parallelSourceCells[ifonte] == cellIndex) {
+                iconex = ifonte;
+                break;
             }
         }
-        if (iconex < 0) {
-            state.cells[cellIndex].acsr.fontechk.VMas();
-            state.cells[cellIndex].fontemassLR += state.cells[cellIndex].acsr.fontechk.masP;
-            state.cells[cellIndex].fontemassCR += state.cells[cellIndex].acsr.fontechk.masC;
-            state.cells[cellIndex].fontemassGR += state.cells[cellIndex].acsr.fontechk.masG;
-        } else {
-            state.cells[cellIndex].fontemassLR += state.parallelSourceProductionLiquid[iconex];
-            state.cells[cellIndex].fontemassCR += state.parallelSourceComplementaryLiquid[iconex];
-            state.cells[cellIndex].fontemassGR += state.parallelSourceGas[iconex];
-        }
+    }
+    if (iconex < 0) {
+        source.VMas();
+        cell.fontemassLR += source.masP;
+        cell.fontemassCR += source.masC;
+        cell.fontemassGR += source.masG;
+    } else {
+        cell.fontemassLR += state.parallelSourceProductionLiquid[iconex];
+        cell.fontemassCR += state.parallelSourceComplementaryLiquid[iconex];
+        cell.fontemassGR += state.parallelSourceGas[iconex];
+    }
+}
+
+void advanceRadialPorousSource(const SourceState &state, int cellIndex) {
+    Cel &cell = state.cells[cellIndex];
+    auto &source = cell.acsr.radialPoro;
+    source.pW.val[0] = cell.pres;
+    // Use the next array cell's fluid at this cell's pressure and temperature.
+    double vfw = inSituWaterFraction(cell, state.cells[cellIndex + 1]);
+    source.sWPoc = vfw * (1. - source.satAconat) + source.satAconat;
+    source.Pint = cell.pres;
+    if (state.steadyMode == 0)
+        source.avancoPressao();
+    else
+        source.pseudoTrans();
+    cell.fontemassLR = source.fluxIni + source.fluxIniA;
+    cell.fontemassCR = 0.;
+    cell.fontemassGR = source.fluxIniG;
+}
+
+void advancePorous2DSource(const SourceState &state, int cellIndex) {
+    Cel &cell = state.cells[cellIndex];
+    auto &source = cell.acsr.poroso2D;
+    source.dados.pW.val[0] = cell.pres;
+    // Use the next array cell's fluid at this cell's pressure and temperature.
+    double vfw = inSituWaterFraction(cell, state.cells[cellIndex + 1]);
+    source.sWPoc = vfw * (1. - source.dados.satAconat) + source.dados.satAconat;
+    source.dados.transfer.sWPoc = source.sWPoc;
+    source.dados.pInt = cell.pres;
+    source.dados.transfer.Pint = cell.pres;
+    if (state.steadyMode == 0)
+        source.avancoPressao();
+    else
+        source.pseudoTransientePoroso();
+    cell.fontemassLR = source.dados.transfer.fluxIni + source.dados.transfer.fluxIniA;
+    cell.fontemassCR = 0.;
+    cell.fontemassGR = source.dados.transfer.fluxIniG;
+}
+
+void refreshChokeMultipleAndPorousSources(const SourceState &state, int cellIndex) {
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryLeak) {
+        refreshLeakSource(state, cellIndex);
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryMultipleSource) {
-        if (state.cells[cellIndex].acsr.injm.condTermo == 1) {
-            state.cells[cellIndex].fontemassLR = state.cells[cellIndex].acsr.injm.MassP;
-            state.cells[cellIndex].fontemassCR = state.cells[cellIndex].acsr.injm.MassC;
-            state.cells[cellIndex].fontemassGR = state.cells[cellIndex].acsr.injm.MassG;
+        Cel &cell = state.cells[cellIndex];
+        if (cell.acsr.injm.condTermo == 1) {
+            cell.fontemassLR = cell.acsr.injm.MassP;
+            cell.fontemassCR = cell.acsr.injm.MassC;
+            cell.fontemassGR = cell.acsr.injm.MassG;
         } else {
-            state.cells[cellIndex].fontemassCR = state.cells[cellIndex].acsr.injm.MassC;
-            double masT = state.cells[cellIndex].acsr.injm.MassP + state.cells[cellIndex].acsr.injm.MassG;
-            double tit = state.cells[cellIndex].acsr.injm.FluidoPro.FracMassHidra(state.cells[cellIndex].pres, state.cells[cellIndex].temp);
-            state.cells[cellIndex].acsr.injm.MassG = state.cells[cellIndex].fontemassGR = masT * tit;
-            state.cells[cellIndex].acsr.injm.MassP = state.cells[cellIndex].fontemassLR = masT - state.cells[cellIndex].fontemassGR;
+            cell.fontemassCR = cell.acsr.injm.MassC;
+            double masT = cell.acsr.injm.MassP + cell.acsr.injm.MassG;
+            double tit = cell.acsr.injm.FluidoPro.FracMassHidra(cell.pres, cell.temp);
+            cell.acsr.injm.MassG = cell.fontemassGR = masT * tit;
+            cell.acsr.injm.MassP = cell.fontemassLR = masT - cell.fontemassGR;
         }
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryRadialPorous) {
-        state.cells[cellIndex].acsr.radialPoro.pW.val[0] = state.cells[cellIndex].pres;
-        // Use the next array cell's fluid at this cell's pressure and temperature.
-        double vfw = inSituWaterFraction(state.cells[cellIndex], state.cells[cellIndex + 1]);
-        state.cells[cellIndex].acsr.radialPoro.sWPoc = vfw * (1. - state.cells[cellIndex].acsr.radialPoro.satAconat) + state.cells[cellIndex].acsr.radialPoro.satAconat;
-        state.cells[cellIndex].acsr.radialPoro.Pint = state.cells[cellIndex].pres;
-        if (state.steadyMode == 0)
-            state.cells[cellIndex].acsr.radialPoro.avancoPressao();
-        else
-            state.cells[cellIndex].acsr.radialPoro.pseudoTrans();
-        state.cells[cellIndex].fontemassLR = state.cells[cellIndex].acsr.radialPoro.fluxIni + state.cells[cellIndex].acsr.radialPoro.fluxIniA;
-        state.cells[cellIndex].fontemassCR = 0.;
-        state.cells[cellIndex].fontemassGR = state.cells[cellIndex].acsr.radialPoro.fluxIniG;
+        advanceRadialPorousSource(state, cellIndex);
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryPorous2D) {
-        state.cells[cellIndex].acsr.poroso2D.dados.pW.val[0] = state.cells[cellIndex].pres;
-        // Use the next array cell's fluid at this cell's pressure and temperature.
-        double vfw = inSituWaterFraction(state.cells[cellIndex], state.cells[cellIndex + 1]);
-        state.cells[cellIndex].acsr.poroso2D.sWPoc = vfw * (1. - state.cells[cellIndex].acsr.poroso2D.dados.satAconat) + state.cells[cellIndex].acsr.poroso2D.dados.satAconat;
-        state.cells[cellIndex].acsr.poroso2D.dados.transfer.sWPoc = state.cells[cellIndex].acsr.poroso2D.sWPoc;
-        state.cells[cellIndex].acsr.poroso2D.dados.pInt = state.cells[cellIndex].pres;
-        state.cells[cellIndex].acsr.poroso2D.dados.transfer.Pint = state.cells[cellIndex].pres;
-        if (state.steadyMode == 0)
-            state.cells[cellIndex].acsr.poroso2D.avancoPressao();
-        else
-            state.cells[cellIndex].acsr.poroso2D.pseudoTransientePoroso();
-        state.cells[cellIndex].fontemassLR = state.cells[cellIndex].acsr.poroso2D.dados.transfer.fluxIni + state.cells[cellIndex].acsr.poroso2D.dados.transfer.fluxIniA;
-        state.cells[cellIndex].fontemassCR = 0.;
-        state.cells[cellIndex].fontemassGR = state.cells[cellIndex].acsr.poroso2D.dados.transfer.fluxIniG;
+        advancePorous2DSource(state, cellIndex);
+    }
+}
+
+void applyGasInjectionSource(const SourceState &state, int cellIndex, double pr, double tr) {
+    Cel &cell = state.cells[cellIndex];
+    auto &source = cell.acsr.injg;
+    if (source.tipoflu == 0) {
+        double masgas = source.VMas(pr, tr);
+        if (fabs(masgas) < (*state.globals).localtiny)
+            masgas = 0.;
+        if (source.seco == 1) {
+            cell.fontemassGR += masgas;
+            cell.fontemassLR = 0.;
+            cell.fontemassCR = 0.;
+        } else {
+            double tit;
+            if (state.input.flashCompleto != 2)
+                tit = source.FluidoPro.FracMassHidra(1., 20.);
+            else
+                tit = source.FluidoPro.dStockTankVaporMassFraction;
+            double masT = masgas / tit;
+            tit = source.FluidoPro.FracMassHidra(pr, tr);
+            cell.fontemassGR += masT * tit;
+            cell.fontemassLR += masT * (1. - tit);
+            double rcomp = source.fluidocol.standardDensity();
+            cell.fontemassCR += rcomp * source.razCompGas * source.QGas / units::kSecondsPerDay;
+        }
+    } else {
+        cell.fontemassGR += 0.;
+        cell.fontemassLR = 0.;
+        cell.fontemassCR = source.QGas;
+    }
+}
+
+void applyLiquidInjectionSource(const SourceState &state, int cellIndex, double pr, double tr) {
+    Cel &cell = state.cells[cellIndex];
+    auto &source = cell.acsr.injl;
+    double rlcA = source.fluidocol.standardDensity();
+    cell.fontemassCR += rlcA * source.QLiq * source.bet / units::kSecondsPerDay;
+    double massic = source.QLiq * (1. - source.bet) / units::kSecondsPerDay;
+    double Rhogs = source.FluidoPro.Deng * kAirDensityAtStandardConditions;
+    double Rhols = (1000 * 141.5 / (131.5 + source.FluidoPro.API)) * (1 - source.FluidoPro.BSW) + 1000. * source.FluidoPro.Denag * source.FluidoPro.BSW;
+    double multiplicador = (Rhols + source.FluidoPro.RGO * Rhogs * (1 - source.FluidoPro.BSW));
+    massic *= multiplicador;
+    double fracmasshidra = source.FluidoPro.FracMassHidra(pr, tr);
+    cell.fontemassLR += (1. - fracmasshidra) * massic;
+    cell.fontemassGR += fracmasshidra * massic;
+}
+
+void applyInflowPerformanceSource(const SourceState &state, int cellIndex, double pr, double tr) {
+    Cel &cell = state.cells[cellIndex];
+    auto &source = cell.acsr.ipr;
+    if (pr < source.Pres) {
+        cell.fontemassLR += source.MasL(pr, tr);
+        cell.fontemassCR = 0.;
+        cell.fontemassGR += source.MasG(pr, tr);
+    } else {
+        double tit;
+        tit = cell.alf * cell.flui.MasEspGas(pr, tr) /
+              (cell.alf * cell.flui.MasEspGas(pr, tr) +
+               (1. - cell.alf) * (1. - cell.bet) * cell.flui.MasEspLiq(pr, tr) +
+               (1. - cell.alf) * cell.bet * cell.fluicol.MasEspFlu(pr, tr));
+        cell.fontemassLR += (1. - cell.alf) * (1. - cell.bet) * source.VMas(pr, tr) * cell.flui.MasEspLiq(pr, tr);
+        cell.fontemassCR += (1. - cell.alf) * cell.bet * source.VMas(pr, tr) * cell.fluicol.MasEspFlu(pr, tr);
+        cell.fontemassGR += 1 * cell.alf * source.VMas(pr, tr) * cell.flui.MasEspGas(pr, tr);
+        source.deriP *= (1. - cell.alf) * (1. - cell.bet) * cell.flui.MasEspLiq(pr, tr);
+        source.deriC *= (1. - cell.alf) * cell.bet * cell.fluicol.MasEspFlu(pr, tr);
+        source.deriG *= 1 * cell.alf * cell.flui.MasEspGas(pr, tr);
+    }
+}
+
+void applyVolumetricPumpSource(const SourceState &state, int cellIndex) {
+    Cel &cell = state.cells[cellIndex];
+    auto &source = cell.acsr.bvol;
+    state.cells[cellIndex + 1].fontemassLR = 0.;
+    state.cells[cellIndex + 1].fontemassCR = 0.;
+    state.cells[cellIndex + 1].fontemassGR = 0.;
+    source.fluido = cell.flui;
+    source.fluicol = cell.fluicol;
+    if (fabs(source.freq) > 1) {
+        double alfM = cell.alf;
+        double betM = cell.bet;
+        double presM = cell.pres;
+        double tempM = cell.temp;
+        double presM1 = cell.presR;
+        double tempM1 = cell.tempR;
+        source.vazmass(presM, tempM, presM1, tempM1, betM, alfM);
+        cell.fontemassLR -= source.MLiqP;
+        cell.fontemassCR -= source.MLiqC;
+        cell.fontemassGR -= source.MGas;
+        state.cells[cellIndex + 1].fontemassLR += source.MLiqP;
+        state.cells[cellIndex + 1].fontemassCR += source.MLiqC;
+        state.cells[cellIndex + 1].fontemassGR += source.MGas;
     }
 }
 
@@ -215,16 +327,13 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
 
     double pr = state.cells[cellIndex].pres;
     double tr = state.cells[cellIndex].temp;
-    if (cellIndex == 0) {
+    if (cellIndex == 0 ||
+        (state.cells[cellIndex - 1].acsr.tipo != kAccessoryChoke &&
+         state.cells[cellIndex - 1].acsr.tipo != kAccessoryVolumetricPump &&
+         (cellIndex < state.lastCell || state.cells[state.lastCell].acsr.tipo == kAccessoryInflowPerformance))) {
         state.cells[cellIndex].fontemassLR = 0.;
         state.cells[cellIndex].fontemassCR = 0.;
         state.cells[cellIndex].fontemassGR = 0.;
-    } else {
-        if (state.cells[cellIndex - 1].acsr.tipo != kAccessoryChoke && state.cells[cellIndex - 1].acsr.tipo != kAccessoryVolumetricPump && (cellIndex < state.lastCell || state.cells[state.lastCell].acsr.tipo == kAccessoryInflowPerformance)) {
-            state.cells[cellIndex].fontemassLR = 0.;
-            state.cells[cellIndex].fontemassCR = 0.;
-            state.cells[cellIndex].fontemassGR = 0.;
-        }
     }
 
     double agua_consumida_Mw = 0.;
@@ -232,63 +341,13 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
 
     consumeHydrateFormationMass(state, gas_consumido_Mg, agua_consumida_Mw, cellIndex);
     if (state.cells[cellIndex].acsr.tipo == kAccessoryGasInjection) {
-        if (state.cells[cellIndex].acsr.injg.tipoflu == 0) {
-            double masgas = state.cells[cellIndex].acsr.injg.VMas(pr, tr);
-            if (fabs(masgas) < (*state.globals).localtiny)
-                masgas = 0.;
-            if (state.cells[cellIndex].acsr.injg.seco == 1) {
-                state.cells[cellIndex].fontemassGR += masgas;
-                state.cells[cellIndex].fontemassLR = 0.;
-                state.cells[cellIndex].fontemassCR = 0.;
-            } else {
-                double tit;
-                if (state.input.flashCompleto != 2)
-                    tit = state.cells[cellIndex].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
-                else
-                    tit = state.cells[cellIndex].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-                double masT = masgas / tit;
-                tit = state.cells[cellIndex].acsr.injg.FluidoPro.FracMassHidra(pr, tr);
-                state.cells[cellIndex].fontemassGR += masT * tit;
-                state.cells[cellIndex].fontemassLR += masT * (1. - tit);
-                double rcomp = state.cells[cellIndex].acsr.injg.fluidocol.standardDensity();
-                state.cells[cellIndex].fontemassCR += rcomp * state.cells[cellIndex].acsr.injg.razCompGas * state.cells[cellIndex].acsr.injg.QGas / units::kSecondsPerDay;
-            }
-        } else {
-            state.cells[cellIndex].fontemassGR += 0.;
-            state.cells[cellIndex].fontemassLR = 0.;
-            state.cells[cellIndex].fontemassCR = state.cells[cellIndex].acsr.injg.QGas;
-        }
+        applyGasInjectionSource(state, cellIndex, pr, tr);
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryLiquidInjection) {
-        double rlcA = state.cells[cellIndex].acsr.injl.fluidocol.standardDensity();
-        state.cells[cellIndex].fontemassCR += rlcA * state.cells[cellIndex].acsr.injl.QLiq * state.cells[cellIndex].acsr.injl.bet / units::kSecondsPerDay;
-        double massic = state.cells[cellIndex].acsr.injl.QLiq * (1. - state.cells[cellIndex].acsr.injl.bet) / units::kSecondsPerDay;
-        double Rhogs = state.cells[cellIndex].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions;
-        double Rhols = (1000 * 141.5 / (131.5 + state.cells[cellIndex].acsr.injl.FluidoPro.API)) * (1 - state.cells[cellIndex].acsr.injl.FluidoPro.BSW) + 1000. * state.cells[cellIndex].acsr.injl.FluidoPro.Denag * state.cells[cellIndex].acsr.injl.FluidoPro.BSW;
-        double multiplicador = (Rhols + state.cells[cellIndex].acsr.injl.FluidoPro.RGO * Rhogs * (1 - state.cells[cellIndex].acsr.injl.FluidoPro.BSW));
-        massic *= multiplicador;
-        double fracmasshidra = state.cells[cellIndex].acsr.injl.FluidoPro.FracMassHidra(pr, tr);
-        state.cells[cellIndex].fontemassLR += (1. - fracmasshidra) * massic;
-        state.cells[cellIndex].fontemassGR += fracmasshidra * massic;
+        applyLiquidInjectionSource(state, cellIndex, pr, tr);
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryInflowPerformance) {
-        if (pr < state.cells[cellIndex].acsr.ipr.Pres) {
-            state.cells[cellIndex].fontemassLR += state.cells[cellIndex].acsr.ipr.MasL(pr, tr);
-            state.cells[cellIndex].fontemassCR = 0.;
-            state.cells[cellIndex].fontemassGR += state.cells[cellIndex].acsr.ipr.MasG(pr, tr);
-        } else {
-            double tit;
-            tit = state.cells[cellIndex].alf * state.cells[cellIndex].flui.MasEspGas(pr, tr) /
-                  (state.cells[cellIndex].alf * state.cells[cellIndex].flui.MasEspGas(pr, tr) +
-                   (1. - state.cells[cellIndex].alf) * (1. - state.cells[cellIndex].bet) * state.cells[cellIndex].flui.MasEspLiq(pr, tr) +
-                   (1. - state.cells[cellIndex].alf) * state.cells[cellIndex].bet * state.cells[cellIndex].fluicol.MasEspFlu(pr, tr));
-            state.cells[cellIndex].fontemassLR += (1. - state.cells[cellIndex].alf) * (1. - state.cells[cellIndex].bet) * state.cells[cellIndex].acsr.ipr.VMas(pr, tr) * state.cells[cellIndex].flui.MasEspLiq(pr, tr);
-            state.cells[cellIndex].fontemassCR += (1. - state.cells[cellIndex].alf) * state.cells[cellIndex].bet * state.cells[cellIndex].acsr.ipr.VMas(pr, tr) * state.cells[cellIndex].fluicol.MasEspFlu(pr, tr);
-            state.cells[cellIndex].fontemassGR += 1 * state.cells[cellIndex].alf * state.cells[cellIndex].acsr.ipr.VMas(pr, tr) * state.cells[cellIndex].flui.MasEspGas(pr, tr);
-            state.cells[cellIndex].acsr.ipr.deriP *= (1. - state.cells[cellIndex].alf) * (1. - state.cells[cellIndex].bet) * state.cells[cellIndex].flui.MasEspLiq(pr, tr);
-            state.cells[cellIndex].acsr.ipr.deriC *= (1. - state.cells[cellIndex].alf) * state.cells[cellIndex].bet * state.cells[cellIndex].fluicol.MasEspFlu(pr, tr);
-            state.cells[cellIndex].acsr.ipr.deriG *= 1 * state.cells[cellIndex].alf * state.cells[cellIndex].flui.MasEspGas(pr, tr);
-        }
+        applyInflowPerformanceSource(state, cellIndex, pr, tr);
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryChoke) {
         state.cells[cellIndex + 1].fontemassLR = 0.;
@@ -298,26 +357,7 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
             addMasterValveFlow(state, cellIndex);
     }
     if (state.cells[cellIndex].acsr.tipo == kAccessoryVolumetricPump) {
-        state.cells[cellIndex + 1].fontemassLR = 0.;
-        state.cells[cellIndex + 1].fontemassCR = 0.;
-        state.cells[cellIndex + 1].fontemassGR = 0.;
-        state.cells[cellIndex].acsr.bvol.fluido = state.cells[cellIndex].flui;
-        state.cells[cellIndex].acsr.bvol.fluicol = state.cells[cellIndex].fluicol;
-        if (fabs(state.cells[cellIndex].acsr.bvol.freq) > 1) {
-            double alfM = state.cells[cellIndex].alf;
-            double betM = state.cells[cellIndex].bet;
-            double presM = state.cells[cellIndex].pres;
-            double tempM = state.cells[cellIndex].temp;
-            double presM1 = state.cells[cellIndex].presR;
-            double tempM1 = state.cells[cellIndex].tempR;
-            state.cells[cellIndex].acsr.bvol.vazmass(presM, tempM, presM1, tempM1, betM, alfM);
-            state.cells[cellIndex].fontemassLR -= state.cells[cellIndex].acsr.bvol.MLiqP;
-            state.cells[cellIndex].fontemassCR -= state.cells[cellIndex].acsr.bvol.MLiqC;
-            state.cells[cellIndex].fontemassGR -= state.cells[cellIndex].acsr.bvol.MGas;
-            state.cells[cellIndex + 1].fontemassLR += state.cells[cellIndex].acsr.bvol.MLiqP;
-            state.cells[cellIndex + 1].fontemassCR += state.cells[cellIndex].acsr.bvol.MLiqC;
-            state.cells[cellIndex + 1].fontemassGR += state.cells[cellIndex].acsr.bvol.MGas;
-        }
+        applyVolumetricPumpSource(state, cellIndex);
     }
     refreshChokeMultipleAndPorousSources(state, cellIndex);
 
