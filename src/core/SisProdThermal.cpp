@@ -1,3 +1,5 @@
+#include "DriftFluxClosure.h"
+#include "SisProdSources.h"
 #include "SisProdThermalInternal.h"
 
 #include "SisProdConstants.h"
@@ -515,7 +517,7 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
 }
 
 MassTransferFaceState initializeDistributedMassTransferInlet(
-    const ThermalState &state, int cellIndex) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex) {
     double inletLiquidDensity;
     double inletOilVolumeFactor;
     double inletSolutionGasRatio;
@@ -523,7 +525,7 @@ MassTransferFaceState initializeDistributedMassTransferInlet(
     Cel &cell = state.cells[cellIndex];
     state.cells[0].transmassLini = state.cells[0].transmassL;
     state.cells[0].transmassL = 0.;
-    state.sourceUpdater(cellIndex);
+    sources::renewSourceTerms(dependencies.sources, cellIndex);
     state.cells[1].fontemassLLini = state.cells[1].fontemassLL;
     state.cells[1].fontemassLL = state.cells[0].fontemassLR;
     state.cells[1].fontemassCLini = state.cells[1].fontemassCL;
@@ -1009,7 +1011,7 @@ void clearDriftClosure(const ThermalState &state, int cellIndex) {
 }
 
 void selectAndApplyInteriorFlowRegime(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
     double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity, double rightSuperficialLiquidVelocity,
     double gasDensity, double liquidDensity, double flowArea) {
     varGlob1D &globals = *state.globals;
@@ -1098,12 +1100,12 @@ void selectAndApplyInteriorFlowRegime(
 
     if (bif[cellIndex] == 1) {
         applyInteriorDriftPartition(
-            state, cellIndex, superficialGasVelocity, superficialLiquidVelocity, gasDensity, liquidDensity, flowArea);
+            state, dependencies, cellIndex, superficialGasVelocity, superficialLiquidVelocity, gasDensity, liquidDensity, flowArea);
     }
 }
 
 void updateInteriorFlowPartitionCell(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif, Vcr<int> &valv) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, Vcr<int> &valv) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -1176,12 +1178,12 @@ void updateInteriorFlowPartitionCell(
     double rightSuperficialLiquidVelocity = (cell.MliqiniR) / (rightLiquidDensity * rightFlowArea);
 
     selectAndApplyInteriorFlowRegime(
-        state, cellIndex, bif, superficialGasVelocity, superficialLiquidVelocity, leftSuperficialGasVelocity, leftSuperficialLiquidVelocity, rightSuperficialGasVelocity, rightSuperficialLiquidVelocity,
+        state, dependencies, cellIndex, bif, superficialGasVelocity, superficialLiquidVelocity, leftSuperficialGasVelocity, leftSuperficialLiquidVelocity, rightSuperficialGasVelocity, rightSuperficialLiquidVelocity,
         gasDensity, liquidDensity, flowArea);
 }
 
 void updateOutletBoundaryFlowPartition(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif) {
     varGlob1D &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
@@ -1285,7 +1287,7 @@ void updateOutletBoundaryFlowPartition(
         const double meanVoidFraction = cell.alfL;
         double c0;
         double ud;
-        state.closureUpdater.instantaneous(cellIndex, c0, ud);
+        driftflux::coefficient::instantaneous(dependencies.closure, cellIndex, c0, ud);
         if (state.input.escorregamentoCelulaContorno == 0) {
             c0 = 1.;
             ud = 0.;
@@ -1400,23 +1402,23 @@ inline void InletBoundaryRegime::applyInletOverrides(const ThermalState &state, 
     }
 }
 
-inline void InletBoundaryRegime::updateClosure(const ThermalState &state, int cellIndex, double &c0,
+inline void InletBoundaryRegime::updateClosure(const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double &c0,
                                                double &ud) {
-    state.closureUpdater.initialization(cellIndex, c0, ud);
+    driftflux::coefficient::initialization(dependencies.closure, cellIndex, c0, ud);
     state.cells[cellIndex].c0 = c0;
     state.cells[cellIndex].ud = ud;
 }
 
 inline void BufferedInletRegime::applyInletOverrides(const ThermalState &, int, int &, double, double) {}
 
-inline void BufferedInletRegime::updateClosure(const ThermalState &state, int cellIndex, double &c0,
+inline void BufferedInletRegime::updateClosure(const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double &c0,
                                                double &ud) {
-    state.closureUpdater.bufferedInitialization(cellIndex, c0, ud);
+    driftflux::coefficient::bufferedInitialization(dependencies.closure, cellIndex, c0, ud);
 }
 
 template <typename Regime>
 void selectAndApplyInletRegime(
-    const ThermalState &state, int cellIndex, int &branchFlag, double distributionCoefficient,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, int &branchFlag, double distributionCoefficient,
     double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea) {
     varGlob1D &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
@@ -1491,7 +1493,7 @@ void selectAndApplyInletRegime(
         double c0;
         double ud;
         const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : state.inletVoidFraction;
-        Regime::updateClosure(state, cellIndex, c0, ud);
+        Regime::updateClosure(state, dependencies, cellIndex, c0, ud);
         double numerator = (1. - meanVoidFraction * c0);
         double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
         cell.term1 = numerator / denominator;
@@ -1500,16 +1502,16 @@ void selectAndApplyInletRegime(
 }
 
 void selectAndApplyInletBoundaryFlowRegime(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
     double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea) {
     selectAndApplyInletRegime<InletBoundaryRegime>(
-        state, cellIndex, bif[cellIndex], distributionCoefficient, driftVelocity,
+        state, dependencies, cellIndex, bif[cellIndex], distributionCoefficient, driftVelocity,
         superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
         gasDensity, liquidDensity, flowArea);
 }
 
 void selectAndApplyBufferedOutletFlowRegime(
-    const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity,
     double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity,
     double flowArea) {
@@ -1592,7 +1594,7 @@ void selectAndApplyBufferedOutletFlowRegime(
         double c0;
         double ud;
         const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : leftCell.alfPigD;
-        state.closureUpdater.buffered(cellIndex, c0, ud);
+        driftflux::coefficient::buffered(dependencies.closure, cellIndex, c0, ud);
         if (state.input.escorregamentoCelulaContorno == 0) {
             c0 = 1.;
             ud = 0.;
@@ -1609,11 +1611,11 @@ void selectAndApplyBufferedOutletFlowRegime(
 }
 
 void selectAndApplyBufferedInletFlowRegime(
-    const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea) {
     int branchFlag = 1;
     selectAndApplyInletRegime<BufferedInletRegime>(
-        state, cellIndex, branchFlag, distributionCoefficient, driftVelocity,
+        state, dependencies, cellIndex, branchFlag, distributionCoefficient, driftVelocity,
         superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
         gasDensity, liquidDensity, flowArea);
 }
@@ -2072,7 +2074,7 @@ int thermalCouplingIndexOf(const ThermalState &state, int cellIndex) {
 }
 
 void updateInletBoundaryFlowPartition(
-    const ThermalState &state, int cellIndex, Vcr<int> &bifurcationFlags) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bifurcationFlags) {
     Cel &cell = state.cells[cellIndex];
     if (state.input.ConContEntrada == 0) {
         state.cells[1].alfL = state.cells[0].alf;
@@ -2144,7 +2146,7 @@ void updateInletBoundaryFlowPartition(
         double rightSuperficialLiquidVelocity = (cell.MliqiniR) / (rightLiquidDensity * rightFlowArea);
 
         selectAndApplyInletBoundaryFlowRegime(
-            state, cellIndex, bifurcationFlags, c0, ud, superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
+            state, dependencies, cellIndex, bifurcationFlags, c0, ud, superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
             gasDensity, liquidDensity, flowArea);
         state.cells[1].term1L = cell.term1;
         state.cells[1].term2L = cell.term2;
@@ -2642,11 +2644,11 @@ void updateEquilibriumMassTransferDerivatives(
 }
 
 void updateDistributedMassTransferCell(
-    const ThermalState &state, int cellIndex, MassTransferFaceState &previousFace) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, MassTransferFaceState &previousFace) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
-    state.sourceUpdater(cellIndex);
+    sources::renewSourceTerms(dependencies.sources, cellIndex);
 
     if (cellIndex < state.lastCell) {
         rightCell.fontemassLLini = cell.fontemassLR;
@@ -2741,7 +2743,7 @@ void finalizeDistributedMassTransferFace(
 }
 
 void applyInteriorDriftPartition(
-    const ThermalState &state, int cellIndex, double superficialGasVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double superficialGasVelocity,
     double superficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
@@ -2754,7 +2756,7 @@ void applyInteriorDriftPartition(
         c0 = 1.;
         ud = 0.;
     } else
-        state.closureUpdater.instantaneous(cellIndex, c0, ud);
+        driftflux::coefficient::instantaneous(dependencies.closure, cellIndex, c0, ud);
     cell.c0 = c0;
     cell.ud = ud;
     if (cellIndex == state.lastCell) {
@@ -3212,17 +3214,17 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
     cell.FonteMudaFase /= latentHeatTerm;
 }
 
-void updateDistributedMassTransfer(const ThermalState &state) {
+void updateDistributedMassTransfer(const ThermalState &state, const ThermalDependencies &dependencies) {
     if (state.lastCell < 0)
         return;
 
-    MassTransferFaceState previousFace = initializeDistributedMassTransferInlet(state, 0);
+    MassTransferFaceState previousFace = initializeDistributedMassTransferInlet(state, dependencies, 0);
     for (int cellIndex = 1; cellIndex <= state.lastCell; cellIndex++) {
-        updateDistributedMassTransferCell(state, cellIndex, previousFace);
+        updateDistributedMassTransferCell(state, dependencies, cellIndex, previousFace);
     }
 }
 
-void updateFlowPartitionTerms(const ThermalState &state, int) {
+void updateFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies, int) {
 
     Vcr<int> bifurcationFlags(state.lastCell + 1, 0);
     Vcr<int> valveFlags(state.lastCell + 1, 1);
@@ -3231,19 +3233,19 @@ void updateFlowPartitionTerms(const ThermalState &state, int) {
         cell.c0ini = cell.c0;
         cell.udini = cell.ud;
         if (cellIndex != 0 && cellIndex != state.lastCell) {
-            updateInteriorFlowPartitionCell(state, cellIndex, bifurcationFlags, valveFlags);
+            updateInteriorFlowPartitionCell(state, dependencies, cellIndex, bifurcationFlags, valveFlags);
         } else if (cellIndex == 0) {
-            updateInletBoundaryFlowPartition(state, cellIndex, bifurcationFlags);
+            updateInletBoundaryFlowPartition(state, dependencies, cellIndex, bifurcationFlags);
 
         } else {
-            updateOutletBoundaryFlowPartition(state, cellIndex, bifurcationFlags);
+            updateOutletBoundaryFlowPartition(state, dependencies, cellIndex, bifurcationFlags);
         }
     }
 
     finalizeFlowPartitionTerms(state, bifurcationFlags, valveFlags);
 }
 
-void updateOutletFlowPartitionTerms(const ThermalState &state) {
+void updateOutletFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies) {
 
     int cellIndex = state.lastCell;
     Cel &cell = state.cells[cellIndex];
@@ -3331,7 +3333,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     double rightSuperficialLiquidVelocity = (cell.MliqiniRBuf) / (rightLiquidDensity * rightFlowArea);
 
     selectAndApplyBufferedOutletFlowRegime(
-        state, cellIndex, c0, ud, superficialGasVelocity, superficialLiquidVelocity, leftSuperficialGasVelocity, leftSuperficialLiquidVelocity, rightSuperficialGasVelocity, rightSuperficialLiquidVelocity,
+        state, dependencies, cellIndex, c0, ud, superficialGasVelocity, superficialLiquidVelocity, leftSuperficialGasVelocity, leftSuperficialLiquidVelocity, rightSuperficialGasVelocity, rightSuperficialLiquidVelocity,
         gasDensity, liquidDensity, flowArea);
     cell.term1L = leftCell.term1;
     cell.term2L = leftCell.term2;
@@ -3339,7 +3341,7 @@ void updateOutletFlowPartitionTerms(const ThermalState &state) {
     leftCell.term2R = cell.term2;
 }
 
-void updateInletFlowPartitionTerms(const ThermalState &state) {
+void updateInletFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies) {
 
     int cellIndex = 0;
     Cel &cell = state.cells[cellIndex];
@@ -3402,7 +3404,7 @@ void updateInletFlowPartitionTerms(const ThermalState &state) {
     double rightSuperficialLiquidVelocity = (cell.MliqiniRBuf) / (rightLiquidDensity * rightFlowArea);
 
     selectAndApplyBufferedInletFlowRegime(
-        state, cellIndex, c0, ud, superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity, gasDensity, liquidDensity,
+        state, dependencies, cellIndex, c0, ud, superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity, gasDensity, liquidDensity,
         flowArea);
     state.cells[1].term1L = cell.term1;
     state.cells[1].term2L = cell.term2;

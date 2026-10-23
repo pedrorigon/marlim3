@@ -120,7 +120,7 @@ void correctSeparatorPressure(const GasLiftState &state, double flowRate, int va
 /// Solves one unloading step from the interface cell to the end of the gas line: marches the pressure through the
 /// friction and the head of each half cell's gas and completion-fluid parts, updates the discharge temperatures, and
 /// sets the flows that carry the valves' sources along the line and the interface velocity.
-void solveUnloading(const GasLiftState &state);
+void solveUnloading(const GasLiftState &state, const thermal::ThermalState &dependencies);
 
 /// Advances the unloading interface over the time step. When it crosses a face of its cell, the interface time step
 /// is shortened to the crossing and the interface moves to the next or the previous cell; at the end of the gas line
@@ -196,7 +196,7 @@ void updateGasLine(const GasLiftState &state);
 /// The gas temperatures of one thermal coupling cycle: the injection temperature at the inlet, the reverse-flow
 /// temperature at the outlet while the flow there runs backwards, and each cell before gasLoopEnd from its left
 /// neighbour's previous temperature; with the time derivative of each temperature it sets.
-void updateGasTemperatures(const GasLiftState &state, int gasLoopEnd);
+void updateGasTemperatures(const GasLiftState &state, const thermal::ThermalState &dependencies, int gasLoopEnd);
 
 /// The gas density of each cell before gasLoopEnd, at its pressure and temperature, and its density times flow area,
 /// with the face values its neighbours hold of both.
@@ -289,7 +289,7 @@ template <ValveFluids fluids>
 
 /// The temperature of the gas a valve injects into its production cell: the valve's discharge temperature while the
 /// valve flows, the cell's own otherwise, and never below kMinimumTemperatureCelsius.
-[[nodiscard]] double injectedGasTemperature(const GasLiftState &state, int valveIndex, const Cel &productionCell);
+[[nodiscard]] double injectedGasTemperature(const GasLiftState &state, const thermal::ThermalState &dependencies, int valveIndex, const Cel &productionCell);
 
 /// Calls visit(productionCellIndex, gasCellIndex) for each pair of cells the column-annulus thermal coupling joins,
 /// from tubingCouplingStart down to tubingCouplingEnd.

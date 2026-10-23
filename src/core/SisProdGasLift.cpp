@@ -1,3 +1,4 @@
+#include "SisProdThermal.h"
 #include "SisProdGasLift.h"
 #include "SisProdGasLiftInternal.h"
 
@@ -343,7 +344,7 @@ double unloadingPressureCorrection(const GasLiftState &state, double maximumFlow
     return sign * pressureCorrection;
 }
 
-void solveUnloading(const GasLiftState &state) {
+void solveUnloading(const GasLiftState &state, const thermal::ThermalState &dependencies) {
     for (int gasCellIndex = state.interfaceCell; gasCellIndex <= state.lastGasCell; gasCellIndex++) {
         CelG &cell = state.gasCells[gasCellIndex];
         CelG &left = state.gasCells[gasCellIndex - 1];
@@ -390,7 +391,7 @@ void solveUnloading(const GasLiftState &state) {
         cell.presL = left.pres;
         left.presR = cell.pres;
 
-        state.temperatureUpdater.dischargeTemperature(gasCellIndex);
+        thermal::computeDischargeTemperature(dependencies, gasCellIndex);
 
         cell.u1L = ((1. - cell.razInter) * cell.MasEspFlu(cell.pres, cell.temp) +
                     cell.razInter * cell.flui.MasEspGas(leftCellPressure, leftTemperature)) *
@@ -583,7 +584,7 @@ double sourceVolumeFlowRate(const CelG &cell, double liquidDensity, double gasDe
 
 // The gas line in the transient.
 
-void solveGasLine(const GasLiftState &state) {
+void solveGasLine(const GasLiftState &state, const thermal::ThermalState &dependencies) {
     if (state.input.lingas <= 0)
         return;
 
@@ -602,7 +603,7 @@ void solveGasLine(const GasLiftState &state) {
                 valveCell.massfonteCH * units::kSecondsPerDay /
                 valveCell.flui.MasEspGas(kStandardPressureKgfPerCm2, kStandardTemperatureCelsius);
             productionCell.acsr.injg.tipoflu = kInjectedGas;
-            productionCell.acsr.injg.temp = injectedGasTemperature(state, valveIndex, productionCell);
+            productionCell.acsr.injg.temp = injectedGasTemperature(state, dependencies, valveIndex, productionCell);
         } else {
             productionCell.acsr.injg.QGas = valveCell.massfonteCH;
             productionCell.acsr.injg.tipoflu = kInjectedCompletionFluid;
@@ -610,7 +611,7 @@ void solveGasLine(const GasLiftState &state) {
         }
         recordValveState(valveCell, choke);
     }
-    advanceGasSubStep(state);
+    advanceGasSubStep(state, dependencies);
 }
 
 void updateTransientGasValves(const GasLiftState &state) {
@@ -663,7 +664,7 @@ void updateMaster2Source(const GasLiftState &state) {
     downstreamCell.fonteM2 = -upstreamCell.fonteM2;
 }
 
-void advanceGasSubStep(const GasLiftState &state) {
+void advanceGasSubStep(const GasLiftState &state, const thermal::ThermalState &dependencies) {
     for (int gasCellIndex = 0; gasCellIndex <= state.lastGasCell; gasCellIndex++)
         state.gasCells[gasCellIndex].DeVoltaParaoFuturo();
     state.interfaceTimeStep = state.timeStep;
@@ -697,7 +698,7 @@ void advanceGasSubStep(const GasLiftState &state) {
     for (int thermalCouplingCycle = 0; thermalCouplingCycle <= maximumThermalCouplingCycles; thermalCouplingCycle++) {
         assembleAndSolveGasSystem(state);
         updateGasLine(state);
-        updateGasTemperatures(state, gasLoopEnd);
+        updateGasTemperatures(state, dependencies, gasLoopEnd);
         if (thermalCouplingCycle < maximumThermalCouplingCycles)
             for (int renewedCellIndex = 0; renewedCellIndex <= state.lastGasCell; renewedCellIndex++)
                 state.gasCells[renewedCellIndex].FeiticoDoTempo();
@@ -709,7 +710,7 @@ void advanceGasSubStep(const GasLiftState &state) {
         state.gasCells[gasCellIndex].presini = state.gasCells[gasCellIndex].pres;
 
     if (state.input.descarga == 1)
-        solveUnloading(state);
+        solveUnloading(state, dependencies);
 }
 
 void assembleAndSolveGasSystem(const GasLiftState &state) {
@@ -755,7 +756,7 @@ void updateGasLine(const GasLiftState &state) {
     }
 }
 
-void updateGasTemperatures(const GasLiftState &state, int gasLoopEnd) {
+void updateGasTemperatures(const GasLiftState &state, const thermal::ThermalState &dependencies, int gasLoopEnd) {
     CelG &inletCell = state.gasCells[0];
     CelG &outletCell = state.gasCells[state.lastGasCell];
     inletCell.temp = state.injectionTemperature;
@@ -765,7 +766,7 @@ void updateGasTemperatures(const GasLiftState &state, int gasLoopEnd) {
 #pragma omp parallel for num_threads(state.globals->ntrd)
     for (int gasCellIndex = 1; gasCellIndex < gasLoopEnd; gasCellIndex++) {
         CelG &cell = state.gasCells[gasCellIndex];
-        state.temperatureUpdater.computeGasTemperature(gasCellIndex, state.gasCells[gasCellIndex - 1].tempini);
+        thermal::computeGasTemperature(dependencies, gasCellIndex, state.gasCells[gasCellIndex - 1].tempini, 0);
         cell.dTdt = (cell.temp - cell.tempini) / state.timeStep;
     }
 }
@@ -1069,7 +1070,7 @@ void coupledSteadyGasTemperature(const GasLiftState &state, int cellIndex) {
                         left.flui.ViscGas(left.pres, left.temp)});
 }
 
-void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
+void computeSteadyGasFlowRate(const GasLiftState &state, const thermal::ThermalState &dependencies, int cellIndex) {
     CelG &cell = state.gasCells[cellIndex];
     const int valveCount = state.input.nvalvgas;
     bool matched = false;
@@ -1082,7 +1083,7 @@ void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex) {
 
             productionCell.acsr.injg.QGas =
                 cell.massfonteCH * units::kSecondsPerDay / (kAirDensityAtStandardConditions * cell.flui.Deng);
-            productionCell.acsr.injg.temp = injectedGasTemperature(state, valveIndex, productionCell);
+            productionCell.acsr.injg.temp = injectedGasTemperature(state, dependencies, valveIndex, productionCell);
             productionCell.fontemassGR = cell.massfonteCH;
 
             if (cell.VGasR <= 0. && cellIndex < state.lastGasCell) {
@@ -1334,10 +1335,10 @@ double calibratedValveOpeningFraction(double calibrationPressure, double calibra
     return std::min(openingArea, throatArea) / throatArea;
 }
 
-double injectedGasTemperature(const GasLiftState &state, int valveIndex, const Cel &productionCell) {
+double injectedGasTemperature(const GasLiftState &state, const thermal::ThermalState &dependencies, int valveIndex, const Cel &productionCell) {
     const ChokeGas &choke = state.gasLiftChokes[valveIndex];
     const double temperature = choke.presEstag > choke.presGarg
-                                   ? state.temperatureUpdater.gasLiftDischargeTemperature(valveIndex)
+                                   ? thermal::computeGasLiftDischargeTemperature(dependencies, valveIndex)
                                    : productionCell.temp;
     return std::max(temperature, kMinimumTemperatureCelsius);
 }

@@ -107,6 +107,9 @@ using TimeStepPolicies = TimeStepPolicyRegistry<
     DampMaximumTimeStepPolicy,
     PressureRateOfChangePolicy>;
 
+/// Selects the collector fluid or the shared default fluid for reverse flow.
+const ProFlu &reverseFlowFluid(const ProFlu *collectorFluid);
+
 /// Returns the absolute gas-to-total mass-flow ratio at the outlet.
 double flowQuality(double gasMassFlow, double totalMassFlow);
 
@@ -117,13 +120,13 @@ double inSituGasMassFraction(const Cel &cell, double voidFraction, double pressu
 void reportAcceptedArtificialGas(const TransientStepState &state);
 
 /// Advances one ordered fraction, porous-flow, pressure-volume, and thermal coupling iteration.
-void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev);
+void advanceCouplingIteration(const TransientSolveState &state, const TransientDependencies &dependencies, int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev);
 
 /// Emits scheduled line, wall, and unit-cell profiles and advances their schedule indices.
 void writeProfiles(const TransientSolveState &state, int nrede);
 
 /// Samples and flushes the four trend channels using their individual initial-time rules.
-void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxdesc, int nrede);
+void writeTrends(const TransientSolveState &state, const TransientDependencies &dependencies, int ordemImpT, double velmaxdesc, int nrede);
 
 /// Writes selected screen variables and the elapsed duration of the step calculation.
 void writeScreenOutput(const TransientSolveState &state, const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end);
@@ -232,7 +235,7 @@ void restoreIntermediateCouplingState(const TransientSolveState &state, int kont
                                       double complementaryMassSource);
 
 /// Finalizes derivatives, deposition, sources, thermal coupling, transported properties and densities in order.
-void finalizeTransientCellState(const TransientSolveState &state, const ProFlu *fluiRev);
+void finalizeTransientCellState(const TransientSolveState &state, const TransientDependencies &dependencies, const ProFlu *fluiRev);
 
 /// Updates weighted pressure, flux and void-fraction histories with the current one-sample removal rule.
 void updateTransientMovingMeans(const TransientSolveState &state);

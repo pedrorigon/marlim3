@@ -11,22 +11,11 @@ class CelG;
 class ChokeGas;
 class Ler;
 struct varGlob1D;
-namespace sisprod { class SolveContext; }
+namespace sisprod::thermal { struct ThermalState; }
 template <class T> class Vcr;
 template <class T> class BandMtx;
 
 namespace sisprod::gaslift {
-
-/// The thermal steps the gas line calls: the discharge, gas and gas-lift discharge
-/// temperatures. They take a ThermalState the gas line does not carry, which the solve
-/// context provides.
-struct GasLiftTemperatureUpdater {
-    SolveContext &context;
-
-    void dischargeTemperature(int cellIndex) const;
-    void computeGasTemperature(int cellIndex, double previousTemperature) const;
-    [[nodiscard]] double gasLiftDischargeTemperature(int valveIndex) const;
-};
 
 /// The state the gas line and gas-lift routines read, and the only state they
 /// may read.
@@ -109,8 +98,6 @@ struct GasLiftState {
     const double &unloadingAveragingWindow;
     const int &unloadingSampleCapacity;
 
-    /// The gas line's temperatures, which the thermal module computes.
-    GasLiftTemperatureUpdater temperatureUpdater;
 };
 
 // Unloading the completion fluid through the gas-lift valves.
@@ -136,13 +123,13 @@ void computeProductionUnloadingHydrostatics(const GasLiftState &state);
 /// Advances the gas line by one sub-step in the transient: updates the valves, records on each valve's production
 /// cell what the valve injects (gas ahead of the interface, completion fluid behind it), at what rate and temperature,
 /// copies the valve's state onto its gas cell, then advances the sub-step. Does nothing without a gas line.
-void solveGasLine(const GasLiftState &state);
+void solveGasLine(const GasLiftState &state, const thermal::ThermalState &dependencies);
 
 /// Advances the gas line by one sub-time-step. During the unloading it first advances the interface, shortening the
 /// time step of the gas line and of the production cells when the interface needs a shorter one; then, for each
 /// thermal coupling cycle, it solves the pressure-flow system and the gas temperatures; last come the gas densities
 /// and, during the unloading, the unloading step.
-void advanceGasSubStep(const GasLiftState &state);
+void advanceGasSubStep(const GasLiftState &state, const thermal::ThermalState &dependencies);
 
 /// Couples the gas line to the production tubing in the transient: each coupled production cell takes the facing gas
 /// cell's temperatures, velocity, diameters and fluid (gas ahead of the interface, completion fluid behind it) as its
@@ -170,7 +157,7 @@ void updateSteadyGasTemperature(const GasLiftState &state, int cellIndex);
 /// The steady gas flow through a cell's right face: the left face's, less what a gas-lift valve in the cell
 /// delivers to the tubing. For each valve in the cell it also primes the choke and records the injection on the
 /// valve's production cell; when the flow runs out before the end of the line, the valves after it get no source.
-void computeSteadyGasFlowRate(const GasLiftState &state, int cellIndex);
+void computeSteadyGasFlowRate(const GasLiftState &state, const thermal::ThermalState &dependencies, int cellIndex);
 
 /// Primes the steady gas mass source of the gas-lift valves that discharge into this production cell, and records
 /// the injection on the cell.

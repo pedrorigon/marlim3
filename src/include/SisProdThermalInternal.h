@@ -118,7 +118,7 @@ struct InletBoundaryRegime {
                                     double superficialLiquidVelocity);
 
     /// Evaluates and stores the instantaneous inlet closure.
-    static void updateClosure(const ThermalState &state, int cellIndex, double &c0,
+    static void updateClosure(const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double &c0,
                               double &ud);
 };
 
@@ -128,7 +128,7 @@ struct BufferedInletRegime {
     static void applyInletOverrides(const ThermalState &, int, int &, double, double);
 
     /// Evaluates the buffered inlet closure without storing it in the cell.
-    static void updateClosure(const ThermalState &state, int cellIndex, double &c0,
+    static void updateClosure(const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double &c0,
                               double &ud);
 };
 
@@ -182,7 +182,7 @@ TemperatureSourceTerms computeThermalMassTransferSourceTerms(
 /// Refreshes inlet sources, saves their previous face values, and seeds the
 /// liquid density and solution-gas properties for the distributed sweep.
 MassTransferFaceState initializeDistributedMassTransferInlet(
-    const ThermalState &state, int cellIndex);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex);
 
 /// Selects liquid-flow donors for a face with cellIndex >= 1 and prepares
 /// water cuts, densities, and pressure/temperature solution-gas derivatives.
@@ -235,18 +235,18 @@ void clearDriftClosure(const ThermalState &state, int cellIndex);
 /// Classifies an interior face, applies ordered regime overrides, then computes
 /// the closure and partition terms for the surviving branch.
 void selectAndApplyInteriorFlowRegime(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
     double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity, double rightSuperficialLiquidVelocity,
     double gasDensity, double liquidDensity, double flowArea);
 
 /// Prepares both face properties, propagates left-face state, and applies
 /// the interior regime unless the valve flag blocks it.
 void updateInteriorFlowPartitionCell(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif, Vcr<int> &valv);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, Vcr<int> &valv);
 
 /// Applies outlet-specific regime rules and propagates its closure to the left face.
 void updateOutletBoundaryFlowPartition(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif);
 
 /// Blends closure values into the supplied buffers according to inclination
 /// and flow-pattern differences; blendIndex identifies the destination entry.
@@ -270,24 +270,24 @@ void applyNoSlipClosure(const ThermalState &state, int cellIndex, double term1,
 /// the partition after all branch-flag overrides.
 template <typename Regime>
 void selectAndApplyInletRegime(
-    const ThermalState &state, int cellIndex, int &branchFlag, double distributionCoefficient,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, int &branchFlag, double distributionCoefficient,
     double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
 
 /// Applies the instantaneous inlet policy using the cell branch-flag entry.
 void selectAndApplyInletBoundaryFlowRegime(
-    const ThermalState &state, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
     double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
 
 /// Applies the buffered outlet rules, closure, and final choke override.
 void selectAndApplyBufferedOutletFlowRegime(
-    const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity,
     double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity,
     double flowArea);
 
 /// Applies the buffered inlet policy with a local branch flag.
 void selectAndApplyBufferedInletFlowRegime(
-    const ThermalState &state, int cellIndex, double distributionCoefficient, double driftVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
 
 /// Advances one cell temperature and stores its rate using the global time step.
@@ -357,7 +357,7 @@ int thermalCouplingIndexOf(const ThermalState &state, int cellIndex);
 /// Prepares the inlet face and partition terms for cellIndex == 0.
 /// The inlet void fraction uses c0 on entry, before the closure callback updates it.
 void updateInletBoundaryFlowPartition(
-    const ThermalState &state, int cellIndex, Vcr<int> &bifurcationFlags);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bifurcationFlags);
 
 /// Evaluates transient, steady, or 3D-coupled heat flux after the cell heat-transfer
 /// state is prepared. Unsupported diffusion modes retain zero heat flux.
@@ -420,7 +420,7 @@ void updateEquilibriumMassTransferDerivatives(
 /// Refreshes sources, prepares one face, updates derivatives and model terms,
 /// then publishes the state carried to the next face before fluid copies are destroyed.
 void updateDistributedMassTransferCell(
-    const ThermalState &state, int cellIndex, MassTransferFaceState &previousFace);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, MassTransferFaceState &previousFace);
 
 /// Applies the hydrate model, disabled-model reset, and ordered phase-availability
 /// limits without sharing reset sets between distinct models.
@@ -431,7 +431,7 @@ void finalizeDistributedMassTransferFace(
 /// Evaluates the interior drift closure after regime selection and applies
 /// its velocity cap and outlet-only partition corrections in their evaluation order.
 void applyInteriorDriftPartition(
-    const ThermalState &state, int cellIndex, double superficialGasVelocity,
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double superficialGasVelocity,
     double superficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
 
 /// Corrects one interior partition using cell closure values. Candidate phase

@@ -7,17 +7,8 @@ class Ler;
 class ProFlu;
 struct varGlob1D;
 class SProd;
-namespace sisprod { class SolveContext; }
 
 namespace sisprod::fluidtracking {
-
-/// Gas specific gravity correction through the steady-state view of the same system.
-struct FluidTrackingUpdaters {
-    SolveContext &context;
-
-    /// Updates cell and accessory gas-density corrections through the solve context.
-    void correctGasSpecificGravity(int i) const;
-};
 
 /// State shared by black-oil property tracking and phase molar-fraction transport.
 ///
@@ -38,8 +29,14 @@ struct FluidTrackingState {
     int &trackGasGravity;                 // trackDeng
     int &compositionalRefreshCounter;     // kontaRenovaComp
 
-    FluidTrackingUpdaters updaters;
+    /// Iteration indicator used to choose the density-correction reference cell.
+    const int &steadyIteration;
 };
+
+/// Updates cell and accessory gas-density corrections. The iteration indicator
+/// selects cell i or i - 1 only when density correction is enabled.
+void correctGasSpecificGravity(Cel *const &cells, const Ler &input,
+                               const int &steadyIteration, int i);
 
 /// Transports gas-oil ratio, gas specific gravity, CO2 fraction, API gravity,
 /// water content and density, and dead-oil viscosities as enabled by the fluid

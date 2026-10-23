@@ -44,11 +44,11 @@ namespace trendoutput { struct TrendState; }
 namespace sisprod {
 
 class SolveContext;
-namespace fluidtracking { struct FluidTrackingState; struct FluidTrackingUpdaters; }
-namespace gaslift { struct GasLiftState; struct GasLiftTemperatureUpdater; }
+namespace fluidtracking { struct FluidTrackingState; }
+namespace gaslift { struct GasLiftState; }
 namespace sources { struct SourceState; }
 namespace steady { struct SteadyStateSearchState; struct SteadyStateState; struct SteadyStateUpdaters; }
-namespace thermal { struct ThermalClosureUpdater; struct ThermalSourceUpdater; struct ThermalState; }
+namespace thermal { struct ThermalState; }
 namespace transient {
 struct TransientSolveState;
 struct TransientSolveUpdaters;
@@ -555,10 +555,6 @@ class SProd {
     friend struct sisprod::steady::SteadyStateUpdaters;
     friend struct sisprod::transient::TransientStepUpdaters;
     friend struct sisprod::transient::TransientSolveUpdaters;
-    friend struct sisprod::gaslift::GasLiftTemperatureUpdater;
-    friend struct sisprod::thermal::ThermalClosureUpdater;
-    friend struct sisprod::thermal::ThermalSourceUpdater;
-    friend struct sisprod::fluidtracking::FluidTrackingUpdaters;
 
   public:
     /// What a system built from an already parsed input takes from the system that

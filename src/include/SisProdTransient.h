@@ -21,11 +21,29 @@ template <class T> class BandMtx;
 #include <string>
 #include <vector>
 
+namespace driftflux::coefficient { struct ClosureState; }
+namespace sisprod::sources { struct SourceState; }
+namespace sisprod::thermal { struct ThermalState; struct ThermalDependencies; }
+namespace sisprod::gaslift { struct GasLiftState; }
+
+namespace sisprod::fluidtracking { struct FluidTrackingState; }
+namespace trendoutput { struct TrendState; }
+
 namespace sisprod {
 
 class SolveContext;
 
 namespace transient {
+
+/// Views of the physical models and trend writer used by transient orchestration.
+struct TransientDependencies {
+    const thermal::ThermalState &thermal;
+    const thermal::ThermalDependencies &thermalDependencies;
+    const gaslift::GasLiftState &gasLift;
+    const fluidtracking::FluidTrackingState &fluidTracking;
+    const trendoutput::TrendState &trends;
+};
+
 
 /// Gas-line sub-step operations resolved through the solve context.
 struct TransientStepUpdaters {
@@ -389,53 +407,23 @@ struct TransientSolveUpdaters {
     /// Solves hydrate envelopes using the production system.
     void solveHydrateEnvelopes() const;
 
-    /// Finds the injection pressure used by unloading control.
-    [[nodiscard]] double searchUnloadingInjectionPressure() const;
 
-    /// Writes a production trend header.
-    void writeProductionTrendHeader(int i, int nrede) const;
 
-    /// Flushes production trend rows.
-    void writeProductionTrendRows(int i, int nrede) const;
 
-    /// Writes a gas-line trend header.
-    void writeGasTrendHeader(int i, int nrede) const;
 
-    /// Flushes gas-line trend rows.
-    void writeGasTrendRows(int i, int nrede) const;
 
-    /// Writes a production-wall trend header.
-    void writeProductionCrossSectionTrendHeader(int i) const;
 
-    /// Flushes production-wall trend rows.
-    void writeProductionCrossSectionTrendRows(int i) const;
 
-    /// Writes a gas-wall trend header.
-    void writeGasCrossSectionTrendHeader(int i) const;
 
-    /// Flushes gas-wall trend rows.
-    void writeGasCrossSectionTrendRows(int i) const;
 
-    /// Updates tubing coupling through the gas-lift module.
-    void connectTubing() const;
 
     /// Advances transient thermal energy for the specified coupling cycle.
     void marchTransientEnergy(int ciclo, int ciclomax) const;
 
-    /// Transports phase molar fractions using the reverse-flow fluid.
-    void updateMolarFractions(const ProFlu *fluiRev) const;
 
-    /// Transports tracked black-oil properties using the reverse-flow fluid.
-    void updateBlackOilProperties(const ProFlu *fluiRev) const;
 
-    /// Updates distributed mass transfer through the thermal module.
-    void updateTemperatures() const;
 
-    /// Updates flow-partition terms through the thermal module.
-    void updateThermal(int aflu = 0) const;
 
-    /// Advances the gas-line solution.
-    void solveGasLine() const;
 };
 
 /// Live step bindings and the additional histories, output buffers, and collaborators
@@ -608,7 +596,7 @@ struct TransientSolveState {
 /// property, history, and output phases. The caller drives the time loop;
 
 /// network time advancement is controlled by the network caller.
-void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev,
+void solveTransientStep(const TransientSolveState &state, const TransientDependencies &dependencies, double titRev, double alfRev, double betRev,
                         int nrede, const ProFlu *fluiRev);
 
 }  // namespace transient

@@ -1,3 +1,8 @@
+#include "DriftFluxClosure.h"
+#include "SisProdSources.h"
+#include "SisProdGasLift.h"
+#include "SisProdThermal.h"
+#include "SisProdFluidTracking.h"
 #include "SisProdSteadyState.h"
 
 #include "GradientCorrelations.h"
@@ -57,7 +62,7 @@ void publishSteadyVoidFraction(const SteadyStateState &state, int i) {
 ///
 /// After publication, the reverse black-oil march zeroes the complementary-liquid
 /// residence time; the reverse compositional march propagates it from the upstream cell.
-void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, double rhol, double rhog) {
+void applyReverseSteadyPhaseFractions(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhol, double rhog) {
     if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
         if (state.input.tipoFluido == 1) {
             state.cells[i].alf = 0.;
@@ -86,7 +91,7 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
                 if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
                     state.cells[i].alf = fabs(state.cells[i].QG) /
                                     (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
-                    state.updaters.steadyDriftClosure(i, c0, ud);
+                    driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
                 } else
                     state.cells[i].alf = 0.;
                 publishSteadyVoidFraction(state, i);
@@ -99,7 +104,7 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, int i, doub
             // at steady state, the void fraction comes from the slip relations,
             // so this is where Co and Ud are obtained:
             else if (fabs(state.cells[i].QG) > (*state.globals).localtiny && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6)
-                state.updaters.steadyDriftClosure(i, c0, ud);
+                driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
             state.cells[i].c0 = c0;
             state.cells[i].ud = ud;
             double area = state.cells[i].duto.area;
@@ -181,7 +186,7 @@ void refreshCompositionalFlashFromNeighbour(const SteadyStateState &state, int i
 
 /// Two-phase branch of the compositional phase-regime chain: one arm of the
 /// four-way chain in applyCompositionalPhaseRegime, with no other caller.
-void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, double rhol, double rhog) {
+void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhol, double rhog) {
     double c0 = 1.;
     double ud = 0.;
     if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5) {
@@ -192,7 +197,7 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
                 if (state.convergenceMonitor > 0.01)
                     state.cells[i].alf = fabs(state.cells[i].QG) /
                                     (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
-                state.updaters.steadyDriftClosure(i, c0, ud);
+                driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
             } else
                 state.cells[i].alf = 0.;
             publishSteadyVoidFraction(state, i);
@@ -205,7 +210,7 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
             // at steady state, the void fraction comes from the slip relations,
             // so this is where Co and Ud are obtained:
             else if (fabs(state.cells[i].QG) > (*state.globals).localtiny * 1e-5 && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5)
-                state.updaters.steadyDriftClosure(i, c0, ud);
+                driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
             state.cells[i].c0 = c0;
             state.cells[i].ud = ud;
             double area = state.cells[i].duto.area;
@@ -258,7 +263,7 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, int i, doub
 /// Resolves the phase fractions of cell i for the compositional mass march.
 ///
 /// Uses localtiny * 1e-5 for the no-flow and phase-presence thresholds.
-void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double rhol, double rhog) {
+void applyCompositionalPhaseRegime(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhol, double rhog) {
     if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny * 1e-5) {
         if (state.input.tipoFluido == 1) {
             state.cells[i].alf = 0.;
@@ -278,7 +283,7 @@ void applyCompositionalPhaseRegime(const SteadyStateState &state, int i, double 
         state.cells[i].ud = 0.;
         publishSteadyComplementaryFraction(state, i);
     } else { // two-phase
-        applyCompositionalTwoPhaseRegime(state, i, rhol, rhog);
+        applyCompositionalTwoPhaseRegime(state, dependencies, i, rhol, rhog);
     }
 }
 
@@ -696,7 +701,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, double o
             state.cells[i].flui.LVisH = state.cells[i - 1].flui.LVisH;
         }
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6) { // re-evaluates the complementary-liquid volume fraction;
         // even without a source it can change, because the produced liquid shrinks
@@ -788,7 +793,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, double
             state.cells[i].flui.LVisH = state.cells[i - 1].flui.LVisH;
         }
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
 
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && state.cells[i - 1].alf < 1. - (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
@@ -937,7 +942,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, double
             state.cells[i].flui.LVisH = state.cells[i - 1].flui.LVisH;
         }
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
 
     if (state.cells[i - 1].bet > (*state.globals).localtiny && state.cells[i - 1].alf < 1. - (*state.globals).localtiny * 1e-10 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
@@ -1091,7 +1096,7 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, double
     }
     if (state.input.flashCompleto == 0) {
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if ((state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny * 1e-6) &&
         fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15) {
@@ -1243,7 +1248,7 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, doub
     }
     if (state.input.flashCompleto == 0) {
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
@@ -1399,7 +1404,7 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, double 
     }
     if (state.input.flashCompleto == 0) {
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if ((state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny) &&
         fabs(state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP + state.cells[i - 1].acsr.injm.MassC) > 1e-15) {
@@ -1542,7 +1547,7 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, double temp
     }
     if (state.input.flashCompleto == 0) {
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny * 1e-6) {
         // re-evaluates the complementary-liquid volume fraction;
@@ -1693,7 +1698,7 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, double te
     }
     if (state.input.flashCompleto == 0) {
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
@@ -1845,7 +1850,7 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, double temper
     }
     if (state.input.flashCompleto == 0) {
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
@@ -1947,7 +1952,7 @@ void finalizeSteadyMassGasOnly(const SteadyStateState &state, int i) {
     publishSteadyComplementaryFraction(state, i);
 }
 
-void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rhog, double rhol) {
+void finalizeSteadyMassTwoPhase(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhog, double rhol) {
     double c0 = 1.;
     double ud = 0.;
     if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6) {
@@ -1959,7 +1964,7 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
                     if (state.convergenceMonitor > 0.01)
                         state.cells[i].alf = fabs(state.cells[i].QG) /
                                         (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
-                    state.updaters.steadyDriftClosure(i, c0, ud);
+                    driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
                 } else
                     state.cells[i].alf = 0.;
                 publishSteadyVoidFraction(state, i);
@@ -1972,7 +1977,7 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
             // at steady state, the void fraction comes from the slip relations,
             // so this is where Co and Ud are obtained:
             else if (fabs(state.cells[i].QG) > (*state.globals).localtiny && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6)
-                state.updaters.steadyDriftClosure(i, c0, ud);
+                driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
             state.cells[i].c0 = c0;
             state.cells[i].ud = ud;
             double area = state.cells[i].duto.area;
@@ -2032,7 +2037,7 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, int i, double rho
     publishSteadyComplementaryFraction(state, i);
 }
 
-void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, double &alfini, double &betini) {
+void seedFirstCellVoidFraction(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, double &alfini, double &betini) {
     // void fraction estimate in the first cell of the system
     if (state.cells[0].acsr.tipo == kAccessoryNone) { // no source at all
         state.cells[0].temp = state.input.celp[0].textern;
@@ -2118,7 +2123,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
                 state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
             state.cells[0].acsr.radialPoro.flup.atualizaPropComp(pchute, state.cells[0].temp);
         }
-        state.updaters.updateSource(0);
+        sources::renewSourceTerms(dependencies.sources, 0);
         double qgas = state.cells[0].acsr.radialPoro.fluxIniG /
                       state.cells[0].acsr.radialPoro.flup.MasEspGas(pchute, state.cells[0].temp);
         double qliq = (state.cells[0].acsr.radialPoro.fluxIni + state.cells[0].acsr.radialPoro.fluxIniA) /
@@ -2134,7 +2139,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
                 state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
             state.cells[0].acsr.poroso2D.dados.flup.atualizaPropComp(pchute, state.cells[0].temp);
         }
-        state.updaters.updateSource(0);
+        sources::renewSourceTerms(dependencies.sources, 0);
         double qgas = state.cells[0].acsr.poroso2D.dados.transfer.fluxIniG /
                       state.cells[0].acsr.poroso2D.dados.flup.MasEspGas(pchute, state.cells[0].temp);
         double qliq = (state.cells[0].acsr.poroso2D.dados.transfer.fluxIni + state.cells[0].acsr.poroso2D.dados.transfer.fluxIniA) /
@@ -2151,7 +2156,7 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
         }
         if (state.cells[0].acsr.injm.condTermo == 0) {
             state.cells[0].pres = pchute;
-            state.updaters.updateSource(0);
+            sources::renewSourceTerms(dependencies.sources, 0);
         }
         double qgas = state.cells[0].acsr.injm.MassG /
                       state.cells[0].acsr.injm.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
@@ -2181,15 +2186,15 @@ void seedFirstCellVoidFraction(const SteadyStateState &state, double pchute, dou
 /// injection pressure given, marches the line when the injection choke is not
 /// throttling, and searches its pressure (tertiary) when it is. With the flow
 /// rate given, searches its pressure (secondary).
-void solveGasLineSteady(const SteadyStateState &state, InjectionPressureCondition) {
+void solveGasLineSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, InjectionPressureCondition) {
     // march for the injection-pressure case
     if (state.input.chokes.abertura[0] >= 0.2) { // injection choke inactive
-        marchGasSteady(state);
+        marchGasSteady(state, dependencies);
     } else
         state.updaters.searchGasPressureSteadyTertiary(); // injection choke active
 }
 
-void solveGasLineSteady(const SteadyStateState &state, InjectionFlowRateCondition) {
+void solveGasLineSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, InjectionFlowRateCondition) {
     state.updaters.searchGasPressureSteadySecondary(); // gas-line march for the injection-flow-rate case
 }
 
@@ -2203,22 +2208,22 @@ void estimateValveGasPressure(const SteadyStateState &state, InjectionPressureCo
 
 void estimateValveGasPressure(const SteadyStateState &, InjectionFlowRateCondition) {}
 
-void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, double pchute) {
+void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute) {
     if (pchute > 0 && state.input.lingas > 0 && state.input.nvalvgas > 0) {
         withGasInletCondition(state.gasCells[0].tipoCC,
-                              [&](auto condition) { solveGasLineSteady(state, condition); });
+                              [&](auto condition) { solveGasLineSteady(state, dependencies, condition); });
     }
 
     if (state.input.acopColAnulPermForte > 0 && state.input.lingas > 0 && state.thermalSourceDisabled == 0) {
         refreshProperties(state);
         refreshSteadyThermalVelocities(state);
         computePseudoTransientTimeStep(state);
-        state.updaters.connectTubing();
+        gaslift::connectTubing(dependencies.gasLift);
         for (int kontaPseudo = 0; kontaPseudo < state.input.acopColAnulPermForte; kontaPseudo++) {
             for (int iterm = 0; iterm <= state.lastGasCell; iterm++)
                 state.gasCells[iterm].tempini = state.gasCells[iterm].temp;
             for (int iterm = 1; iterm <= state.lastGasCell; iterm++) {
-                state.updaters.computeGasTemperature(iterm, state.gasCells[iterm - 1].tempini, 1);
+                thermal::computeGasTemperature(dependencies.thermal, iterm, state.gasCells[iterm - 1].tempini, 1);
             }
             state.cells[0].tempini = state.cells[0].temp;
             state.cells[1].tempLini = state.cells[1].tempL;
@@ -2227,16 +2232,16 @@ void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, double pchute) 
                 state.cells[iterm].tempini = state.cells[iterm].temp;
             }
             for (int iterm = 1; iterm <= state.lastCell; iterm++) {
-                state.updaters.computeTemperature(iterm, state.cells[iterm].tempini, 1);
+                thermal::computeTemperature(dependencies.thermal, iterm, state.cells[iterm].tempini, 1);
             }
             refreshProperties(state);
             computePseudoTransientTimeStep(state);
-            state.updaters.connectTubing();
+            gaslift::connectTubing(dependencies.gasLift);
         }
     }
 }
 
-bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+bool advanceProductionCells(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, int &i, double &abortValue) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
@@ -2257,19 +2262,19 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
         refreshUpstreamProductionPeriphery(state, i); // update of the left boundary pressure,
         // if there is an ESP or a pressure increment
         if (state.input.flashCompleto != 2)
-            advanceSteadyMass(state, i); // checks whether the previous cell has a source, and so updates
+            advanceSteadyMass(state, dependencies, i); // checks whether the previous cell has a source, and so updates
         // the mass flow rates at the left boundary and the fluid properties,
         // gas density, GOR, API, BSW, beta
         else
-            advanceCompositionalSteadyMass(state, i);
+            advanceCompositionalSteadyMass(state, dependencies, i);
 
         if (state.input.acopColAnulPermForte == 0 || state.input.lingas == 0 || state.convergenceMonitor > 0.3)
-            state.updaters.advanceSteadyTemperature(i, 0); // advances the temperature from cell i-1 to cell i
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 0); // advances the temperature from cell i-1 to cell i
         // checks whether the temperature went out of bounds
         // when working with a PVTSim table
         if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
             state.cells[i].temp = state.input.tabent.tmin;
-        state.updaters.updateProductionTemperaturePeriphery(i); // just updates the left and right temperature fields
+        thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i); // just updates the left and right temperature fields
         advanceDownstreamSteadyPressure(state, i, 0); // advances the pressure from the left boundary of cell i to
         // its cell centre
         // checks whether something went wrong in this pressure advance to the centre of the
@@ -2294,7 +2299,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
 
             if (state.productionValveCellIndices[j] == i) {
                 int k = state.gasValveCellIndices[j];
-                state.updaters.computeSteadyGasFlowRate(k);
+                gaslift::computeSteadyGasFlowRate(dependencies.gasLift, dependencies.thermal, k);
             }
         }
         if (state.input.tipoFluido == 0)
@@ -2309,8 +2314,8 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
             double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
             advanceUpstreamSteadyPressure(state, i, 1);
             refreshUpstreamProductionPeriphery(state, i);
-            advanceSteadyMass(state, i);
-            state.updaters.advanceSteadyTemperature(i, 1);
+            advanceSteadyMass(state, dependencies, i);
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 1);
             if (isnan(state.cells[i].temp)) {
                 if (state.input.transiente == 0 && state.input.AP == 0)
                     // in this case the simulation ends: there is no transient
@@ -2340,8 +2345,8 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
             state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
             refreshDownstreamProductionPeriphery(state, i);
             refreshUpstreamProductionPeriphery(state, i);
-            state.updaters.updateProductionTemperaturePeriphery(i);
-            advanceSteadyMass(state, i);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+            advanceSteadyMass(state, dependencies, i);
             if (state.input.tipoFluido == 0)
                 advanceSteadyMassTransfer(state, i - 1);
             else
@@ -2352,7 +2357,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
         // checks whether there is a gas-lift valve in i and makes an initial estimate of the gas-lift
         // flow rate (when there is a gas line). Note that this is done only on iteration zero.
         if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1)
-            state.updaters.initializeSteadyValveGasFlowRate(i);
+            gaslift::initializeSteadyValveGasFlowRate(dependencies.gasLift, i);
         i++;
 
         if (isnan(state.cells[i - 1].pres) || isnan(state.cells[i - 1].temp) || isnan(state.cells[i - 1].alf)) {
@@ -2381,7 +2386,7 @@ bool advanceProductionCells(const SteadyStateState &state, double pchute, int &i
     return false;
 }
 
-bool advanceReverseProductionCells(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+bool advanceReverseProductionCells(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, int &i, double &abortValue) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
@@ -2402,18 +2407,18 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
         refreshUpstreamProductionPeriphery(state, i); // update of the left boundary pressure,
         // if there is an ESP or a pressure increment
         if (state.input.flashCompleto != 2)
-            advanceSteadyMass(state, i); // checks whether the previous cell has a source, and so updates
+            advanceSteadyMass(state, dependencies, i); // checks whether the previous cell has a source, and so updates
         // the mass flow rates at the left boundary and the fluid properties,
         // gas density, GOR, API, BSW, beta
         else
-            advanceCompositionalSteadyMass(state, i);
+            advanceCompositionalSteadyMass(state, dependencies, i);
         // checks whether the temperature went out of bounds
         // when working with a PVTSim table
         if (isnan(state.cells[i].temp))
             NumError("Temperatrura na linha de producao com valor NaN");
         if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
             state.cells[i].temp = state.input.tabent.tmin;
-        state.updaters.updateProductionTemperaturePeriphery(i); // just updates the left and right temperature fields
+        thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i); // just updates the left and right temperature fields
         advanceDownstreamSteadyPressure(state, i, 0); // advances the pressure from the left boundary of cell i to
         // its cell centre
         // checks whether something went wrong in this pressure advance to the centre of the
@@ -2445,15 +2450,15 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
             double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
             advanceUpstreamSteadyPressure(state, i, 1);
             refreshUpstreamProductionPeriphery(state, i);
-            advanceSteadyMass(state, i);
+            advanceSteadyMass(state, dependencies, i);
             advanceDownstreamSteadyPressure(state, i, 1);
             state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
             state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
             state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
             refreshDownstreamProductionPeriphery(state, i);
             refreshUpstreamProductionPeriphery(state, i);
-            state.updaters.updateProductionTemperaturePeriphery(i);
-            advanceSteadyMass(state, i);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+            advanceSteadyMass(state, dependencies, i);
             if (state.input.tipoFluido == 0)
                 advanceSteadyMassTransfer(state, i - 1);
             else
@@ -2473,7 +2478,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, double pchute,
     return false;
 }
 
-bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchute, int &i, double &abortValue) {
+bool advanceProductionCellsSecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, int &i, double &abortValue) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
@@ -2487,14 +2492,14 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
         refreshUpstreamProductionPeriphery(state, i); // update of the left boundary pressure,
         // if there is an ESP or a pressure increment
         if (state.input.flashCompleto != 2)
-            advanceSteadyMass(state, i); // checks whether the previous cell has a source, and so updates
+            advanceSteadyMass(state, dependencies, i); // checks whether the previous cell has a source, and so updates
         // the mass flow rates at the left boundary and the fluid properties,
         // gas density, GOR, API, BSW, beta
         else
-            advanceCompositionalSteadyMass(state, i);
+            advanceCompositionalSteadyMass(state, dependencies, i);
 
         if (state.input.acopColAnulPermForte == 0 || state.input.lingas == 0 || state.convergenceMonitor > 0.3)
-            state.updaters.advanceSteadyTemperature(i, 0); // advances the temperature from cell i-1 to cell i
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 0); // advances the temperature from cell i-1 to cell i
         // checks whether the temperature went out of bounds
         // when working with a PVTSim table
         if (isnan(state.cells[i].temp)) {
@@ -2522,7 +2527,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
         }
         if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
             state.cells[i].temp = state.input.tabent.tmin;
-        state.updaters.updateProductionTemperaturePeriphery(i); // just updates the left and right temperature fields
+        thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i); // just updates the left and right temperature fields
         advanceDownstreamSteadyPressure(state, i, 0); // advances the pressure from the left boundary of cell i to
         // its cell centre
         // checks whether something went wrong in this pressure advance to the centre of the
@@ -2539,7 +2544,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
 
             if (state.productionValveCellIndices[j] == i) {
                 int k = state.gasValveCellIndices[j];
-                state.updaters.computeSteadyGasFlowRate(k);
+                gaslift::computeSteadyGasFlowRate(dependencies.gasLift, dependencies.thermal, k);
             }
         }
         if (state.input.tipoFluido == 0)
@@ -2554,16 +2559,16 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
             double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
             advanceUpstreamSteadyPressure(state, i, 1);
             refreshUpstreamProductionPeriphery(state, i);
-            advanceSteadyMass(state, i);
-            state.updaters.advanceSteadyTemperature(i, 1);
+            advanceSteadyMass(state, dependencies, i);
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 1);
             advanceDownstreamSteadyPressure(state, i, 1);
             state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
             state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
             state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
             refreshDownstreamProductionPeriphery(state, i);
             refreshUpstreamProductionPeriphery(state, i);
-            state.updaters.updateProductionTemperaturePeriphery(i);
-            advanceSteadyMass(state, i);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+            advanceSteadyMass(state, dependencies, i);
             if (state.input.tipoFluido == 0)
                 advanceSteadyMassTransfer(state, i - 1);
             else
@@ -2573,7 +2578,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, double pchut
         // checks whether there is a gas-lift valve in i and makes an initial estimate of the gas-lift
         // flow rate (when there is a gas line). Note that this is done only on iteration zero.
         if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1)
-            state.updaters.initializeSteadyValveGasFlowRate(i);
+            gaslift::initializeSteadyValveGasFlowRate(dependencies.gasLift, i);
         i++;
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any, or fell too low
@@ -2714,21 +2719,21 @@ void seedFirstCellFromFlowRateGuess(const SteadyStateState &state, double mchute
     }
 }
 
-void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &state, int &i) {
+void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, int &i) {
     while (i <= state.lastCell && state.cells[i - 1].pres >= 1.) {
 
         advanceUpstreamSteadyPressure(state, i, 0);
         refreshUpstreamProductionPeriphery(state, i);
         if (state.input.flashCompleto != 2)
-            advanceSteadyMass(state, i);
+            advanceSteadyMass(state, dependencies, i);
         else
-            advanceCompositionalSteadyMass(state, i);
-        state.updaters.advanceSteadyTemperature(i, 0);
+            advanceCompositionalSteadyMass(state, dependencies, i);
+        thermal::advanceSteadyTemperature(dependencies.thermal, i, 0);
         if (isnan(state.cells[i].temp))
             NumError("Temperatrura na linha de producao com valor NaN");
         if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
             state.cells[i].temp = state.input.tabent.tmin;
-        state.updaters.updateProductionTemperaturePeriphery(i);
+        thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
         advanceDownstreamSteadyPressure(state, i, 0);
         refreshDownstreamProductionPeriphery(state, i);
         if (state.input.tipoFluido == 0)
@@ -2741,16 +2746,16 @@ void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &s
             double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
             advanceUpstreamSteadyPressure(state, i, 1);
             refreshUpstreamProductionPeriphery(state, i);
-            advanceSteadyMass(state, i);
-            state.updaters.advanceSteadyTemperature(i, 1);
+            advanceSteadyMass(state, dependencies, i);
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 1);
             advanceDownstreamSteadyPressure(state, i, 1);
             state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
             state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
             state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
             refreshDownstreamProductionPeriphery(state, i);
             refreshUpstreamProductionPeriphery(state, i);
-            state.updaters.updateProductionTemperaturePeriphery(i);
-            advanceSteadyMass(state, i);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+            advanceSteadyMass(state, dependencies, i);
             if (state.input.tipoFluido == 0)
                 advanceSteadyMassTransfer(state, i - 1);
             else
@@ -2763,107 +2768,12 @@ void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &s
 
 }  // namespace
 
-void correctGasSpecificGravity(const SteadyStateState &state, int i) {
-    if (state.input.corrDeng == 0) { // this switch, for black oil, distinguishes
-        // between the density of dissolved gas and of free gas
-        // rDgD = ratio between the density of the dissolved gas and the gas at standard conditions
-        // rDgL = ratio between the density of the free gas and the gas at standard conditions
-        // arq.corrDeng==0 means no distinction between the densities
-        state.cells[i].flui.rDgD = 1.;
-        state.cells[i].flui.rDgL = 1.;
-        state.cells[i].flui.PCis = state.cells[i].flui.PC;
-        state.cells[i].flui.TCis = state.cells[i].flui.TC;
-        if (state.cells[i].acsr.tipo == kAccessoryGasInjection && state.cells[i].acsr.injg.seco == 0) {
-            state.cells[i].acsr.injg.FluidoPro.rDgD = 1.;
-            state.cells[i].acsr.injg.FluidoPro.rDgL = 1.;
-        }
-        if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
-            state.cells[i].acsr.injl.FluidoPro.rDgD = 1.;
-            state.cells[i].acsr.injl.FluidoPro.rDgL = 1.;
-        } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
-            state.cells[i].acsr.ipr.FluidoPro.rDgD = 1.;
-            state.cells[i].acsr.ipr.FluidoPro.rDgL = 1.;
-        } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
-            state.cells[i].acsr.injm.FluidoPro.rDgD = 1.;
-            state.cells[i].acsr.injm.FluidoPro.rDgL = 1.;
-        }
-        if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-            state.cells[i].acsr.radialPoro.flup.rDgD = 1.;
-            state.cells[i].acsr.radialPoro.flup.rDgL = 1.;
-            for (int porousCell = 0; porousCell < state.cells[i].acsr.radialPoro.ncel; porousCell++) {
-                state.cells[i].acsr.radialPoro.celula[porousCell].flup.rDgD = 1.;
-                state.cells[i].acsr.radialPoro.celula[porousCell].flup.rDgL = 1.;
-            }
-        }
-        if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
-            state.cells[i].acsr.poroso2D.dados.flup.rDgD = 1.;
-            state.cells[i].acsr.poroso2D.dados.flup.rDgL = 1.;
-            for (int porousCell = 0; porousCell < state.cells[i].acsr.poroso2D.dados.transfer.ncel; porousCell++) {
-                state.cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.rDgD = 1.;
-                state.cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.rDgL = 1.;
-            }
-            for (int porousCell = 0; porousCell < state.cells[i].acsr.poroso2D.malha.nele; porousCell++) {
-                state.cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.rDgD = 1.;
-                state.cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.rDgL = 1.;
-            }
-        }
-    } else { // case arq.corrDeng==1, which means the densities are distinguished
-        int k = i - 1;
-        if (state.steadyIteration != 0)
-            k = i;
-        state.cells[i].flui.razDegD(state.cells[k].pres, state.cells[k].temp);
-        state.cells[i].flui.rzDegL(state.cells[k].pres, state.cells[k].temp);
-        state.cells[i].flui.PcTcIS(); // as the free-gas density changed, its critical
-        // pressures must be recomputed
-        // if there is a source, computes the sources' in-situ densities
-        if (state.cells[i].acsr.tipo == kAccessoryGasInjection && state.cells[i].acsr.injg.seco == 0) { // liquid source
-            state.cells[i].acsr.injg.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
-            state.cells[i].acsr.injg.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
-        }
-        if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) { // liquid source
-            state.cells[i].acsr.injl.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
-            state.cells[i].acsr.injl.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
-        } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) { // ipr
-            state.cells[i].acsr.ipr.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
-            state.cells[i].acsr.ipr.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
-        } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) { // generic mass source
-            state.cells[i].acsr.injm.FluidoPro.razDegD(state.cells[k].pres, state.cells[k].temp);
-            state.cells[i].acsr.injm.FluidoPro.rzDegL(state.cells[k].pres, state.cells[k].temp);
-        }
-        if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-            state.cells[i].acsr.radialPoro.flup.razDegD(state.cells[i].pres, state.cells[i].temp);
-            state.cells[i].acsr.radialPoro.flup.rzDegL(state.cells[i].pres, state.cells[i].temp);
-            for (int porousCell = 0; porousCell < state.cells[i].acsr.radialPoro.ncel; porousCell++) {
-                double pres = state.cells[i].acsr.radialPoro.celula[porousCell].Pcamada;
-                double temp = state.cells[i].acsr.radialPoro.tRes;
-                state.cells[i].acsr.radialPoro.celula[porousCell].flup.razDegD(pres, temp);
-                state.cells[i].acsr.radialPoro.celula[porousCell].flup.rzDegL(pres, temp);
-            }
-        }
-        if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
-            state.cells[i].acsr.poroso2D.dados.flup.razDegD(state.cells[i].pres, state.cells[i].temp);
-            state.cells[i].acsr.poroso2D.dados.flup.rzDegL(state.cells[i].pres, state.cells[i].temp);
-            for (int porousCell = 0; porousCell < state.cells[i].acsr.poroso2D.dados.transfer.ncel; porousCell++) {
-                double pres = state.cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].Pcamada;
-                double temp = state.cells[i].acsr.poroso2D.dados.transfer.tRes;
-                state.cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.razDegD(pres, temp);
-                state.cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.rzDegL(pres, temp);
-            }
-            for (int porousCell = 0; porousCell < state.cells[i].acsr.poroso2D.malha.nele; porousCell++) {
-                double pres = state.cells[i].acsr.poroso2D.malha.mlh2d[porousCell].cel2D.presC;
-                double temp = state.cells[i].acsr.poroso2D.malha.mlh2d[porousCell].tRes;
-                state.cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.razDegD(pres, temp);
-                state.cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.rzDegL(pres, temp);
-            }
-        }
-    }
-}
 
-void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
+void advanceReverseSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int i) {
     ProFlu fluF;
     double residenceTimeSource = 0.;
     if (i == 1) {
-        state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
+        sources::renewSourceTerms(dependencies.sources, i - 1); // checks whether the cell has a source and computes the
         // mass flow rates of produced liquid (oil+water), gas and complementary liquid
         // relation between the source at the left and at the right of a cell:
         state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
@@ -2905,7 +2815,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         }
         state.cells[i].flui = fluF;
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     } else {
         state.cells[i - 1].fontemassLR = 0.;
         state.cells[i - 1].fontemassCR = 0.;
@@ -2926,7 +2836,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
 
         state.cells[i].flui = state.cells[i - 1].flui;
         state.cells[i].flui.RenovaFluido();
-        correctGasSpecificGravity(state, i);
+        fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
     if (i == 0) {
         if (state.cells[0].acsr.tipo == kAccessoryRadialPorous)
@@ -3018,7 +2928,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
     state.cells[i - 1].FW = state.cells[i - 1].flui.BSW * waterVolumeFactor / (oilVolumeFactor + waterVolumeFactor * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * oilVolumeFactor);
     state.cells[i - 1].FWini = state.cells[i - 1].FW;
     // Volume fractions:
-    applyReverseSteadyPhaseFractions(state, i, rhol, rhog);
+    applyReverseSteadyPhaseFractions(state, dependencies, i, rhol, rhog);
 
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
         double hol0 = 1. - state.cells[i - 1].alf;
@@ -3031,11 +2941,11 @@ void advanceReverseSteadyMass(const SteadyStateState &state, int i) {
         state.cells[i].fluicol.TR = 0.;
 }
 
-void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i) {
+void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int i) {
     ProFlu fluF;
     double residenceTimeSource = 0.;
     if (i == 1) {
-        state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
+        sources::renewSourceTerms(dependencies.sources, i - 1); // checks whether the cell has a source and computes the
         // mass flow rates of produced liquid (oil+water), gas and complementary liquid
         // relation between the source at the left and at the right of a cell:
         state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
@@ -3199,7 +3109,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
     state.cells[i - 1].FW = state.cells[i - 1].flui.BSW * waterVolumeFactor / (oilVolumeFactor + waterVolumeFactor * state.cells[i - 1].flui.BSW - state.cells[i - 1].flui.BSW * oilVolumeFactor);
     state.cells[i - 1].FWini = state.cells[i - 1].FW;
     // Volume fractions:
-    applyReverseSteadyPhaseFractions(state, i, rhol, rhog);
+    applyReverseSteadyPhaseFractions(state, dependencies, i, rhol, rhog);
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
         double hol0 = 1. - state.cells[i - 1].alf;
         double hol1 = 1. - state.cells[i].alf;
@@ -3211,7 +3121,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int i)
         state.cells[i].fluicol.TR = state.cells[i - 1].fluicol.TR;
 }
 
-void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
+void advanceCompositionalSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int i) {
     SteadySource source;
     source.tit = 0.;
     ProFlu fluF;
@@ -3222,7 +3132,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
 
     readCompositionalSourceProperties(state, i, fluF, source);
 
-    state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
+    sources::renewSourceTerms(dependencies.sources, i - 1); // checks whether the cell has a source and computes the
     // mass flow rates of produced liquid (oil+water), gas and complementary liquid
     // relation between the source at the left and at the right of a cell:
     state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
@@ -3367,7 +3277,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
     state.cells[i - 1].QLR = state.cells[i].QL;
     state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / rhog;
     // Volume fractions:
-    applyCompositionalPhaseRegime(state, i, rhol, rhog);
+    applyCompositionalPhaseRegime(state, dependencies, i, rhol, rhog);
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
         double hol0 = 1. - state.cells[i - 1].alf;
         double hol1 = 1. - state.cells[i].alf;
@@ -3379,7 +3289,7 @@ void advanceCompositionalSteadyMass(const SteadyStateState &state, int i) {
         state.cells[i].fluicol.TR = state.cells[i - 1].fluicol.TR;
 }
 
-void advanceSteadyMass(const SteadyStateState &state, int i) {
+void advanceSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int i) {
 
     if (state.cells[i - 1].acsr.tipo == kAccessoryGasInjection && state.cells[i - 1].acsr.injg.QGas < 0) {
         state.cells[i - 1].acsr.injg.FluidoPro = state.cells[i - 1].flui;
@@ -3389,7 +3299,7 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
         state.cells[i - 1].acsr.injm.FluidoPro = state.cells[i - 1].flui;
     }
 
-    state.updaters.updateSource(i - 1); // checks whether the cell has a source and computes the
+    sources::renewSourceTerms(dependencies.sources, i - 1); // checks whether the cell has a source and computes the
     // mass flow rates of produced liquid (oil+water), gas and complementary liquid
     // relation between the source at the left and at the right of a cell:
     state.cells[i].fontemassLL = state.cells[i - 1].fontemassLR;
@@ -3515,7 +3425,7 @@ void advanceSteadyMass(const SteadyStateState &state, int i) {
     } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-6) { // gas only:
         finalizeSteadyMassGasOnly(state, i);
     } else { // two-phase
-        finalizeSteadyMassTwoPhase(state, i, rhog, rhol);
+        finalizeSteadyMassTwoPhase(state, dependencies, i, rhog, rhol);
     }
 
     if (fabs(state.cells[i].QL) > 1e-15 && fabs(state.cells[i].MComp) > 1e-15) {
@@ -4124,7 +4034,7 @@ void gasLineHydrostatic(const SteadyStateState &state) {
     }
 }
 
-double marchGasSteady(const SteadyStateState &state, double chutemass) {
+double marchGasSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double chutemass) {
     int valveCount = state.input.nvalvgas;
     double massGas = 0.;
     double erro = 10.;
@@ -4165,11 +4075,11 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
         state.gasCells[0].VGasR = massGas;
         state.gasCells[1].VGasL = massGas;
         for (int i = 1; i <= state.lastGasCell; i++) { // march
-            state.updaters.updateSteadyGasPressure(i);            // pressure advance from one cell to the next, at the cell centre
-            state.updaters.updateSteadyGasTemperature(i);            // temperature advance from one cell to the next, cell centre
+            gaslift::updateSteadyGasPressure(dependencies.gasLift, i);            // pressure advance from one cell to the next, at the cell centre
+            gaslift::updateSteadyGasTemperature(dependencies.gasLift, i);            // temperature advance from one cell to the next, cell centre
             if (isnan(state.gasCells[i].temp))
                 NumError("Temperatrura na linha de servico com valor NaN");
-            state.updaters.computeSteadyGasFlowRate(i); // if this cell's centre has a gas-lift valve, computes its flow rate
+            gaslift::computeSteadyGasFlowRate(dependencies.gasLift, dependencies.thermal, i); // if this cell's centre has a gas-lift valve, computes its flow rate
             // and takes it from the line's total flow rate
             state.gasCells[i].rg = state.gasCells[i].flui.MasEspGas(state.gasCells[i].pres, state.gasCells[i].temp);
             state.gasCells[i - 1].rgR = state.gasCells[i].rg;
@@ -4214,12 +4124,12 @@ double marchGasSteady(const SteadyStateState &state, double chutemass) {
         return erro1;
 }
 
-double marchProductionSteady(const SteadyStateState &state, double pchute) {
+double marchProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute) {
 
     double alfini = 0.;
     double betini = 0.;
 
-    seedFirstCellVoidFraction(state, pchute, alfini, betini);
+    seedFirstCellVoidFraction(state, dependencies, pchute, alfini, betini);
     if (fabs(alfini) < 1e-6)
         alfini = 0.;
     if (fabs(betini) < 1e-6)
@@ -4269,11 +4179,11 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
         masfim0 = masfim;
         presteste0 = presteste;
         if (state.steadyIteration == 0 && state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            state.updaters.initializeTubingConnectionSteady(); // before the first march iteration,
+            gaslift::initializeTubingConnectionSteady(dependencies.gasLift); // before the first march iteration,
         // an initial estimate of the thermal coupling between the tubing and the annulus is made,
         // when there is a gas line
         else if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            state.updaters.connectTubingSteady(); // thermal coupling with the pressure and temperature
+            gaslift::connectTubingSteady(dependencies.gasLift); // thermal coupling with the pressure and temperature
         // obtained in the first march iteration
         int i;
         int guessNeedsCorrection = 1;
@@ -4327,19 +4237,19 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
                 withGasInletCondition(state.gasCells[0].tipoCC,
                                       [&](auto condition) { estimateValveGasPressure(state, condition); });
-                state.updaters.initializeSteadyValveGasFlowRate(0);
+                gaslift::initializeSteadyValveGasFlowRate(dependencies.gasLift, 0);
             }
             i = 1;
             // start of the march proper
             double abortValue;
-            if (advanceProductionCells(state, pchute, i, abortValue))
+            if (advanceProductionCells(state, dependencies, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
                 guessNeedsCorrection = 0; // end of the march
         }
         // after the production line march, the gas line is marched,
         // if there is one
-        marchGasLineAndCoupleAnnulus(state, pchute);
+        marchGasLineAndCoupleAnnulus(state, dependencies, pchute);
 
         masfim = state.cells[state.lastCell - 1].MC; // stores the flow rate to compute the error when the
         // convergence acceleration option is off
@@ -4362,13 +4272,13 @@ double marchProductionSteady(const SteadyStateState &state, double pchute) {
     // computed by the march
 }
 
-double marchReverseProductionSteady(const SteadyStateState &state, double pchute) {
+double marchReverseProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute) {
 
     double alfini = 0.;
     double betini = 0.;
     state.slowHeatTransferThreshold = 0.1;
 
-    seedFirstCellVoidFraction(state, pchute, alfini, betini);
+    seedFirstCellVoidFraction(state, dependencies, pchute, alfini, betini);
     // this march is for a source at the start of the pipe,
     // so the pipe is taken as closed and a source is placed at the centre of the
     // first cell. The flow rates at the cell's left boundary are therefore 0
@@ -4416,11 +4326,11 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
         presteste0 = presteste;
         tempteste0 = tempteste;
         if (state.steadyIteration == 0 && state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            state.updaters.initializeTubingConnectionSteady(); // before the first march iteration,
+            gaslift::initializeTubingConnectionSteady(dependencies.gasLift); // before the first march iteration,
         // an initial estimate of the thermal coupling between the tubing and the annulus is made,
         // when there is a gas line
         else if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            state.updaters.connectTubingSteady(); // thermal coupling with the pressure and temperature
+            gaslift::connectTubingSteady(dependencies.gasLift); // thermal coupling with the pressure and temperature
         // obtained in the first march iteration
         int i;
         int guessNeedsCorrection = 1;
@@ -4463,11 +4373,11 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                 return -kSteadyMarchLimit;
 
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0)
-                state.updaters.initializeSteadyValveGasFlowRate(0);
+                gaslift::initializeSteadyValveGasFlowRate(dependencies.gasLift, 0);
             i = 1;
             // start of the march proper
             double abortValue;
-            if (advanceReverseProductionCells(state, pchute, i, abortValue))
+            if (advanceReverseProductionCells(state, dependencies, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
                 guessNeedsCorrection = 0; // end of the march
@@ -4503,12 +4413,12 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                     state.slowHeatTransferThreshold = 100.;
                 }
                 for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
-                    state.updaters.advanceReverseSteadyTemperature(ktemp, 0); // advances the temperature from cell i-1 to cell i
+                    thermal::advanceReverseSteadyTemperature(dependencies.thermal, ktemp, 0); // advances the temperature from cell i-1 to cell i
                     // checks whether the temperature went out of bounds
                     // when working with a PVTSim table
                     if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
                         state.cells[ktemp].temp = state.input.tabent.tmin;
-                    state.updaters.updateProductionTemperaturePeriphery(ktemp); // just updates the left and right temperature fields
+                    thermal::updateProductionTemperaturePeriphery(dependencies.thermal, ktemp); // just updates the left and right temperature fields
                 }
             }
             tempteste = state.cells[0].temp;
@@ -4525,7 +4435,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
                     state.cells[i].tempini = state.cells[i].temp;
                 }
                 for (int itemp = 1; itemp <= state.lastCell; itemp++) {
-                    state.updaters.computeTemperature(itemp, state.cells[itemp].tempini, 1);
+                    thermal::computeTemperature(dependencies.thermal, itemp, state.cells[itemp].tempini, 1);
                 }
                 refreshProperties(state);
                 computePseudoTransientTimeStep(state);
@@ -4543,12 +4453,12 @@ double marchReverseProductionSteady(const SteadyStateState &state, double pchute
     // computed by the march
 }
 
-double marchProductionSteadySecondary(const SteadyStateState &state, double pchute) {
+double marchProductionSteadySecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute) {
 
     double alfini = 0.;
     double betini = 0.;
 
-    seedFirstCellVoidFraction(state, pchute, alfini, betini);
+    seedFirstCellVoidFraction(state, dependencies, pchute, alfini, betini);
 
     // this march is for a source at the start of the pipe,
     // so the pipe is taken as closed and a source is placed at the centre of the
@@ -4593,11 +4503,11 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
         masfim0 = masfim;
         presteste0 = presteste;
         if (state.steadyIteration == 0 && state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            state.updaters.initializeTubingConnectionSteady(); // before the first march iteration,
+            gaslift::initializeTubingConnectionSteady(dependencies.gasLift); // before the first march iteration,
         // an initial estimate of the thermal coupling between the tubing and the annulus is made,
         // when there is a gas line
         else if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            state.updaters.connectTubingSteady(); // thermal coupling with the pressure and temperature
+            gaslift::connectTubingSteady(dependencies.gasLift); // thermal coupling with the pressure and temperature
         // obtained in the first march iteration
         int i;
         int guessNeedsCorrection = 1;
@@ -4656,19 +4566,19 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
                 withGasInletCondition(state.gasCells[0].tipoCC,
                                       [&](auto condition) { estimateValveGasPressure(state, condition); });
-                state.updaters.initializeSteadyValveGasFlowRate(0);
+                gaslift::initializeSteadyValveGasFlowRate(dependencies.gasLift, 0);
             }
             i = 1;
             // start of the march proper
             double abortValue;
-            if (advanceProductionCellsSecondary(state, pchute, i, abortValue))
+            if (advanceProductionCellsSecondary(state, dependencies, pchute, i, abortValue))
                 return abortValue;
             if (i == state.lastCell + 1)
                 guessNeedsCorrection = 0; // end of the march
         }
         // after the production line march, the gas line is marched,
         // if there is one
-        marchGasLineAndCoupleAnnulus(state, pchute);
+        marchGasLineAndCoupleAnnulus(state, dependencies, pchute);
 
         masfim = state.cells[state.lastCell - 1].MC; // stores the flow rate to compute the error when the
         // convergence acceleration option is off
@@ -4700,7 +4610,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, double pchu
     // if the bottom-hole pressure estimate is low, maxSup<masfim, it returns a positive value
 }
 
-double marchProductionPressureToPressure(const SteadyStateState &state, double mchute) {
+double marchProductionPressureToPressure(const SteadyStateState &state, const SteadyDependencies &dependencies, double mchute) {
 
     double alfini = 0.;
     double betini = 0.;
@@ -4761,13 +4671,13 @@ double marchProductionPressureToPressure(const SteadyStateState &state, double m
             advanceUpstreamSteadyPressure(state, i, 0);
             refreshUpstreamProductionPeriphery(state, i);
             if (state.input.flashCompleto != 2)
-                advanceSteadyMass(state, i);
+                advanceSteadyMass(state, dependencies, i);
             else
-                advanceCompositionalSteadyMass(state, i);
-            state.updaters.advanceSteadyTemperature(i, 0);
+                advanceCompositionalSteadyMass(state, dependencies, i);
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 0);
             if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
                 state.cells[i].temp = state.input.tabent.tmin;
-            state.updaters.updateProductionTemperaturePeriphery(i);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
             advanceDownstreamSteadyPressure(state, i, 0);
             refreshDownstreamProductionPeriphery(state, i);
             if (state.input.tipoFluido == 0)
@@ -4780,8 +4690,8 @@ double marchProductionPressureToPressure(const SteadyStateState &state, double m
                 double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
                 advanceUpstreamSteadyPressure(state, i, 1);
                 refreshUpstreamProductionPeriphery(state, i);
-                advanceSteadyMass(state, i);
-                state.updaters.advanceSteadyTemperature(i, 1);
+                advanceSteadyMass(state, dependencies, i);
+                thermal::advanceSteadyTemperature(dependencies.thermal, i, 1);
                 if (isnan(state.cells[i].temp))
                     NumError("Temperatrura na linha de producao com valor NaN");
                 advanceDownstreamSteadyPressure(state, i, 1);
@@ -4790,8 +4700,8 @@ double marchProductionPressureToPressure(const SteadyStateState &state, double m
                 state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
                 refreshDownstreamProductionPeriphery(state, i);
                 refreshUpstreamProductionPeriphery(state, i);
-                state.updaters.updateProductionTemperaturePeriphery(i);
-                advanceSteadyMass(state, i);
+                thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+                advanceSteadyMass(state, dependencies, i);
                 if (state.input.tipoFluido == 0)
                     advanceSteadyMassTransfer(state, i - 1);
                 else
@@ -4813,7 +4723,7 @@ double marchProductionPressureToPressure(const SteadyStateState &state, double m
     return state.cells[state.lastCell].pres + corrigePresF - state.gasSurfacePressure;
 }
 
-double marchReverseProductionPressureToPressure(const SteadyStateState &state, double mchute) {
+double marchReverseProductionPressureToPressure(const SteadyStateState &state, const SteadyDependencies &dependencies, double mchute) {
 
     double alfini = 0.;
     double betini = 0.;
@@ -4878,14 +4788,14 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
             advanceUpstreamSteadyPressure(state, i, 0);
             refreshUpstreamProductionPeriphery(state, i);
             if (state.input.flashCompleto != 2)
-                advanceSteadyMass(state, i);
+                advanceSteadyMass(state, dependencies, i);
             else
-                advanceCompositionalSteadyMass(state, i);
+                advanceCompositionalSteadyMass(state, dependencies, i);
             if (isnan(state.cells[i].temp))
                 NumError("Temperatrura na linha de producao com valor NaN");
             if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
                 state.cells[i].temp = state.input.tabent.tmin;
-            state.updaters.updateProductionTemperaturePeriphery(i);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
             advanceDownstreamSteadyPressure(state, i, 0);
             refreshDownstreamProductionPeriphery(state, i);
             if (state.input.tipoFluido == 0)
@@ -4898,15 +4808,15 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
                 double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
                 advanceUpstreamSteadyPressure(state, i, 1);
                 refreshUpstreamProductionPeriphery(state, i);
-                advanceSteadyMass(state, i);
+                advanceSteadyMass(state, dependencies, i);
                 advanceDownstreamSteadyPressure(state, i, 1);
                 state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
                 state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
                 state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
                 refreshDownstreamProductionPeriphery(state, i);
                 refreshUpstreamProductionPeriphery(state, i);
-                state.updaters.updateProductionTemperaturePeriphery(i);
-                advanceSteadyMass(state, i);
+                thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+                advanceSteadyMass(state, dependencies, i);
                 if (state.input.tipoFluido == 0)
                     advanceSteadyMassTransfer(state, i - 1);
                 else
@@ -4942,10 +4852,10 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
                     state.steadyIteration = 0;
                 }
                 for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
-                    state.updaters.advanceReverseSteadyTemperature(ktemp, 0);
+                    thermal::advanceReverseSteadyTemperature(dependencies.thermal, ktemp, 0);
                     if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
                         state.cells[ktemp].temp = state.input.tabent.tmin;
-                    state.updaters.updateProductionTemperaturePeriphery(ktemp); // just updates the left and right temperature fields
+                    thermal::updateProductionTemperaturePeriphery(dependencies.thermal, ktemp); // just updates the left and right temperature fields
                 }
             }
             tempteste = state.cells[0].temp;
@@ -4962,7 +4872,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
                     state.cells[i].tempini = state.cells[i].temp;
                 }
                 for (int itemp = 1; itemp <= state.lastCell; itemp++) {
-                    state.updaters.computeTemperature(itemp, state.cells[itemp].tempini, 1);
+                    thermal::computeTemperature(dependencies.thermal, itemp, state.cells[itemp].tempini, 1);
                 }
                 refreshProperties(state);
                 computePseudoTransientTimeStep(state);
@@ -4976,7 +4886,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, d
     return state.cells[state.lastCell].pres + corrigePresF - state.gasSurfacePressure;
 }
 
-double marchProductionPressureToPressureSecondary(const SteadyStateState &state, double mchute) {
+double marchProductionPressureToPressureSecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double mchute) {
 
     double alfini = 0.;
     double betini = 0.;
@@ -5102,7 +5012,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
     state.steadyIteration = 0;
     while (state.steadyIteration < 3) {
         i = 1;
-        advanceProductionCellsPressureToPressureSecondary(state, i);
+        advanceProductionCellsPressureToPressureSecondary(state, dependencies, i);
         state.steadyIteration++;
     }
 
@@ -5149,7 +5059,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
     return maxSup - state.cells[state.lastCell - 1].MR;
 }
 
-double marchProductionPressureToPressureTertiary(const SteadyStateState &state, double mchute) {
+double marchProductionPressureToPressureTertiary(const SteadyStateState &state, const SteadyDependencies &dependencies, double mchute) {
 
     double alfini = 0.;
     double betini = 0.;
@@ -5210,15 +5120,15 @@ double marchProductionPressureToPressureTertiary(const SteadyStateState &state, 
             advanceUpstreamSteadyPressure(state, i, 0);
             refreshUpstreamProductionPeriphery(state, i);
             if (state.input.flashCompleto != 2)
-                advanceSteadyMass(state, i);
+                advanceSteadyMass(state, dependencies, i);
             else
-                advanceCompositionalSteadyMass(state, i);
-            state.updaters.advanceSteadyTemperature(i, 0);
+                advanceCompositionalSteadyMass(state, dependencies, i);
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 0);
             if (isnan(state.cells[i].temp))
                 NumError("Temperatrura na linha de producao com valor NaN");
             if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
                 state.cells[i].temp = state.input.tabent.tmin;
-            state.updaters.updateProductionTemperaturePeriphery(i);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
             advanceDownstreamSteadyPressure(state, i, 0);
             refreshDownstreamProductionPeriphery(state, i);
             if (state.input.tipoFluido == 0)
@@ -5231,16 +5141,16 @@ double marchProductionPressureToPressureTertiary(const SteadyStateState &state, 
                 double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
                 advanceUpstreamSteadyPressure(state, i, 1);
                 refreshUpstreamProductionPeriphery(state, i);
-                advanceSteadyMass(state, i);
-                state.updaters.advanceSteadyTemperature(i, 1);
+                advanceSteadyMass(state, dependencies, i);
+                thermal::advanceSteadyTemperature(dependencies.thermal, i, 1);
                 advanceDownstreamSteadyPressure(state, i, 1);
                 state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
                 state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
                 state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
                 refreshDownstreamProductionPeriphery(state, i);
                 refreshUpstreamProductionPeriphery(state, i);
-                state.updaters.updateProductionTemperaturePeriphery(i);
-                advanceSteadyMass(state, i);
+                thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+                advanceSteadyMass(state, dependencies, i);
                 if (state.input.tipoFluido == 0)
                     advanceSteadyMassTransfer(state, i - 1);
                 else
@@ -5258,7 +5168,7 @@ double marchProductionPressureToPressureTertiary(const SteadyStateState &state, 
     return 0. - state.cells[state.lastCell - 1].MR;
 }
 
-double marchGasSteadySecondary(const SteadyStateState &state, double pchute, double chutemass) {
+double marchGasSteadySecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, double chutemass) {
     state.gasCells[0].presL = pchute;
     state.gasCells[0].pres = pchute;
     state.gasCells[0].presini = pchute;
@@ -5280,11 +5190,11 @@ double marchGasSteadySecondary(const SteadyStateState &state, double pchute, dou
     state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
 
     for (int i = 1; i <= state.lastGasCell; i++) { // march along the service line
-        state.updaters.updateSteadyGasPressure(i);            // pressure advance from one cell to the next, at the cell centre
-        state.updaters.updateSteadyGasTemperature(i);            // temperature advance from one cell to the next, cell centre
+        gaslift::updateSteadyGasPressure(dependencies.gasLift, i);            // pressure advance from one cell to the next, at the cell centre
+        gaslift::updateSteadyGasTemperature(dependencies.gasLift, i);            // temperature advance from one cell to the next, cell centre
         if (isnan(state.gasCells[i].temp))
             NumError("Temperatrura na linha de servico com valor NaN");
-        state.updaters.computeSteadyGasFlowRate(i); // if this cell's centre has a gas-lift valve, computes its flow rate
+        gaslift::computeSteadyGasFlowRate(dependencies.gasLift, dependencies.thermal, i); // if this cell's centre has a gas-lift valve, computes its flow rate
         // and takes it from the line's total flow rate
         state.gasCells[i].rg = state.gasCells[i].flui.MasEspGas(state.gasCells[i].pres, state.gasCells[i].temp);
         state.gasCells[i - 1].rgR = state.gasCells[i].rg;
@@ -5303,7 +5213,7 @@ double marchGasSteadySecondary(const SteadyStateState &state, double pchute, dou
     // and the line's injection flow rate
 }
 
-double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
+double marchGasSteadyTertiary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute) {
     state.gasCells[0].presL = pchute; // pressure downstream of the injection choke
     state.gasCells[0].pres = pchute;
     state.gasCells[0].presini = pchute;
@@ -5324,11 +5234,11 @@ double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
     state.gasCells[1].VGasL = state.gasCells[0].massfonteCH;
 
     for (int i = 1; i <= state.lastGasCell; i++) { // march along the gas line
-        state.updaters.updateSteadyGasPressure(i);            // pressure advance from one cell to the next, at the cell centre
-        state.updaters.updateSteadyGasTemperature(i);            // temperature advance from one cell to the next, cell centre
+        gaslift::updateSteadyGasPressure(dependencies.gasLift, i);            // pressure advance from one cell to the next, at the cell centre
+        gaslift::updateSteadyGasTemperature(dependencies.gasLift, i);            // temperature advance from one cell to the next, cell centre
         if (isnan(state.gasCells[i].temp))
             NumError("Temperatura na linha de servico com valor NaN");
-        state.updaters.computeSteadyGasFlowRate(i); // if this cell's centre has a gas-lift valve, computes its flow rate
+        gaslift::computeSteadyGasFlowRate(dependencies.gasLift, dependencies.thermal, i); // if this cell's centre has a gas-lift valve, computes its flow rate
         // and takes it from the line's total flow rate
         state.gasCells[i].rg = state.gasCells[i].flui.MasEspGas(state.gasCells[i].pres, state.gasCells[i].temp);
         state.gasCells[i - 1].rgR = state.gasCells[i].rg;
@@ -5347,7 +5257,7 @@ double marchGasSteadyTertiary(const SteadyStateState &state, double pchute) {
     // and the line's injection flow rate
 }
 
-double marchInjectionSteady(const SteadyStateState &state, double chute) {
+double marchInjectionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double chute) {
 
     if (state.input.flashCompleto < 1)
         state.cells[0].temp = state.cells[0].acsr.injl.temp;
@@ -5479,11 +5389,11 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
             advanceUpstreamSteadyPressure(state, i, 0);
             refreshUpstreamProductionPeriphery(state, i);
             if (state.input.flashCompleto != 2)
-                advanceSteadyMass(state, i);
+                advanceSteadyMass(state, dependencies, i);
             else
-                advanceCompositionalSteadyMass(state, i);
-            state.updaters.advanceSteadyTemperature(i, 0);
-            state.updaters.updateProductionTemperaturePeriphery(i);
+                advanceCompositionalSteadyMass(state, dependencies, i);
+            thermal::advanceSteadyTemperature(dependencies.thermal, i, 0);
+            thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
             advanceDownstreamSteadyPressure(state, i, 0);
             refreshDownstreamProductionPeriphery(state, i);
             advanceSteadyMassTransfer(state, i - 1);
@@ -5493,16 +5403,16 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
                 double D0temp = state.cells[i].temp - state.cells[i - 1].temp;
                 advanceUpstreamSteadyPressure(state, i, 1);
                 refreshUpstreamProductionPeriphery(state, i);
-                advanceSteadyMass(state, i);
-                state.updaters.advanceSteadyTemperature(i, 1);
+                advanceSteadyMass(state, dependencies, i);
+                thermal::advanceSteadyTemperature(dependencies.thermal, i, 1);
                 advanceDownstreamSteadyPressure(state, i, 1);
                 state.cells[i].pres = 0.5 * (state.cells[i].presaux + D0pres + state.cells[i].pres);
                 state.cells[i].presaux = 0.5 * (state.cells[i - 1].pres + D0presaux + state.cells[i].presaux);
                 state.cells[i].temp = 0.5 * (state.cells[i - 1].temp + D0temp + state.cells[i].temp);
                 refreshDownstreamProductionPeriphery(state, i);
                 refreshUpstreamProductionPeriphery(state, i);
-                state.updaters.updateProductionTemperaturePeriphery(i);
-                advanceSteadyMass(state, i);
+                thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
+                advanceSteadyMass(state, dependencies, i);
                 advanceSteadyMassTransfer(state, i - 1);
             }
             masfim += (state.cells[i - 1].fontemassCR + state.cells[i - 1].fontemassLR + state.cells[i - 1].fontemassGR);
@@ -5519,7 +5429,7 @@ double marchInjectionSteady(const SteadyStateState &state, double chute) {
         else
             return kSteadyMarchLimit; // stopped on the mass flow, as the march's own flow test
     }
-    state.updaters.updateSource(state.lastCell);
+    sources::renewSourceTerms(dependencies.sources, state.lastCell);
     masfim += (state.cells[state.lastCell].fontemassCR + state.cells[state.lastCell].fontemassLR + state.cells[state.lastCell].fontemassGR);
 
     if (state.input.condpocinj.CC != 3 && state.input.condpocinj.CC != 5)

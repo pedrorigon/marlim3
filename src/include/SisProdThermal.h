@@ -8,6 +8,9 @@ class CelG;
 class ChokeGas;
 class Ler;
 class SProd;
+namespace driftflux::coefficient { struct ClosureState; }
+namespace sisprod::sources { struct SourceState; }
+
 namespace sisprod {
 class SolveContext;
 }
@@ -17,32 +20,12 @@ struct varGlob1D;
 
 namespace sisprod::thermal {
 
-/// The source refresh the thermal steps call, with the solve context's source view.
-struct ThermalSourceUpdater {
-    SolveContext &context;
-
-    /// Refreshes mass and heat sources for the selected cell.
-    void operator()(int cellIndex) const;
+/// Source and drift-closure views used by coupled thermal operations.
+struct ThermalDependencies {
+    const sources::SourceState &sources;
+    const driftflux::coefficient::ClosureState &closure;
 };
 
-/// The four drift-closure entry points the thermal steps call, with the solve context's
-/// closure view.
-struct ThermalClosureUpdater {
-    SolveContext &context;
-
-    /// Evaluates the instantaneous drift closure.
-    void instantaneous(int cellIndex, double &distribution,
-                       double &driftVelocity) const;
-    /// Evaluates the buffered drift closure.
-    void buffered(int cellIndex, double &distribution,
-                  double &driftVelocity) const;
-    /// Evaluates the instantaneous inlet closure.
-    void initialization(int cellIndex, double &distribution,
-                        double &driftVelocity) const;
-    /// Evaluates the buffered inlet closure.
-    void bufferedInitialization(int cellIndex, double &distribution,
-                                double &driftVelocity) const;
-};
 
 /// The transient coupling the thermal steps call, with the solve context's view of the
 /// transient step.
@@ -75,10 +58,8 @@ struct ThermalState {
     const int &endNode;
     const double &gasSurfaceTemperature;
     const int &latentHeatEnabled;
-    ThermalSourceUpdater sourceUpdater;
     const int &fullModel;
     const int &massTransferModel;
-    ThermalClosureUpdater closureUpdater;
     const double &inletPressure;
     const double &inletTemperature;
     const double &inletQuality;
@@ -134,17 +115,17 @@ void computeTemperature(const ThermalState &state, int cellIndex,
                         double previousTemperature, int steadyStateMode = 0);
 
 /// Renews distributed phase-change mass transfer along the production cells.
-void updateDistributedMassTransfer(const ThermalState &state);
+void updateDistributedMassTransfer(const ThermalState &state, const ThermalDependencies &dependencies);
 
 /// Computes the mixture-flow partition terms along the production cells.
 /// inflowMode does not affect the sweep, which uses the outlet boundary.
-void updateFlowPartitionTerms(const ThermalState &state, int inflowMode);
+void updateFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies, int inflowMode);
 
 /// Computes mixture-flow partition terms at an internal-section outlet.
-void updateOutletFlowPartitionTerms(const ThermalState &state);
+void updateOutletFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies);
 
 /// Computes mixture-flow partition terms at an internal-section inlet.
-void updateInletFlowPartitionTerms(const ThermalState &state);
+void updateInletFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies);
 
 /// Prepares the non-dimensional heat-diffusion properties for one cell.
 void prepareNonDimensionalHeatDiffusion(const ThermalState &state,

@@ -13,49 +13,33 @@ class choke;
 struct varGlob1D;
 namespace sisprod { class SolveContext; }
 
+namespace driftflux::coefficient { struct ClosureState; }
+namespace sisprod::sources { struct SourceState; }
+namespace sisprod::thermal { struct ThermalState; struct ThermalDependencies; }
+namespace sisprod::gaslift { struct GasLiftState; }
+
 namespace sisprod::steady {
+
+/// Physical-model views used by steady marches and boundary searches.
+struct SteadyDependencies {
+    const sources::SourceState &sources;
+    const driftflux::coefficient::ClosureState &closure;
+    const thermal::ThermalState &thermal;
+    const thermal::ThermalDependencies &thermalDependencies;
+    const gaslift::GasLiftState &gasLift;
+};
+
+
 
 /// Operations on closure, source, thermal and gas-line states supplied by the solve context.
 struct SteadyStateUpdaters {
     SolveContext &context;
 
     // --- drift closure and sources -----------------------------------------
-    /// Computes the steady drift coefficients for a production cell.
-    void steadyDriftClosure(int cellIndex, double &c0, double &ud) const;
-    /// Updates the source mass rates and properties of a production cell.
-    void updateSource(int cellIndex) const;
 
     // --- thermal ------------------------------------------------------------
-    /// Advances the forward steady energy balance at the specified Runge-Kutta stage.
-    void advanceSteadyTemperature(int cellIndex, int rungeKuttaStage) const;
-    /// Advances the reverse steady energy balance at the specified Runge-Kutta stage.
-    void advanceReverseSteadyTemperature(int cellIndex, int rungeKuttaStage) const;
-    /// Updates a production cell temperature from its previous value and balance mode.
-    void computeTemperature(int cellIndex, double previousTemperature, int steadyMode) const;
-    /// Updates a gas-line cell temperature from its previous value and balance mode.
-    void computeGasTemperature(int cellIndex, double previousTemperature, int steadyMode) const;
-    /// Publishes a production cell temperature at its neighbouring faces.
-    void updateProductionTemperaturePeriphery(int cellIndex) const;
 
     // --- gas line -----------------------------------------------------------
-    /// Estimates the steady gas flow through the valve attached to a cell.
-    void initializeSteadyValveGasFlowRate(int cellIndex) const;
-    /// Initializes the steady thermal coupling between tubing and gas line.
-    void initializeTubingConnectionSteady() const;
-    /// Advances the steady gas-line pressure at a cell.
-    void updateSteadyGasPressure(int cellIndex) const;
-    /// Advances the steady gas-line temperature at a cell.
-    void updateSteadyGasTemperature(int cellIndex) const;
-    /// Updates the gas-line flow rate at a cell.
-    void computeSteadyGasFlowRate(int cellIndex) const;
-    /// Updates the thermal coupling between tubing and gas line.
-    void connectTubing() const;
-    /// Updates the tubing and gas-line coupling during a steady iteration.
-    void connectTubingSteady() const;
-    /// Returns the steady gas pressure drop at a cell, in kgf/cm2.
-    [[nodiscard]] double steadyGasPressureDrop(int cellIndex) const;
-    /// Returns the steady injection pressure drop at a cell, in kgf/cm2.
-    [[nodiscard]] double steadyInjectionPressureDrop(int cellIndex) const;
 
     /// Solves the gas-line pressure for a prescribed injection flow rate.
     void searchGasPressureSteadySecondary() const;
@@ -134,16 +118,16 @@ struct SteadyStateState {
 };
 
 /// Advances the forward black-oil mass balance and publishes cell and face fractions.
-void advanceSteadyMass(const SteadyStateState &state, int cellIndex);
+void advanceSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int cellIndex);
 
 /// Advances the reverse black-oil mass balance and publishes cell and face fractions.
-void advanceReverseSteadyMass(const SteadyStateState &state, int cellIndex);
+void advanceReverseSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int cellIndex);
 
 /// Advances the forward compositional mass balance, including source mixing and flash properties.
-void advanceCompositionalSteadyMass(const SteadyStateState &state, int cellIndex);
+void advanceCompositionalSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int cellIndex);
 
 /// Advances the reverse compositional mass balance and publishes cell and face fractions.
-void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, int cellIndex);
+void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, const SteadyDependencies &dependencies, int cellIndex);
 
 /// Updates phase mass transfer at the upstream cell of a steady mass step.
 void advanceSteadyMassTransfer(const SteadyStateState &state, int cellIndex);
@@ -164,53 +148,50 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int cellInde
 /// Returns the last-cell pressure with the outlet half-cell pressure contribution.
 [[nodiscard]] double steadyPressureAtLastCell(const SteadyStateState &state);
 
-/// Updates gas specific gravity and the affected source densities along the march.
-void correctGasSpecificGravity(const SteadyStateState &state, int cellIndex);
-
 /// Marches the production column from a bottom-hole pressure guess in kgf/cm2.
 /// Returns surface gas pressure minus corrected outlet pressure, or a march failure sentinel.
-[[nodiscard]] double marchProductionSteady(const SteadyStateState &state, double pressureGuess);
+[[nodiscard]] double marchProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pressureGuess);
 
 /// Marches the production column in reverse from a bottom-hole pressure guess in kgf/cm2.
 /// Returns surface gas pressure minus corrected outlet pressure, or a march failure sentinel.
-[[nodiscard]] double marchReverseProductionSteady(const SteadyStateState &state, double pressureGuess);
+[[nodiscard]] double marchReverseProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pressureGuess);
 
 /// Marches the production column with a surface choke from a pressure guess in kgf/cm2.
 /// Returns outlet mass flow minus the choke capacity, or a march failure sentinel.
-[[nodiscard]] double marchProductionSteadySecondary(const SteadyStateState &state, double pressureGuess);
+[[nodiscard]] double marchProductionSteadySecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pressureGuess);
 
 /// Marches between fixed pressures from a standard source flow guess in m3/day.
 /// Returns corrected outlet pressure minus surface gas pressure, or a march failure sentinel.
-[[nodiscard]] double marchProductionPressureToPressure(const SteadyStateState &state, double massFlowRateGuess);
+[[nodiscard]] double marchProductionPressureToPressure(const SteadyStateState &state, const SteadyDependencies &dependencies, double massFlowRateGuess);
 
 /// Marches in reverse between fixed pressures from a standard source flow guess in m3/day.
 /// Returns corrected outlet pressure minus surface gas pressure, or a march failure sentinel.
-[[nodiscard]] double marchReverseProductionPressureToPressure(const SteadyStateState &state, double massFlowRateGuess);
+[[nodiscard]] double marchReverseProductionPressureToPressure(const SteadyStateState &state, const SteadyDependencies &dependencies, double massFlowRateGuess);
 
 /// Marches between fixed pressures with a surface choke and a standard source flow guess in m3/day.
 /// Returns choke capacity minus outlet mass flow, or a march failure sentinel.
-[[nodiscard]] double marchProductionPressureToPressureSecondary(const SteadyStateState &state, double massFlowRateGuess);
+[[nodiscard]] double marchProductionPressureToPressureSecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double massFlowRateGuess);
 
 /// Marches between fixed pressures with a closed outlet and a standard source flow guess in m3/day.
 /// Returns the negative outlet mass flow, or a march failure sentinel.
-[[nodiscard]] double marchProductionPressureToPressureTertiary(const SteadyStateState &state, double massFlowRateGuess);
+[[nodiscard]] double marchProductionPressureToPressureTertiary(const SteadyStateState &state, const SteadyDependencies &dependencies, double massFlowRateGuess);
 
 /// Marches the gas line and returns the relative outlet-pressure residual.
 /// A nonnegative massGuess is in kg/s; a negative value derives the flow from the gas-lift valves.
 /// Updates gas-line cells and may return a march failure sentinel.
-double marchGasSteady(const SteadyStateState &state, double massGuess = -1);
+double marchGasSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double massGuess = -1);
 
 /// Marches the gas line from a pressure guess in kgf/cm2 and returns the injection mass imbalance.
 /// A nonnegative standardFlowRateGuess is in m3/day; a negative value uses the configured gas rate.
-[[nodiscard]] double marchGasSteadySecondary(const SteadyStateState &state, double pressureGuess,
+[[nodiscard]] double marchGasSteadySecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pressureGuess,
                                              double standardFlowRateGuess = -1);
 
 /// Marches the gas line from a pressure guess in kgf/cm2 with an active injection choke.
 /// Returns the difference between valve flow and choke flow, or a march failure sentinel.
-[[nodiscard]] double marchGasSteadyTertiary(const SteadyStateState &state, double pressureGuess);
+[[nodiscard]] double marchGasSteadyTertiary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pressureGuess);
 
 /// Marches the injection column from the boundary-condition guess and returns its residual.
-[[nodiscard]] double marchInjectionSteady(const SteadyStateState &state, double guess);
+[[nodiscard]] double marchInjectionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double guess);
 
 /// Estimates bottom-hole pressure by a reverse hydrostatic march with the supplied holdup.
 /// Optional liquid and gas rates are standard volumetric rates in m3/day.

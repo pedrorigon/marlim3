@@ -1,3 +1,7 @@
+#include "SisProdTrendOutput.h"
+#include "SisProdFluidTracking.h"
+#include "SisProdGasLift.h"
+#include "SisProdThermal.h"
 #include "SisProdTransient.h"
 #include "SisProdTransientInternal.h"
 
@@ -20,6 +24,11 @@ namespace sisprod::transient {
 
 namespace {
 
+const ProFlu &reverseFlowFluid(const ProFlu *collectorFluid) {
+    static const ProFlu defaultFluid;
+    return collectorFluid != nullptr ? *collectorFluid : defaultFluid;
+}
+
 double flowQuality(double gasMassFlow, double totalMassFlow) {
     return fabs(gasMassFlow / totalMassFlow);
 }
@@ -35,7 +44,7 @@ void reportAcceptedArtificialGas(const TransientStepState &state) {
     state.artificialGasThisStep.clear();
 }
 
-void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev) {
+void advanceCouplingIteration(const TransientSolveState &state, const TransientDependencies &dependencies, int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev) {
     prepareCouplingModelFlags(state, celpos);
     evolveFractions(state.step, alfRev, betRev, kontaAcop);
     for (int i = 0; i <= state.step.lastCell; i++) {
@@ -74,7 +83,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
     }
 
     applyOutletPressureCondition(state.step, titRev, alfRev, betRev);
-    state.updaters.updateThermal();
+    thermal::updateFlowPartitionTerms(dependencies.thermal, dependencies.thermalDependencies, 0);
 
     if (state.step.cells[state.step.lastCell].alf < 0.05 && state.step.surfaceChokeMassFlag == 1)
         state.step.cells[state.step.lastCell].alf = 0.05;
@@ -150,18 +159,18 @@ void writeProfiles(const TransientSolveState &state, int nrede) {
     }
 }
 
-void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxdesc, int nrede) {
+void writeTrends(const TransientSolveState &state, const TransientDependencies &dependencies, int ordemImpT, double velmaxdesc, int nrede) {
     if (state.step.input.ntendp > 0) {
         for (int i = 0; i < state.step.input.ntendp; i++) {
             if (state.productionTrendResetTimers[i] == 0) {
                 if ((*state.step.globals).lixo5 < 1e-15)
-                    state.updaters.writeProductionTrendHeader(i, nrede);
+                    trendoutput::writeProductionTrendHeader(dependencies.trends, i, nrede);
                 if ((*state.step.globals).lixo5 > 1e-15)
                     state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).lixo5, i, state.productionTrendCounts[i]);
                 state.productionTrendCounts[i]++;
             }
             if (ordemImpT == 1) {
-                state.updaters.writeProductionTrendRows(i, nrede);
+                trendoutput::writeProductionTrendRows(dependencies.trends, i, nrede);
                 state.productionTrendBufferedCounts[i] = state.productionTrendCounts[i];
             }
             state.productionTrendResetTimers[i] += state.step.timeStep;
@@ -173,12 +182,12 @@ void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxd
         for (int i = 0; i < state.step.input.ntendg; i++) {
             if (state.gasTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
                 if ((*state.step.globals).lixo5 < 1e-15)
-                    state.updaters.writeGasTrendHeader(i, nrede);
+                    trendoutput::writeGasLineTrendHeader(dependencies.trends, i, nrede);
                 state.step.input.imprimeTrendG(state.step.gasCells, state.gasTrendMatrix[i], (*state.step.globals).lixo5, i, state.gasTrendCounts[i], velmaxdesc);
                 state.gasTrendCounts[i]++;
             }
             if (ordemImpT == 1) {
-                state.updaters.writeGasTrendRows(i, nrede);
+                trendoutput::writeGasLineTrendRows(dependencies.trends, i, nrede);
                 state.gasTrendBufferedCounts[i] = state.gasTrendCounts[i];
             }
             state.gasTrendResetTimers[i] += state.step.timeStep;
@@ -190,7 +199,7 @@ void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxd
         for (int i = 0; i < state.step.input.ntendtransp; i++) {
             if (state.productionCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
                 if ((*state.step.globals).lixo5 < 1e-15)
-                    state.updaters.writeProductionCrossSectionTrendHeader(i);
+                    trendoutput::writeProductionCrossSectionTrendHeader(dependencies.trends, i);
                 state.productionCrossSectionTrendMatrix[i][state.productionCrossSectionTrendCounts[i]][0] = (*state.step.globals).lixo5;
                 int poscel = state.step.input.trendtransp[i].posic;
                 int poscam = state.step.input.trendtransp[i].camada - 1;
@@ -199,7 +208,7 @@ void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxd
                 state.productionCrossSectionTrendCounts[i]++;
             }
             if (ordemImpT == 1) {
-                state.updaters.writeProductionCrossSectionTrendRows(i);
+                trendoutput::writeProductionCrossSectionTrendRows(dependencies.trends, i);
                 state.productionCrossSectionTrendBufferedCounts[i] = state.productionCrossSectionTrendCounts[i];
             }
             state.productionCrossSectionTrendResetTimers[i] += state.step.timeStep;
@@ -211,7 +220,7 @@ void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxd
         for (int i = 0; i < state.step.input.ntendtransg; i++) {
             if (state.gasCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
                 if ((*state.step.globals).lixo5 < 1e-15)
-                    state.updaters.writeGasCrossSectionTrendHeader(i);
+                    trendoutput::writeGasLineCrossSectionTrendHeader(dependencies.trends, i);
                 state.gasCrossSectionTrendMatrix[i][state.gasCrossSectionTrendCounts[i]][0] = (*state.step.globals).lixo5;
                 int poscel = state.step.input.trendtransg[i].posic;
                 int poscam = state.step.input.trendtransg[i].camada - 1;
@@ -220,7 +229,7 @@ void writeTrends(const TransientSolveState &state, int ordemImpT, double velmaxd
                 state.gasCrossSectionTrendCounts[i]++;
             }
             if (ordemImpT == 1) {
-                state.updaters.writeGasCrossSectionTrendRows(i);
+                trendoutput::writeGasLineCrossSectionTrendRows(dependencies.trends, i);
                 state.gasCrossSectionTrendBufferedCounts[i] = state.gasCrossSectionTrendCounts[i];
             }
             state.gasCrossSectionTrendResetTimers[i] += state.step.timeStep;
@@ -1109,7 +1118,7 @@ void restoreIntermediateCouplingState(const TransientSolveState &state, int kont
     }
 }
 
-void finalizeTransientCellState(const TransientSolveState &state, const ProFlu *fluiRev) {
+void finalizeTransientCellState(const TransientSolveState &state, const TransientDependencies &dependencies, const ProFlu *fluiRev) {
     if (state.poissonSolver3D.itera > 7) {
         state.poissonSolver3D.penalizaDt = 20;
     }
@@ -1127,11 +1136,11 @@ void finalizeTransientCellState(const TransientSolveState &state, const ProFlu *
         evaluateWaxDeposition(state.step);
 
     storePreviousSources(state.step);
-    state.updaters.updateTemperatures();
+    thermal::updateDistributedMassTransfer(dependencies.thermal, dependencies.thermalDependencies);
 
     state.step.outletPressure = state.step.cells[state.step.lastCell].pres;
     if (state.step.input.lingas > 0 && state.networkCoupled == 1)
-        state.updaters.connectTubing();
+        gaslift::connectTubing(dependencies.gasLift);
 
     if (state.step.input.flashCompleto == 2) {
         for (int i = 0; i < state.step.lastCell; i++) {
@@ -1140,9 +1149,9 @@ void finalizeTransientCellState(const TransientSolveState &state, const ProFlu *
     }
     storePreviousFractionsAndMovePigs(state.step);
     if ((state.trackGasOilRatio > 0 || state.trackGasGravity > 0) && state.step.input.flashCompleto != 2)
-        state.updaters.updateBlackOilProperties(fluiRev);
+        fluidtracking::transportBlackOilProperties(dependencies.fluidTracking, reverseFlowFluid(fluiRev));
     if (state.step.input.flashCompleto == 2) {
-        state.updaters.updateMolarFractions(fluiRev);
+        fluidtracking::transportPhaseMolarFractions(dependencies.fluidTracking, reverseFlowFluid(fluiRev));
         state.compositionalRefreshCounter++;
         if (state.compositionalRefreshCounter == state.step.input.miniTabAtraso + 1 && state.step.input.miniTabAtraso > 0) {
             generateFluidMiniTables(state.step);
@@ -2273,7 +2282,7 @@ void refreshInletCondition(const TransientStepState &state) {
     }
 }
 
-void solveTransientStep(const TransientSolveState &state, double titRev, double alfRev, double betRev, int nrede,
+void solveTransientStep(const TransientSolveState &state, const TransientDependencies &dependencies, double titRev, double alfRev, double betRev, int nrede,
                         const ProFlu *fluiRev) {
     chrono::steady_clock::time_point begin, end;
     begin = chrono::steady_clock::now();
@@ -2292,7 +2301,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
             for (int i = 0; i < state.step.input.ntendp; i++) {
                 state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).lixo5, i, state.productionTrendCounts[i]);
             }
-            state.updaters.updateTemperatures();
+            thermal::updateDistributedMassTransfer(dependencies.thermal, dependencies.thermalDependencies);
         }
 
         int vExpli = 0;
@@ -2307,8 +2316,8 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         valveOpeningLow(state.step);
 
         if (state.step.input.controDesc == 1)
-            velmaxdesc = state.updaters.searchUnloadingInjectionPressure();
-        state.updaters.solveGasLine();
+            velmaxdesc = gaslift::searchUnloadingInjectionPressure(dependencies.gasLift);
+        gaslift::solveGasLine(dependencies.gasLift, dependencies.thermal);
         state.initialGasSurfacePressure = state.step.gasSurfacePressure;
         state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,
                      state.defaultInletTemperature, state.initialGasPressure, state.initialGasTemperature,
@@ -2332,7 +2341,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
         state.step.initiallyOpen = state.step.surfaceChokeOpen;
         state.initialOpenTime = state.step.openTime;
         for (int kontaAcop = 0; kontaAcop <= 1 * state.step.fullModel; kontaAcop++) {
-            advanceCouplingIteration(state, kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev);
+            advanceCouplingIteration(state, dependencies, kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev);
         }
 
         if (state.step.fullModel == 0 || state.step.input.cicloAcopTerm == 0) {
@@ -2341,7 +2350,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
             }
         }
     }
-    finalizeTransientCellState(state, fluiRev);
+    finalizeTransientCellState(state, dependencies, fluiRev);
 
     updateTransientMovingMeans(state);
     // Finalize transient conduction in buried pipes.
@@ -2363,7 +2372,7 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
     if ((*state.step.globals).chaverede != 0)
         (*state.step.globals).lixo5 = (*state.step.globals).lixo5R;
     writeProfiles(state, nrede);
-    writeTrends(state, ordemImpT, velmaxdesc, nrede);
+    writeTrends(state, dependencies, ordemImpT, velmaxdesc, nrede);
     end = chrono::steady_clock::now();
     (*state.step.globals).contador = state.step.stepIndex;
     writeScreenOutput(state, begin, end);

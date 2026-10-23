@@ -931,7 +931,7 @@ void publishBlackOilCellProperties(const FluidTrackingState &state, int i, Vcr<d
     }
     if (state.input.flashCompleto == 0)
         state.cells[i].flui.RenovaFluido();
-    state.updaters.correctGasSpecificGravity(i);
+    correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
 }
 
 void updateBlackOilOutletProperties(const FluidTrackingState &state, const ProFlu &fluiRev, Vcr<double> &rgo,
@@ -1791,6 +1791,102 @@ void transportPhaseMolarFractions(const FluidTrackingState &state, ProFlu fluiRe
     delete[] fluC;
     if (state.input.miniTabAtraso > 0)
         (*state.globals).modoTransiente = 1;
+}
+
+void correctGasSpecificGravity(Cel *const &cells, const Ler &input, const int &steadyIteration, int i) {
+    if (input.corrDeng == 0) { // this switch, for black oil, distinguishes
+        // between the density of dissolved gas and of free gas
+        // rDgD = ratio between the density of the dissolved gas and the gas at standard conditions
+        // rDgL = ratio between the density of the free gas and the gas at standard conditions
+        // arq.corrDeng==0 means no distinction between the densities
+        cells[i].flui.rDgD = 1.;
+        cells[i].flui.rDgL = 1.;
+        cells[i].flui.PCis = cells[i].flui.PC;
+        cells[i].flui.TCis = cells[i].flui.TC;
+        if (cells[i].acsr.tipo == kAccessoryGasInjection && cells[i].acsr.injg.seco == 0) {
+            cells[i].acsr.injg.FluidoPro.rDgD = 1.;
+            cells[i].acsr.injg.FluidoPro.rDgL = 1.;
+        }
+        if (cells[i].acsr.tipo == kAccessoryLiquidInjection) {
+            cells[i].acsr.injl.FluidoPro.rDgD = 1.;
+            cells[i].acsr.injl.FluidoPro.rDgL = 1.;
+        } else if (cells[i].acsr.tipo == kAccessoryInflowPerformance) {
+            cells[i].acsr.ipr.FluidoPro.rDgD = 1.;
+            cells[i].acsr.ipr.FluidoPro.rDgL = 1.;
+        } else if (cells[i].acsr.tipo == kAccessoryMultipleSource) {
+            cells[i].acsr.injm.FluidoPro.rDgD = 1.;
+            cells[i].acsr.injm.FluidoPro.rDgL = 1.;
+        }
+        if (cells[i].acsr.tipo == kAccessoryRadialPorous) {
+            cells[i].acsr.radialPoro.flup.rDgD = 1.;
+            cells[i].acsr.radialPoro.flup.rDgL = 1.;
+            for (int porousCell = 0; porousCell < cells[i].acsr.radialPoro.ncel; porousCell++) {
+                cells[i].acsr.radialPoro.celula[porousCell].flup.rDgD = 1.;
+                cells[i].acsr.radialPoro.celula[porousCell].flup.rDgL = 1.;
+            }
+        }
+        if (cells[i].acsr.tipo == kAccessoryPorous2D) {
+            cells[i].acsr.poroso2D.dados.flup.rDgD = 1.;
+            cells[i].acsr.poroso2D.dados.flup.rDgL = 1.;
+            for (int porousCell = 0; porousCell < cells[i].acsr.poroso2D.dados.transfer.ncel; porousCell++) {
+                cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.rDgD = 1.;
+                cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.rDgL = 1.;
+            }
+            for (int porousCell = 0; porousCell < cells[i].acsr.poroso2D.malha.nele; porousCell++) {
+                cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.rDgD = 1.;
+                cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.rDgL = 1.;
+            }
+        }
+    } else { // case arq.corrDeng==1, which means the densities are distinguished
+        int k = i - 1;
+        if (steadyIteration != 0)
+            k = i;
+        cells[i].flui.razDegD(cells[k].pres, cells[k].temp);
+        cells[i].flui.rzDegL(cells[k].pres, cells[k].temp);
+        cells[i].flui.PcTcIS(); // as the free-gas density changed, its critical
+        // pressures must be recomputed
+        // if there is a source, computes the sources' in-situ densities
+        if (cells[i].acsr.tipo == kAccessoryGasInjection && cells[i].acsr.injg.seco == 0) { // liquid source
+            cells[i].acsr.injg.FluidoPro.razDegD(cells[k].pres, cells[k].temp);
+            cells[i].acsr.injg.FluidoPro.rzDegL(cells[k].pres, cells[k].temp);
+        }
+        if (cells[i].acsr.tipo == kAccessoryLiquidInjection) { // liquid source
+            cells[i].acsr.injl.FluidoPro.razDegD(cells[k].pres, cells[k].temp);
+            cells[i].acsr.injl.FluidoPro.rzDegL(cells[k].pres, cells[k].temp);
+        } else if (cells[i].acsr.tipo == kAccessoryInflowPerformance) { // ipr
+            cells[i].acsr.ipr.FluidoPro.razDegD(cells[k].pres, cells[k].temp);
+            cells[i].acsr.ipr.FluidoPro.rzDegL(cells[k].pres, cells[k].temp);
+        } else if (cells[i].acsr.tipo == kAccessoryMultipleSource) { // generic mass source
+            cells[i].acsr.injm.FluidoPro.razDegD(cells[k].pres, cells[k].temp);
+            cells[i].acsr.injm.FluidoPro.rzDegL(cells[k].pres, cells[k].temp);
+        }
+        if (cells[i].acsr.tipo == kAccessoryRadialPorous) {
+            cells[i].acsr.radialPoro.flup.razDegD(cells[i].pres, cells[i].temp);
+            cells[i].acsr.radialPoro.flup.rzDegL(cells[i].pres, cells[i].temp);
+            for (int porousCell = 0; porousCell < cells[i].acsr.radialPoro.ncel; porousCell++) {
+                double pres = cells[i].acsr.radialPoro.celula[porousCell].Pcamada;
+                double temp = cells[i].acsr.radialPoro.tRes;
+                cells[i].acsr.radialPoro.celula[porousCell].flup.razDegD(pres, temp);
+                cells[i].acsr.radialPoro.celula[porousCell].flup.rzDegL(pres, temp);
+            }
+        }
+        if (cells[i].acsr.tipo == kAccessoryPorous2D) {
+            cells[i].acsr.poroso2D.dados.flup.razDegD(cells[i].pres, cells[i].temp);
+            cells[i].acsr.poroso2D.dados.flup.rzDegL(cells[i].pres, cells[i].temp);
+            for (int porousCell = 0; porousCell < cells[i].acsr.poroso2D.dados.transfer.ncel; porousCell++) {
+                double pres = cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].Pcamada;
+                double temp = cells[i].acsr.poroso2D.dados.transfer.tRes;
+                cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.razDegD(pres, temp);
+                cells[i].acsr.poroso2D.dados.transfer.celula[porousCell].flup.rzDegL(pres, temp);
+            }
+            for (int porousCell = 0; porousCell < cells[i].acsr.poroso2D.malha.nele; porousCell++) {
+                double pres = cells[i].acsr.poroso2D.malha.mlh2d[porousCell].cel2D.presC;
+                double temp = cells[i].acsr.poroso2D.malha.mlh2d[porousCell].tRes;
+                cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.razDegD(pres, temp);
+                cells[i].acsr.poroso2D.malha.mlh2d[porousCell].flup.rzDegL(pres, temp);
+            }
+        }
+    }
 }
 
 } // namespace sisprod::fluidtracking
