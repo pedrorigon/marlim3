@@ -1,85 +1,88 @@
 #ifndef SISPRODTRENDOUTPUT_H_
 #define SISPRODTRENDOUTPUT_H_
 
-/// Trend-file output for the production and service lines.
-///
-/// A trend is a time series recorded at one fixed cell. Eight writers produce
-/// them: two roles (header, rows) times four data sources (production line,
-/// service line, and the cross-section temperature trend of each). None of them
-/// reads the cells or writes simulation state -- they read the trend buffers and
-/// write files, and nothing here feeds back into the numerics.
-///
-/// The writers take their state through TrendState instead of reading it from
-/// SProd: it names, in one place, the state a trend writer is allowed to touch,
-/// and it makes the writers callable without an SProd, so they can be exercised
-/// against synthetic buffers.
+/// Writes buffered time series and input-mesh metadata for production and service lines.
+/// Samples and configuration are read without modifying simulation state or advancing counters.
+/// File names use pathPrefixoArqSaida. Each enabled call closes its file before recording its
+/// name in arqRelatorioPerfis, except for injection-well simulations.
 
-// Declared, not included: TrendState only holds references to these, so the
-// header stays free of the input-deck and globals headers.
 class Ler;
 struct varGlob1D;
 
 namespace trendoutput {
 
-/// One trend group: the sample buffer and the window still to be written, kept
-/// together so that no writer can pair a buffer with another group's counters.
+/// Sample buffers and scan counters for one family of time series.
 struct TrendSeries {
-    /// Samples, indexed [series][row][column] -- MatTrend*.
+    /// Samples indexed by [trend][row][column]; column zero contains time.
     double ***const &samples;
-    /// Rows recorded so far, per series -- ntrend*.
+    /// Recorder count for each trend. The writer also inspects the row at this position
+    /// so that the trailing sentinel can stop the scan.
     const int *const &count;
-    /// Rows already written, per series -- ntrend*B.
+    /// First buffer row to inspect for each trend; maintained by the recorder.
     const int *const &countBase;
 };
 
-/// The state a trend writer reads, and the only state it may read.
-///
-/// Every field is a reference into the owner's state, never a copy: the call
-/// site advances the counters between the header call and the row call, so a
-/// copy would be read at the wrong moment.
+/// Views of configuration, samples and counters used by the trend writers.
+/// References preserve access to the owner's current pointers, counters and output-pass count.
+/// Output paths and the profile-report stream are supplied by the module's I/O globals.
 struct TrendState {
-    /// Input deck and configuration -- SProd::arq.
+    /// Input deck, output settings and mesh geometry -- SProd::arq.
     const Ler &input;
-    /// Shared 1D globals; only sequenciaAP is read -- SProd::vg1dSP.
+    /// Shared globals; sequenciaAP is read only for an AP sequence column -- SProd::vg1dSP.
     const varGlob1D *const &globals;
     /// Branch index; negative outside a network -- SProd::indTramo.
     const int &branchIndex;
-    /// Count of output passes so far; captions go out on the first --
-    /// SProd::trends.trendOutputCount.
+    /// Output-pass count; captions are emitted only when it equals one -- SProd::trends.trendOutputCount.
     const int &printPassCount;
 
-    /// MatTrendP, ntrend, ntrendB.
+    /// Production samples and their recording and scan-base counters.
     TrendSeries production;
-    /// MatTrendG, ntrendg, ntrendgB.
+    /// Service-line samples and their recording and scan-base counters.
     TrendSeries gasLine;
-    /// MatTrendTransP, ntrendtrans, ntrendtransB.
+    /// Production cross-section samples and their recording and scan-base counters.
     TrendSeries productionCrossSection;
-    /// MatTrendTransG, ntrendtransg, ntrendtransgB.
+    /// Service cross-section samples and their recording and scan-base counters.
     TrendSeries gasLineCrossSection;
 };
 
-/// Writes the column captions of a production-line trend file, truncating it.
+/// Truncates the production-line file when production trends are enabled.
+/// Writes input-mesh metadata and selected captions only when printPassCount equals one.
+/// networkIndex is part of the file name only for a network branch.
 void writeProductionTrendHeader(const TrendState &state, int trendIndex, int networkIndex);
 
-/// Appends the buffered rows of a production-line trend file.
+/// Appends production time and data columns from countBase through count, stopping at the sentinel.
+/// Adds the AP sequence column only outside a network when AP equals one.
+/// Performs no file operation when production trends are disabled.
 void writeProductionTrendRows(const TrendState &state, int trendIndex, int networkIndex);
 
-/// Writes the column captions of a service-line trend file, truncating it.
+/// Truncates the service-line file when service trends and the gas line are enabled.
+/// Writes input-mesh metadata and selected captions only when printPassCount equals one.
+/// Appends a final blank line even when no captions are emitted.
 void writeGasLineTrendHeader(const TrendState &state, int trendIndex, int networkIndex);
 
-/// Appends the buffered rows of a service-line trend file.
+/// Appends service time and data columns from countBase through count, stopping at the sentinel.
+/// Adds the AP sequence column only outside a network when AP equals one.
+/// Performs no file operation unless service trends and the gas line are enabled.
 void writeGasLineTrendRows(const TrendState &state, int trendIndex, int networkIndex);
 
-/// Writes the captions of a production cross-section temperature trend file.
+/// Truncates the production cross-section file when its trends are enabled.
+/// Writes the label and the time and temperature captions only when printPassCount equals one.
+/// The file name uses position in metres and zero-based layer and discretization indices.
 void writeProductionCrossSectionTrendHeader(const TrendState &state, int trendIndex);
 
-/// Appends the buffered rows of a production cross-section temperature trend.
+/// Appends production cross-section time and temperature from countBase through count,
+/// stopping at the sentinel. Emits no AP sequence and appends a final blank line.
+/// Performs no file operation when production cross-section trends are disabled.
 void writeProductionCrossSectionTrendRows(const TrendState &state, int trendIndex);
 
-/// Writes the captions of a service cross-section temperature trend file.
+/// Truncates the service cross-section file when its trends and the gas line are enabled.
+/// Writes the label and the time and temperature captions only when printPassCount equals one.
+/// The file name uses position in metres and zero-based layer and discretization indices.
 void writeGasLineCrossSectionTrendHeader(const TrendState &state, int trendIndex);
 
-/// Appends the buffered rows of a service cross-section temperature trend.
+/// Appends service cross-section time and temperature from countBase through count,
+/// stopping at the sentinel. Emits no AP sequence and appends a final blank line.
+/// Performs no file operation unless service cross-section trends and the gas line are enabled.
 void writeGasLineCrossSectionTrendRows(const TrendState &state, int trendIndex);
 
 } // namespace trendoutput
