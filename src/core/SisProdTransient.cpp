@@ -36,32 +36,7 @@ void reportAcceptedArtificialGas(const TransientStepState &state) {
 }
 
 void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, int celpos, int vExpli, int ciclomax, double titRev, double alfRev, double betRev) {
-    if (state.step.fullModel == 0) {
-        for (int i = 0; i <= state.step.lastCell; i++)
-            state.step.cells[i].m2d = 0.;
-    } else {
-        for (int i = 0; i <= state.step.lastCell; i++) {
-            double razDp = 0.1;
-            double razDT = 1;
-            if ((fabs(state.step.cells[i].dpdtIni) / state.step.cells[i].pres < razDp) && fabs(state.step.cells[i].dTdtIni) < razDT) {
-                if (state.massTransferModel == 0)
-                    state.step.cells[i].m2d = 1.;
-                else
-                    state.step.cells[i].m2d = 0.;
-                state.step.cells[i].mudaDT = 1.;
-            } else {
-                state.step.cells[i].m2d = 0.;
-                state.step.cells[i].mudaDT = 0.;
-            }
-        }
-    }
-    if (state.step.input.estabCol == 1) {
-        for (int i = 0; i <= celpos; i++) {
-            state.step.cells[i].m2d = 0.;
-            state.step.cells[i].mudaDT = 0.;
-            state.step.cells[i].estabCol = 1;
-        }
-    }
+    prepareCouplingModelFlags(state, celpos);
     evolveFractions(state.step, alfRev, betRev, kontaAcop);
     for (int i = 0; i <= state.step.lastCell; i++) {
         if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
@@ -81,35 +56,7 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
 
     TimeStepPolicies::apply<TimeStepHook::CouplingIterationStart>(
         {state.step, kontaAcop, vExpli});
-    if (state.step.restart == -1) {
-        restartFractionEvolutionInitial(state.step);
-        for (int i = 0; i <= state.step.lastCell; i++) {
-            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-                state.step.cells[i].acsr.radialPoro.reavaliaDT(state.step.timeStep);
-            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
-                state.step.cells[i].acsr.poroso2D.reavaliaDT(state.step.timeStep);
-            }
-        }
-        for (int i = 0; i <= state.step.lastCell; i++) {
-            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-                state.step.cells[i].acsr.radialPoro.reiniciaEvoluiSW(state.step.timeStep);
-            }
-            if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
-                state.step.cells[i].acsr.poroso2D.reiniciaEvoluiSW(state.step.timeStep);
-            }
-        }
-        state.step.finalAuxiliaryTimeStep = state.step.timeStep;
-        restartFractionEvolution(state.step);
-        evolveFractions(state.step, alfRev, betRev, kontaAcop);
-        state.step.restart = 0;
-        for (int i = 0; i <= state.step.lastCell; i++) {
-            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-                state.step.cells[i].acsr.radialPoro.avancoSWcorrec();
-            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
-                state.step.cells[i].acsr.poroso2D.avancoSWcorrec();
-            }
-        }
-    }
+    restartCouplingFractions(state, kontaAcop, alfRev, betRev);
     updatePig(state.step);
 
     if (kontaAcop == 0)
@@ -159,23 +106,8 @@ void advanceCouplingIteration(const TransientSolveState &state, int kontaAcop, i
                 state.step.cells[i].dpdt = state.step.cells[i].d2pdt2;
         state.updaters.marchTransientEnergy(kontaAcop, ciclomax);
     }
-    if (kontaAcop != 1 * state.step.fullModel) {
-        for (int i = 0; i <= state.step.lastCell; i++) {
-            state.step.cells[i].FeiticoDoTempo2();
-            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
-                state.step.cells[i].acsr.radialPoro.FeiticoDoTempoSW();
-            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
-                state.step.cells[i].acsr.poroso2D.FeiticoDoTempoSW();
-            }
-        }
+    restoreIntermediateCouplingState(state, kontaAcop, gasMassSource, liquidMassSource, complementaryMassSource);
 
-        state.step.cells[state.step.lastCell].fontemassCR = complementaryMassSource;
-        state.step.cells[state.step.lastCell].fontemassLR = liquidMassSource;
-        state.step.cells[state.step.lastCell].fontemassGR = gasMassSource;
-
-        state.step.surfaceChokeOpen = state.step.initiallyOpen;
-        state.step.openTime = state.initialOpenTime;
-    }
 }
 
 void writeProfiles(const TransientSolveState &state, int nrede) {
@@ -441,157 +373,17 @@ void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
 }
 
 void fillMiniTableCornersAtMinPressure(const TransientStepState &state, ProFlu &fluC, ProFlu &flui) {
-    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
-        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmin,
-                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-                              fluC.oCalculatedVapComposition, state.input.pocinjec);
-    else
-        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmin, -1, NULL, NULL, state.input.pocinjec);
-    flui.miniTabDin.rholF[0][0] =
-        fluC.MasEspoleo(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.rhogF[0][0] =
-        fluC.MasEspGas(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.DrhogDpF[0][0] =
-        fluC.drhodp(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.DrholDtF[0][0] =
-        fluC.DrholDT(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.DrhogDtF[0][0] =
-        fluC.drhodt(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.valBO[0][0] =
-        fluC.BOFunc(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.valZ[0][0] =
-        fluC.Zdran(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.valdZdT[0][0] =
-        fluC.DZDT(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.valdZdP[0][0] =
-        fluC.DZDP(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.tit[0][0] =
-        fluC.FracMass(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.rs[0][0] =
-        fluC.RS(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.cplF[0][0] =
-        fluC.CalorLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.cpgF[0][0] =
-        fluC.CalorGas(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.HlF[0][0] =
-        fluC.EntalpLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    flui.miniTabDin.HgF[0][0] =
-        fluC.EntalpGas(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
+    fillMiniTableCorner(state, fluC, flui, 0, 0);
     flui.miniTabDin.PBF[0] =
         fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmin);
-    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
-        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmax,
-                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-                              fluC.oCalculatedVapComposition, state.input.pocinjec);
-    else
-        fluC.atualizaPropComp(flui.miniTabDin.pmin, flui.miniTabDin.tmax, -1, NULL, NULL, state.input.pocinjec);
-    flui.miniTabDin.rholF[0][1] =
-        fluC.MasEspoleo(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.rhogF[0][1] =
-        fluC.MasEspGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.DrhogDpF[0][1] =
-        fluC.drhodp(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.DrholDtF[0][1] =
-        fluC.DrholDT(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.DrhogDtF[0][1] =
-        fluC.drhodt(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.valBO[0][1] =
-        fluC.BOFunc(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.valZ[0][1] =
-        fluC.Zdran(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.valdZdT[0][1] =
-        fluC.DZDT(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.valdZdP[0][1] =
-        fluC.DZDP(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.tit[0][1] =
-        fluC.FracMass(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.rs[0][1] =
-        fluC.RS(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.cplF[0][1] =
-        fluC.CalorLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.cpgF[0][1] =
-        fluC.CalorGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.HlF[0][1] =
-        fluC.EntalpLiq(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
-    flui.miniTabDin.HgF[0][1] =
-        fluC.EntalpGas(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
+    fillMiniTableCorner(state, fluC, flui, 0, 1);
     flui.miniTabDin.PBF[1] =
         fluC.PB(flui.miniTabDin.pmin, flui.miniTabDin.tmax);
 }
 
 void fillMiniTableCornersAtMaxPressure(const TransientStepState &state, ProFlu &fluC, ProFlu &flui) {
-    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
-        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmin,
-                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-                              fluC.oCalculatedVapComposition, state.input.pocinjec);
-    else
-        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmin, -1, NULL, NULL, state.input.pocinjec);
-    flui.miniTabDin.rholF[1][0] =
-        fluC.MasEspoleo(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.rhogF[1][0] =
-        fluC.MasEspGas(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.DrhogDpF[1][0] =
-        fluC.drhodp(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.DrholDtF[1][0] =
-        fluC.DrholDT(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.DrhogDtF[1][0] =
-        fluC.drhodt(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.valBO[1][0] =
-        fluC.BOFunc(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.valZ[1][0] =
-        fluC.Zdran(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.valdZdT[1][0] =
-        fluC.DZDT(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.valdZdP[1][0] =
-        fluC.DZDP(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.tit[1][0] =
-        fluC.FracMass(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.rs[1][0] =
-        fluC.RS(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.cplF[1][0] =
-        fluC.CalorLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.cpgF[1][0] =
-        fluC.CalorGas(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.HlF[1][0] =
-        fluC.EntalpLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    flui.miniTabDin.HgF[1][0] =
-        fluC.EntalpGas(flui.miniTabDin.pmax, flui.miniTabDin.tmin);
-    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
-        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmax,
-                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
-                              fluC.oCalculatedVapComposition, state.input.pocinjec);
-    else
-        fluC.atualizaPropComp(flui.miniTabDin.pmax, flui.miniTabDin.tmax, -1, NULL, NULL, state.input.pocinjec);
-    flui.miniTabDin.rholF[1][1] =
-        fluC.MasEspoleo(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.rhogF[1][1] =
-        fluC.MasEspGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.DrhogDpF[1][1] =
-        fluC.drhodp(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.DrholDtF[1][1] =
-        fluC.DrholDT(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.DrhogDtF[1][1] =
-        fluC.drhodt(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.valBO[1][1] =
-        fluC.BOFunc(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.valZ[1][1] =
-        fluC.Zdran(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.valdZdT[1][1] =
-        fluC.DZDT(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.valdZdP[1][1] =
-        fluC.DZDP(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.tit[1][1] =
-        fluC.FracMass(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.rs[1][1] =
-        fluC.RS(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.cplF[1][1] =
-        fluC.CalorLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.cpgF[1][1] =
-        fluC.CalorGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.HlF[1][1] =
-        fluC.EntalpLiq(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
-    flui.miniTabDin.HgF[1][1] =
-        fluC.EntalpGas(flui.miniTabDin.pmax, flui.miniTabDin.tmax);
+    fillMiniTableCorner(state, fluC, flui, 1, 0);
+    fillMiniTableCorner(state, fluC, flui, 1, 1);
 }
 
 void assignCellTimeSteps(const TransientStepState &state) {
@@ -668,6 +460,868 @@ bool progressReportIsDue(const TransientSolveState &state, int MaxKontaImpres) {
     return (fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal);
 }
 
+double updateInteriorAuxiliaryPressure(const TransientStepState &state, int i) {
+    Cel &cell = state.cells[i];
+    Cel &upstreamCell = state.cells[i - 1];
+    double dx = 0.5 * cell.dx;
+    double diameter = cell.duto.a;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
+    double perimeter = cell.duto.peri;
+    double alfmed = cell.alf;
+    double rhog = cell.flui.MasEspGas(cell.pres, cell.temp);
+    double rhol = (1 - cell.bet) * cell.flui.MasEspLiq(cell.pres, cell.temp) + cell.bet * cell.fluicol.MasEspFlu(cell.pres, cell.temp);
+    double ugsmed = (cell.MC - cell.Mliqini) / (area * rhog);
+    double ulsmed = cell.Mliqini / (area * rhol);
+    double j = ugsmed + ulsmed;
+
+    double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
+    double viscmix = alfmed * cell.flui.ViscGas(cell.pres, cell.temp) + (1 - alfmed) * ((1 - cell.bet) * cell.flui.ViscOleo(cell.pres, cell.temp) + cell.bet * cell.fluicol.VisFlu(cell.pres, cell.temp));
+
+    double reynolds;
+    if (cell.duto.revest == 0)
+        reynolds = cell.Rey(cell.duto.a, j, rhomix, viscmix);
+    else {
+        double dhid = 4 * area / perimeter;
+        reynolds = cell.Rey(dhid, j, rhomix, viscmix);
+    }
+    double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
+    double medpres;
+    if (state.input.MedSimpPresFront == 0) {
+        if (cell.presaux <= 10)
+            medpres = 1;
+        else
+            medpres = 0.;
+    } else
+        medpres = 1;
+    double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
+    double gradhidro = (1 - medpres) * kGravity * sin(cell.duto.teta) * rhomix * dx;
+    cell.presauxini = cell.presaux;
+    cell.presaux = cell.pres + (gradfric + gradhidro - upstreamCell.dpB) / units::kPascalPerKgfPerCm2;
+    cell.dpresaux = 0.5 * (gradfric + gradhidro - upstreamCell.dpB) / units::kPascalPerKgfPerCm2;
+    dx = 0.5 * cell.dxL;
+    diameter = upstreamCell.duto.a;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
+    perimeter = upstreamCell.duto.peri;
+    alfmed = upstreamCell.alf;
+    rhog = upstreamCell.flui.MasEspGas(upstreamCell.pres, upstreamCell.temp);
+    rhol = (1 - upstreamCell.bet) * upstreamCell.flui.MasEspLiq(upstreamCell.pres, upstreamCell.temp) + upstreamCell.bet * upstreamCell.fluicol.MasEspFlu(upstreamCell.pres, upstreamCell.temp);
+    ugsmed = (upstreamCell.MC - upstreamCell.Mliqini) / (area * rhog);
+    ulsmed = upstreamCell.Mliqini / (area * rhol);
+    j = ugsmed + ulsmed;
+
+    rhomix = alfmed * rhog + (1 - alfmed) * rhol;
+    viscmix = alfmed * upstreamCell.flui.ViscGas(upstreamCell.pres, upstreamCell.temp) + (1 - alfmed) * ((1 - upstreamCell.bet) * upstreamCell.flui.ViscOleo(upstreamCell.pres, upstreamCell.temp) + upstreamCell.bet * upstreamCell.fluicol.VisFlu(upstreamCell.pres, upstreamCell.temp));
+
+    if (upstreamCell.duto.revest == 0)
+        reynolds = upstreamCell.Rey(upstreamCell.duto.a, j, rhomix, viscmix);
+    else {
+        double dhid = 4 * area / perimeter;
+        reynolds = upstreamCell.Rey(dhid, j, rhomix, viscmix);
+    }
+    frictionFactor = upstreamCell.fric(reynolds, upstreamCell.duto.rug / diameter);
+
+    gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
+    gradhidro = (1 - medpres) * kGravity * sin(upstreamCell.duto.teta) * rhomix * dx;
+
+    if (upstreamCell.acsr.tipo != kAccessoryChoke || upstreamCell.acsr.chk.AreaGarg > upstreamCell.acsr.chk.AreaTub * 0.5)
+        cell.presaux = 0.5 * (cell.presaux) +
+                            0.5 * (upstreamCell.pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2);
+    cell.dpresaux -= 0.5 * (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
+    upstreamCell.presauxRini = upstreamCell.presauxR;
+    upstreamCell.presauxR = cell.presaux;
+    if (i < state.lastCell) {
+        state.cells[i + 1].presauxLini = state.cells[i + 1].presauxL;
+        state.cells[i + 1].presauxL = cell.presaux;
+    }
+    return area;
+}
+
+void updateInteriorVolumeFlows(const TransientStepState &state, int i, double area) {
+    Cel &cell = state.cells[i];
+    Cel &upstreamCell = state.cells[i - 1];
+    double tmed = upstreamCell.temp;
+    if (cell.VTemper < 0.)
+        tmed = cell.temp;
+
+    ProFlu flud;
+    if (cell.Mliqini < 0.)
+        flud = cell.flui;
+    else
+        flud = upstreamCell.flui;
+
+    double betI;
+    if (((cell.MC - cell.Mliqini) * 0 + 1 * cell.Mliqini) < 0)
+        betI = cell.bet;
+    else
+        betI = cell.betL;
+
+    const FacePhaseDensities densities = facePhaseDensitiesOf(state, i, flud, tmed, betI);
+    double rhol = densities.liquid;
+    double gasDensity = densities.gas;
+    double vLiqTest = 1 + 0 * fabs(cell.Mliqini / (rhol * area));
+    double vGasTest = 1 + 0 * fabs((cell.MC - cell.Mliqini) / (gasDensity * area));
+
+    cell.QLini = cell.QL;
+    if (vLiqTest > 1e-3)
+        cell.QL = cell.Mliqini / rhol;
+    else {
+        cell.QL = 0.;
+        cell.MC = (cell.MC - cell.Mliqini);
+        cell.Mliqini = 0;
+        state.cells[i + 1].ML = upstreamCell.MR = cell.MC;
+        state.cells[i + 1].MliqiniL = upstreamCell.MliqiniR = cell.Mliqini;
+    }
+    cell.QGini = cell.QG;
+    if (vGasTest > 1e-3)
+        cell.QG = (cell.MC - cell.Mliqini) / gasDensity;
+    else {
+        cell.QG = 0;
+        cell.MC = cell.Mliqini;
+        state.cells[i + 1].ML = upstreamCell.MR = cell.MC;
+    }
+    upstreamCell.QLRini = upstreamCell.QLR;
+    upstreamCell.QLR = cell.QL;
+    if (i < state.lastCell) {
+        state.cells[i + 1].QLLini = state.cells[i + 1].QLL;
+        state.cells[i + 1].QLL = cell.QL;
+    }
+}
+
+void updateOutletAuxiliaryPressure(const TransientStepState &state, int i) {
+    Cel &cell = state.cells[i];
+    Cel &upstreamCell = state.cells[i - 1];
+    double dx = 0.5 * cell.dx;
+    double diameter = cell.duto.a;
+    double area = 0.25 * std::numbers::pi * diameter * diameter;
+    double perimeter = cell.duto.peri;
+    double alfmed = cell.alf;
+    double rhog = cell.flui.MasEspGas(cell.pres, cell.temp);
+    double rhol = (1 - cell.bet) * cell.flui.MasEspLiq(cell.pres, cell.temp) + cell.bet * cell.fluicol.MasEspFlu(cell.pres, cell.temp);
+    double ugsmed = (cell.QG) / (area);
+    double ulsmed = cell.QL / (area);
+    double j = ugsmed + ulsmed;
+
+    double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
+    double viscmix = alfmed * cell.flui.ViscGas(cell.pres, cell.temp) + (1 - alfmed) * ((1 - cell.bet) * cell.flui.ViscOleo(cell.pres, cell.temp) + cell.bet * cell.fluicol.VisFlu(cell.pres, cell.temp));
+
+    double reynolds;
+    if (cell.duto.revest == 0)
+        reynolds = cell.Rey(cell.duto.a, j, rhomix, viscmix);
+    else {
+        double dhid = 4 * area / perimeter;
+        reynolds = cell.Rey(dhid, j, rhomix, viscmix);
+    }
+    double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
+    double medpres = 0;
+    double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
+    double gradhidro = (1 - medpres) * kGravity * sin(cell.duto.teta) * rhomix * dx;
+
+    cell.presauxini = cell.presaux;
+    cell.presaux = cell.pres + (gradfric + gradhidro - upstreamCell.dpB) / units::kPascalPerKgfPerCm2;
+    cell.dpresaux = 0.5 * (gradfric + gradhidro - upstreamCell.dpB) / units::kPascalPerKgfPerCm2;
+    dx = 0.5 * cell.dxL;
+    diameter = upstreamCell.duto.a;
+    area = 0.25 * std::numbers::pi * diameter * diameter;
+    perimeter = upstreamCell.duto.peri;
+    alfmed = upstreamCell.alf;
+    rhog = upstreamCell.flui.MasEspGas(upstreamCell.pres, upstreamCell.temp);
+    rhol = (1 - upstreamCell.bet) * upstreamCell.flui.MasEspLiq(upstreamCell.pres, upstreamCell.temp) + upstreamCell.bet * upstreamCell.fluicol.MasEspFlu(upstreamCell.pres, upstreamCell.temp);
+    ugsmed = (upstreamCell.MC - upstreamCell.Mliqini) / (area * rhog);
+    ulsmed = upstreamCell.Mliqini / (area * rhol);
+    j = ugsmed + ulsmed;
+
+    rhomix = alfmed * rhog + (1 - alfmed) * rhol;
+    viscmix = alfmed * upstreamCell.flui.ViscGas(upstreamCell.pres, upstreamCell.temp) + (1 - alfmed) * ((1 - upstreamCell.bet) * upstreamCell.flui.ViscOleo(upstreamCell.pres, upstreamCell.temp) + upstreamCell.bet * upstreamCell.fluicol.VisFlu(upstreamCell.pres, upstreamCell.temp));
+
+    if (upstreamCell.duto.revest == 0)
+        reynolds = upstreamCell.Rey(upstreamCell.duto.a, j, rhomix, viscmix);
+    else {
+        double dhid = 4 * area / perimeter;
+        reynolds = upstreamCell.Rey(dhid, j, rhomix, viscmix);
+    }
+    frictionFactor = upstreamCell.fric(reynolds, upstreamCell.duto.rug / diameter);
+    gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
+    gradhidro = (1 - medpres) * kGravity * sin(upstreamCell.duto.teta) * rhomix * dx;
+
+    cell.presaux = 0.5 * (cell.presaux) +
+                        0.5 * (upstreamCell.pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2);
+    cell.dpresaux -= 0.5 * (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
+    upstreamCell.presauxRini = upstreamCell.presauxR;
+    upstreamCell.presauxR = cell.presaux;
+    if (i < state.lastCell) {
+        state.cells[i + 1].presauxLini = state.cells[i + 1].presauxL;
+        state.cells[i + 1].presauxL = cell.presaux;
+    }
+}
+
+void updateOutletVolumeFlows(const TransientStepState &state, int i) {
+    Cel &cell = state.cells[i];
+    Cel &upstreamCell = state.cells[i - 1];
+    double tmed = upstreamCell.temp;
+    if (cell.VTemper < 0.)
+        tmed = cell.temp;
+
+    ProFlu flud;
+    if (cell.Mliqini < 0.)
+        flud = cell.flui;
+    else
+        flud = upstreamCell.flui;
+
+    double betI;
+    if (((cell.MC - cell.Mliqini) * 0.99 + 0.01 * cell.Mliqini) < 0)
+        betI = cell.bet;
+    else
+        betI = cell.betL;
+
+    const FacePhaseDensities densities = facePhaseDensitiesOf(state, i, flud, tmed, betI);
+    double rhol = densities.liquid;
+    double gasDensity = densities.gas;
+
+    cell.QL = cell.Mliqini / rhol;
+    cell.QG = (cell.MC - cell.Mliqini) / gasDensity;
+    upstreamCell.QLR = cell.QL;
+}
+
+FacePhaseDensities facePhaseDensitiesOf(const TransientStepState &state, int i,
+                                             const ProFlu &flud, double tmed, double betI) {
+    double liquidDensity = flud.MasEspLiq(state.cells[i].presaux, tmed);
+    double rhol = (1 - betI) * liquidDensity + betI * state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
+    double gasDensity = flud.MasEspGas(state.cells[i].presaux, tmed);
+    return {rhol, gasDensity};
+}
+
+void applyChokeTimeStepControls(const TransientStepState &state) {
+    constexpr int multChoke = 1;
+    double mgas = state.cells[state.lastCell].MC - state.cells[state.lastCell].Mliqini;
+    double mgas0 = state.cells[state.lastCell].MCini - state.cells[state.lastCell].Mliqini0;
+    if (state.input.RelaxaDTChoke == 0 &&
+        (((*state.globals).lixo5 > 1e-15 && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
+          state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area &&
+          ((state.cells[state.lastCell].Mliqini >= 0 && state.cells[state.lastCell].Mliqini0 < 0 && mgas > 0) || (state.cells[state.lastCell].Mliqini >= 0 && mgas < 0 && mgas0 > 0))) ||
+         state.slugCount < multChoke * 200)) {
+
+        if (state.slugCount > multChoke * 200) {
+            state.slugCount = 0;
+        }
+        if (((state.cells[state.lastCell].Mliqini >= 0 && state.cells[state.lastCell].Mliqini0 < 0 && mgas > 0) ||
+             (state.cells[state.lastCell].Mliqini >= 0 && mgas < 0 && mgas0 > 0)) &&
+            state.slugCount > multChoke * 100)
+            state.slugCount = multChoke * 100;
+        double progres = 1.;
+        if (state.slugCount > multChoke * 100) {
+            progres = state.slugCount - multChoke * 100;
+        }
+        state.timeStep *= (progres / (multChoke * 100.));
+        state.slugCount++;
+    }
+    if (state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area)
+        state.surfaceChokeOpen = 1;
+    if (fabs(state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.surfaceChokeOpen == 0 && state.timeStep > 1. && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
+        state.surfaceChoke.AreaGarg > 1e-15 * state.cells[state.lastCell - 1].duto.area)
+        state.timeStep =
+            1.;
+    for (int i = 0; i < state.input.eventoabre; i++) {
+        if ((*state.globals).lixo5 > state.input.Tevento[i] - state.input.dtmax && (*state.globals).lixo5 < state.input.Tevento[i] + 30) {
+            if (state.timeStep > state.smallestCellLength / 100.) {
+                state.timeStep = state.smallestCellLength / 100.;
+            }
+        }
+    }
+    state.multiplier = 0.8;
+    if ((((*state.globals).lixo5 - 2 * state.input.dtmax) > state.movingMeanStartTime && (fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure > 0.4)) || (state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area) || (state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area && state.surfaceChokeOpen == 0)) {
+        double denominador = 10.;
+        double progres = 0.95;
+
+        if ((state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1)) {
+            denominador = 100.;
+            progres = 0.5;
+            state.multiplier = pow(progres, 10. * fabs(state.gasSurfacePressure - state.outletPressure) / state.outletPressure) * state.multiplier;
+        } else if ((state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area)) {
+            denominador = 1000.;
+            state.multiplier = (state.cells[state.lastCell].alf + 1e-5) * state.multiplier;
+        } else {
+            state.multiplier = pow(progres, 10 * fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure) * state.multiplier;
+        }
+        if (state.input.dtmax * state.multiplier < state.smallestCellLength / denominador)
+            state.multiplier = (state.smallestCellLength / denominador) / state.input.dtmax;
+        if (state.multiplier > 0.8)
+            state.multiplier = 0.8;
+    } else {
+        if (state.cells[state.lastCell].alf >= 0.11 || state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area ||
+            state.surfaceChoke.AreaGarg <= 1e-3 * state.cells[state.lastCell - 1].duto.area || state.surfaceChokeOpen == 1) {
+            state.multiplier = state.multiplier / 0.95;
+            if (state.multiplier > 0.8)
+                state.multiplier = 0.8;
+        }
+    }
+}
+
+void restrictTimeStepByTransport(const TransientStepState &state) {
+    for (int i = 0; i <= state.lastCell; i++) {
+        double jmix = 0.;
+        double pipeArea = state.cells[i].duto.area;
+        double dtaux;
+        double alfteste = state.cells[i].alf;
+        if (i > 0 && (state.cells[i].MC - state.cells[i].Mliqini) > 0)
+            alfteste = state.cells[i - 1].alf;
+        if (alfteste > 1e-9)
+            jmix += fabs(
+                (state.cells[i].MC - state.cells[i].Mliqini) / (pipeArea * state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp) * (0 + 1 * alfteste)));
+        if (fabs(state.cells[i].VTemper) > jmix)
+            jmix = fabs(state.cells[i].VTemper);
+
+        double jmixL = 0.;
+        if (alfteste < 1 - 1e-5)
+            jmixL = fabs(
+                state.cells[i].Mliqini / (pipeArea * ((1. - state.cells[i].bet) * state.cells[i].rpC + state.cells[i].bet * state.cells[i].rcC) * (1. - 0 * alfteste)));
+        if (fabs(jmixL) > jmix)
+            jmix = fabs(jmixL);
+        if (fabs(jmix) > 1e-5)
+            dtaux = 1.0 * state.cells[i].dx / jmix;
+        else
+            dtaux = state.timeStep;
+        if (dtaux < state.timeStep)
+            state.timeStep = dtaux;
+    }
+    if (state.input.lingas == 1) {
+        for (int i = 0; i <= state.lastGasCell; i++) {
+            double dtaux;
+            double jmix = fabs(state.gasCells[i].VGasR / state.gasCells[i].u1L);
+            if (fabs(jmix) > 1e-5)
+                dtaux = state.gasCells[i].dx0 / jmix;
+            else
+                dtaux = state.timeStep;
+            if (dtaux < state.timeStep)
+                state.timeStep = dtaux;
+        }
+    }
+}
+
+void applyScheduledTimeStepEvents(const TransientStepState &state) {
+    if (state.input.evento.size() > state.eventIndex) {
+        if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) > (state.input.evento[state.eventIndex] + 0.1)) {
+            state.timeStep = state.input.evento[state.eventIndex] - (*state.globals).lixo5;
+            state.eventIndex++;
+        } else if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) >= (state.input.evento[state.eventIndex]))
+            state.eventIndex++;
+    }
+
+    state.masterState = 1;
+    for (int i = 0; i < state.masterCloseCount; i++) {
+        if ((*state.globals).lixo5 > state.masterCloseSchedule[i]) {
+            for (int j = 0; j < state.masterOpenCount; j++) {
+                if ((*state.globals).lixo5 < state.masterOpenSchedule[j]) {
+                    state.masterState = 0;
+                    state.masterCounter++;
+                    if (state.masterCounter > 19)
+                        state.masterCounter = 20;
+                    if ((*state.globals).lixo5 >= state.masterOpenSchedule[j] - state.timeStep)
+                        state.masterCounter = 0;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void penalizeOscillatingFractions(const TransientStepState &state) {
+    int parada = 0;
+    for (int i = 1; i < state.lastCell; i++) {
+        if (state.cells[i].acsr.tipo == kAccessoryChoke && state.cells[i].acsr.chk.AreaGarg <= 1e-15 * state.cells[i].acsr.chk.AreaTub)
+            parada = 1;
+        else if (state.surfaceChoke.AreaGarg <= 1.e-15 * state.surfaceChoke.AreaTub)
+            parada = 1;
+    }
+    if (parada == 1) {
+        Vcr<int> oscila(state.lastCell, 0);
+        for (int i = 0; i <= state.lastCell; i++) {
+            if (i > 0 && i < state.lastCell) {
+                if (fabs(state.cells[i - 1].alf - state.cells[i + 1].alf) < fabs(state.cells[i].alf - state.cells[i - 1].alf)) {
+                    double area = state.cells[i].duto.area;
+                    double vLiqTest = fabs(state.cells[i].QL / (area));
+                    double vGasTest = fabs(state.cells[i].QG / (area));
+                    if ((vLiqTest + vGasTest) > 0.1)
+                        oscila[i] = 1;
+                }
+            }
+        }
+        int alarmOscila = 0;
+        for (int i = 1; i <= state.lastCell - 4; i++) {
+            int kontaOsc = 0;
+            int multOsc = 0;
+            while (kontaOsc < 3) {
+                multOsc += oscila[i + kontaOsc];
+                kontaOsc++;
+            }
+            if (multOsc == 3)
+                alarmOscila = 1;
+        }
+
+        if (alarmOscila == 1 && state.input.desligaPenalizaDT == 0)
+            state.timeStep /= 10.;
+    }
+}
+
+double valveRestrictedTimeStep(const TransientStepState &state, int i, double dtaux) {
+    int celpos;
+    double valveTimeStep = state.cells[0].dt;
+    if (i == 0)
+        celpos = state.input.master1.posic;
+    else
+        celpos = state.input.valv[i - 1].posicP;
+    if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= 1e-3 * state.input.master1.razareaativ)) {
+        if (state.cells[celpos].alf < 0.05) {
+            if (state.cells[celpos].alf < 0.01)
+                state.desperationMoment += 1.5;
+            else
+                state.desperationMoment = 1;
+            if (state.desperationMoment < 1.)
+                state.desperationMoment = 1.;
+            double artificialGasRate = state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * kAirDensityAtStandardConditions / units::kSecondsPerDay;
+            state.cells[celpos].fontemassGL += artificialGasRate;
+            state.cells[celpos - 1].fontemassGR = state.cells[celpos].fontemassGL;
+            state.artificialGasThisStep.push_back({i, celpos, artificialGasRate});
+        }
+        if (state.cells[celpos].alf < 0.5)
+            state.masterCriticalRatio[i] = 0.01;
+    } else
+        state.desperationMoment = 0.;
+    if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= state.masterCriticalRatio[i] * state.input.master1.razareaativ)) {
+        double timeStepDivisor = 20.;
+        if (state.cells[celpos].alf < 0.5)
+            timeStepDivisor = 40.;
+        valveTimeStep = dtaux;
+        if (valveTimeStep > 1)
+            valveTimeStep = 1.;
+        if (state.cells[celpos].alf < 0.5)
+            valveTimeStep = 0.1 + 0.9 * (state.cells[celpos].alf) / 0.5;
+        valveTimeStep /= timeStepDivisor;
+        state.restart = -1;
+    }
+    return valveTimeStep;
+}
+
+void updateOutletVoidFraction(const TransientStepState &state, int i, double alfrev) {
+    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
+        if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
+            state.cells[i].alf = state.cells[i - 1].alf;
+        else
+            state.cells[i].avancalf(state.restart, state.lastCell);
+    } else {
+        if (state.cells[state.lastCell].Mliqini > 0)
+            state.cells[i].alf = state.cells[i - 1].alf;
+        else if (state.surfaceChokeMassFlag == 0 && state.input.chkv == 0)
+            state.cells[i].alf = alfrev;
+        else
+            state.cells[i].avancalf(state.restart, state.lastCell);
+    }
+}
+
+void updateOutletComplementaryFraction(const TransientStepState &state, int i) {
+    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
+        if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
+            state.cells[i].bet = state.cells[i - 1].bet;
+        else
+            state.cells[i].avancbet(state.restart, state.lastCell);
+    } else {
+        if (state.surfaceChokeMassFlag == 1)
+            state.cells[i].avancbet(state.restart, state.lastCell);
+        else if (state.input.chkv == 1)
+            state.cells[i].bet = state.cells[i - 1].bet;
+    }
+}
+
+void preparePigFaceFractions(const TransientStepState &state) {
+    if (state.input.ConContEntrada == 0) {
+        state.cells[0].betI = state.cells[0].bet;
+        state.cells[0].betLI = state.cells[0].bet;
+    } else {
+        state.cells[0].betI = state.inletComplementaryFraction;
+        if ((state.cells[0].MC - state.cells[0].Mliqini) * 0 + state.cells[0].Mliqini < 0.)
+            state.cells[0].betI = state.cells[0].betPigE;
+        state.cells[0].betLI = state.cells[0].betI;
+    }
+    for (int i = 1; i <= state.lastCell; i++) {
+        state.cells[i].betI = state.cells[i].betPigE;
+        if (state.cells[i].QL > 0.)
+            state.cells[i].betI = state.cells[i - 1].betPigD;
+        state.cells[i - 1].betRI = state.cells[i].betI;
+        if (i < state.lastCell)
+            state.cells[i + 1].betLI = state.cells[i].betI;
+    }
+}
+
+double currentOutletGasMassFraction(const TransientStepState &state, double alfSup,
+                                    double massgas, double masentrada, double romix) {
+    double chokeGasMassFraction;
+    if ((massgas >= 0 && state.cells[state.lastCell - 1].MliqiniR <= 0) || (massgas < 0 && state.cells[state.lastCell - 1].MliqiniR == 0))
+        chokeGasMassFraction = 1.;
+    else if (massgas <= 0 && state.cells[state.lastCell - 1].MliqiniR > 0)
+        chokeGasMassFraction = 0.;
+    else if (masentrada < 0) {
+        chokeGasMassFraction = 1.;
+    } else if (fabs(masentrada) < 1e-15)
+        chokeGasMassFraction = inSituGasMassFraction(state.cells[state.lastCell], alfSup, state.cells[state.lastCell].pres, romix);
+    else
+        chokeGasMassFraction = flowQuality(massgas, masentrada);
+    if (chokeGasMassFraction > 1)
+        chokeGasMassFraction = 1;
+    if (state.outletPressure < state.gasSurfacePressure) {
+        chokeGasMassFraction = 1.;
+    }
+
+    if (chokeGasMassFraction == 0 && alfSup > 0.05)
+        chokeGasMassFraction = inSituGasMassFraction(state.cells[state.lastCell], alfSup, state.cells[state.lastCell].pres, romix);
+    return chokeGasMassFraction;
+}
+
+bool currentOutletUsesPressureDrop(const TransientStepState &state, double chokeGasMassFraction,
+                                   double delp, double masentrada, double maxSup) {
+    double difdelp = state.outletPressure - state.gasSurfacePressure;
+    return ((chokeGasMassFraction < 1e-7 && surfaceChokeIsOpen(state)) ||
+         (chokeGasMassFraction < 0.01 && surfaceChokeIsOpen(state) &&
+          fabs(difdelp) / delp < 1.2 && fabs(difdelp) / delp > 0.8 &&
+          ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
+           (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))));
+}
+
+bool currentOutletCanRemainOpen(const TransientStepState &state, double delp) {
+    return surfaceChokeIsOpen(state) &&
+            ((((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
+              fabs(state.movingMeanPressure - state.gasSurfacePressure) / state.movingMeanPressure < 0.05 && fabs(state.movingMeanFlux) < 0.5) ||
+             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
+              fabs(state.movingMeanPressure - state.gasSurfacePressure) < (0.05 * state.gasSurfacePressure) && fabs(state.movingMeanFlux) < 5. && delp < 0.01 * state.gasSurfacePressure) ||
+             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) / state.movingMeanPressure > 0.001 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.input.chkv == 0));
+}
+
+bool bufferedOutletUsesPressureDrop(const TransientStepState &state, double chokeGasMassFraction,
+                                    double delp, double masentrada, double maxSup) {
+    double difdelp = fabs(fabs(state.cells[state.lastCell].presBuf - state.gasSurfacePressure) - delp);
+    return ((chokeGasMassFraction < 1e-7 && surfaceChokeIsOpen(state)) ||
+         (chokeGasMassFraction < 0.01 && surfaceChokeIsOpen(state) &&
+          difdelp / delp < 0.2 &&
+          ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
+           (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))));
+}
+
+void updateBufferedNetworkSources(const TransientStepState &state, double betRev) {
+    double sinal;
+    if (state.input.chkv == 0 || state.cells[state.lastCell - 1].MRBuf > 0.)
+        sinal = 1.;
+    else
+        sinal = 0.;
+    double betloc;
+    if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
+        betloc = state.cells[state.lastCell - 1].bet;
+    else
+        betloc = betRev;
+    double rhomistBuf = betloc *
+                            state.cells[state.lastCell - 1].fluicol.MasEspFlu(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) +
+                        (1. - betloc) * state.cells[state.lastCell - 1].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
+    double QLbuf = state.cells[state.lastCell - 1].MliqiniRBuf / rhomistBuf;
+
+    state.bufferedComplementaryMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
+    state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedComplementaryMassSource);
+    state.bufferedGasMassSource = -sinal * (state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf);
+}
+
+void prepareCouplingModelFlags(const TransientSolveState &state, int celpos) {
+    if (state.step.fullModel == 0) {
+        for (int i = 0; i <= state.step.lastCell; i++)
+            state.step.cells[i].m2d = 0.;
+    } else {
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            double razDp = 0.1;
+            double razDT = 1;
+            if ((fabs(state.step.cells[i].dpdtIni) / state.step.cells[i].pres < razDp) && fabs(state.step.cells[i].dTdtIni) < razDT) {
+                if (state.massTransferModel == 0)
+                    state.step.cells[i].m2d = 1.;
+                else
+                    state.step.cells[i].m2d = 0.;
+                state.step.cells[i].mudaDT = 1.;
+            } else {
+                state.step.cells[i].m2d = 0.;
+                state.step.cells[i].mudaDT = 0.;
+            }
+        }
+    }
+    if (state.step.input.estabCol == 1) {
+        for (int i = 0; i <= celpos; i++) {
+            state.step.cells[i].m2d = 0.;
+            state.step.cells[i].mudaDT = 0.;
+            state.step.cells[i].estabCol = 1;
+        }
+    }
+}
+
+void restartCouplingFractions(const TransientSolveState &state, int kontaAcop,
+                              double alfRev, double betRev) {
+    if (state.step.restart == -1) {
+        restartFractionEvolutionInitial(state.step);
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
+                state.step.cells[i].acsr.radialPoro.reavaliaDT(state.step.timeStep);
+            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
+                state.step.cells[i].acsr.poroso2D.reavaliaDT(state.step.timeStep);
+            }
+        }
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
+                state.step.cells[i].acsr.radialPoro.reiniciaEvoluiSW(state.step.timeStep);
+            }
+            if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
+                state.step.cells[i].acsr.poroso2D.reiniciaEvoluiSW(state.step.timeStep);
+            }
+        }
+        state.step.finalAuxiliaryTimeStep = state.step.timeStep;
+        restartFractionEvolution(state.step);
+        evolveFractions(state.step, alfRev, betRev, kontaAcop);
+        state.step.restart = 0;
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
+                state.step.cells[i].acsr.radialPoro.avancoSWcorrec();
+            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
+                state.step.cells[i].acsr.poroso2D.avancoSWcorrec();
+            }
+        }
+    }
+}
+
+void restoreIntermediateCouplingState(const TransientSolveState &state, int kontaAcop,
+                                      double gasMassSource, double liquidMassSource,
+                                      double complementaryMassSource) {
+    if (kontaAcop != 1 * state.step.fullModel) {
+        for (int i = 0; i <= state.step.lastCell; i++) {
+            state.step.cells[i].FeiticoDoTempo2();
+            if (state.step.cells[i].acsr.tipo == kAccessoryRadialPorous) {
+                state.step.cells[i].acsr.radialPoro.FeiticoDoTempoSW();
+            } else if (state.step.cells[i].acsr.tipo == kAccessoryPorous2D) {
+                state.step.cells[i].acsr.poroso2D.FeiticoDoTempoSW();
+            }
+        }
+
+        state.step.cells[state.step.lastCell].fontemassCR = complementaryMassSource;
+        state.step.cells[state.step.lastCell].fontemassLR = liquidMassSource;
+        state.step.cells[state.step.lastCell].fontemassGR = gasMassSource;
+
+        state.step.surfaceChokeOpen = state.step.initiallyOpen;
+        state.step.openTime = state.initialOpenTime;
+    }
+}
+
+void finalizeTransientCellState(const TransientSolveState &state, const ProFlu *fluiRev) {
+    if (state.poissonSolver3D.itera > 7) {
+        state.poissonSolver3D.penalizaDt = 20;
+    }
+
+    for (int i = 1; i <= state.step.lastCell; i++) {
+        state.step.cells[i].dTdt = 0.;
+        state.step.cells[i].dTdtL = 0.;
+        if (state.step.fullModel == 0 || state.step.cells[i].estabCol == 1) {
+            state.step.cells[i].dTdtIni = 0.;
+            state.step.cells[i].d2pdt2 = 0.;
+        }
+    }
+
+    if (state.step.input.modoParafina == 1)
+        evaluateWaxDeposition(state.step);
+
+    storePreviousSources(state.step);
+    state.updaters.updateTemperatures();
+
+    state.step.outletPressure = state.step.cells[state.step.lastCell].pres;
+    if (state.step.input.lingas > 0 && state.networkCoupled == 1)
+        state.updaters.connectTubing();
+
+    if (state.step.input.flashCompleto == 2) {
+        for (int i = 0; i < state.step.lastCell; i++) {
+            state.step.cells[i].nMolIni = state.step.cells[i].nMol;
+        }
+    }
+    storePreviousFractionsAndMovePigs(state.step);
+    if ((state.trackGasOilRatio > 0 || state.trackGasGravity > 0) && state.step.input.flashCompleto != 2)
+        state.updaters.updateBlackOilProperties(fluiRev);
+    if (state.step.input.flashCompleto == 2) {
+        state.updaters.updateMolarFractions(fluiRev);
+        state.compositionalRefreshCounter++;
+        if (state.compositionalRefreshCounter == state.step.input.miniTabAtraso + 1 && state.step.input.miniTabAtraso > 0) {
+            generateFluidMiniTables(state.step);
+            state.compositionalRefreshCounter = 0;
+        }
+    }
+    cacheCellAndFaceDensities(state.step);
+}
+
+void updateTransientMovingMeans(const TransientSolveState &state) {
+    state.timeStepHistory.push_back(state.step.timeStep);
+    state.pressureHistory.push_back(state.step.outletPressure * state.step.timeStep);
+    double jtemporario = state.step.cells[state.step.lastCell - 1].Mliqini / (state.step.cells[state.step.lastCell - 1].duto.area * ((1. - state.step.cells[state.step.lastCell - 1].bet) * state.step.cells[state.step.lastCell - 1].rpC + state.step.cells[state.step.lastCell - 1].bet * state.step.cells[state.step.lastCell - 1].rcC));
+    jtemporario += (state.step.cells[state.step.lastCell - 1].MC - state.step.cells[state.step.lastCell - 1].Mliqini) / (state.step.cells[state.step.lastCell - 1].duto.area * state.step.cells[state.step.lastCell - 1].flui.MasEspGas(state.step.cells[state.step.lastCell - 1].pres, state.step.cells[state.step.lastCell - 1].temp));
+    state.fluxHistory.push_back(jtemporario * state.step.timeStep);
+    state.voidFractionHistory.push_back(state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep);
+    state.movingMeanCounter += state.step.timeStep;
+    state.totalPressure += state.step.outletPressure * state.step.timeStep;
+    state.totalFlux += jtemporario * state.step.timeStep;
+    state.totalVoidFraction += state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep;
+    if ((*state.step.globals).lixo5 > state.step.movingMeanStartTime) {
+        state.totalPressure -= state.pressureHistory.front();
+        state.pressureHistory.erase(state.pressureHistory.begin());
+        state.totalFlux -= state.fluxHistory.front();
+        state.fluxHistory.erase(state.fluxHistory.begin());
+        state.totalVoidFraction -= state.voidFractionHistory.front();
+        state.voidFractionHistory.erase(state.voidFractionHistory.begin());
+        state.movingMeanCounter -= state.timeStepHistory.front();
+        state.timeStepHistory.erase(state.timeStepHistory.begin());
+        state.step.movingMeanPressure = state.totalPressure / state.movingMeanCounter;
+        state.step.movingMeanFlux = state.totalFlux / state.movingMeanCounter;
+        state.movingMeanVoidFraction = state.totalVoidFraction / state.movingMeanCounter;
+    }
+}
+
+void updateActivePigState(const TransientStepState &state, int i) {
+    state.movingPigCount++;
+    int ipig = state.cells[i].indpig;
+    state.cells[i].DelPig = state.input.pig[ipig].delpres;
+    state.cells[i].RazAreaPig = state.input.pig[ipig].razarea;
+    state.cells[i].cdpig = state.input.pig[ipig].cdPig;
+    double flowArea = state.cells[i].duto.area;
+    double superficialMixtureVelocityLeft = (state.cells[i].QL + state.cells[i].QG) / flowArea;
+    double superficialMixtureVelocityRight;
+    if (i < state.lastCell)
+        superficialMixtureVelocityRight = (state.cells[i + 1].QL + state.cells[i + 1].QG) / flowArea;
+    else
+        superficialMixtureVelocityRight = (state.cells[i].QL + state.cells[i].QG) / flowArea;
+    state.cells[i].velPigini = state.cells[i].velPig;
+    state.cells[i].velPig = superficialMixtureVelocityLeft * state.cells[i].razPig + superficialMixtureVelocityRight * (1. - state.cells[i].razPig) - state.cells[i].VazaPig / flowArea;
+    for (int j = 0; j < state.scheduledPigCount; j++) {
+        if (state.pigReceiverCells[j] == i) {
+            state.cells[i].velPig = 0.;
+            state.cells[i].estadoPig = 0;
+            state.cells[i].razPig = 0.;
+            state.cells[i].razPigini = 0.;
+            state.cells[i].alfPigDini = state.cells[i].alf;
+            state.cells[i].betPigDini = state.cells[i].bet;
+            state.cells[i].alfPigEini = state.cells[i].alf;
+            state.cells[i].betPigEini = state.cells[i].bet;
+            state.cells[i].alfPigD = state.cells[i].alf;
+            state.cells[i].betPigD = state.cells[i].bet;
+            state.cells[i].alfPigE = state.cells[i].alf;
+            state.cells[i].betPigE = state.cells[i].bet;
+            if (i > 0)
+                state.cells[i - 1].alfPigER = state.cells[i].alfPigE;
+            if (i == state.lastCell)
+                state.cells[i].alfPigER = state.cells[i].alf;
+
+            state.movingPigCount--;
+        }
+    }
+}
+
+void fillMiniTableCorner(const TransientStepState &state, ProFlu &fluC, ProFlu &flui,
+                         int pressureIndex, int temperatureIndex) {
+    const double &pressure = pressureIndex == 0 ? flui.miniTabDin.pmin : flui.miniTabDin.pmax;
+    const double &temperature = temperatureIndex == 0 ? flui.miniTabDin.tmin : flui.miniTabDin.tmax;
+    if (fluC.dCalculatedBeta > 0. && fluC.dCalculatedBeta < 1.)
+        fluC.atualizaPropComp(pressure, temperature,
+                              fluC.dCalculatedBeta, fluC.oCalculatedLiqComposition,
+                              fluC.oCalculatedVapComposition, state.input.pocinjec);
+    else
+        fluC.atualizaPropComp(pressure, temperature, -1, NULL, NULL, state.input.pocinjec);
+    flui.miniTabDin.rholF[pressureIndex][temperatureIndex] =
+        fluC.MasEspoleo(pressure, temperature);
+    flui.miniTabDin.rhogF[pressureIndex][temperatureIndex] =
+        fluC.MasEspGas(pressure, temperature);
+    flui.miniTabDin.DrhogDpF[pressureIndex][temperatureIndex] =
+        fluC.drhodp(pressure, temperature);
+    flui.miniTabDin.DrholDtF[pressureIndex][temperatureIndex] =
+        fluC.DrholDT(pressure, temperature);
+    flui.miniTabDin.DrhogDtF[pressureIndex][temperatureIndex] =
+        fluC.drhodt(pressure, temperature);
+    flui.miniTabDin.valBO[pressureIndex][temperatureIndex] =
+        fluC.BOFunc(pressure, temperature);
+    flui.miniTabDin.valZ[pressureIndex][temperatureIndex] =
+        fluC.Zdran(pressure, temperature);
+    flui.miniTabDin.valdZdT[pressureIndex][temperatureIndex] =
+        fluC.DZDT(pressure, temperature);
+    flui.miniTabDin.valdZdP[pressureIndex][temperatureIndex] =
+        fluC.DZDP(pressure, temperature);
+    flui.miniTabDin.tit[pressureIndex][temperatureIndex] =
+        fluC.FracMass(pressure, temperature);
+    flui.miniTabDin.rs[pressureIndex][temperatureIndex] =
+        fluC.RS(pressure, temperature);
+    flui.miniTabDin.cplF[pressureIndex][temperatureIndex] =
+        fluC.CalorLiq(pressure, temperature);
+    flui.miniTabDin.cpgF[pressureIndex][temperatureIndex] =
+        fluC.CalorGas(pressure, temperature);
+    flui.miniTabDin.HlF[pressureIndex][temperatureIndex] =
+        fluC.EntalpLiq(pressure, temperature);
+    flui.miniTabDin.HgF[pressureIndex][temperatureIndex] =
+        fluC.EntalpGas(pressure, temperature);
+}
+
+void supplyAbsentGasProperties(ProFlu &flui, const std::pair<double, int> (&titVec)[4]) {
+    if(titVec[0].first<1e-3){
+        int busca=1;
+        while(busca<4 && titVec[busca].first<1e-3)busca++;
+        if(busca<4){
+            const int jtroca = titVec[busca].second / 2;
+            const int ktroca = titVec[busca].second % 2;
+            for(int j=0;j<2;j++){
+                for(int k=0;k<2;k++){
+                    if(flui.miniTabDin.tit[j][k]<1e-3){
+                        flui.miniTabDin.rhogF[j][k]=flui.miniTabDin.rhogF[jtroca][ktroca];
+                        flui.miniTabDin.DrhogDpF[j][k]=flui.miniTabDin.DrhogDpF[jtroca][ktroca];
+                        flui.miniTabDin.DrhogDtF[j][k]=flui.miniTabDin.DrhogDtF[jtroca][ktroca];
+                        flui.miniTabDin.valZ[j][k]=flui.miniTabDin.valZ[jtroca][ktroca];
+                        flui.miniTabDin.valdZdT[j][k]=flui.miniTabDin.valdZdT[jtroca][ktroca];
+                        flui.miniTabDin.valdZdP[j][k]=flui.miniTabDin.valdZdP[jtroca][ktroca];
+                        flui.miniTabDin.cpgF[j][k]=flui.miniTabDin.cpgF[jtroca][ktroca];
+                        flui.miniTabDin.HgF[j][k]=flui.miniTabDin.HgF[jtroca][ktroca];
+                    }
+                }
+            }
+        }
+    }
+}
+
+void supplyAbsentLiquidProperties(ProFlu &flui, const std::pair<double, int> (&titVec)[4]) {
+    if(titVec[3].first>1.-1e-3){
+        int busca=2;
+        while(busca>=0 && titVec[busca].first>1.-1e-3)busca--;
+        if(busca>=0){
+            const int jtroca = titVec[busca].second / 2;
+            const int ktroca = titVec[busca].second % 2;
+            for(int j=0;j<2;j++){
+                for(int k=0;k<2;k++){
+                    if(flui.miniTabDin.tit[j][k]>1.-1e-3){
+                        flui.miniTabDin.rholF[j][k]=flui.miniTabDin.rholF[jtroca][ktroca];
+                        flui.miniTabDin.valBO[j][k]=flui.miniTabDin.valBO[jtroca][ktroca];
+                        flui.miniTabDin.DrholDtF[j][k]=flui.miniTabDin.DrholDtF[jtroca][ktroca];
+                        flui.miniTabDin.rs[j][k]=flui.miniTabDin.rs[jtroca][ktroca];
+                        flui.miniTabDin.cplF[j][k]=flui.miniTabDin.cplF[jtroca][ktroca];
+                        flui.miniTabDin.HlF[j][k]=flui.miniTabDin.HlF[jtroca][ktroca];
+                    }
+                }
+            }
+        }
+    }
+}
+
+void refreshAccessoryFluidMiniTable(const TransientStepState &state, int i, ProFlu &accessoryFluid) {
+    accessoryFluid.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
+    accessoryFluid.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
+    accessoryFluid.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
+    accessoryFluid.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
+    accessoryFluid.atualizaPropCompStandard();
+    if (accessoryFluid.dCalculatedBeta > 0. && accessoryFluid.dCalculatedBeta < 1.)
+        accessoryFluid.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
+                                                       accessoryFluid.dCalculatedBeta, accessoryFluid.oCalculatedLiqComposition,
+                                                       accessoryFluid.oCalculatedVapComposition, state.input.pocinjec);
+    else
+        accessoryFluid.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
+    if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, accessoryFluid);
+}
+
 }  // namespace
 
 void updateInteriorCell(const TransientStepState &state, int i, int expli) {
@@ -696,124 +1350,9 @@ void updateInteriorCell(const TransientStepState &state, int i, int expli) {
     state.cells[i - 1].MliqiniR0 = state.cells[i - 1].MliqiniR;
     state.cells[i + 1].MliqiniL = state.cells[i - 1].MliqiniR = state.cells[i].Mliqini;
 
-    double dx = 0.5 * state.cells[i].dx;
-    double diameter = state.cells[i].duto.a;
-    double area = 0.25 * std::numbers::pi * diameter * diameter;
-    double perimeter = state.cells[i].duto.peri;
-    double alfmed = state.cells[i].alf;
-    double rhog = state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp);
-    double rhol = (1 - state.cells[i].bet) * state.cells[i].flui.MasEspLiq(state.cells[i].pres, state.cells[i].temp) + state.cells[i].bet * state.cells[i].fluicol.MasEspFlu(state.cells[i].pres, state.cells[i].temp);
-    double ugsmed = (state.cells[i].MC - state.cells[i].Mliqini) / (area * rhog);
-    double ulsmed = state.cells[i].Mliqini / (area * rhol);
-    double j = ugsmed + ulsmed;
+    double area = updateInteriorAuxiliaryPressure(state, i);
 
-    double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    double viscmix = alfmed * state.cells[i].flui.ViscGas(state.cells[i].pres, state.cells[i].temp) + (1 - alfmed) * ((1 - state.cells[i].bet) * state.cells[i].flui.ViscOleo(state.cells[i].pres, state.cells[i].temp) + state.cells[i].bet * state.cells[i].fluicol.VisFlu(state.cells[i].pres, state.cells[i].temp));
-
-    double reynolds;
-    if (state.cells[i].duto.revest == 0)
-        reynolds = state.cells[i].Rey(state.cells[i].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / perimeter;
-        reynolds = state.cells[i].Rey(dhid, j, rhomix, viscmix);
-    }
-    double frictionFactor = state.cells[i].fric(reynolds, state.cells[i].duto.rug / diameter);
-    double medpres;
-    if (state.input.MedSimpPresFront == 0) {
-        if (state.cells[i].presaux <= 10)
-            medpres = 1;
-        else
-            medpres = 0.;
-    } else
-        medpres = 1;
-    double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    double gradhidro = (1 - medpres) * kGravity * sin(state.cells[i].duto.teta) * rhomix * dx;
-    state.cells[i].presauxini = state.cells[i].presaux;
-    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
-    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
-    dx = 0.5 * state.cells[i].dxL;
-    diameter = state.cells[i - 1].duto.a;
-    area = 0.25 * std::numbers::pi * diameter * diameter;
-    perimeter = state.cells[i - 1].duto.peri;
-    alfmed = state.cells[i - 1].alf;
-    rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
-    rhol = (1 - state.cells[i - 1].bet) * state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp) + state.cells[i - 1].bet * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp);
-    ugsmed = (state.cells[i - 1].MC - state.cells[i - 1].Mliqini) / (area * rhog);
-    ulsmed = state.cells[i - 1].Mliqini / (area * rhol);
-    j = ugsmed + ulsmed;
-
-    rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    viscmix = alfmed * state.cells[i - 1].flui.ViscGas(state.cells[i - 1].pres, state.cells[i - 1].temp) + (1 - alfmed) * ((1 - state.cells[i - 1].bet) * state.cells[i - 1].flui.ViscOleo(state.cells[i - 1].pres, state.cells[i - 1].temp) + state.cells[i - 1].bet * state.cells[i - 1].fluicol.VisFlu(state.cells[i - 1].pres, state.cells[i - 1].temp));
-
-    if (state.cells[i - 1].duto.revest == 0)
-        reynolds = state.cells[i - 1].Rey(state.cells[i - 1].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / perimeter;
-        reynolds = state.cells[i - 1].Rey(dhid, j, rhomix, viscmix);
-    }
-    frictionFactor = state.cells[i - 1].fric(reynolds, state.cells[i - 1].duto.rug / diameter);
-
-    gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    gradhidro = (1 - medpres) * kGravity * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
-
-    if (state.cells[i - 1].acsr.tipo != kAccessoryChoke || state.cells[i - 1].acsr.chk.AreaGarg > state.cells[i - 1].acsr.chk.AreaTub * 0.5)
-        state.cells[i].presaux = 0.5 * (state.cells[i].presaux) +
-                            0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2);
-    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
-    state.cells[i - 1].presauxRini = state.cells[i - 1].presauxR;
-    state.cells[i - 1].presauxR = state.cells[i].presaux;
-    if (i < state.lastCell) {
-        state.cells[i + 1].presauxLini = state.cells[i + 1].presauxL;
-        state.cells[i + 1].presauxL = state.cells[i].presaux;
-    }
-
-    double tmed = state.cells[i - 1].temp;
-    if (state.cells[i].VTemper < 0.)
-        tmed = state.cells[i].temp;
-
-    ProFlu flud;
-    if (state.cells[i].Mliqini < 0.)
-        flud = state.cells[i].flui;
-    else
-        flud = state.cells[i - 1].flui;
-
-    double betI;
-    if (((state.cells[i].MC - state.cells[i].Mliqini) * 0 + 1 * state.cells[i].Mliqini) < 0)
-        betI = state.cells[i].bet;
-    else
-        betI = state.cells[i].betL;
-
-    double liquidDensity = flud.MasEspLiq(state.cells[i].presaux, tmed);
-    rhol = (1 - betI) * liquidDensity + betI * state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-
-    double gasDensity = flud.MasEspGas(state.cells[i].presaux, tmed);
-    double vLiqTest = 1 + 0 * fabs(state.cells[i].Mliqini / (rhol * area));
-    double vGasTest = 1 + 0 * fabs((state.cells[i].MC - state.cells[i].Mliqini) / (gasDensity * area));
-
-    state.cells[i].QLini = state.cells[i].QL;
-    if (vLiqTest > 1e-3)
-        state.cells[i].QL = state.cells[i].Mliqini / rhol;
-    else {
-        state.cells[i].QL = 0.;
-        state.cells[i].MC = (state.cells[i].MC - state.cells[i].Mliqini);
-        state.cells[i].Mliqini = 0;
-        state.cells[i + 1].ML = state.cells[i - 1].MR = state.cells[i].MC;
-        state.cells[i + 1].MliqiniL = state.cells[i - 1].MliqiniR = state.cells[i].Mliqini;
-    }
-    state.cells[i].QGini = state.cells[i].QG;
-    if (vGasTest > 1e-3)
-        state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / gasDensity;
-    else {
-        state.cells[i].QG = 0;
-        state.cells[i].MC = state.cells[i].Mliqini;
-        state.cells[i + 1].ML = state.cells[i - 1].MR = state.cells[i].MC;
-    }
-    state.cells[i - 1].QLRini = state.cells[i - 1].QLR;
-    state.cells[i - 1].QLR = state.cells[i].QL;
-    if (i < state.lastCell) {
-        state.cells[i + 1].QLLini = state.cells[i + 1].QLL;
-        state.cells[i + 1].QLL = state.cells[i].QL;
-    }
+    updateInteriorVolumeFlows(state, i, area);
 
 }
 
@@ -880,93 +1419,10 @@ void updateLastCell(const TransientStepState &state, int i, int expli) {
     state.cells[state.lastCell].MliqiniR0 = state.cells[state.lastCell].MliqiniR;
     state.cells[state.lastCell].MliqiniR = state.cells[state.lastCell].Mliqini;
 
-    double dx = 0.5 * state.cells[i].dx;
-    double diameter = state.cells[i].duto.a;
-    double area = 0.25 * std::numbers::pi * diameter * diameter;
-    double perimeter = state.cells[i].duto.peri;
-    double alfmed = state.cells[i].alf;
-    double rhog = state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp);
-    double rhol = (1 - state.cells[i].bet) * state.cells[i].flui.MasEspLiq(state.cells[i].pres, state.cells[i].temp) + state.cells[i].bet * state.cells[i].fluicol.MasEspFlu(state.cells[i].pres, state.cells[i].temp);
-    double ugsmed = (state.cells[i].QG) / (area);
-    double ulsmed = state.cells[i].QL / (area);
-    double j = ugsmed + ulsmed;
+    updateOutletAuxiliaryPressure(state, i);
 
-    double rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    double viscmix = alfmed * state.cells[i].flui.ViscGas(state.cells[i].pres, state.cells[i].temp) + (1 - alfmed) * ((1 - state.cells[i].bet) * state.cells[i].flui.ViscOleo(state.cells[i].pres, state.cells[i].temp) + state.cells[i].bet * state.cells[i].fluicol.VisFlu(state.cells[i].pres, state.cells[i].temp));
+    updateOutletVolumeFlows(state, i);
 
-    double reynolds;
-    if (state.cells[i].duto.revest == 0)
-        reynolds = state.cells[i].Rey(state.cells[i].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / perimeter;
-        reynolds = state.cells[i].Rey(dhid, j, rhomix, viscmix);
-    }
-    double frictionFactor = state.cells[i].fric(reynolds, state.cells[i].duto.rug / diameter);
-    double medpres = 0;
-    double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    double gradhidro = (1 - medpres) * kGravity * sin(state.cells[i].duto.teta) * rhomix * dx;
-
-    state.cells[i].presauxini = state.cells[i].presaux;
-    state.cells[i].presaux = state.cells[i].pres + (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
-    state.cells[i].dpresaux = 0.5 * (gradfric + gradhidro - state.cells[i - 1].dpB) / units::kPascalPerKgfPerCm2;
-    dx = 0.5 * state.cells[i].dxL;
-    diameter = state.cells[i - 1].duto.a;
-    area = 0.25 * std::numbers::pi * diameter * diameter;
-    perimeter = state.cells[i - 1].duto.peri;
-    alfmed = state.cells[i - 1].alf;
-    rhog = state.cells[i - 1].flui.MasEspGas(state.cells[i - 1].pres, state.cells[i - 1].temp);
-    rhol = (1 - state.cells[i - 1].bet) * state.cells[i - 1].flui.MasEspLiq(state.cells[i - 1].pres, state.cells[i - 1].temp) + state.cells[i - 1].bet * state.cells[i - 1].fluicol.MasEspFlu(state.cells[i - 1].pres, state.cells[i - 1].temp);
-    ugsmed = (state.cells[i - 1].MC - state.cells[i - 1].Mliqini) / (area * rhog);
-    ulsmed = state.cells[i - 1].Mliqini / (area * rhol);
-    j = ugsmed + ulsmed;
-
-    rhomix = alfmed * rhog + (1 - alfmed) * rhol;
-    viscmix = alfmed * state.cells[i - 1].flui.ViscGas(state.cells[i - 1].pres, state.cells[i - 1].temp) + (1 - alfmed) * ((1 - state.cells[i - 1].bet) * state.cells[i - 1].flui.ViscOleo(state.cells[i - 1].pres, state.cells[i - 1].temp) + state.cells[i - 1].bet * state.cells[i - 1].fluicol.VisFlu(state.cells[i - 1].pres, state.cells[i - 1].temp));
-
-    if (state.cells[i - 1].duto.revest == 0)
-        reynolds = state.cells[i - 1].Rey(state.cells[i - 1].duto.a, j, rhomix, viscmix);
-    else {
-        double dhid = 4 * area / perimeter;
-        reynolds = state.cells[i - 1].Rey(dhid, j, rhomix, viscmix);
-    }
-    frictionFactor = state.cells[i - 1].fric(reynolds, state.cells[i - 1].duto.rug / diameter);
-    gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
-    gradhidro = (1 - medpres) * kGravity * sin(state.cells[i - 1].duto.teta) * rhomix * dx;
-
-    state.cells[i].presaux = 0.5 * (state.cells[i].presaux) +
-                        0.5 * (state.cells[i - 1].pres - (gradfric + gradhidro) / units::kPascalPerKgfPerCm2);
-    state.cells[i].dpresaux -= 0.5 * (gradfric + gradhidro) / units::kPascalPerKgfPerCm2;
-    state.cells[i - 1].presauxRini = state.cells[i - 1].presauxR;
-    state.cells[i - 1].presauxR = state.cells[i].presaux;
-    if (i < state.lastCell) {
-        state.cells[i + 1].presauxLini = state.cells[i + 1].presauxL;
-        state.cells[i + 1].presauxL = state.cells[i].presaux;
-    }
-
-    double tmed = state.cells[i - 1].temp;
-    if (state.cells[i].VTemper < 0.)
-        tmed = state.cells[i].temp;
-
-    ProFlu flud;
-    if (state.cells[i].Mliqini < 0.)
-        flud = state.cells[i].flui;
-    else
-        flud = state.cells[i - 1].flui;
-
-    double betI;
-    if (((state.cells[i].MC - state.cells[i].Mliqini) * 0.99 + 0.01 * state.cells[i].Mliqini) < 0)
-        betI = state.cells[i].bet;
-    else
-        betI = state.cells[i].betL;
-
-    double liquidDensity = flud.MasEspLiq(state.cells[i].presaux, tmed);
-    rhol = (1 - betI) * liquidDensity + betI * state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-
-    double gasDensity = flud.MasEspGas(state.cells[i].presaux, tmed);
-
-    state.cells[i].QL = state.cells[i].Mliqini / rhol;
-    state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / gasDensity;
-    state.cells[i - 1].QLR = state.cells[i].QL;
 }
 
 void updateCells(const TransientStepState &state, int expli) {
@@ -1002,10 +1458,9 @@ void updateFlowRates(const TransientStepState &state) {
             else
                 betI = state.cells[i].betL;
 
-            double liquidDensity = flud.MasEspLiq(state.cells[i].presaux, tmed);
-            double rhol = (1 - betI) * liquidDensity + betI * state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-
-            double gasDensity = flud.MasEspGas(state.cells[i].presaux, tmed);
+            const FacePhaseDensities densities = facePhaseDensitiesOf(state, i, flud, tmed, betI);
+            double rhol = densities.liquid;
+            double gasDensity = densities.gas;
             state.cells[i].QL = state.cells[i].Mliqini / rhol;
             state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / gasDensity;
             state.cells[i - 1].QLR = state.cells[i].QL;
@@ -1049,10 +1504,9 @@ void updateFlowRates(const TransientStepState &state) {
             else
                 betI = state.cells[i].betL;
 
-            double liquidDensity = flud.MasEspLiq(state.cells[i].presaux, tmed);
-            double rhol = (1 - betI) * liquidDensity + betI * state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);
-
-            double gasDensity = flud.MasEspGas(state.cells[i].presaux, tmed);
+            const FacePhaseDensities densities = facePhaseDensitiesOf(state, i, flud, tmed, betI);
+            double rhol = densities.liquid;
+            double gasDensity = densities.gas;
 
             state.cells[i].QL = state.cells[i].Mliqini / rhol;
             state.cells[i].QG = (state.cells[i].MC - state.cells[i].Mliqini) / gasDensity;
@@ -1153,25 +1607,7 @@ void applyOutletPressureCondition(const TransientStepState &state, [[maybe_unuse
     double rholmix = (1 - betSup) * rholp + betSup * rholc;
     double romix = alfSup * state.cells[state.lastCell].rgC + (1 - alfSup) * rholmix;
 
-    double chokeGasMassFraction;
-    if ((massgas >= 0 && state.cells[state.lastCell - 1].MliqiniR <= 0) || (massgas < 0 && state.cells[state.lastCell - 1].MliqiniR == 0))
-        chokeGasMassFraction = 1.;
-    else if (massgas <= 0 && state.cells[state.lastCell - 1].MliqiniR > 0)
-        chokeGasMassFraction = 0.;
-    else if (masentrada < 0) {
-        chokeGasMassFraction = 1.;
-    } else if (fabs(masentrada) < 1e-15)
-        chokeGasMassFraction = inSituGasMassFraction(state.cells[state.lastCell], alfSup, state.cells[state.lastCell].pres, romix);
-    else
-        chokeGasMassFraction = flowQuality(massgas, masentrada);
-    if (chokeGasMassFraction > 1)
-        chokeGasMassFraction = 1;
-    if (state.outletPressure < state.gasSurfacePressure) {
-        chokeGasMassFraction = 1.;
-    }
-
-    if (chokeGasMassFraction == 0 && alfSup > 0.05)
-        chokeGasMassFraction = inSituGasMassFraction(state.cells[state.lastCell], alfSup, state.cells[state.lastCell].pres, romix);
+    double chokeGasMassFraction = currentOutletGasMassFraction(state, alfSup, massgas, masentrada, romix);
 
     romix = chokeGasMassFraction * (1. / state.cells[state.lastCell].rgC) + (1 - chokeGasMassFraction) * (1. / rholmix);
     romix = 1 / romix;
@@ -1247,12 +1683,7 @@ void applyOutletPressureCondition(const TransientStepState &state, [[maybe_unuse
     int masChkSup0 = state.surfaceChokeMassFlag;
     state.chokeModeChanged = 0;
 
-    double difdelp = state.outletPressure - state.gasSurfacePressure;
-    if (((chokeGasMassFraction < 1e-7 && surfaceChokeIsOpen(state)) ||
-         (chokeGasMassFraction < 0.01 && surfaceChokeIsOpen(state) &&
-          fabs(difdelp) / delp < 1.2 && fabs(difdelp) / delp > 0.8 &&
-          ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
-           (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
+    if (currentOutletUsesPressureDrop(state, chokeGasMassFraction, delp, masentrada, maxSup)) {
         state.surfaceChokeOpen = 1;
         double sens = 1.;
         if (masentrada < 0. && state.cells[state.lastCell - 1].MliqiniR <= 0)
@@ -1263,12 +1694,7 @@ void applyOutletPressureCondition(const TransientStepState &state, [[maybe_unuse
             state.chokeModeChanged = 1;
 
     } else {
-        if (surfaceChokeIsOpen(state) &&
-            ((((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
-              fabs(state.movingMeanPressure - state.gasSurfacePressure) / state.movingMeanPressure < 0.05 && fabs(state.movingMeanFlux) < 0.5) ||
-             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
-              fabs(state.movingMeanPressure - state.gasSurfacePressure) < (0.05 * state.gasSurfacePressure) && fabs(state.movingMeanFlux) < 5. && delp < 0.01 * state.gasSurfacePressure) ||
-             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) / state.movingMeanPressure > 0.001 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.input.chkv == 0))) {
+        if (currentOutletCanRemainOpen(state, delp)) {
             state.surfaceChokeOpen = 1;
             if (abertoini != state.surfaceChokeOpen)
                 state.openTime = 1;
@@ -1416,30 +1842,9 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
     else
         delp = 0.;
 
-    double difdelp = fabs(fabs(state.cells[state.lastCell].presBuf - state.gasSurfacePressure) - delp);
-    if (((chokeGasMassFraction < 1e-7 && surfaceChokeIsOpen(state)) ||
-         (chokeGasMassFraction < 0.01 && surfaceChokeIsOpen(state) &&
-          difdelp / delp < 0.2 &&
-          ((fabs(maxSup) > 0 && fabs((masentrada - maxSup) / maxSup) < 0.2) ||
-           (fabs(masentrada) > 0 && fabs((masentrada - maxSup) / masentrada) < 0.2))))) {
+    if (bufferedOutletUsesPressureDrop(state, chokeGasMassFraction, delp, masentrada, maxSup)) {
         state.surfaceChokeOpen = 1;
-        if (state.input.chkv == 0 || state.cells[state.lastCell - 1].MRBuf > 0.)
-            sinal = 1.;
-        else
-            sinal = 0.;
-        double betloc;
-        if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
-            betloc = state.cells[state.lastCell - 1].bet;
-        else
-            betloc = betRev;
-        double rhomistBuf = betloc *
-                                state.cells[state.lastCell - 1].fluicol.MasEspFlu(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) +
-                            (1. - betloc) * state.cells[state.lastCell - 1].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
-        double QLbuf = state.cells[state.lastCell - 1].MliqiniRBuf / rhomistBuf;
-
-        state.bufferedComplementaryMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
-        state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedComplementaryMassSource);
-        state.bufferedGasMassSource = -sinal * (state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf);
+        updateBufferedNetworkSources(state, betRev);
     } else {
         if (((chokeGasMassFraction > -0.01 && state.cells[state.lastCell].alf > -0.01) || surfaceChokeIsShut(state)) &&
             state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && (state.surfaceChokeOpen == 0 && (state.openTime == 0 || state.openTime > 60))) {
@@ -1459,130 +1864,14 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
             state.cells[state.lastCell].DmasschokeL = 0.;
             state.cells[state.lastCell].DmasschokeC = 0.;
         } else if (state.surfaceChokeMassFlag == 0 && (*state.globals).chaverede == 1) {
-            if (state.input.chkv == 0 || state.cells[state.lastCell - 1].MRBuf > 0.)
-                sinal = 1.;
-            else
-                sinal = 0.;
-            double betloc;
-            if ((state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf) * 0.0 + 1.0 * state.cells[state.lastCell - 1].MliqiniRBuf > 0.)
-                betloc = state.cells[state.lastCell - 1].bet;
-            else
-                betloc = betRev;
-            double rhomistBuf = betloc *
-                                    state.cells[state.lastCell - 1].fluicol.MasEspFlu(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp) +
-                                (1. - betloc) * state.cells[state.lastCell - 1].flui.MasEspLiq(state.cells[state.lastCell].presBuf, state.cells[state.lastCell].temp);
-            double QLbuf = state.cells[state.lastCell - 1].MliqiniRBuf / rhomistBuf;
-
-            state.bufferedComplementaryMassSource = -sinal * QLbuf * (betloc)*state.cells[state.lastCell - 1].rcC;
-            state.bufferedLiquidMassSource = -sinal * (state.cells[state.lastCell - 1].MliqiniRBuf + state.bufferedComplementaryMassSource);
-            state.bufferedGasMassSource = -sinal * (state.cells[state.lastCell - 1].MRBuf - state.cells[state.lastCell - 1].MliqiniRBuf);
+            updateBufferedNetworkSources(state, betRev);
         }
     }
 }
 
 void computeImplicitTimeStep(const TransientStepState &state) {
-    constexpr int multChoke = 1;
-    double mgas = state.cells[state.lastCell].MC - state.cells[state.lastCell].Mliqini;
-    double mgas0 = state.cells[state.lastCell].MCini - state.cells[state.lastCell].Mliqini0;
-    if (state.input.RelaxaDTChoke == 0 &&
-        (((*state.globals).lixo5 > 1e-15 && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
-          state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area &&
-          ((state.cells[state.lastCell].Mliqini >= 0 && state.cells[state.lastCell].Mliqini0 < 0 && mgas > 0) || (state.cells[state.lastCell].Mliqini >= 0 && mgas < 0 && mgas0 > 0))) ||
-         state.slugCount < multChoke * 200)) {
-
-        if (state.slugCount > multChoke * 200) {
-            state.slugCount = 0;
-        }
-        if (((state.cells[state.lastCell].Mliqini >= 0 && state.cells[state.lastCell].Mliqini0 < 0 && mgas > 0) ||
-             (state.cells[state.lastCell].Mliqini >= 0 && mgas < 0 && mgas0 > 0)) &&
-            state.slugCount > multChoke * 100)
-            state.slugCount = multChoke * 100;
-        double progres = 1.;
-        if (state.slugCount > multChoke * 100) {
-            progres = state.slugCount - multChoke * 100;
-        }
-        state.timeStep *= (progres / (multChoke * 100.));
-        state.slugCount++;
-    }
-    if (state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area)
-        state.surfaceChokeOpen = 1;
-    if (fabs(state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.surfaceChokeOpen == 0 && state.timeStep > 1. && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
-        state.surfaceChoke.AreaGarg > 1e-15 * state.cells[state.lastCell - 1].duto.area)
-        state.timeStep =
-            1.;
-    for (int i = 0; i < state.input.eventoabre; i++) {
-        if ((*state.globals).lixo5 > state.input.Tevento[i] - state.input.dtmax && (*state.globals).lixo5 < state.input.Tevento[i] + 30) {
-            if (state.timeStep > state.smallestCellLength / 100.) {
-                state.timeStep = state.smallestCellLength / 100.;
-            }
-        }
-    }
-    state.multiplier = 0.8;
-    if ((((*state.globals).lixo5 - 2 * state.input.dtmax) > state.movingMeanStartTime && (fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure > 0.4)) || (state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area) || (state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area && state.surfaceChokeOpen == 0)) {
-        double denominador = 10.;
-        double progres = 0.95;
-
-        if ((state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1)) {
-            denominador = 100.;
-            progres = 0.5;
-            state.multiplier = pow(progres, 10. * fabs(state.gasSurfacePressure - state.outletPressure) / state.outletPressure) * state.multiplier;
-        } else if ((state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area)) {
-            denominador = 1000.;
-            state.multiplier = (state.cells[state.lastCell].alf + 1e-5) * state.multiplier;
-        } else {
-            state.multiplier = pow(progres, 10 * fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure) * state.multiplier;
-        }
-        if (state.input.dtmax * state.multiplier < state.smallestCellLength / denominador)
-            state.multiplier = (state.smallestCellLength / denominador) / state.input.dtmax;
-        if (state.multiplier > 0.8)
-            state.multiplier = 0.8;
-    } else {
-        if (state.cells[state.lastCell].alf >= 0.11 || state.surfaceChoke.AreaGarg >= 0.6 * state.cells[state.lastCell - 1].duto.area ||
-            state.surfaceChoke.AreaGarg <= 1e-3 * state.cells[state.lastCell - 1].duto.area || state.surfaceChokeOpen == 1) {
-            state.multiplier = state.multiplier / 0.95;
-            if (state.multiplier > 0.8)
-                state.multiplier = 0.8;
-        }
-    }
-
-    for (int i = 0; i <= state.lastCell; i++) {
-        double jmix = 0.;
-        double pipeArea = state.cells[i].duto.area;
-        double dtaux;
-        double alfteste = state.cells[i].alf;
-        if (i > 0 && (state.cells[i].MC - state.cells[i].Mliqini) > 0)
-            alfteste = state.cells[i - 1].alf;
-        if (alfteste > 1e-9)
-            jmix += fabs(
-                (state.cells[i].MC - state.cells[i].Mliqini) / (pipeArea * state.cells[i].flui.MasEspGas(state.cells[i].pres, state.cells[i].temp) * (0 + 1 * alfteste)));
-        if (fabs(state.cells[i].VTemper) > jmix)
-            jmix = fabs(state.cells[i].VTemper);
-
-        double jmixL = 0.;
-        if (alfteste < 1 - 1e-5)
-            jmixL = fabs(
-                state.cells[i].Mliqini / (pipeArea * ((1. - state.cells[i].bet) * state.cells[i].rpC + state.cells[i].bet * state.cells[i].rcC) * (1. - 0 * alfteste)));
-        if (fabs(jmixL) > jmix)
-            jmix = fabs(jmixL);
-        if (fabs(jmix) > 1e-5)
-            dtaux = 1.0 * state.cells[i].dx / jmix;
-        else
-            dtaux = state.timeStep;
-        if (dtaux < state.timeStep)
-            state.timeStep = dtaux;
-    }
-    if (state.input.lingas == 1) {
-        for (int i = 0; i <= state.lastGasCell; i++) {
-            double dtaux;
-            double jmix = fabs(state.gasCells[i].VGasR / state.gasCells[i].u1L);
-            if (fabs(jmix) > 1e-5)
-                dtaux = state.gasCells[i].dx0 / jmix;
-            else
-                dtaux = state.timeStep;
-            if (dtaux < state.timeStep)
-                state.timeStep = dtaux;
-        }
-    }
+    applyChokeTimeStepControls(state);
+    restrictTimeStepByTransport(state);
 
     if (state.timeStepRestricted == 1 && state.input.desligaPenalizaDT == 0) {
         if (state.timeChanged < 2)
@@ -1596,30 +1885,7 @@ void computeImplicitTimeStep(const TransientStepState &state) {
     if (state.timeStep > state.input.dtmax)
         state.timeStep = state.input.dtmax;
 
-    if (state.input.evento.size() > state.eventIndex) {
-        if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) > (state.input.evento[state.eventIndex] + 0.1)) {
-            state.timeStep = state.input.evento[state.eventIndex] - (*state.globals).lixo5;
-            state.eventIndex++;
-        } else if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) >= (state.input.evento[state.eventIndex]))
-            state.eventIndex++;
-    }
-
-    state.masterState = 1;
-    for (int i = 0; i < state.masterCloseCount; i++) {
-        if ((*state.globals).lixo5 > state.masterCloseSchedule[i]) {
-            for (int j = 0; j < state.masterOpenCount; j++) {
-                if ((*state.globals).lixo5 < state.masterOpenSchedule[j]) {
-                    state.masterState = 0;
-                    state.masterCounter++;
-                    if (state.masterCounter > 19)
-                        state.masterCounter = 20;
-                    if ((*state.globals).lixo5 >= state.masterOpenSchedule[j] - state.timeStep)
-                        state.masterCounter = 0;
-                    break;
-                }
-            }
-        }
-    }
+    applyScheduledTimeStepEvents(state);
 
     assignCellTimeSteps(state);
 
@@ -1659,41 +1925,7 @@ void computeTimeStep(const TransientStepState &state, int vexpli) {
     }
     state.timeStep = state.input.dtmax;
 
-    int parada = 0;
-    for (int i = 1; i < state.lastCell; i++) {
-        if (state.cells[i].acsr.tipo == kAccessoryChoke && state.cells[i].acsr.chk.AreaGarg <= 1e-15 * state.cells[i].acsr.chk.AreaTub)
-            parada = 1;
-        else if (state.surfaceChoke.AreaGarg <= 1.e-15 * state.surfaceChoke.AreaTub)
-            parada = 1;
-    }
-    if (parada == 1) {
-        Vcr<int> oscila(state.lastCell, 0);
-        for (int i = 0; i <= state.lastCell; i++) {
-            if (i > 0 && i < state.lastCell) {
-                if (fabs(state.cells[i - 1].alf - state.cells[i + 1].alf) < fabs(state.cells[i].alf - state.cells[i - 1].alf)) {
-                    double area = state.cells[i].duto.area;
-                    double vLiqTest = fabs(state.cells[i].QL / (area));
-                    double vGasTest = fabs(state.cells[i].QG / (area));
-                    if ((vLiqTest + vGasTest) > 0.1)
-                        oscila[i] = 1;
-                }
-            }
-        }
-        int alarmOscila = 0;
-        for (int i = 1; i <= state.lastCell - 4; i++) {
-            int kontaOsc = 0;
-            int multOsc = 0;
-            while (kontaOsc < 3) {
-                multOsc += oscila[i + kontaOsc];
-                kontaOsc++;
-            }
-            if (multOsc == 3)
-                alarmOscila = 1;
-        }
-
-        if (alarmOscila == 1 && state.input.desligaPenalizaDT == 0)
-            state.timeStep /= 10.;
-    }
+    penalizeOscillatingFractions(state);
 
     for (int i = 0; i <= state.lastCell; i++) {
         if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
@@ -1825,56 +2057,19 @@ void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli) {
 void restrictTimeStepByValve(const TransientStepState &state) {
 
     if (state.input.ConContEntrada == 0 && (*state.globals).chaveRedeParalela == 0) {
-        int celpos;
         double dtaux = state.cells[0].dt;
         if (state.restart == -1) {
             for (int i = 1; i <= state.lastCell; i++)
                 if (dtaux > state.cells[i].dt)
                     dtaux = state.cells[i].dt;
         }
-        double dtvec[state.input.nvalv + 1];
-        for (int i = 0; i <= state.input.nvalv; i++)
-            dtvec[i] = state.cells[0].dt;
-        for (int i = 0; i <= state.input.nvalv; i++) {
-            if (i == 0)
-                celpos = state.input.master1.posic;
-            else
-                celpos = state.input.valv[i - 1].posicP;
-            if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= 1e-3 * state.input.master1.razareaativ)) {
-                if (state.cells[celpos].alf < 0.05) {
-                    if (state.cells[celpos].alf < 0.01)
-                        state.desperationMoment += 1.5;
-                    else
-                        state.desperationMoment = 1;
-                    if (state.desperationMoment < 1.)
-                        state.desperationMoment = 1.;
-                    double artificialGasRate = state.desperationMoment * 10000 * state.cells[celpos].flui.Deng * kAirDensityAtStandardConditions / units::kSecondsPerDay;
-                    state.cells[celpos].fontemassGL += artificialGasRate;
-                    state.cells[celpos - 1].fontemassGR = state.cells[celpos].fontemassGL;
-                    state.artificialGasThisStep.push_back({i, celpos, artificialGasRate});
-                }
-                if (state.cells[celpos].alf < 0.5)
-                    state.masterCriticalRatio[i] = 0.01;
-            } else
-                state.desperationMoment = 0.;
-            if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= state.masterCriticalRatio[i] * state.input.master1.razareaativ)) {
-                double timeStepDivisor = 20.;
-                if (state.cells[celpos].alf < 0.5)
-                    timeStepDivisor = 40.;
-                dtvec[i] = dtaux;
-                if (dtvec[i] > 1)
-                    dtvec[i] = 1.;
-                if (state.cells[celpos].alf < 0.5)
-                    dtvec[i] = 0.1 + 0.9 * (state.cells[celpos].alf) / 0.5;
-                dtvec[i] /= timeStepDivisor;
-                state.restart = -1;
-            }
+        double minimumTimeStep = valveRestrictedTimeStep(state, 0, dtaux);
+        for (int i = 1; i <= state.input.nvalv; i++) {
+            double candidate = valveRestrictedTimeStep(state, i, dtaux);
+            if (candidate < minimumTimeStep)
+                minimumTimeStep = candidate;
         }
-        dtaux = dtvec[0];
-        for (int i = 1; i <= state.input.nvalv; i++)
-            if (dtvec[i] < dtaux)
-                dtaux = dtvec[i];
-        state.cells[0].dt = dtaux;
+        state.cells[0].dt = minimumTimeStep;
     }
 }
 
@@ -1931,20 +2126,7 @@ void evolveFractions(const TransientStepState &state, double alfrev, [[maybe_unu
             state.cells[i].avancalf(state.restart, state.lastCell);
         }
         if (i == state.lastCell) {
-
-            if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
-                if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
-                    state.cells[i].alf = state.cells[i - 1].alf;
-                else
-                    state.cells[i].avancalf(state.restart, state.lastCell);
-            } else {
-                if (state.cells[state.lastCell].Mliqini > 0)
-                    state.cells[i].alf = state.cells[i - 1].alf;
-                else if (state.surfaceChokeMassFlag == 0 && state.input.chkv == 0)
-                    state.cells[i].alf = alfrev;
-                else
-                    state.cells[i].avancalf(state.restart, state.lastCell);
-            }
+            updateOutletVoidFraction(state, i, alfrev);
         }
     }
 #pragma omp parallel for num_threads((*state.globals).ntrd)
@@ -1953,17 +2135,7 @@ void evolveFractions(const TransientStepState &state, double alfrev, [[maybe_unu
             state.cells[i].avancbet(state.restart, state.lastCell);
         }
         if (i == state.lastCell) {
-            if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
-                if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
-                    state.cells[i].bet = state.cells[i - 1].bet;
-                else
-                    state.cells[i].avancbet(state.restart, state.lastCell);
-            } else {
-                if (state.surfaceChokeMassFlag == 1)
-                    state.cells[i].avancbet(state.restart, state.lastCell);
-                else if (state.input.chkv == 1)
-                    state.cells[i].bet = state.cells[i - 1].bet;
-            }
+            updateOutletComplementaryFraction(state, i);
         }
     }
 #pragma omp parallel for num_threads((*state.globals).ntrd)
@@ -2026,23 +2198,8 @@ void updatePig(const TransientStepState &state) {
             }
         }
     }
-    if (state.input.ConContEntrada == 0) {
-        state.cells[0].betI = state.cells[0].bet;
-        state.cells[0].betLI = state.cells[0].bet;
-    } else {
-        state.cells[0].betI = state.inletComplementaryFraction;
-        if ((state.cells[0].MC - state.cells[0].Mliqini) * 0 + state.cells[0].Mliqini < 0.)
-            state.cells[0].betI = state.cells[0].betPigE;
-        state.cells[0].betLI = state.cells[0].betI;
-    }
-    for (int i = 1; i <= state.lastCell; i++) {
-        state.cells[i].betI = state.cells[i].betPigE;
-        if (state.cells[i].QL > 0.)
-            state.cells[i].betI = state.cells[i - 1].betPigD;
-        state.cells[i - 1].betRI = state.cells[i].betI;
-        if (i < state.lastCell)
-            state.cells[i + 1].betLI = state.cells[i].betI;
-    }
+    preparePigFaceFractions(state);
+
 }
 
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo) {
@@ -2184,70 +2341,9 @@ void solveTransientStep(const TransientSolveState &state, double titRev, double 
             }
         }
     }
-    if (state.poissonSolver3D.itera > 7) {
-        state.poissonSolver3D.penalizaDt = 20;
-    }
+    finalizeTransientCellState(state, fluiRev);
 
-    for (int i = 1; i <= state.step.lastCell; i++) {
-        state.step.cells[i].dTdt = 0.;
-        state.step.cells[i].dTdtL = 0.;
-        if (state.step.fullModel == 0 || state.step.cells[i].estabCol == 1) {
-            state.step.cells[i].dTdtIni = 0.;
-            state.step.cells[i].d2pdt2 = 0.;
-        }
-    }
-
-    if (state.step.input.modoParafina == 1)
-        evaluateWaxDeposition(state.step);
-
-    storePreviousSources(state.step);
-    state.updaters.updateTemperatures();
-
-    state.step.outletPressure = state.step.cells[state.step.lastCell].pres;
-    if (state.step.input.lingas > 0 && state.networkCoupled == 1)
-        state.updaters.connectTubing();
-
-    if (state.step.input.flashCompleto == 2) {
-        for (int i = 0; i < state.step.lastCell; i++) {
-            state.step.cells[i].nMolIni = state.step.cells[i].nMol;
-        }
-    }
-    storePreviousFractionsAndMovePigs(state.step);
-    if ((state.trackGasOilRatio > 0 || state.trackGasGravity > 0) && state.step.input.flashCompleto != 2)
-        state.updaters.updateBlackOilProperties(fluiRev);
-    if (state.step.input.flashCompleto == 2) {
-        state.updaters.updateMolarFractions(fluiRev);
-        state.compositionalRefreshCounter++;
-        if (state.compositionalRefreshCounter == state.step.input.miniTabAtraso + 1 && state.step.input.miniTabAtraso > 0) {
-            generateFluidMiniTables(state.step);
-            state.compositionalRefreshCounter = 0;
-        }
-    }
-    cacheCellAndFaceDensities(state.step);
-
-    state.timeStepHistory.push_back(state.step.timeStep);
-    state.pressureHistory.push_back(state.step.outletPressure * state.step.timeStep);
-    double jtemporario = state.step.cells[state.step.lastCell - 1].Mliqini / (state.step.cells[state.step.lastCell - 1].duto.area * ((1. - state.step.cells[state.step.lastCell - 1].bet) * state.step.cells[state.step.lastCell - 1].rpC + state.step.cells[state.step.lastCell - 1].bet * state.step.cells[state.step.lastCell - 1].rcC));
-    jtemporario += (state.step.cells[state.step.lastCell - 1].MC - state.step.cells[state.step.lastCell - 1].Mliqini) / (state.step.cells[state.step.lastCell - 1].duto.area * state.step.cells[state.step.lastCell - 1].flui.MasEspGas(state.step.cells[state.step.lastCell - 1].pres, state.step.cells[state.step.lastCell - 1].temp));
-    state.fluxHistory.push_back(jtemporario * state.step.timeStep);
-    state.voidFractionHistory.push_back(state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep);
-    state.movingMeanCounter += state.step.timeStep;
-    state.totalPressure += state.step.outletPressure * state.step.timeStep;
-    state.totalFlux += jtemporario * state.step.timeStep;
-    state.totalVoidFraction += state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep;
-    if ((*state.step.globals).lixo5 > state.step.movingMeanStartTime) {
-        state.totalPressure -= state.pressureHistory.front();
-        state.pressureHistory.erase(state.pressureHistory.begin());
-        state.totalFlux -= state.fluxHistory.front();
-        state.fluxHistory.erase(state.fluxHistory.begin());
-        state.totalVoidFraction -= state.voidFractionHistory.front();
-        state.voidFractionHistory.erase(state.voidFractionHistory.begin());
-        state.movingMeanCounter -= state.timeStepHistory.front();
-        state.timeStepHistory.erase(state.timeStepHistory.begin());
-        state.step.movingMeanPressure = state.totalPressure / state.movingMeanCounter;
-        state.step.movingMeanFlux = state.totalFlux / state.movingMeanCounter;
-        state.movingMeanVoidFraction = state.totalVoidFraction / state.movingMeanCounter;
-    }
+    updateTransientMovingMeans(state);
     // Finalize transient conduction in buried pipes.
     for (int j = 0; j <= state.step.lastCell; j++) {
         if (state.step.cells[j].calor.difus2D == 1) {
@@ -2298,48 +2394,8 @@ void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
         }
     }
     std::sort(titVec, titVec + 4);
-    if(titVec[0].first<1e-3){
-        int busca=1;
-        while(busca<4 && titVec[busca].first<1e-3)busca++;
-        if(busca<4){
-            const int jtroca = titVec[busca].second / 2;
-            const int ktroca = titVec[busca].second % 2;
-            for(int j=0;j<2;j++){
-                for(int k=0;k<2;k++){
-                    if(flui.miniTabDin.tit[j][k]<1e-3){
-                        flui.miniTabDin.rhogF[j][k]=flui.miniTabDin.rhogF[jtroca][ktroca];
-                        flui.miniTabDin.DrhogDpF[j][k]=flui.miniTabDin.DrhogDpF[jtroca][ktroca];
-                        flui.miniTabDin.DrhogDtF[j][k]=flui.miniTabDin.DrhogDtF[jtroca][ktroca];
-                        flui.miniTabDin.valZ[j][k]=flui.miniTabDin.valZ[jtroca][ktroca];
-                        flui.miniTabDin.valdZdT[j][k]=flui.miniTabDin.valdZdT[jtroca][ktroca];
-                        flui.miniTabDin.valdZdP[j][k]=flui.miniTabDin.valdZdP[jtroca][ktroca];
-                        flui.miniTabDin.cpgF[j][k]=flui.miniTabDin.cpgF[jtroca][ktroca];
-                        flui.miniTabDin.HgF[j][k]=flui.miniTabDin.HgF[jtroca][ktroca];
-                    }
-                }
-            }
-        }
-    }
-    if(titVec[3].first>1.-1e-3){
-        int busca=2;
-        while(busca>=0 && titVec[busca].first>1.-1e-3)busca--;
-        if(busca>=0){
-            const int jtroca = titVec[busca].second / 2;
-            const int ktroca = titVec[busca].second % 2;
-            for(int j=0;j<2;j++){
-                for(int k=0;k<2;k++){
-                    if(flui.miniTabDin.tit[j][k]>1.-1e-3){
-                        flui.miniTabDin.rholF[j][k]=flui.miniTabDin.rholF[jtroca][ktroca];
-                        flui.miniTabDin.valBO[j][k]=flui.miniTabDin.valBO[jtroca][ktroca];
-                        flui.miniTabDin.DrholDtF[j][k]=flui.miniTabDin.DrholDtF[jtroca][ktroca];
-                        flui.miniTabDin.rs[j][k]=flui.miniTabDin.rs[jtroca][ktroca];
-                        flui.miniTabDin.cplF[j][k]=flui.miniTabDin.cplF[jtroca][ktroca];
-                        flui.miniTabDin.HlF[j][k]=flui.miniTabDin.HlF[jtroca][ktroca];
-                    }
-                }
-            }
-        }
-    }
+    supplyAbsentGasProperties(flui, titVec);
+    supplyAbsentLiquidProperties(flui, titVec);
 }
 
 void generateFluidMiniTables(const TransientStepState &state) {
@@ -2365,74 +2421,19 @@ void generateFluidMiniTables(const TransientStepState &state) {
         state.cells[i].flui.miniTabDin.tmin = state.cells[i].temp - delt;
         if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].flui);
         if (state.cells[i].acsr.tipo == kAccessoryGasInjection) {
-            state.cells[i].acsr.injg.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
-            state.cells[i].acsr.injg.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
-            state.cells[i].acsr.injg.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
-            state.cells[i].acsr.injg.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
-            state.cells[i].acsr.injg.FluidoPro.atualizaPropCompStandard();
-            if (state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta < 1.)
-                state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
-                                                               state.cells[i].acsr.injg.FluidoPro.dCalculatedBeta, state.cells[i].acsr.injg.FluidoPro.oCalculatedLiqComposition,
-                                                               state.cells[i].acsr.injg.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
-            else
-                state.cells[i].acsr.injg.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
-            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injg.FluidoPro);
+            refreshAccessoryFluidMiniTable(state, i, state.cells[i].acsr.injg.FluidoPro);
         } else if (state.cells[i].acsr.tipo == kAccessoryLiquidInjection) {
-            state.cells[i].acsr.injl.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
-            state.cells[i].acsr.injl.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
-            state.cells[i].acsr.injl.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
-            state.cells[i].acsr.injl.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
-            state.cells[i].acsr.injl.FluidoPro.atualizaPropCompStandard();
-            if (state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta < 1.)
-                state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
-                                                               state.cells[i].acsr.injl.FluidoPro.dCalculatedBeta, state.cells[i].acsr.injl.FluidoPro.oCalculatedLiqComposition,
-                                                               state.cells[i].acsr.injl.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
-            else
-                state.cells[i].acsr.injl.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
-            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injl.FluidoPro);
+            refreshAccessoryFluidMiniTable(state, i, state.cells[i].acsr.injl.FluidoPro);
         } else if (state.cells[i].acsr.tipo == kAccessoryInflowPerformance) {
-            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
-            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
-            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
-            state.cells[i].acsr.ipr.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
-            state.cells[i].acsr.ipr.FluidoPro.atualizaPropCompStandard();
-            if (state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta < 1.)
-                state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
-                                                              state.cells[i].acsr.ipr.FluidoPro.dCalculatedBeta, state.cells[i].acsr.ipr.FluidoPro.oCalculatedLiqComposition,
-                                                              state.cells[i].acsr.ipr.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
-            else
-                state.cells[i].acsr.ipr.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
-            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.ipr.FluidoPro);
+            refreshAccessoryFluidMiniTable(state, i, state.cells[i].acsr.ipr.FluidoPro);
         } else if (state.cells[i].acsr.tipo == kAccessoryRadialPorous) {
             if(state.input.miniTabAtraso > 0)state.cells[i].acsr.radialPoro.geraMiniTabFlu();
         } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
             if(state.input.miniTabAtraso > 0)state.cells[i].acsr.poroso2D.geraMiniTabFlu();
         } else if (state.cells[i].acsr.tipo == kAccessoryLeak) {
-            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
-            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
-            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
-            state.cells[i].acsr.fontechk.fluidoP.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
-            state.cells[i].acsr.fontechk.fluidoP.atualizaPropCompStandard();
-            if (state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta > 0. && state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta < 1.)
-                state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
-                                                                 state.cells[i].acsr.fontechk.fluidoP.dCalculatedBeta, state.cells[i].acsr.fontechk.fluidoP.oCalculatedLiqComposition,
-                                                                 state.cells[i].acsr.fontechk.fluidoP.oCalculatedVapComposition, state.input.pocinjec);
-            else
-                state.cells[i].acsr.fontechk.fluidoP.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
-            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.fontechk.fluidoP);
+            refreshAccessoryFluidMiniTable(state, i, state.cells[i].acsr.fontechk.fluidoP);
         } else if (state.cells[i].acsr.tipo == kAccessoryMultipleSource) {
-            state.cells[i].acsr.injm.FluidoPro.miniTabDin.pmax = state.cells[i].flui.miniTabDin.pmax;
-            state.cells[i].acsr.injm.FluidoPro.miniTabDin.pmin = state.cells[i].flui.miniTabDin.pmin;
-            state.cells[i].acsr.injm.FluidoPro.miniTabDin.tmax = state.cells[i].flui.miniTabDin.tmax;
-            state.cells[i].acsr.injm.FluidoPro.miniTabDin.tmin = state.cells[i].flui.miniTabDin.tmin;
-            state.cells[i].acsr.injm.FluidoPro.atualizaPropCompStandard();
-            if (state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta > 0. && state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta < 1.)
-                state.cells[i].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp,
-                                                               state.cells[i].acsr.injm.FluidoPro.dCalculatedBeta, state.cells[i].acsr.injm.FluidoPro.oCalculatedLiqComposition,
-                                                               state.cells[i].acsr.injm.FluidoPro.oCalculatedVapComposition, state.input.pocinjec);
-            else
-                state.cells[i].acsr.injm.FluidoPro.atualizaPropComp(state.cells[i].pres, state.cells[i].temp, -1, NULL, NULL, state.input.pocinjec);
-            if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, state.cells[i].acsr.injm.FluidoPro);
+            refreshAccessoryFluidMiniTable(state, i, state.cells[i].acsr.injm.FluidoPro);
         }
     }
     (*state.globals).modoTransiente = 1;
@@ -2517,42 +2518,7 @@ void storePreviousFractionsAndMovePigs(const TransientStepState &state) {
         state.cells[i].RazAreaPig = 0.;
         state.cells[i].cdpig = 1.;
         if (state.cells[i].estadoPig == 1) {
-            state.movingPigCount++;
-            int ipig = state.cells[i].indpig;
-            state.cells[i].DelPig = state.input.pig[ipig].delpres;
-            state.cells[i].RazAreaPig = state.input.pig[ipig].razarea;
-            state.cells[i].cdpig = state.input.pig[ipig].cdPig;
-            double flowArea = state.cells[i].duto.area;
-            double superficialMixtureVelocityLeft = (state.cells[i].QL + state.cells[i].QG) / flowArea;
-            double superficialMixtureVelocityRight;
-            if (i < state.lastCell)
-                superficialMixtureVelocityRight = (state.cells[i + 1].QL + state.cells[i + 1].QG) / flowArea;
-            else
-                superficialMixtureVelocityRight = (state.cells[i].QL + state.cells[i].QG) / flowArea;
-            state.cells[i].velPigini = state.cells[i].velPig;
-            state.cells[i].velPig = superficialMixtureVelocityLeft * state.cells[i].razPig + superficialMixtureVelocityRight * (1. - state.cells[i].razPig) - state.cells[i].VazaPig / flowArea;
-            for (int j = 0; j < state.scheduledPigCount; j++) {
-                if (state.pigReceiverCells[j] == i) {
-                    state.cells[i].velPig = 0.;
-                    state.cells[i].estadoPig = 0;
-                    state.cells[i].razPig = 0.;
-                    state.cells[i].razPigini = 0.;
-                    state.cells[i].alfPigDini = state.cells[i].alf;
-                    state.cells[i].betPigDini = state.cells[i].bet;
-                    state.cells[i].alfPigEini = state.cells[i].alf;
-                    state.cells[i].betPigEini = state.cells[i].bet;
-                    state.cells[i].alfPigD = state.cells[i].alf;
-                    state.cells[i].betPigD = state.cells[i].bet;
-                    state.cells[i].alfPigE = state.cells[i].alf;
-                    state.cells[i].betPigE = state.cells[i].bet;
-                    if (i > 0)
-                        state.cells[i - 1].alfPigER = state.cells[i].alfPigE;
-                    if (i == state.lastCell)
-                        state.cells[i].alfPigER = state.cells[i].alf;
-
-                    state.movingPigCount--;
-                }
-            }
+            updateActivePigState(state, i);
         }
         state.cells[i].razPigini = state.cells[i].razPig;
     }

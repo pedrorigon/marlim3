@@ -7,9 +7,16 @@
 #include <concepts>
 #include <ctime>
 #include <iosfwd>
+#include <utility>
 
 namespace sisprod::transient {
 namespace {
+
+/// Liquid-mixture and gas densities evaluated at one upwind face.
+struct FacePhaseDensities {
+    double liquid;
+    double gas;
+};
 
 /// Ordered application points of the single-line time-step policies.
 enum class TimeStepHook {
@@ -153,6 +160,98 @@ void writeRunCompletionReport(const TransientSolveState &state, std::ostream &es
 
 /// Tests progress, report-count, and final-time triggers at the current clock value.
 bool progressReportIsDue(const TransientSolveState &state, int MaxKontaImpres);
+
+/// Updates the interior auxiliary pressure and returns its upstream flow area.
+double updateInteriorAuxiliaryPressure(const TransientStepState &state, int i);
+
+/// Updates interior volumetric flows and snapshots with the upstream face area.
+void updateInteriorVolumeFlows(const TransientStepState &state, int i, double area);
+
+/// Updates the outlet auxiliary pressure using the outlet-specific velocity estimate.
+void updateOutletAuxiliaryPressure(const TransientStepState &state, int i);
+
+/// Updates outlet volumetric flows using the outlet-specific donor fraction.
+void updateOutletVolumeFlows(const TransientStepState &state, int i);
+
+/// Evaluates liquid-mixture density before gas density using the caller-owned donor copy.
+FacePhaseDensities facePhaseDensitiesOf(const TransientStepState &state, int i,
+                                             const ProFlu &flud, double tmed, double betI);
+
+/// Applies choke startup, opening events, and the current CFL safety-factor rule.
+void applyChokeTimeStepControls(const TransientStepState &state);
+
+/// Limits the current step by production and gas-line transport in their sweep order.
+void restrictTimeStepByTransport(const TransientStepState &state);
+
+/// Aligns the limited step to events and updates the master-valve schedule state.
+void applyScheduledTimeStepEvents(const TransientStepState &state);
+
+/// Detects the current three-cell oscillation pattern behind closed chokes and penalizes the step.
+void penalizeOscillatingFractions(const TransientStepState &state);
+
+/// Applies one valve closing restriction and its artificial-gas effects using the shared pre-sweep limit.
+double valveRestrictedTimeStep(const TransientStepState &state, int i, double dtaux);
+
+/// Applies the outlet void-fraction rule inside the void-fraction sweep.
+void updateOutletVoidFraction(const TransientStepState &state, int i, double alfrev);
+
+/// Applies the outlet complementary-liquid rule inside its own fraction sweep.
+void updateOutletComplementaryFraction(const TransientStepState &state, int i);
+
+/// Prepares inlet and neighboring complementary-liquid fractions after serial pig transfers.
+void preparePigFaceFractions(const TransientStepState &state);
+
+/// Selects the current-state choke gas fraction with its current-flow and in-situ fallbacks.
+double currentOutletGasMassFraction(const TransientStepState &state, double alfSup,
+                                    double massgas, double masentrada, double romix);
+
+/// Tests the current-state liquid-dominated pressure-drop criterion without changing its thresholds.
+bool currentOutletUsesPressureDrop(const TransientStepState &state, double chokeGasMassFraction,
+                                   double delp, double masentrada, double maxSup);
+
+/// Tests the current-pressure and moving-mean conditions for retaining an open outlet.
+bool currentOutletCanRemainOpen(const TransientStepState &state, double delp);
+
+/// Tests the buffered liquid-dominated pressure-drop criterion with its own absolute difference.
+bool bufferedOutletUsesPressureDrop(const TransientStepState &state, double chokeGasMassFraction,
+                                    double delp, double masentrada, double maxSup);
+
+/// Computes buffered network sources from buffered liquid flow and the selected reverse liquid fraction.
+void updateBufferedNetworkSources(const TransientStepState &state, double betRev);
+
+/// Sets the current model and stabilization flags before fraction evolution.
+void prepareCouplingModelFlags(const TransientSolveState &state, int celpos);
+
+/// Restarts porous and fraction evolution at the reduced step, then applies porous corrections.
+void restartCouplingFractions(const TransientSolveState &state, int kontaAcop,
+                              double alfRev, double betRev);
+
+/// Restores intermediate cell, porous, outlet-source and choke state between coupling iterations.
+void restoreIntermediateCouplingState(const TransientSolveState &state, int kontaAcop,
+                                      double gasMassSource, double liquidMassSource,
+                                      double complementaryMassSource);
+
+/// Finalizes derivatives, deposition, sources, thermal coupling, transported properties and densities in order.
+void finalizeTransientCellState(const TransientSolveState &state, const ProFlu *fluiRev);
+
+/// Updates weighted pressure, flux and void-fraction histories with the current one-sample removal rule.
+void updateTransientMovingMeans(const TransientSolveState &state);
+
+/// Sets active-pig properties and velocity, then applies every matching receiver in its original order.
+void updateActivePigState(const TransientStepState &state, int i);
+
+/// Updates the shared composition and writes one corner; indices select live minimum/maximum bounds.
+void fillMiniTableCorner(const TransientStepState &state, ProFlu &fluC, ProFlu &flui,
+                         int pressureIndex, int temperatureIndex);
+
+/// Supplies gas properties from the selected sorted donor at gas-poor corners.
+void supplyAbsentGasProperties(ProFlu &flui, const std::pair<double, int> (&titVec)[4]);
+
+/// Supplies liquid properties from the selected sorted donor at liquid-poor corners.
+void supplyAbsentLiquidProperties(ProFlu &flui, const std::pair<double, int> (&titVec)[4]);
+
+/// Copies cell bounds, updates the accessory stock-tank and in-situ composition, and fills its enabled table.
+void refreshAccessoryFluidMiniTable(const TransientStepState &state, int i, ProFlu &accessoryFluid);
 
 }  // namespace
 }  // namespace sisprod::transient
