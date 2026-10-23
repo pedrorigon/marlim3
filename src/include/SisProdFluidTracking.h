@@ -15,12 +15,13 @@ namespace sisprod::fluidtracking {
 struct FluidTrackingUpdaters {
     SolveContext &context;
 
+    /// Updates cell and accessory gas-density corrections through the solve context.
     void correctGasSpecificGravity(int i) const;
 };
 
 /// State shared by black-oil property tracking and phase molar-fraction transport.
 ///
-/// Each transport reads its time step from the first cell.
+/// Each transport reads its time step from cells[1]; lastCell is the outlet index.
 ///
 /// Scalars are held by reference so each transport reads them only when its
 /// selected fluid model and tracking options require them.
@@ -46,9 +47,11 @@ struct FluidTrackingState {
 /// under reverse flow, taken by value.
 void transportBlackOilProperties(const FluidTrackingState &state, ProFlu fluiRev);
 
-/// Transports liquid and vapour molar fractions separately, together with the
-/// water content and density and dead-oil viscosities. Refreshes the cell fluids
-/// by flash. fluiRev is the outlet's reverse-flow fluid, taken by value.
+/// Advances mixture molar fractions using upwind mixture compositions and
+/// liquid mass rates adjusted for water and complementary fluid. Transports
+/// water content and density and dead-oil viscosities under their model gates.
+/// Refreshes enabled flash properties. fluiRev is the outlet reverse-flow
+/// fluid, taken by value.
 void transportPhaseMolarFractions(const FluidTrackingState &state, ProFlu fluiRev);
 
 }  // namespace sisprod::fluidtracking
