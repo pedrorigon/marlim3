@@ -107,7 +107,9 @@ template <typename Axis>
         (state.cells[cellIndex - 1].acsr.tipo != kAccessoryChoke ||
          state.cells[cellIndex - 1].acsr.chk.AreaGarg >
              (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area);
-    const Cel &donor = useCellFlow ? cell : state.cells[cellIndex + 1];
+    const Cel &donor = useCellFlow || cellIndex == state.lastCell
+                           ? cell
+                           : state.cells[cellIndex + 1];
     const double meanSuperficialGasVelocity = cellHasGas ? donor.QG / flowArea : 0.;
     const double meanSuperficialLiquidVelocity = cellHasLiquid ? donor.QL / flowArea : 0.;
     return CellFlowBasis{.flowArea = flowArea,
@@ -121,11 +123,10 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
                                              int cellIndex,
                                              int steadyStateMode) {
     Cel &cell = state.cells[cellIndex];
-    Cel &leftCell = state.cells[cellIndex - 1];
     double cellLength = cell.dx;
     double meanCellLength;
     if (cellIndex > 0)
-        meanCellLength = 0.5 * (cell.dx + leftCell.dx);
+        meanCellLength = 0.5 * (cell.dx + state.cells[cellIndex - 1].dx);
     else
         meanCellLength = 0.5 * cell.dx;
     const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex);
@@ -149,7 +150,7 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
 
     cell.calor.Tint = cell.temp;
     if (cellIndex > 0)
-        cell.calor.dtL = cell.temp - leftCell.tempini;
+        cell.calor.dtL = cell.temp - state.cells[cellIndex - 1].tempini;
     else
         cell.calor.dtL = 0;
     cell.calor.Vint = meanSuperficialGasVelocity + meanSuperficialLiquidVelocity;
@@ -201,8 +202,6 @@ TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
 double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
                                      TemperatureBalance &balance) {
     Cel &cell = state.cells[cellIndex];
-    Cel &leftCell = state.cells[cellIndex - 1];
-    Cel &rightCell = state.cells[cellIndex + 1];
     double kineticTerm = 0;
     double leftFaceMeanGasVelocity = 0;
     double leftFaceMeanLiquidVelocity = 0;
@@ -211,8 +210,9 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
     double previousRightFaceMeanGasVelocity = 0;
     double previousRightFaceMeanLiquidVelocity = 0;
     if (!(cellIndex <= state.lastCell - 1 && cell.acsr.tipo == kAccessoryNone &&
-          rightCell.acsr.tipo == kAccessoryNone))
+          state.cells[cellIndex + 1].acsr.tipo == kAccessoryNone))
         return kineticTerm;
+    Cel &rightCell = state.cells[cellIndex + 1];
 
     double kineticCellLength = cell.dx;
     double cellDiameter = cell.duto.a;
@@ -241,7 +241,7 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
 
     double leftFaceVoidFraction;
     if (cell.QG > 0)
-        leftFaceVoidFraction = leftCell.alf;
+        leftFaceVoidFraction = cellIndex > 0 ? state.cells[cellIndex - 1].alf : cell.alfL;
     else
         leftFaceVoidFraction = cell.alf;
 
@@ -297,7 +297,6 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                                                      int cellIndex,
                                                      double cellLength) {
     Cel &cell = state.cells[cellIndex];
-    Cel &leftCell = state.cells[cellIndex - 1];
     double sourceTemperature = cell.temp;
     double sourceGasSpecificHeat;
     double sourceSpecificHeatRatio;
@@ -340,7 +339,8 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
         sourceLiquidSpecificHeat = (1. - betM) * cell.acsr.fontechk.fluidoPamb.CalorLiq(ambientPressure, ambientTemperature) + betM * cell.acsr.fontechk.fluidocol.CalorLiq(ambientPressure, ambientTemperature);
         sourceSpecificHeatRatio = cell.acsr.fontechk.fluidoPamb.ConstAdG(ambientPressure, ambientTemperature);
         sourceTemperature = cell.acsr.fontechk.tamb;
-    } else if (cell.acsrL != 0 && cellIndex < state.lastCell) {
+    } else if (cellIndex > 0 && cell.acsrL != 0 && cellIndex < state.lastCell) {
+        Cel &leftCell = state.cells[cellIndex - 1];
         if ((*cell.acsrL).tipo == kAccessoryChoke && (cell.fontemassLR + cell.fontemassCR + cell.fontemassGR) > 0.) {
             if ((*cell.acsrL).chk.AreaGarg < state.input.master1.razareaativ * cell.dutoL.area && (*cell.acsrL).chk.AreaGarg > 1e-5 * cell.dutoL.area) {
                 double upstreamTemperature = leftCell.tempini;
@@ -2185,47 +2185,51 @@ double temperatureHeatFluxOf(const ThermalState &state, int cellIndex, int stead
 double temperaturePressureGradientOf(const ThermalState &state, int cellIndex,
                                      const TemperatureBalance &balance) {
     Cel &cell = state.cells[cellIndex];
-    Cel &leftCell = state.cells[cellIndex - 1];
-    Cel &rightCell = state.cells[cellIndex + 1];
     double pressureGradient;
     if (cellIndex < state.lastCell - 1)
-        pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
+        pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
     else if (cellIndex == state.lastCell - 1 && state.surfaceChoke.AreaGarg > 0.5 * state.cells[state.lastCell - 1].duto.area)
-        pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
+        pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
     else
         pressureGradient = 2. * (cell.pres - cell.presaux) * units::kPascalPerKgfPerCm2 / cell.dx;
-    if (cellIndex > 0 && leftCell.acsr.tipo == kAccessoryChoke &&
-        leftCell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area)
-        pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
+    if (cellIndex > 0 && cellIndex < state.lastCell && state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke &&
+        state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area)
+        pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
     else if (cellIndex > 0 && cell.acsr.tipo == kAccessoryChoke &&
              cell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area) {
-        pressureGradient = (cell.pres - leftCell.pres) * units::kPascalPerKgfPerCm2 / balance.meanCellLength;
+        pressureGradient = (cell.pres - state.cells[cellIndex - 1].pres) * units::kPascalPerKgfPerCm2 / balance.meanCellLength;
     } else if (cellIndex == 0)
-        pressureGradient = 2. * (rightCell.presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
+        pressureGradient = 2. * (state.cells[cellIndex + 1].presaux - cell.pres) * units::kPascalPerKgfPerCm2 / cell.dx;
     return pressureGradient;
 }
 
 double temperatureSpatialGradientOf(const ThermalState &state, int cellIndex,
                                     const TemperatureBalance &balance, double &pressureGradient) {
     Cel &cell = state.cells[cellIndex];
-    Cel &leftCell = state.cells[cellIndex - 1];
-    Cel &rightCell = state.cells[cellIndex + 1];
     double temperatureGradient = 0.;
     if (cellIndex > 0)
-        temperatureGradient = (cell.temp - leftCell.tempini) / balance.meanCellLength;
+        temperatureGradient = (cell.temp - state.cells[cellIndex - 1].tempini) / balance.meanCellLength;
 
     if (cellIndex < state.lastCell)
-        if (cell.VTemper < 0)
+        if (cell.VTemper < 0) {
+            const Cel &rightCell = state.cells[cellIndex + 1];
             temperatureGradient = (rightCell.tempini - cell.temp) / (0.5 * (rightCell.dx + cell.dx));
+        }
     if (cell.acsr.tipo == kAccessoryChoke && cell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area && cell.VTemper <= 0)
         temperatureGradient = 0.;
-    if (cellIndex > 0 && leftCell.acsr.tipo == kAccessoryChoke &&
-        leftCell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * leftCell.duto.area && cell.VTemper >= 0)
-        temperatureGradient = 0 * (rightCell.tempini - cell.temp) / (0.5 * (rightCell.dx + cell.dx));
+    if (cellIndex > 0 && state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke &&
+        state.cells[cellIndex - 1].acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area && cell.VTemper >= 0) {
+        if (cellIndex < state.lastCell) {
+            const Cel &rightCell = state.cells[cellIndex + 1];
+            temperatureGradient = 0 * (rightCell.tempini - cell.temp) / (0.5 * (rightCell.dx + cell.dx));
+        } else {
+            temperatureGradient = 0.;
+        }
+    }
     if ((cellIndex <= 1 && cell.VTemper <= 0) || (cellIndex == state.lastCell && cell.VTemper <= 0))
         temperatureGradient = 0.;
-    if (cell.acsr.tipo == kAccessoryVolumetricPump && cell.acsr.bvol.freq > 1.) {
-        pressureGradient = (cell.pres - leftCell.pres) * units::kPascalPerKgfPerCm2 / balance.meanCellLength;
+    if (cellIndex > 0 && cell.acsr.tipo == kAccessoryVolumetricPump && cell.acsr.bvol.freq > 1.) {
+        pressureGradient = (cell.pres - state.cells[cellIndex - 1].pres) * units::kPascalPerKgfPerCm2 / balance.meanCellLength;
     }
     return temperatureGradient;
 }
@@ -3035,7 +3039,6 @@ void computeTemperature(const ThermalState &state, int cellIndex, double, int st
         return;
     }
 
-    Cel &leftCell = state.cells[cellIndex - 1];
     TemperatureBalance balance = prepareTemperatureBalance(state, cellIndex, steadyMode);
     double pressureGradient = temperaturePressureGradientOf(state, cellIndex, balance);
 
@@ -3072,7 +3075,7 @@ void computeTemperature(const ThermalState &state, int cellIndex, double, int st
 
         double leftCellThermalPower = 0.;
         if (cellIndex > 0)
-            leftCellThermalPower = leftCell.potTermo;
+            leftCellThermalPower = state.cells[cellIndex - 1].potTermo;
         cell.temp = ((balance.timeCoefficient / cell.dt) * cell.temp - (-balance.pressureTimeCoefficient * (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2 / cell.dt) + cell.dTdLCor * (-balance.temperatureSpatialCoefficient * temperatureGradient + balance.pressureSpatialCoefficient * pressureGradient - kineticTerm - (balance.hydrostaticPower - 0. * interfacialWorkTerm) + (leftCellThermalPower + cell.fonteCal) / balance.meanCellLength + sourceTerms.liquid + sourceTerms.gas + balance.heatFlux - latentHeatTerm) - (balance.rc - balance.rp) * (1 - balance.voidFraction) * cell.pres * units::kPascalPerKgfPerCm2 * balance.flowArea * (cell.bet - cell.betini) / (balance.liquidDensity * cell.dt)) / (balance.timeCoefficient / cell.dt);
 
         if (fabs(cell.temp - cell.tempini) / cell.dt > 10.) {
@@ -3413,7 +3416,6 @@ void updateInletFlowPartitionTerms(const ThermalState &state, const ThermalDepen
 
 void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex) {
     Cel &cell = state.cells[cellIndex];
-    Cel &leftCell = state.cells[cellIndex - 1];
     const CellFlowBasis basis = cellFlowBasisOf(state, cellIndex);
     const double meanVoidFraction = basis.voidFraction;
     const double betmed = basis.betmed;
@@ -3427,7 +3429,7 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state, int cellIndex
     double gasSpecificHeat = cell.flui.CalorGas(cell.presini, cell.temp);
 
     cell.calor.Tint = cell.temp;
-    cell.calor.dtL = cell.temp - leftCell.tempini;
+    cell.calor.dtL = cellIndex > 0 ? cell.temp - state.cells[cellIndex - 1].tempini : 0.;
     cell.calor.Vint = meanSuperficialGasVelocity + meanSuperficialLiquidVelocity;
     cell.calor.dt = cell.dt;
     double liquidConductivity = (1. - betmed) * cell.flui.CondLiq(cell.presini, cell.temp) + betmed * cell.fluicol.CondLiq(cell.presini, cell.temp);
@@ -3468,9 +3470,9 @@ void advanceTransientEnergy(const ThermalState &state, const transient::Transien
     for (int cellIndex = 1; cellIndex <= state.lastCell; cellIndex++) {
         Cel &cell = state.cells[cellIndex];
         Cel &leftCell = state.cells[cellIndex - 1];
-        Cel &rightCell = state.cells[cellIndex + 1];
         cell.dTdtL = leftCell.dTdt;
         if (cellIndex < state.lastCell) {
+            Cel &rightCell = state.cells[cellIndex + 1];
             rightCell.tempLini = rightCell.tempL;
             rightCell.tempL = cell.temp;
         }
