@@ -2199,7 +2199,7 @@ void updatePig(const TransientStepState &state) {
 }
 
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo) {
-#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
+#pragma omp parallel for default(none) shared(state) firstprivate(ciclo, vexpli) schedule(static) num_threads((*state.globals).solverThreadCount)
     for (int i = 0; i <= state.lastCell; i++) {
         state.cells[i].GeraLocal(state.outletPressure, state.surfaceChokeMassFlag, state.lastCell, state.input.master1.razareaativ, state.inletPressure, state.inletTemperature, state.inletQuality, state.inletComplementaryFraction, ciclo,
                             state.fullModel, state.endNode, state.input.corrigeContSep, state.surfaceChoke.AreaGarg, vexpli);

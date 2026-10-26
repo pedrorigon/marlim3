@@ -24,6 +24,18 @@ def candidate(path, overrides):
     source = overrides.get(path, (ROOT/path).read_text() if (ROOT/path).exists() else reference(path))
     if path.endswith('SisProdTransient.cpp'):
         matches = [f for f in functions(source, ['TransientStepState'])
+                   if f['leaf'] == 'solvePressureVolumeCoupling']
+        assert len(matches) == 1, 'pressure-volume coupling definition'
+        function = matches[0]
+        body = source[function['body']+1:function['tail']]
+        explicit_assembly = '#pragma omp parallel for default(none) shared(state) firstprivate(ciclo, vexpli) schedule(static) num_threads((*state.globals).solverThreadCount)'
+        implicit_assembly = '#pragma omp parallel for num_threads((*state.globals).solverThreadCount)'
+        if explicit_assembly in body:
+            assert body.count(explicit_assembly) == 1, 'single pressure-volume assembly region'
+            assert not tokens(body[:body.index(explicit_assembly)]), 'pressure-volume region position'
+            body = body.replace(explicit_assembly, implicit_assembly)
+            source = source[:function['body']+1] + body + source[function['tail']:]
+        matches = [f for f in functions(source, ['TransientStepState'])
                    if f['leaf'] == 'restartFractionEvolutionInitial']
         assert len(matches) == 1, 'fraction restart definition'
         function = matches[0]

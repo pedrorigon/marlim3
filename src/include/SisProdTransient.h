@@ -371,7 +371,11 @@ void restartFractionEvolution(const TransientStepState &state, const gaslift::Ga
 /// Snapshots pig movement state, transfers pigs between cells, and prepares face liquid fractions.
 void updatePig(const TransientStepState &state);
 
-/// Builds cell pressure-volume equations in parallel and solves the assembled band system.
+/// Builds each cell's pressure-volume equations in parallel, writing its two exclusive
+/// matrix rows and right-hand-side entries, then solves the band system serially.
+/// All cell assemblies complete before the solve. Configuration, fluid tables and
+/// shared input data must remain stable throughout assembly; concurrent calls must
+/// use distinct cell arrays, matrices and right-hand-side storage.
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli = 0, int ciclo = 0);
 
 /// Generates fluid mini-tables and initializes the interior-cell mole inventories.
