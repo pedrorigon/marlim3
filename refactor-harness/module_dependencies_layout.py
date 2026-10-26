@@ -10,6 +10,7 @@ import re
 import json
 import subprocess
 from simulation_context_names import restore as restore_context_names
+from fraction_evolution_layout import restore as restore_fraction_sweeps
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT
@@ -21,7 +22,7 @@ def reference(path):
     return _CACHE[path]
 def candidate(path, overrides):
     source = overrides.get(path, (ROOT/path).read_text() if (ROOT/path).exists() else reference(path))
-    return restore_context_names(source, path)
+    return restore_context_names(restore_fraction_sweeps(source, path), path)
 
 LEX = re.compile(r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
 

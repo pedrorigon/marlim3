@@ -1994,6 +1994,8 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var, int pres
     if(pres<presMin || pres>=presMax || temp<tempMin || temp>=tempMax){
     	varprop=1.225*Deng;
 		if(pres>=presMax|| temp<tempMin || temp>=tempMax){
+#pragma omp critical(marlim_property_iteration_limit)
+            {
             // incluir falha
             string complementoFalha = string("Limite alto na tabela ") + to_string((*simulationContext).propertyIterationLimitCount);
             logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Pressão ou temperatura excedeu o limite máximo da tabela de Flash", "N/A",
@@ -2002,6 +2004,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var, int pres
             logger.writeOutputLog();
             // encerrar a aplicacao
             exit(EXIT_SUCCESS);
+            }
     		int para;
     		para++;
     	}
@@ -3217,16 +3220,19 @@ double ProFlu::FalsaCorda(double a,double b,double PR,double TR,double delta ,do
             ((u>0&&w<0)||(u<0&&w>0))?(b=c):(a=c,u=w);
             controla++;
           }
-          if(controla>=maxit)(*simulationContext).propertyIterationLimitCount++;
-          if((*simulationContext).propertyIterationLimitCount>400) {
-            // incluir falha
-            string complementoFalha = string("Maximo falhas atingido: ") + to_string((*simulationContext).propertyIterationLimitCount);
-            logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Falsa corda em PropFlu atingiu numero maximo de iteracoes", "N/A",
-                complementoFalha);
-            // gravar arquivo de log
-            logger.writeOutputLog();
-            // encerrar a aplicacao
-            exit(EXIT_SUCCESS);
+#pragma omp critical(marlim_property_iteration_limit)
+          {
+              if(controla>=maxit)(*simulationContext).propertyIterationLimitCount++;
+              if((*simulationContext).propertyIterationLimitCount>400) {
+                  // incluir falha
+                  string complementoFalha = string("Maximo falhas atingido: ") + to_string((*simulationContext).propertyIterationLimitCount);
+                  logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Falsa corda em PropFlu atingiu numero maximo de iteracoes", "N/A",
+                      complementoFalha);
+                  // gravar arquivo de log
+                  logger.writeOutputLog();
+                  // encerrar a aplicacao
+                  exit(EXIT_SUCCESS);
+              }
           }
           return c;
 }

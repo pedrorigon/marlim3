@@ -2120,23 +2120,18 @@ void restartFractionEvolution(const TransientStepState &state, const gaslift::Ga
 void evolveFractions(const TransientStepState &state, double alfrev, [[maybe_unused]] double betrev, [[maybe_unused]] int ciclo) {
 
 #pragma omp parallel for num_threads((*state.globals).solverThreadCount)
-    for (int i = 0; i <= state.lastCell; i++) {
-
-        if (i < state.lastCell) {
-            state.cells[i].avancalf(state.restart, state.lastCell);
-        }
-        if (i == state.lastCell) {
-            updateOutletVoidFraction(state, i, alfrev);
-        }
+    for (int i = 0; i < state.lastCell; i++) {
+        state.cells[i].avancalf(state.restart, state.lastCell);
+    }
+    if (state.lastCell >= 0) {
+        updateOutletVoidFraction(state, state.lastCell, alfrev);
     }
 #pragma omp parallel for num_threads((*state.globals).solverThreadCount)
-    for (int i = 0; i <= state.lastCell; i++) {
-        if (i < state.lastCell) {
-            state.cells[i].avancbet(state.restart, state.lastCell);
-        }
-        if (i == state.lastCell) {
-            updateOutletComplementaryFraction(state, i);
-        }
+    for (int i = 0; i < state.lastCell; i++) {
+        state.cells[i].avancbet(state.restart, state.lastCell);
+    }
+    if (state.lastCell >= 0) {
+        updateOutletComplementaryFraction(state, state.lastCell);
     }
 #pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = 0; i <= state.lastCell; i++) {

@@ -350,7 +350,9 @@ void restrictTimeStepByValve(const TransientStepState &state);
 /// which must provide at least input.nvalv + 1 entries.
 void captureValveAreaRatios(const TransientStepState &state, double *destination);
 
-/// Advances void, complementary-liquid, and pig fractions in separate parallel sweeps.
+/// Advances interior void and complementary-liquid fractions in parallel, applying
+/// each outlet condition after its interior sweep completes, then advances pig fractions.
+/// Collects cell restart flags serially after all fraction updates complete.
 /// betrev and ciclo are accepted but unused; alfrev supplies the reverse void fraction.
 void evolveFractions(const TransientStepState &state, double alfrev = 1., double betrev = 0., int ciclo = 0);
 
