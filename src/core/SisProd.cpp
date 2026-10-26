@@ -156,14 +156,12 @@ void SProd::avaliaVariaDpDt(int explicitScheme) {
     transient::evaluatePressureRateOfChange(transientStep, explicitScheme);
 }
 
-void SProd::aberturaVal1() {
+void SProd::captureValveAreaRatios(sisprod::ValveSnapshotPhase phase) {
     const auto transientStep = transientStateOf();
-    transient::valveOpeningHigh(transientStep);
-}
-
-void SProd::aberturaVal0() {
-    const auto transientStep = transientStateOf();
-    transient::valveOpeningLow(transientStep);
+    double *destination = phase == ValveSnapshotPhase::BeforeBoundaryUpdate
+                              ? transientStep.valveAreaRatiosBeforeUpdate
+                              : transientStep.valveAreaRatiosAfterUpdate;
+    transient::captureValveAreaRatios(transientStep, destination);
 }
 
 void SProd::restringeDTporValv() {
@@ -556,8 +554,8 @@ sisprod::transient::TransientStepState SProd::transientStateOf() {
         .openTime = transient.activeChokeDelay,
         .productionSolution = transient.rightHandSide,
         .inletQuality = titE,
-        .masterRatio0 = transient.masterValveRatiosInactive.data(),
-        .masterRatio1 = transient.masterValveRatiosActive.data(),
+        .valveAreaRatiosBeforeUpdate = transient.valveAreaRatiosBeforeUpdate.data(),
+        .valveAreaRatiosAfterUpdate = transient.valveAreaRatiosAfterUpdate.data(),
         .masterCriticalRatio = transient.masterValveCriticalRatios.data(),
         .interfaceVelocity = gasLift.interfaceVelocity,
         .movingPigCount = transient.movingPigCount,

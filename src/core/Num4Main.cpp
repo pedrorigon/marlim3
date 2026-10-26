@@ -2617,7 +2617,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
             if (inativo[i] == 0) {
                 malha[i].transient.rollbackRequested = 0;
                 celpos[i] = malha[i].arq.master1.posic;
-                malha[i].aberturaVal0();
+                malha[i].captureValveAreaRatios(sisprod::ValveSnapshotPhase::BeforeBoundaryUpdate);
                 malha[i].solveLinGas();
                 int presinterna = malha[i].noextremo;
                 if (arqRede.malha[i].presimposta == 1)
@@ -2631,14 +2631,14 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                 malha[i].atualizaCC1();
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
                     malha[i].transient.masterValveCriticalRatios[j] = 0.5;
-                malha[i].aberturaVal1();
+                malha[i].captureValveAreaRatios(sisprod::ValveSnapshotPhase::AfterBoundaryUpdate);
                 if (arqRede.malha[i].ncoleta > 0 &&
                     (malha[i].chokeSup.AreaGarg / malha[i].celula[malha[i].ncel - 1].duto.area) < 0.6)
                     malha[i].arq.chkv = 1;
                 if ((*arqRede.vg1dSP).lixo5R >= 4000) {
                 }
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                    if (malha[i].transient.masterValveRatiosActive[j] != malha[i].transient.masterValveRatiosInactive[j])
+                    if (malha[i].transient.valveAreaRatiosAfterUpdate[j] != malha[i].transient.valveAreaRatiosBeforeUpdate[j])
                         malha[i].transient.fullModel = 0;
                 if (malha[i].transient.fullModel == 1)
                     malha[i].avaliaVariaDpDt();
@@ -2864,7 +2864,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                             celposAux = malha[i].arq.valv[j - 1].posicP;
                         else
                             celposAux = celpos[i];
-                        if (malha[i].celula[celposAux].alf < 0.05 && malha[i].transient.masterValveRatiosActive[j] <= malha[i].arq.master1.razareaativ)
+                        if (malha[i].celula[celposAux].alf < 0.05 && malha[i].transient.valveAreaRatiosAfterUpdate[j] <= malha[i].arq.master1.razareaativ)
                             malha[i].celula[celposAux].alf = 0.05;
                     }
 
@@ -11133,7 +11133,7 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
         for (int i = 0; i < narq; i++) {
             malha[i].transient.rollbackRequested = 0;
             celpos[i] = malha[i].arq.master1.posic;
-            malha[i].aberturaVal0();
+            malha[i].captureValveAreaRatios(sisprod::ValveSnapshotPhase::BeforeBoundaryUpdate);
             malha[i].solveLinGas();
             int presinterna = 1;
             malha[i].arq.atualiza(malha[i].noinicial, presinterna, malha[i].derivaAnel,
@@ -11145,9 +11145,9 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
             malha[i].atualizaCC1();
             for (int j = 0; j <= malha[i].arq.nvalv; j++)
                 malha[i].transient.masterValveCriticalRatios[j] = 0.5;
-            malha[i].aberturaVal1();
+            malha[i].captureValveAreaRatios(sisprod::ValveSnapshotPhase::AfterBoundaryUpdate);
             for (int j = 0; j <= malha[i].arq.nvalv; j++)
-                if (malha[i].transient.masterValveRatiosActive[j] != malha[i].transient.masterValveRatiosInactive[j])
+                if (malha[i].transient.valveAreaRatiosAfterUpdate[j] != malha[i].transient.valveAreaRatiosBeforeUpdate[j])
                     malha[i].transient.fullModel = 0;
             if (malha[i].transient.fullModel == 1)
                 malha[i].avaliaVariaDpDt();
@@ -11301,7 +11301,7 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
                         celposAux = malha[i].arq.valv[j - 1].posicP;
                     else
                         celposAux = celpos[i];
-                    if (malha[i].celula[celposAux].alf < 0.05 && malha[i].transient.masterValveRatiosActive[j] <= malha[i].arq.master1.razareaativ)
+                    if (malha[i].celula[celposAux].alf < 0.05 && malha[i].transient.valveAreaRatiosAfterUpdate[j] <= malha[i].arq.master1.razareaativ)
                         malha[i].celula[celposAux].alf = 0.05;
                 }
                 malha[i].SolveAcopPV();

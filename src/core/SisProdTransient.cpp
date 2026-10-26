@@ -94,7 +94,7 @@ void advanceCouplingIteration(const TransientSolveState &state, const TransientD
             celposAux = state.step.input.valv[j - 1].posicP;
         else
             celposAux = celpos;
-        if (state.step.cells[celposAux].alf < 0.05 && state.step.masterRatio1[j] <= state.step.input.master1.razareaativ)
+        if (state.step.cells[celposAux].alf < 0.05 && state.step.valveAreaRatiosAfterUpdate[j] <= state.step.input.master1.razareaativ)
             state.step.cells[celposAux].alf = 0.05;
     }
 
@@ -878,7 +878,7 @@ double valveRestrictedTimeStep(const TransientStepState &state, int i, double dt
         celpos = state.input.master1.posic;
     else
         celpos = state.input.valv[i - 1].posicP;
-    if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= 1e-3 * state.input.master1.razareaativ)) {
+    if (state.valveAreaRatiosAfterUpdate[i] < state.valveAreaRatiosBeforeUpdate[i] && (state.valveAreaRatiosAfterUpdate[i] <= 1.1 * state.input.master1.razareaativ && state.valveAreaRatiosAfterUpdate[i] >= 1e-3 * state.input.master1.razareaativ)) {
         if (state.cells[celpos].alf < 0.05) {
             if (state.cells[celpos].alf < 0.01)
                 state.desperationMoment += 1.5;
@@ -895,7 +895,7 @@ double valveRestrictedTimeStep(const TransientStepState &state, int i, double dt
             state.masterCriticalRatio[i] = 0.01;
     } else
         state.desperationMoment = 0.;
-    if (state.masterRatio1[i] < state.masterRatio0[i] && (state.masterRatio1[i] <= 1.1 * state.input.master1.razareaativ && state.masterRatio1[i] >= state.masterCriticalRatio[i] * state.input.master1.razareaativ)) {
+    if (state.valveAreaRatiosAfterUpdate[i] < state.valveAreaRatiosBeforeUpdate[i] && (state.valveAreaRatiosAfterUpdate[i] <= 1.1 * state.input.master1.razareaativ && state.valveAreaRatiosAfterUpdate[i] >= state.masterCriticalRatio[i] * state.input.master1.razareaativ)) {
         double timeStepDivisor = 20.;
         if (state.cells[celpos].alf < 0.5)
             timeStepDivisor = 40.;
@@ -1957,21 +1957,12 @@ void computeTimeStep(const TransientStepState &state, int vexpli) {
     }
 }
 
-void valveOpeningLow(const TransientStepState &state) {
+void captureValveAreaRatios(const TransientStepState &state, double *destination) {
     int celpos = state.input.master1.posic;
-    state.masterRatio0[0] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
+    destination[0] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
     for (int i = 1; i <= state.input.nvalv; i++) {
         celpos = state.input.valv[i - 1].posicP;
-        state.masterRatio0[i] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
-    }
-}
-
-void valveOpeningHigh(const TransientStepState &state) {
-    int celpos = state.input.master1.posic;
-    state.masterRatio1[0] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
-    for (int i = 1; i <= state.input.nvalv; i++) {
-        celpos = state.input.valv[i - 1].posicP;
-        state.masterRatio1[i] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
+        destination[i] = state.cells[celpos].acsr.chk.AreaGarg / state.cells[celpos].duto.area;
     }
 }
 
@@ -2050,13 +2041,13 @@ void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli) {
             state.fullModel = 1;
         int linAberta = 1;
         for (int i = 0; i <= state.input.nvalv; i++)
-            if (state.masterRatio1[i] <= 1e-3)
+            if (state.valveAreaRatiosAfterUpdate[i] <= 1e-3)
                 linAberta = 0;
         if ((linAberta == 1 && state.surfaceChoke.AreaGarg / state.cells[state.lastCell - 1].duto.area > 1e-3))
             state.fullModel = 1;
     }
     for (int i = 0; i <= state.input.nvalv; i++)
-        if (state.masterRatio1[i] != state.masterRatio0[i])
+        if (state.valveAreaRatiosAfterUpdate[i] != state.valveAreaRatiosBeforeUpdate[i])
             state.fullModel = 0;
     if ((state.meanMaximumPressureRate > 10 || state.meanMaximumTemperatureRate > 1) && state.fullModel == 1 && vexpli == 0) {
         state.fullModel = 0;
@@ -2313,7 +2304,7 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
 
         state.step.restart = 0;
         int celpos = state.step.input.master1.posic;
-        valveOpeningLow(state.step);
+        captureValveAreaRatios(state.step, state.step.valveAreaRatiosBeforeUpdate);
 
         if (state.step.input.controDesc == 1)
             velmaxdesc = gaslift::searchUnloadingInjectionPressure(dependencies.gasLift);
@@ -2326,9 +2317,9 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
 
         for (int i = 0; i <= state.step.input.nvalv; i++)
             state.step.masterCriticalRatio[i] = 0.5;
-        valveOpeningHigh(state.step);
+        captureValveAreaRatios(state.step, state.step.valveAreaRatiosAfterUpdate);
         for (int i = 0; i <= state.step.input.nvalv; i++)
-            if (state.step.masterRatio1[i] != state.step.masterRatio0[i])
+            if (state.step.valveAreaRatiosAfterUpdate[i] != state.step.valveAreaRatiosBeforeUpdate[i])
                 state.step.fullModel = 0;
         TimeStepPolicies::apply<TimeStepHook::AfterValveOpenings>(
             {state.step, kOutsideCouplingLoop, vExpli});

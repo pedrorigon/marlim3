@@ -158,11 +158,11 @@ struct TransientStepState {
     /// SProd::titE -- written.
     double &inletQuality;
 
-    /// SProd::transient.masterValveRatiosInactive -- written.
-    double *masterRatio0;
+    /// SProd::transient.valveAreaRatiosBeforeUpdate -- written.
+    double *valveAreaRatiosBeforeUpdate;
 
-    /// SProd::transient.masterValveRatiosActive -- written.
-    double *masterRatio1;
+    /// SProd::transient.valveAreaRatiosAfterUpdate -- written.
+    double *valveAreaRatiosAfterUpdate;
 
     /// SProd::transient.masterValveCriticalRatios -- written.
     double *masterCriticalRatio;
@@ -346,11 +346,9 @@ void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli);
 /// Restricts the inlet-cell increment during valve closing and records artificial gas additions.
 void restrictTimeStepByValve(const TransientStepState &state);
 
-/// Captures master and accessory valve area ratios before the boundary update.
-void valveOpeningLow(const TransientStepState &state);
-
-/// Captures master and accessory valve area ratios after the boundary update.
-void valveOpeningHigh(const TransientStepState &state);
+/// Captures the current master and accessory valve area ratios in destination,
+/// which must provide at least input.nvalv + 1 entries.
+void captureValveAreaRatios(const TransientStepState &state, double *destination);
 
 /// Advances void, complementary-liquid, and pig fractions in separate parallel sweeps.
 /// betrev and ciclo are accepted but unused; alfrev supplies the reverse void fraction.

@@ -43,6 +43,9 @@ namespace trendoutput { struct TrendState; }
 
 namespace sisprod {
 
+/// Identifies the valve-area snapshot on either side of a boundary-condition update.
+enum class ValveSnapshotPhase { BeforeBoundaryUpdate, AfterBoundaryUpdate };
+
 namespace fluidtracking { struct FluidTrackingState; }
 namespace gaslift { struct GasLiftState; }
 namespace sources { struct SourceState; }
@@ -250,10 +253,10 @@ struct TransientRun {
     /// Requests rollback and time-step reevaluation when at least one control volume produces a holdup or volume
     /// fraction outside the physical [0, 1] range.
     int rollbackRequested = 0;
-    /// Recent Master1 ratio values for the active state.
-    std::array<double, kMasterRatioHistorySize> masterValveRatiosActive{};
-    /// Recent Master1 ratio values for the inactive state.
-    std::array<double, kMasterRatioHistorySize> masterValveRatiosInactive{};
+    /// Master and accessory valve area ratios after the boundary-condition update.
+    std::array<double, kMasterRatioHistorySize> valveAreaRatiosAfterUpdate{};
+    /// Master and accessory valve area ratios before the boundary-condition update.
+    std::array<double, kMasterRatioHistorySize> valveAreaRatiosBeforeUpdate{};
     /// Critical Master1 ratio history used by the switching logic.
     std::array<double, kMasterRatioHistorySize> masterValveCriticalRatios{
         kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio, kDefaultMasterCriticalRatio,
@@ -620,10 +623,8 @@ class SProd {
     void atenuaDtMax();
     /// Checks whether liquid-density variation requires the complete formulation.
     void avaliaVariaDpDt(int explicitScheme = 0);
-    /// Updates the valve logic for the active-state formulation.
-    void aberturaVal1();
-    /// Updates the valve logic for the inactive-state formulation.
-    void aberturaVal0();
+    /// Captures valve area ratios for the selected side of the boundary-condition update.
+    void captureValveAreaRatios(sisprod::ValveSnapshotPhase phase);
     /// Restricts the time step during valve-state transitions.
     void restringeDTporValv();
 
