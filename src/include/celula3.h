@@ -97,8 +97,8 @@ class Cel {
     double agua_consumida_massa;
     double gas_consumido_massa;
 
-    double agua_consumida_massa_step;
-    double gas_consumido_massa_step;
+    double waterMassConsumedByHydratesThisStep;
+    double gasMassConsumedByHydratesThisStep;
 
     double massa_hidrato;
 

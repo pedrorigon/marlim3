@@ -59,8 +59,8 @@ Cel::Cel(SimulationContext *context, const DadosGeo vdutoL, const DadosGeo vduto
     agua_consumida_massa = 0.;
     gas_consumido_massa = 0.;
 
-    agua_consumida_massa_step = 0.;
-    gas_consumido_massa_step = 0.;
+    waterMassConsumedByHydratesThisStep = 0.;
+    gasMassConsumedByHydratesThisStep = 0.;
 
     massa_hidrato = 0.0;
 
@@ -411,8 +411,8 @@ Cel::Cel(const Cel &vcel) : TL(2), local(2, 6) { // construtor por copia
     agua_consumida_massa = vcel.agua_consumida_massa;
     gas_consumido_massa = vcel.gas_consumido_massa;
 
-    agua_consumida_massa_step = vcel.agua_consumida_massa_step;
-    gas_consumido_massa_step = vcel.gas_consumido_massa_step;
+    waterMassConsumedByHydratesThisStep = vcel.waterMassConsumedByHydratesThisStep;
+    gasMassConsumedByHydratesThisStep = vcel.gasMassConsumedByHydratesThisStep;
 
     // modeloIII
 	kH=vcel.kH; //alteracao hidratos modelo 3
@@ -766,8 +766,8 @@ Cel &Cel::operator=(const Cel &vcel) {
         agua_consumida_massa = vcel.agua_consumida_massa;
         gas_consumido_massa = vcel.gas_consumido_massa;
 
-        agua_consumida_massa_step = vcel.agua_consumida_massa_step;
-        gas_consumido_massa_step = vcel.gas_consumido_massa_step;
+        waterMassConsumedByHydratesThisStep = vcel.waterMassConsumedByHydratesThisStep;
+        gasMassConsumedByHydratesThisStep = vcel.gasMassConsumedByHydratesThisStep;
 
         // modeloIII
 	    kH=vcel.kH; //alteracao hidratos modelo 3

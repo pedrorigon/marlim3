@@ -23,9 +23,9 @@ void consumeHydrateFormationMass(const SourceState &state, double &consumedGasMa
     const bool hydrateModel3Active = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 3 && (*state.globals).simulationTime > 0.01;
     if (hydrateModel2Active || hydrateModel3Active) {
 
-        consumedWaterMass = state.cells[cellIndex].agua_consumida_massa_step;
+        consumedWaterMass = state.cells[cellIndex].waterMassConsumedByHydratesThisStep;
 
-        consumedGasMass = state.cells[cellIndex].gas_consumido_massa_step;
+        consumedGasMass = state.cells[cellIndex].gasMassConsumedByHydratesThisStep;
 
         // Update the BSW
         double crossSectionArea = state.cells[cellIndex].duto.area;
@@ -203,14 +203,14 @@ void applyLiquidInjectionSource(const SourceState &state, int cellIndex, double 
     auto &source = cell.acsr.injl;
     double complementaryFluidStandardDensity = source.fluidocol.standardDensity();
     cell.fontemassCR += complementaryFluidStandardDensity * source.QLiq * source.bet / units::kSecondsPerDay;
-    double massic = source.QLiq * (1. - source.bet) / units::kSecondsPerDay;
+    double standardProducedLiquidVolumeFlowRate = source.QLiq * (1. - source.bet) / units::kSecondsPerDay;
     double standardGasDensity = source.FluidoPro.Deng * kAirDensityAtStandardConditions;
     double standardProducedLiquidDensity = (1000 * 141.5 / (131.5 + source.FluidoPro.API)) * (1 - source.FluidoPro.BSW) + 1000. * source.FluidoPro.Denag * source.FluidoPro.BSW;
     double massPerStandardLiquidVolume = (standardProducedLiquidDensity + source.FluidoPro.RGO * standardGasDensity * (1 - source.FluidoPro.BSW));
-    massic *= massPerStandardLiquidVolume;
+    double productionFluidMassFlowRate = standardProducedLiquidVolumeFlowRate * massPerStandardLiquidVolume;
     double gasMassFraction = source.FluidoPro.FracMassHidra(cellPressure, cellTemperature);
-    cell.fontemassLR += (1. - gasMassFraction) * massic;
-    cell.fontemassGR += gasMassFraction * massic;
+    cell.fontemassLR += (1. - gasMassFraction) * productionFluidMassFlowRate;
+    cell.fontemassGR += gasMassFraction * productionFluidMassFlowRate;
 }
 
 void applyInflowPerformanceSource(const SourceState &state, int cellIndex, double cellPressure, double cellTemperature) {
