@@ -2075,14 +2075,15 @@ void restrictTimeStepByValve(const TransientStepState &state) {
 
 void restartFractionEvolutionInitial(const TransientStepState &state) {
     for (int i = 0; i <= state.lastCell; i++) {
-        if (state.cells[i].dt < state.timeStep)
-            state.timeStep = state.cells[i].dt;
-        if (state.cells[i].dt1 < state.timeStep)
-            state.timeStep = state.cells[i].dt1;
-        if (state.cells[i].dt2 < state.timeStep)
-            state.timeStep = state.cells[i].dt2;
-        if (state.cells[i].dtPig < state.timeStep)
-            state.timeStep = state.cells[i].dtPig;
+        const Cel &cell = state.cells[i];
+        if (cell.dt < state.timeStep)
+            state.timeStep = cell.dt;
+        if (cell.dt1 < state.timeStep)
+            state.timeStep = cell.dt1;
+        if (cell.dt2 < state.timeStep)
+            state.timeStep = cell.dt2;
+        if (cell.dtPig < state.timeStep)
+            state.timeStep = cell.dtPig;
     }
 }
 

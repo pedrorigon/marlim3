@@ -22,6 +22,21 @@ def reference(path):
     return _CACHE[path]
 def candidate(path, overrides):
     source = overrides.get(path, (ROOT/path).read_text() if (ROOT/path).exists() else reference(path))
+    if path.endswith('SisProdTransient.cpp'):
+        matches = [f for f in functions(source, ['TransientStepState'])
+                   if f['leaf'] == 'restartFractionEvolutionInitial']
+        assert len(matches) == 1, 'fraction restart definition'
+        function = matches[0]
+        body = source[function['body']+1:function['tail']]
+        if 'const Cel &cell' in body:
+            alias = 'const Cel &cell = state.cells[i];'
+            prefix = 'for (int i = 0; i <= state.lastCell; i++) {'
+            assert tokens(body).index('const') == len(tokens(prefix)), 'cell alias scope'
+            assert body.count(alias) == 1, 'live restart cell reference'
+            body = body.replace(alias, '')
+            body = re.sub(r'\bcell\s*\.', 'state.cells[i].', body)
+            assert not re.search(r'\bcell\b', masked(body)), 'unresolved restart cell alias'
+            source = source[:function['body']+1] + body + source[function['tail']:]
     return restore_context_names(restore_fraction_sweeps(source, path), path)
 
 LEX = re.compile(r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')

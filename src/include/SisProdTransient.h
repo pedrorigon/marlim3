@@ -356,7 +356,9 @@ void captureValveAreaRatios(const TransientStepState &state, double *destination
 /// betrev and ciclo are accepted but unused; alfrev supplies the reverse void fraction.
 void evolveFractions(const TransientStepState &state, double alfrev = 1., double betrev = 0., int ciclo = 0);
 
-/// Selects the smallest current cell increment for restarting fraction evolution.
+/// Reduces the current global time step using each cell's general, void fraction,
+/// complementary liquid and pig movement limits, in that order.
+/// Includes the outlet cell and keeps the step unless a limit is strictly smaller.
 void restartFractionEvolutionInitial(const TransientStepState &state);
 
 /// Restores void and pig void fractions where cell pressure exceeds -10.
