@@ -43,6 +43,22 @@ struct CellFlowBasis {
     double liquidSuperficialVelocity;
 };
 
+/// Phase heat capacities and advection coefficients evaluated without advancing the wall.
+struct TemperatureTransport {
+    CellFlowBasis flow;
+    double liquidDensity;
+    double liquidSpecificHeat;
+    double gasSpecificHeat;
+    double timeCoefficient;
+    double spatialCoefficient;
+};
+
+/// Inlet policy selected from the thermal characteristic before applying external temperature.
+struct TransientInletTemperature {
+    TemperatureTransport transport;
+    bool prescribed;
+};
+
 struct TemperatureBalance {
     double cellLength;
     double meanCellLength;
@@ -151,15 +167,35 @@ template <typename Axis>
 /// Phase presence and flow area always belong to this cell.
 [[nodiscard]] CellFlowBasis cellFlowBasisOf(const ThermalState &state, int cellIndex);
 
+/// Evaluates phase heat capacities and transport coefficients at the stored cell temperature.
+/// Uses previous pressure and current flow data; does not update heat-transfer state.
+[[nodiscard]] TemperatureTransport temperatureTransportOf(const ThermalState &state,
+                                                          int cellIndex);
+
+/// Selects the inlet characteristic at the saved internal temperature. Incoming
+/// characteristics use the configured external or source temperature; outgoing
+/// and stationary characteristics retain the stored internal temperature.
+/// Reuses transport properties when the selected temperature is unchanged.
+[[nodiscard]] TransientInletTemperature prepareTransientInletTemperature(const ThermalState &state);
+
 /// Prepares heat-transfer state and energy coefficients using previous pressure
-/// and current temperature, and publishes the mean cell heat flux.
+/// and current temperature, reusing transport properties at that temperature.
+/// Advances the wall heat-transfer state once and publishes the mean cell heat flux.
 TemperatureBalance prepareTemperatureBalance(const ThermalState &state,
                                              int cellIndex,
-                                             int steadyStateMode);
+                                             int steadyStateMode,
+                                             const TemperatureTransport &transport);
+
+/// Advances a cell with its current transport coefficients. The transient inlet
+/// policy fixes whether cell zero is prescribed or evolved throughout the cycle.
+/// A null inlet selects the local characteristic, including stationary evolution.
+void computeCellTemperature(const ThermalState &state, int cellIndex, int steadyStateMode,
+                            const TransientInletTemperature *inlet);
 
 /// Computes the transient kinetic-energy term where both cells have no accessory.
 /// Also replaces the balance velocities with downstream face velocities for the
-/// subsequent interfacial-work calculation.
+/// subsequent interfacial-work calculation. At cell zero, incoming gas uses the
+/// inlet face void fraction rather than a left control volume.
 double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
                                      TemperatureBalance &balance);
 
@@ -292,11 +328,12 @@ void selectAndApplyBufferedInletFlowRegime(
 
 /// Advances one cell temperature and stores its rate using the global time step.
 /// Indices beyond lastCell use the external boundary or gas surface temperature.
-void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex);
+void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex,
+                                    const TransientInletTemperature &inlet);
 
 /// Refreshes the Poisson-2D cells and then the production column in separate
 /// OpenMP loops with their completion barriers.
-void refreshTemperatureField(const ThermalState &state);
+void refreshTemperatureField(const ThermalState &state, const TransientInletTemperature &inlet);
 
 /// Computes steady source heating from the left cell accessory.
 TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
@@ -369,7 +406,8 @@ double temperaturePressureGradientOf(const ThermalState &state, int cellIndex,
                                      const TemperatureBalance &balance);
 
 /// Computes the upwind temperature gradient and the subsequent volumetric-pump
-/// pressure override. Retains zero products for non-finite face values.
+/// pressure override. Negative transport uses the saved right temperature,
+/// including at cells zero and one. Choke and outlet rules take precedence.
 double temperatureSpatialGradientOf(const ThermalState &state, int cellIndex,
                                     const TemperatureBalance &balance, double &pressureGradient);
 
@@ -401,7 +439,8 @@ void prepareTransientOutletFlow(const ThermalState &state);
 
 /// Prepares coupled-cell interface data in parallel, advances the 3D Poisson
 /// thermal solver when the cycle requires it, and refreshes the temperature field.
-void advanceCoupledThermalField(const ThermalState &state, int cycle, int maximumCycle);
+void advanceCoupledThermalField(const ThermalState &state, int cycle, int maximumCycle,
+                                const TransientInletTemperature &inlet);
 
 /// Copies the two donors selected by liquid-flow direction and evaluates their
 /// water cuts and the upstream cell water cut in property-call order.

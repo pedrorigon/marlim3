@@ -96,6 +96,8 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex);
 /// Updates one control-volume temperature from the thermal energy balance.
 /// previousTemperature does not participate in the calculation.
 /// Uses previous pressure, current temperature, and prior face temperatures.
+/// Cell zero evolves for outgoing or stationary thermal characteristics;
+/// the transient field advance supplies its prescribed-inlet policy separately.
 void computeTemperature(const ThermalState &state, int cellIndex,
                         double previousTemperature, int steadyStateMode = 0);
 
@@ -113,10 +115,16 @@ void updateOutletFlowPartitionTerms(const ThermalState &state, const ThermalDepe
 void updateInletFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies);
 
 /// Prepares the non-dimensional heat-diffusion properties for one cell.
+/// Cell zero has no left control volume and uses a zero left temperature offset.
 void prepareNonDimensionalHeatDiffusion(const ThermalState &state,
                                         int cellIndex);
 
 /// Advances the transient thermal-energy solution by one coupling cycle.
+/// The inlet characteristic uses the saved internal temperature and updated flow.
+/// Incoming characteristics use the configured boundary or source temperature;
+/// outgoing and stationary characteristics evolve the stored cell temperature.
+/// Source enthalpies, network-supplied temperatures, wall updates, and intermediate
+/// coupling-state restoration retain their respective roles.
 void advanceTransientEnergy(const ThermalState &state, const transient::TransientStepState &transientStep, int cycle,
                             int maximumCycle);
 
