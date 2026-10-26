@@ -58,7 +58,7 @@
 #include "SisProd.h"
 #include "DriftFluxClosure.h"
 #include "estruturas.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -369,7 +369,7 @@ void resetCells(SProd &sp, Cel *cells, const Scenario &s, int ind) {
         // the harness fluid is one the program itself considers valid. A
         // default-constructed ProFlu has api=1, rgo=1 and templ==temph, which
         // makes ViscOleo return NaN and MasEspLiq negative.
-        c.flui = ProFlu(sp.vg1dSP, 20, 100., 0.7, 0., 1., 20, 10, 40,
+        c.flui = ProFlu(sp.simulationContext, 20, 100., 0.7, 0., 1., 20, 10, 40,
                         2, 0, 0.8, 0, 0, 0);
         c.fluiL = &c.flui;
         c.duto.a = 0.1 * k;
@@ -509,12 +509,12 @@ int main(int argc, char **argv) {
         repeats = std::atol(argv[2]);
         quiet = true;
     }
-    varGlob1D globals;
+    SimulationContext globals;
 
     // Deliberately leaked, as in trend-sweep.cpp: ~SProd frees arrays keyed off
     // counters this driver sets by hand, and the process is about to exit.
     SProd &sp = *new SProd();
-    sp.vg1dSP = &globals;
+    sp.simulationContext = &globals;
 
     // One guard cell below index 0, so celula[-1] is defined storage.
     Cel *storage = new Cel[kCells + 1];

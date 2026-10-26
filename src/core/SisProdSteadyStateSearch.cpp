@@ -11,7 +11,7 @@
 #include "celula3.h"
 #include "celulaGas.h"
 #include "chokegas.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 
 #include <math.h>
@@ -112,18 +112,18 @@ double bracketReverseRoot(const SteadyStateSearchState &state, const SteadyDepen
             kontaiter++;
             if (kontaiter > 100) { // iteration limit: failed to find the second guess
                 // end of the simulation or a failure warning
-                if ((*state.march.globals).chaverede == 0) {
+                if ((*state.march.globals).networkMode == 0) {
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                         NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                     else {
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
                     }
                 } else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -140,18 +140,18 @@ double bracketReverseRoot(const SteadyStateSearchState &state, const SteadyDepen
                     negativeResidualGuess = pchute2;
                 kontaiter++;
                 if (kontaiter > 100) {
-                    if ((*state.march.globals).chaverede == 0) {
+                    if ((*state.march.globals).networkMode == 0) {
                         if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                             NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                         else {
                             cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
                         }
                     } else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -177,18 +177,18 @@ double bracketReverseRoot(const SteadyStateSearchState &state, const SteadyDepen
             kontaiter++;
             if (kontaiter > 100) { // iteration limit: failed to find the second guess
                 // end of the simulation or a failure warning
-                if ((*state.march.globals).chaverede == 0) {
+                if ((*state.march.globals).networkMode == 0) {
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                         NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                     else {
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
                     }
                 } else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -207,19 +207,19 @@ double bracketReverseRoot(const SteadyStateSearchState &state, const SteadyDepen
                     positiveResidualGuess = pchute2;
                 kontaiter++;
                 if (kontaiter > 100) {
-                    if ((*state.march.globals).chaverede == 0) {
+                    if ((*state.march.globals).networkMode == 0) {
                         if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                             NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                         else {
                             cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
 
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
                         }
                     } else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -265,7 +265,7 @@ bool retryUntilReverseMarchCompletes(const SteadyStateSearchState &state, const 
             }
             // checking whether this raised estimate is above the maximum pressure
             // of a PVTSim table, if there is one
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
             valtemp = marchReverseProductionSteady(state.march, dependencies, pchuteAux); // new attempt
             if (valtemp < -kSteadyMarchSentinelThreshold && limpres == 1) { // still high, and the flag says
@@ -289,7 +289,7 @@ bool retryUntilReverseMarchCompletes(const SteadyStateSearchState &state, const 
                         // only shows a warning
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
                         // if in a network iteration, after the first iteration
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             {
                                 abortValue = -kSteadyConvergenceFailure;
                                 return true;
@@ -330,7 +330,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
             double alfa = 0.;
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -343,7 +343,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
                 if (pchuteAux > 1.01 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchuteAux = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1100)
@@ -359,7 +359,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
             double alfa = 0.8;
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.2 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.2 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -372,7 +372,7 @@ void classifyReverseMarchSentinel(const SteadyStateSearchState &state, double ma
                 if (pchuteAux > 1.01 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchuteAux = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1100)
@@ -469,7 +469,7 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             }
             if (state.march.annulusDrift == 0)
                 alfa = 1.; // if it is the ring, there is only gas
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -492,7 +492,7 @@ void estimateInitialReverseBottomHolePressure(const SteadyStateSearchState &stat
             }
             // a guess above the maximum limit of a table is also avoided
             // when PVTSim is used
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).smallValueTolerance)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
 
@@ -520,7 +520,7 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, const
                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                        "", "");
         cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-        if ((*state.march.globals).iterRede > 0)
+        if ((*state.march.globals).networkIteration > 0)
             {
                 abortValue = -kSteadyConvergenceFailure;
                 return true;
@@ -535,7 +535,7 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, const
         positiveResidualGuess = pchute2;
     kontaiter++;
     if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) {
-        if ((*state.march.globals).chaverede == 0) {
+        if ((*state.march.globals).networkMode == 0) {
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                 logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -548,7 +548,7 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, const
                                "", "");
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
 
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -560,7 +560,7 @@ bool raisePressureUntilMarchCompletes(const SteadyStateSearchState &state, const
                     }
             }
         } else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -615,7 +615,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, const SteadyDepend
                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                            "", "");
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -637,7 +637,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, const SteadyDepend
                                    "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                    "", "");
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -663,7 +663,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, const SteadyDepend
                                    "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                    "", "");
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -696,7 +696,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, const SteadyDepend
         kontaiter++;
         if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) { // iteration limit: failed to find the second guess
             // end of the simulation or a failure warning
-            if ((*state.march.globals).chaverede == 0) {
+            if ((*state.march.globals).networkMode == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                     logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -708,7 +708,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, const SteadyDepend
                                    "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                    "", "");
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -720,7 +720,7 @@ bool bracketFromLowGuess(const SteadyStateSearchState &state, const SteadyDepend
                         }
                 }
             } else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -770,7 +770,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                            "", "");
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -800,7 +800,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
         kontaiter++;
         if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) { // iteration limit: failed to find the second guess
             // end of the simulation or a failure warning
-            if ((*state.march.globals).chaverede == 0) {
+            if ((*state.march.globals).networkMode == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                     logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -812,7 +812,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
                                    "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                    "", "");
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -824,7 +824,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
                         }
                 }
             } else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -849,7 +849,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                "", "");
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -865,7 +865,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
             }
             kontaiter++;
             if (kontaiter > 50 * 0.1 / state.march.input.buscaFC) {
-                if ((*state.march.globals).chaverede == 0) {
+                if ((*state.march.globals).networkMode == 0) {
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                         NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                         logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -877,7 +877,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
                                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                        "", "");
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             {
                                 abortValue = -kSteadyConvergenceFailure;
                                 return true;
@@ -889,7 +889,7 @@ bool bracketFromHighGuess(const SteadyStateSearchState &state, const SteadyDepen
                             }
                     }
                 } else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -920,7 +920,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, const SteadyD
                 logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                            "", "");
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -940,7 +940,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, const SteadyD
                     logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                "", "");
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -973,7 +973,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, const SteadyD
             }
             // checking whether this raised estimate is above the maximum pressure
             // of a PVTSim table, if there is one
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
             valtemp = marchProductionSteady(state.march, dependencies, pchuteAux); // new attempt
             if (fabs(valtemp) > kSteadyConvergenceFailureThreshold) {
@@ -982,7 +982,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, const SteadyD
                     logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                "", "");
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -1006,7 +1006,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, const SteadyD
                             logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
                                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                        "", "");
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             {
                                 abortValue = -kSteadyConvergenceFailure;
                                 return true;
@@ -1038,7 +1038,7 @@ bool retryUntilMarchCompletes(const SteadyStateSearchState &state, const SteadyD
                                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                        "", "");
                         // if in a network iteration, after the first iteration
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             {
                                 abortValue = -kSteadyConvergenceFailure;
                                 return true;
@@ -1087,7 +1087,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
             }
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -1100,7 +1100,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchuteAux = 0.99 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1000) {
@@ -1123,7 +1123,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
             }
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.2 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.2 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -1136,7 +1136,7 @@ void classifyMarchSentinel(const SteadyStateSearchState &state, double marchResi
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchuteAux = 0.99 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1000) {
@@ -1235,7 +1235,7 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             }
             if (state.march.annulusDrift == 0)
                 alfa = 1.; // if it is the ring, there is only gas
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -1261,7 +1261,7 @@ void estimateInitialBottomHolePressure(const SteadyStateSearchState &state, doub
             }
             // a guess above the maximum limit of a table is also avoided
             // when PVTSim is used
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).smallValueTolerance)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
 
@@ -1282,11 +1282,11 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
     // positiveResidualGuess is updated with the last pressure guess
     while (marchResidual > 0) {
         pchuteAux = pchute2;
-        if ((*state.march.globals).chaverede == 0)
+        if ((*state.march.globals).networkMode == 0)
             pchute2 *= amplifica; // Raising the pressure in search of marchResidual>0
         else
             pchute2 *= mult2; // Raising the pressure in search of marchResidual>0
-        if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
+        if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).smallValueTolerance)
             pchute2 = 0.9 * state.march.input.tabent.pmax;
         int limpres = 0;
         if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
@@ -1308,7 +1308,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
         marchResidual = marchProductionSteadySecondary(state.march, dependencies, pchute2);
         if (fabs(marchResidual) > kSteadyConvergenceFailureThreshold) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -1326,7 +1326,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
                 marchResidual = marchProductionSteadySecondary(state.march, dependencies, pchute2);
                 if (fabs(marchResidual) > kSteadyConvergenceFailureThreshold) {
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -1345,7 +1345,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                 else {
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -1363,13 +1363,13 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
         kontaiter++;
         if (kontaiter > 50) { // iteration limit: failed to find the second guess
             // end of the simulation or a failure warning
-            if ((*state.march.globals).chaverede == 0) {
+            if ((*state.march.globals).networkMode == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                 else {
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -1381,7 +1381,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
                         }
                 }
             } else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -1400,7 +1400,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
             // the low pressure estimate must be lowered
             pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the highest pressure
             // that gives marchResidual>0 and the pressure that is too high
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).smallValueTolerance)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
@@ -1411,7 +1411,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
             marchResidual = marchProductionSteadySecondary(state.march, dependencies, pchute2);
             if (fabs(marchResidual) > kSteadyConvergenceFailureThreshold) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -1427,13 +1427,13 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
             kontaiter++;
 
             if (kontaiter > 50) {
-                if ((*state.march.globals).chaverede == 0) {
+                if ((*state.march.globals).networkMode == 0) {
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                     else {
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             {
                                 abortValue = -kSteadyConvergenceFailure;
                                 return true;
@@ -1445,7 +1445,7 @@ bool bracketFromLowGuessSecondary(const SteadyStateSearchState &state, const Ste
                             }
                     }
                 } else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -1477,7 +1477,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
             pchute2 *= 0.5;
         }
         pchuteAux = pchute2;
-        if ((*state.march.globals).chaverede == 0)
+        if ((*state.march.globals).networkMode == 0)
             pchute2 *= reduz; // Lowering the pressure in search of marchResidual>0
         else
             pchute2 *= mult1; // Lowering the pressure in search of marchResidual>0
@@ -1486,7 +1486,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
         // zero, but pchute2 may be lowered so far that marchResidual=-1e10
         // (pressure below 0.5 somewhere in the march); then guessLowerBound becomes this value of
         // pchute2, as it is then known that one cannot go below guessLowerBound
-        if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
+        if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).smallValueTolerance)
             pchute2 = 0.9 * state.march.input.tabent.pmax;
         if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
             (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
@@ -1497,7 +1497,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
         marchResidual = marchProductionSteadySecondary(state.march, dependencies, pchute2);
         if (fabs(marchResidual) > kSteadyConvergenceFailureThreshold) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -1513,12 +1513,12 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
         kontaiter++;
         if (kontaiter > 50) { // iteration limit: failed to find the second guess
             // end of the simulation or a failure warning
-            if ((*state.march.globals).chaverede == 0) {
+            if ((*state.march.globals).networkMode == 0) {
                 if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoees");
                 else {
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -1530,7 +1530,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
                         }
                 }
             } else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -1548,7 +1548,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
             guessLowerBound = pchute2;
             pchute2 = 0.5 * (pchute2 + pchuteAux); // intermediate value between the lowest pressure
             // that gives marchResidual<0 and the pressure that is too low
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute2) < (*state.march.globals).smallValueTolerance)
                 pchute2 = 0.9 * state.march.input.tabent.pmax;
             if (state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                 (state.march.cells[0].acsr.ipr.Pres - pchute2) < 0.001 * state.march.cells[0].acsr.ipr.Pres) {
@@ -1559,7 +1559,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
             marchResidual = marchProductionSteadySecondary(state.march, dependencies, pchute2);
             if (fabs(marchResidual) > kSteadyConvergenceFailureThreshold) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -1574,13 +1574,13 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
                 negativeResidualGuess = pchute2;
             kontaiter++;
             if (kontaiter > 50) {
-                if ((*state.march.globals).chaverede == 0) {
+                if ((*state.march.globals).networkMode == 0) {
                     if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm2 atingiu maximo de iteracoes");
                     else {
                         cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             {
                                 abortValue = -kSteadyConvergenceFailure;
                                 return true;
@@ -1592,7 +1592,7 @@ bool bracketFromHighGuessSecondary(const SteadyStateSearchState &state, const St
                             }
                     }
                 } else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -1616,7 +1616,7 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, cons
         valtemp = marchProductionSteadySecondary(state.march, dependencies, pchuteAux); // march with pchuteAux
         if (fabs(valtemp) > kSteadyConvergenceFailureThreshold) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -1632,7 +1632,7 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, cons
             valtemp = marchProductionSteadySecondary(state.march, dependencies, pchuteAux);
             if (fabs(valtemp) > kSteadyConvergenceFailureThreshold) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -1660,12 +1660,12 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, cons
             }
             // checking whether this raised estimate is above the maximum pressure
             // of a PVTSim table, if there is one
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
             valtemp = marchProductionSteadySecondary(state.march, dependencies, pchuteAux); // new attempt
             if (fabs(valtemp) > kSteadyConvergenceFailureThreshold) {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -1684,7 +1684,7 @@ bool retryUntilMarchCompletesSecondary(const SteadyStateSearchState &state, cons
         valtemp = marchProductionSteadySecondary(state.march, dependencies, pchuteAux);
         if (fabs(valtemp) > kSteadyConvergenceFailureThreshold) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 {
                     abortValue = -kSteadyConvergenceFailure;
                     return true;
@@ -1717,7 +1717,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
             double alfa = 0.;
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -1728,7 +1728,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchuteAux = 0.99 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1100)
@@ -1744,7 +1744,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
             double alfa = 0.8;
             if (state.march.annulusDrift == 0)
                 alfa = 1.;
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.2 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.2 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -1755,7 +1755,7 @@ void classifyMarchSentinelSecondary(const SteadyStateSearchState &state, double 
                 if (pchuteAux < 0.99 * state.march.cells[i - 1].acsr.ipr.Pres)
                     pchuteAux = 0.99 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchuteAux) < (*state.march.globals).smallValueTolerance)
                 pchuteAux = 0.9 * state.march.input.tabent.pmax;
         }
         if (pchuteAux > 1100)
@@ -1850,9 +1850,9 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             }
             if (state.march.annulusDrift == 0)
                 alfa = 1.; // if it is the ring, there is only gas
-            else if ((*state.march.globals).chaverede == 0 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 0 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess;
-            else if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
+            else if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
@@ -1873,7 +1873,7 @@ void estimateInitialBottomHolePressureSecondary(const SteadyStateSearchState &st
             }
             // a guess above the maximum limit of a table is also avoided
             // when PVTSim is used
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).smallValueTolerance)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
 
@@ -1891,13 +1891,13 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, const SteadyDepen
                 advanceUpstreamSteadyPressure(state.march, i, 0); // march step to get the pressure at the left boundary
                 // of cell i
                 // checks whether something went wrong:
-                if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].presaux) < (*state.march.globals).localtiny)
+                if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].presaux) < (*state.march.globals).smallValueTolerance)
                     {
                         abortValue = kSteadyMarchLimit;
                         return true;
                     }
                 if (marchPressureTooLow(state.march.cells[i].presaux) ||
-                    (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].presaux) > (*state.march.globals).localtiny)) {
+                    (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].presaux) > (*state.march.globals).smallValueTolerance)) {
                     {
                         abortValue = -kSteadyMarchLimit;
                         return true;
@@ -1916,21 +1916,21 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, const SteadyDepen
                 // when working with a PVTSim table
                 if (isnan(state.march.cells[i].temp))
                     NumError("Temperatrura na linha de producao com valor NaN");
-                if (state.march.input.usaTabela == 1 && (state.march.cells[i].temp - state.march.input.tabent.tmin) < (*state.march.globals).localtiny)
+                if (state.march.input.usaTabela == 1 && (state.march.cells[i].temp - state.march.input.tabent.tmin) < (*state.march.globals).smallValueTolerance)
                     state.march.cells[i].temp = state.march.input.tabent.tmin;
                 thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i); // just updates the left and right temperature fields
                 advanceDownstreamSteadyPressure(state.march, i, 0); // advances the pressure from the left boundary of cell i to
                 // its cell centre
                 // checks whether something went wrong in this pressure advance to the centre of the
                 // cell
-                if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].pres) < (*state.march.globals).localtiny) {
+                if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - state.march.cells[i].pres) < (*state.march.globals).smallValueTolerance) {
                     {
                         abortValue = kSteadyMarchLimit;
                         return true;
                     }
                 }
                 if (marchPressureTooLow(state.march.cells[i].pres) ||
-                    (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].pres) > (*state.march.globals).localtiny)) {
+                    (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i].pres) > (*state.march.globals).smallValueTolerance)) {
                     {
                         abortValue = -kSteadyMarchLimit;
                         return true;
@@ -1984,25 +1984,25 @@ bool advanceTertiaryCells(const SteadyStateSearchState &state, const SteadyDepen
                 // checks whether the cell-centre pressure went above
                 // the static pressure of an IPR, if any
                 if (marchPressureTooLow(state.march.cells[i - 1].pres) ||
-                    (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i - 1].pres) > (*state.march.globals).localtiny)) {
+                    (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[i - 1].pres) > (*state.march.globals).smallValueTolerance)) {
                     {
                         abortValue = -kSteadyMarchLimit;
                         return true;
                     }
                 } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
-                            ((state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
+                            ((state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) < (*state.march.globals).smallValueTolerance) && i == 1)) {
                     {
                         abortValue = kSteadyMarchLimit;
                         return true;
                     }
                 } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryRadialPorous &&
-                            ((state.march.cells[i - 1].acsr.radialPoro.pRes[0] - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
+                            ((state.march.cells[i - 1].acsr.radialPoro.pRes[0] - state.march.cells[i - 1].pres) < (*state.march.globals).smallValueTolerance) && i == 1)) {
                     {
                         abortValue = kSteadyMarchLimit;
                         return true;
                     }
                 } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryPorous2D &&
-                            ((state.march.cells[i - 1].acsr.poroso2D.dados.pRes - state.march.cells[i - 1].pres) < (*state.march.globals).localtiny) && i == 1)) {
+                            ((state.march.cells[i - 1].acsr.poroso2D.dados.pRes - state.march.cells[i - 1].pres) < (*state.march.globals).smallValueTolerance) && i == 1)) {
                     {
                         abortValue = kSteadyMarchLimit;
                         return true;
@@ -2052,25 +2052,25 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, const
 
         // checks whether something is already wrong at the start of the march
         if (marchPressureTooLow(state.march.cells[0].pres) ||
-            (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[0].pres) > (*state.march.globals).localtiny))
+            (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmin - state.march.cells[0].pres) > (*state.march.globals).smallValueTolerance))
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
             }
         else if ((state.march.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
-                  (state.march.cells[0].acsr.ipr.Pres - state.march.cells[0].pres) < (*state.march.globals).localtiny))
+                  (state.march.cells[0].acsr.ipr.Pres - state.march.cells[0].pres) < (*state.march.globals).smallValueTolerance))
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
         else if ((state.march.cells[0].acsr.tipo == kAccessoryRadialPorous &&
-                  (state.march.cells[0].acsr.radialPoro.pRes[0] - state.march.cells[0].pres) < (*state.march.globals).localtiny))
+                  (state.march.cells[0].acsr.radialPoro.pRes[0] - state.march.cells[0].pres) < (*state.march.globals).smallValueTolerance))
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
         else if ((state.march.cells[0].acsr.tipo == kAccessoryPorous2D &&
-                  (state.march.cells[0].acsr.poroso2D.dados.pRes - state.march.cells[0].pres) < (*state.march.globals).localtiny))
+                  (state.march.cells[0].acsr.poroso2D.dados.pRes - state.march.cells[0].pres) < (*state.march.globals).smallValueTolerance))
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
@@ -2086,7 +2086,7 @@ bool marchTertiaryCellsUntilConverged(const SteadyStateSearchState &state, const
             gaslift::initializeSteadyValveGasFlowRate(dependencies.gasLift, 0);
         i = 1;
         // start of the march proper
-        while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).localtiny) {
+        while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pentrada - state.march.cells[0].pres) < (*state.march.globals).smallValueTolerance) {
             if (advanceTertiaryCells(state, dependencies, i, abortValue))
                 return true;
         }
@@ -2136,11 +2136,11 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
             kontaiter++;
             double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
             if (kontaiter > 200 && velocityGuess > 0.01) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2157,11 +2157,11 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                     negativeResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -2176,7 +2176,7 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
             mchuteAux = mchute2;
             mchute2 *= (1. + state.march.input.buscaFC);
             marchResidual = marchProductionPressureToPressureSecondary(state.march, dependencies, mchute2);
-            if ((*state.march.globals).chaverede != 0 && mchute2 > maximumFlowRate && maximumFlowRate > 0) {
+            if ((*state.march.globals).networkMode != 0 && mchute2 > maximumFlowRate && maximumFlowRate > 0) {
                 testaEscoa = 0;
                 marchResidual = -1.;
             }
@@ -2184,11 +2184,11 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 positiveResidualGuess = mchute2;
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2202,11 +2202,11 @@ double bracketTertiaryPressureToPressureRoot(const SteadyStateSearchState &state
                 kontaiter++;
 
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -2259,11 +2259,11 @@ double bracketInjectionPressureRoot(const SteadyStateSearchState &state, const S
             marchResidual = marchInjectionSteady(state.march, dependencies, pchute2);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2274,11 +2274,11 @@ double bracketInjectionPressureRoot(const SteadyStateSearchState &state, const S
                 marchResidual = marchInjectionSteady(state.march, dependencies, pchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -2295,11 +2295,11 @@ double bracketInjectionPressureRoot(const SteadyStateSearchState &state, const S
             marchResidual = marchInjectionSteady(state.march, dependencies, pchute2);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2310,11 +2310,11 @@ double bracketInjectionPressureRoot(const SteadyStateSearchState &state, const S
                 marchResidual = marchInjectionSteady(state.march, dependencies, pchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm2 atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -2410,10 +2410,10 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state, con
                 kontaiter++;
             }
             if (kontaiter >= 800) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm2 atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2431,10 +2431,10 @@ double searchGasPressureSteadySecondary(const SteadyStateSearchState &state, con
                 kontaiter++;
             }
             if (kontaiter >= 800) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm2 atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2502,10 +2502,10 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state, cons
                 kontaiter++;
             }
             if (kontaiter >= 800) { // failed to find a guess for the false chord
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2525,10 +2525,10 @@ double searchGasPressureSteadyTertiary(const SteadyStateSearchState &state, cons
                 kontaiter++;
             }
             if (kontaiter >= 800) { // failed to find a guess for the false chord
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError("Busca de valores iniciais para calculo de zero de funcao em buscaGasPresPerm3 atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -2576,7 +2576,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
     if (retryUntilReverseMarchCompletes(state, dependencies, pchuteAux0, kontaiter, marchResidual, pchuteAux, pchute, chute, abortValue))
         return abortValue;
     if (kontaiter > 100) { // iteration limit reached
-        if ((*state.march.globals).chaverede == 0) {
+        if ((*state.march.globals).networkMode == 0) {
             // in this case the simulation ends: there is no transient
             // to run next and this is not a network
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
@@ -2585,7 +2585,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
                 // only shows a warning
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
                 // if in a network iteration, after the first iteration
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 // if a transient simulation follows, or this is the first network iteration
                 else
@@ -2593,7 +2593,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
             }
         } else {
             // if in a network iteration, after the first iteration
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             // if a transient simulation follows, or this is the first network iteration
             else
@@ -2615,7 +2615,7 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
                 if (pchute > 1.01 * state.march.cells[0].acsr.ipr.Pres)
                     pchute = 1.01 * state.march.cells[0].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).smallValueTolerance)
                 pchute = 0.9 * state.march.input.tabent.pmax;
             pchuteAux = pchute;
         }
@@ -2623,18 +2623,18 @@ double searchReverseProductionBottomHolePressure(const SteadyStateSearchState &s
         kontaiter++;
     }
     if (kontaiter >= 100) {
-        if ((*state.march.globals).chaverede == 0) {
+        if ((*state.march.globals).networkMode == 0) {
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
             }
         } else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -2694,7 +2694,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, c
     if (retryUntilMarchCompletes(state, dependencies, pchuteAux0, kontaiter, marchResidual, pchuteAux, pchute, chute, kontaTenta, abortValue))
         return abortValue;
     if (kontaiter > 50) { // iteration limit reached
-        if ((*state.march.globals).chaverede == 0) {
+        if ((*state.march.globals).networkMode == 0) {
             // in this case the simulation ends: there is no transient
             // to run next and this is not a network
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
@@ -2710,7 +2710,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, c
                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                                "", "");
                 // if in a network iteration, after the first iteration
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 // if a transient simulation follows, or this is the first network iteration
                 else
@@ -2718,7 +2718,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, c
             }
         } else {
             // if in a network iteration, after the first iteration
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             // if a transient simulation follows, or this is the first network iteration
             else
@@ -2740,7 +2740,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, c
                 if (pchute < 0.99 * state.march.cells[0].acsr.ipr.Pres)
                     pchute = 0.99 * state.march.cells[0].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).smallValueTolerance)
                 pchute = 0.9 * state.march.input.tabent.pmax;
             pchuteAux = pchute;
         }
@@ -2751,7 +2751,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, c
                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
                            "", "");
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -2759,7 +2759,7 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, c
         kontaiter++;
     }
     if (kontaiter >= 50) {
-        if ((*state.march.globals).chaverede == 0) {
+        if ((*state.march.globals).networkMode == 0) {
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0) {
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
                 logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
@@ -2767,13 +2767,13 @@ double searchProductionBottomHolePressure(const SteadyStateSearchState &state, c
                            "", "");
             } else {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
             }
         } else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -2851,21 +2851,21 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
     if (retryUntilMarchCompletesSecondary(state, dependencies, pchuteAux0, kontaiter, marchResidual, pchuteAux, pchute, abortValue))
         return abortValue;
     if (kontaiter > 50) { // iteration limit reached
-        if ((*state.march.globals).chaverede == 0) {
+        if ((*state.march.globals).networkMode == 0) {
             // in this case the simulation ends: there is no transient
             // to run next and this is not a network
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
             }
         } else {
             // if in a network iteration, after the first iteration
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             // if a transient simulation follows, or this is the first network iteration
             else
@@ -2887,7 +2887,7 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
                 if (pchute < 0.99 * state.march.cells[0].acsr.ipr.Pres)
                     pchute = 0.99 * state.march.cells[0].acsr.ipr.Pres;
             }
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).smallValueTolerance)
                 pchute = 0.9 * state.march.input.tabent.pmax;
             pchuteAux = pchute;
         }
@@ -2895,7 +2895,7 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
         marchResidual = marchProductionSteadySecondary(state.march, dependencies, pchute);
         if (fabs(marchResidual) > kSteadyConvergenceFailureThreshold) {
             cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -2903,18 +2903,18 @@ double searchProductionBottomHolePressureSecondary(const SteadyStateSearchState 
         kontaiter++;
     }
     if (kontaiter > 50) {
-        if ((*state.march.globals).chaverede == 0) {
+        if ((*state.march.globals).networkMode == 0) {
             if (state.march.input.transiente == 0 && chute < 0 && state.march.input.AP == 0)
                 NumError("Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes");
             else {
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
             }
         } else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -3086,7 +3086,7 @@ double searchProductionBottomHolePressureTertiary(const SteadyStateSearchState &
     }
 
     double corrigePresF = 0.;
-    if (((*state.march.globals).chaverede == 0 || state.march.endNode == 1 || (*state.march.globals).chaveRedeParalela == 1) && state.march.input.corrigeContSep == 1)
+    if (((*state.march.globals).networkMode == 0 || state.march.endNode == 1 || (*state.march.globals).parallelNetworkMode == 1) && state.march.input.corrigeContSep == 1)
         corrigePresF = steadyPressureAtLastCell(state.march);
 
     state.march.gasSurfacePressure = (state.march.cells[state.march.lastCell].pres + corrigePresF);
@@ -3110,11 +3110,11 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
     double marchResidual = marchReverseProductionPressureToPressure(state.march, dependencies, mchute);
     state.march.searchOrigin = 1;
     if (marchResidual < -kSteadyMarchSentinelThreshold) {
-        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
             NumError(
                 "Busca de valores iniciais para callculo de zero de funcao em buscaProdPresPresPermRev com problemas, pressao abaixo de 1 kgf/cm2 na marcha reversa");
         else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -3148,11 +3148,11 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                 kontaiter++;
                 double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
                 if (kontaiter > 200 && fabs(velocityGuess) > 0.01) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPermRev atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3180,11 +3180,11 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
                     positiveResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3219,11 +3219,11 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
             mchute *= 0.9;
             marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute);
             if (mchute < 1e-5) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -3271,11 +3271,11 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                 kontaiter++;
                 double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3292,11 +3292,11 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                         negativeResidualGuess = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
@@ -3325,7 +3325,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                     } else
                         val0 = marchResidual;
                 }
-                if ((*state.march.globals).chaverede != 0 && mchute2 > maximumFlowRate && maximumFlowRate > 0) {
+                if ((*state.march.globals).networkMode != 0 && mchute2 > maximumFlowRate && maximumFlowRate > 0) {
                     testaEscoa = 0;
                     marchResidual = -1.;
                 }
@@ -3333,11 +3333,11 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                     positiveResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3351,11 +3351,11 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                     kontaiter++;
 
                     if (kontaiter > 200) {
-                        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
@@ -3392,11 +3392,11 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
             mchute *= 0.9;
             marchResidual = marchProductionPressureToPressureSecondary(state.march, dependencies, mchute);
             if (mchute < 1e-5) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -3428,11 +3428,11 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                 kontaiter++;
                 double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3449,11 +3449,11 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                         negativeResidualGuess = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
@@ -3468,7 +3468,7 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                 mchuteAux = mchute2;
                 mchute2 *= (1. + state.march.input.buscaFC);
                 marchResidual = marchProductionPressureToPressureSecondary(state.march, dependencies, mchute2);
-                if ((*state.march.globals).chaverede != 0 && mchute2 > maximumFlowRate) {
+                if ((*state.march.globals).networkMode != 0 && mchute2 > maximumFlowRate) {
                     testaEscoa = 0;
                     marchResidual = -1.;
                 }
@@ -3476,11 +3476,11 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     positiveResidualGuess = mchute2;
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3494,11 +3494,11 @@ double searchProductionPressureToPressureSecondary(const SteadyStateSearchState 
                     kontaiter++;
 
                     if (kontaiter > 200) {
-                        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                         else {
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
@@ -3537,7 +3537,7 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
             // the pressure estimate uses only the liquid hydrostatics, which gives a
             // very high initial pressure guess
             double alfa = 0.1;
-            if ((*state.march.globals).chaverede == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
+            if ((*state.march.globals).networkMode == 1 && state.holdupGuess < 0.5 && state.holdupGuess > -1e-15)
                 alfa = 1. - state.holdupGuess * 2.;
             double rhomix = (1. - alfa) * rhol + alfa * rhog;
             double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i + 1].dx);
@@ -3574,7 +3574,7 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
                 totalSourceFlowRate -= accessoryFlowRate;
             // a guess above the maximum limit of a table is also avoided
             // when PVTSim is used
-            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).localtiny)
+            if (state.march.input.usaTabela == 1 && (state.march.input.tabent.pmax - pchute) < (*state.march.globals).smallValueTolerance)
                 pchute = 0.9 * state.march.input.tabent.pmax;
         }
         chute = totalSourceFlowRate;
@@ -3588,11 +3588,11 @@ double searchProductionPressureToPressureTertiary(const SteadyStateSearchState &
             mchute *= (1. - state.march.input.buscaFC);
             marchResidual = marchProductionPressureToPressureSecondary(state.march, dependencies, mchute);
             if (mchute < 1e-5) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -3627,12 +3627,12 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(pavanc, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pavanc -= rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / units::kPascalPerKgfPerCm2;
-                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).smallValueTolerance) {
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Poco injetor provavelmente produzindo quando se utiliza este valor de pressao na superficie");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3659,12 +3659,12 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
                 double rhog = state.march.cells[i].flui.MasEspGas(pavanc, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pavanc -= rhog * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / units::kPascalPerKgfPerCm2;
-                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).localtiny) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if (state.march.cells[i].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i].acsr.ipr.Pres - pavanc) > -(*state.march.globals).smallValueTolerance) {
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Poco injetor provavelmente produzindo quando se utiliza este valor de pressao na superficie");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3698,11 +3698,11 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
             marchResidual = marchInjectionSteady(state.march, dependencies, mchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, perda de carga muito alta");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -3715,11 +3715,11 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
             marchResidual = marchInjectionSteady(state.march, dependencies, mchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, Vazao muito baixa");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -3742,11 +3742,11 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
                 marchResidual = marchInjectionSteady(state.march, dependencies, mchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3757,11 +3757,11 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
                     marchResidual = marchInjectionSteady(state.march, dependencies, mchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                         else {
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
@@ -3778,11 +3778,11 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
                 marchResidual = marchInjectionSteady(state.march, dependencies, mchute2);
                 kontaiter++;
                 if (kontaiter > 200) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3793,11 +3793,11 @@ double searchInjectionBottomHolePressure1(const SteadyStateSearchState &state, c
                     marchResidual = marchInjectionSteady(state.march, dependencies, mchute2);
                     kontaiter++;
                     if (kontaiter > 200) {
-                        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                             NumError(
                                 "Busca de valores iniciais para calculo de zero de funcao em buscaInjPfundoPerm1 atingiu maximo de iteracoes");
                         else {
-                            if ((*state.march.globals).iterRede > 0)
+                            if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
                             else
                                 return kSteadyConvergenceFailure;
@@ -3845,7 +3845,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, c
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).smallValueTolerance)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -3877,7 +3877,7 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, c
                 double rhol = state.march.cells[i].flui.MasEspGas(pchute, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).smallValueTolerance)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
                 taux = state.march.cells[i].calor.Textern1;
             }
@@ -3897,11 +3897,11 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, c
             marchResidual = marchInjectionSteady(state.march, dependencies, pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -3914,11 +3914,11 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, c
             marchResidual = marchInjectionSteady(state.march, dependencies, pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -3940,10 +3940,10 @@ double searchInjectionBottomHolePressure2(const SteadyStateSearchState &state, c
 double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, const SteadyDependencies &dependencies, double chute) {
     state.march.cells[state.march.lastCell].pres = state.march.input.condpocinj.presfundo;
     if (state.march.cells[state.march.lastCell].pres < state.march.cells[state.march.lastCell].acsr.ipr.Pres) {
-        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
             NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
         else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -3963,11 +3963,11 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, c
                 double rhol = state.march.cells[i].fluicol.MasEspFlu(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / units::kPascalPerKgfPerCm2;
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).smallValueTolerance) {
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -3993,11 +3993,11 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, c
                 double rhol = state.march.cells[i].flui.MasEspGas(state.march.cells[i].pres, taux);
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed / units::kPascalPerKgfPerCm2;
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).smallValueTolerance) {
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -4019,22 +4019,22 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, c
     double marchResidual;
     marchResidual = marchInjectionSteady(state.march, dependencies, mchute);
     if (marchResidual < -kSteadyMarchSentinelThreshold) {
-        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
             NumError(
                 "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
         else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
         }
     }
     if (marchResidual > kSteadyMarchSentinelThreshold) {
-        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
             NumError(
                 "PoÃ§o injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
         else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -4050,11 +4050,11 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, c
                 mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].fluicol.MasEspFlu(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / state.march.cells[state.march.lastCell].fluicol.MasEspFlu(1.01, 15.)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             for (int i = state.march.lastCell; i > 0; i--) {
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + gaslift::steadyInjectionPressureDrop(dependencies.gasLift, i);
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).smallValueTolerance) {
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -4074,11 +4074,11 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, c
                 mchute = -(state.march.cells[state.march.lastCell].acsr.ipr.ij * state.march.cells[state.march.lastCell].flui.MasEspGas(state.march.cells[state.march.lastCell].pres, state.march.cells[state.march.lastCell].temp) / (state.march.cells[0].flui.Deng * kAirDensityAtStandardConditions)) * (state.march.cells[state.march.lastCell].acsr.ipr.Pres - state.march.cells[state.march.lastCell].pres);
             for (int i = state.march.lastCell; i > 0; i--) {
                 state.march.cells[i - 1].pres = state.march.cells[i].pres + gaslift::steadyInjectionPressureDrop(dependencies.gasLift, i);
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).smallValueTolerance) {
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
@@ -4096,22 +4096,22 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, c
         marchResidual = marchInjectionSteady(state.march, dependencies, mchute);
         konta++;
         if (marchResidual < -kSteadyMarchSentinelThreshold) {
-            if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+            if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                 NumError(
                     "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
             else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
             }
         }
         if (marchResidual > kSteadyMarchSentinelThreshold) {
-            if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+            if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                 NumError(
                     "PoÃ§o injetor com problemas na iteracao na busca de um chute de pressao inicial, pressao muito alta");
             else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
@@ -4119,10 +4119,10 @@ double searchInjectionBottomHolePressure3(const SteadyStateSearchState &state, c
         }
     }
     if (konta >= 200) {
-        if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+        if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
             NumError("PoÃ§o injetor com problemas na iteracao");
         else {
-            if ((*state.march.globals).iterRede > 0)
+            if ((*state.march.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -4217,7 +4217,7 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state, c
         state.march.cells[0].betI = state.march.cells[0].bet;
         state.march.cells[1].betLI = state.march.cells[0].bet;
         i = 1;
-        while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= 1. && masfim >= -(*state.march.globals).localtiny) {
+        while (i <= state.march.lastCell && state.march.cells[i - 1].pres >= 1. && masfim >= -(*state.march.globals).smallValueTolerance) {
 
             advanceUpstreamSteadyPressure(state.march, i, 0);
             refreshUpstreamProductionPeriphery(state.march, i);
@@ -4233,28 +4233,28 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state, c
             masfim += (state.march.cells[i - 1].fontemassCR + state.march.cells[i - 1].fontemassLR + state.march.cells[i - 1].fontemassGR);
             i++;
             if (state.march.cells[i - 1].pres <= 1) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError("pressao menor que 1");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
                 }
-            } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).localtiny)) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+            } else if ((state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - state.march.cells[i - 1].pres) > -(*state.march.globals).smallValueTolerance)) {
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
                 }
-            } else if (i < (state.march.lastCell + 1) && masfim < -(*state.march.globals).localtiny) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+            } else if (i < (state.march.lastCell + 1) && masfim < -(*state.march.globals).smallValueTolerance) {
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError("Vazao massica de injeÃ§Ã£o menor que 0");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -4264,19 +4264,19 @@ double searchInjectionBottomHolePressure4(const SteadyStateSearchState &state, c
         if (i == state.march.lastCell + 1)
             guessNeedsCorrection = 0;
         else if (!(state.march.cells[i - 1].pres >= 1.)) { // stopped on the pressure
-            if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+            if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                 NumError("pressao menor que 1");
             else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
             }
         } else { // stopped on the mass flow
-            if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+            if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                 NumError("Vazao massica de injeÃ§Ã£o menor que 0");
             else {
-                if ((*state.march.globals).iterRede > 0)
+                if ((*state.march.globals).networkIteration > 0)
                     return -kSteadyConvergenceFailure;
                 else
                     return kSteadyConvergenceFailure;
@@ -4320,17 +4320,17 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, c
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
                 if (pchute < 0.5) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Poco injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).smallValueTolerance)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
         } else {
@@ -4355,17 +4355,17 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, c
                 double dxmed = 0.5 * (state.march.cells[i].dx + state.march.cells[i - 1].dx);
                 pchute += (rhol * 9.81 * sin(state.march.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2;
                 if (pchute < 0.5) {
-                    if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                    if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                         NumError(
                             "Poco injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                     else {
-                        if ((*state.march.globals).iterRede > 0)
+                        if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
                         else
                             return kSteadyConvergenceFailure;
                     }
                 }
-                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).localtiny)
+                if (state.march.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.march.cells[i - 1].acsr.ipr.Pres - pchute) > -(*state.march.globals).smallValueTolerance)
                     pchute = 1.01 * state.march.cells[i - 1].acsr.ipr.Pres;
             }
         }
@@ -4382,11 +4382,11 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, c
             marchResidual = marchInjectionSteady(state.march, dependencies, pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Poco injetor com problemas na iteracao na busca de um chute de pressao inicial, perda de carga muito alta");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;
@@ -4399,11 +4399,11 @@ double searchInjectionBottomHolePressure5(const SteadyStateSearchState &state, c
             marchResidual = marchInjectionSteady(state.march, dependencies, pchute);
             kontaiter++;
             if (kontaiter > 200) {
-                if ((*state.march.globals).chaverede == 0 && state.march.input.AP == 0)
+                if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
                     NumError(
                         "Poco injetor com problemas na iteracao na busca de um chute de vazao inicial, pressao muito alta");
                 else {
-                    if ((*state.march.globals).iterRede > 0)
+                    if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
                     else
                         return kSteadyConvergenceFailure;

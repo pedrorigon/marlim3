@@ -7,10 +7,10 @@
 #include "Elem2DPoroso.h"
 #include "UnitConversions.h"
 
-elem2dPoroso::elem2dPoroso(varGlob1D *Vvg1dSP, double **xcoor, int **noEle, int *tipo, double *atributo, int nVert, int nele, int nno,
+elem2dPoroso::elem2dPoroso(SimulationContext *context, double **xcoor, int **noEle, int *tipo, double *atributo, int nVert, int nele, int nno,
                            int vperm, int vtrans, int i, ProFlu vflup, tabelaPemRelOA vkRelOA, tabelaPemRelOG vkRelOG,
                            tabelaPresCapOA vpcOA, tabelaPresCapGO vpcGO) : TL(1), local(1, nVert + 1) {
-    vg1dSP = Vvg1dSP;
+    simulationContext = context;
 
     double vfluxCal = 0.;
     double vdt = 0.;
@@ -487,7 +487,7 @@ elem2dPoroso::elem2dPoroso(varGlob1D *Vvg1dSP, double **xcoor, int **noEle, int 
     }
 }
 elem2dPoroso::elem2dPoroso(const elem2dPoroso &velem) : TL(1), local(1, velem.cel2D.nvert + 1) {
-    vg1dSP = velem.vg1dSP;
+    simulationContext = velem.simulationContext;
     cel2D.nvert = velem.cel2D.nvert;
     cel2D.dim = velem.cel2D.dim;
     cel2D.indEle = velem.cel2D.indEle;
@@ -991,7 +991,7 @@ elem2dPoroso &elem2dPoroso::operator=(const elem2dPoroso &velem) {
             delete[] fonteTHR;
             delete[] cel2D.vecSDif;
         }
-        vg1dSP = velem.vg1dSP;
+        simulationContext = velem.simulationContext;
         cel2D.nvert = velem.cel2D.nvert;
         cel2D.dim = velem.cel2D.dim;
         cel2D.indEle = velem.cel2D.indEle;
@@ -1518,7 +1518,7 @@ void elem2dPoroso::atualizaCC(int i) {
     double raz;
     if (diri == 1) {
 
-        indraz(ind, raz, (*vg1dSP).tempo, CC.ccDir[kcc].nserie, CC.ccDir[kcc].tempo);
+        indraz(ind, raz, (*simulationContext).solverTime, CC.ccDir[kcc].nserie, CC.ccDir[kcc].tempo);
         double inf = CC.ccDir[kcc].val[ind];
         double sup;
         double infSat = CC.ccDir[kcc].valSat[ind];
@@ -1534,7 +1534,7 @@ void elem2dPoroso::atualizaCC(int i) {
         }
     } else if (vn == 1) {
 
-        indraz(ind, raz, (*vg1dSP).tempo, CC.ccVN[kcc].nserie, CC.ccVN[kcc].tempo);
+        indraz(ind, raz, (*simulationContext).solverTime, CC.ccVN[kcc].nserie, CC.ccVN[kcc].tempo);
         double inf = CC.ccVN[kcc].val[ind];
         double sup;
         double infSat = CC.ccVN[kcc].valSat[ind];
@@ -1550,7 +1550,7 @@ void elem2dPoroso::atualizaCC(int i) {
         }
     } else if (rich == 1) {
 
-        indraz(ind, raz, (*vg1dSP).tempo, CC.ccRic[kcc].nserie, CC.ccRic[kcc].tempo);
+        indraz(ind, raz, (*simulationContext).solverTime, CC.ccRic[kcc].nserie, CC.ccRic[kcc].tempo);
         double inf = CC.ccRic[kcc].valAmb[ind];
         double sup;
         double infSat = CC.ccRic[kcc].valSat[ind];

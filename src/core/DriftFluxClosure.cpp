@@ -17,7 +17,7 @@
 #include "celula3.h"
 #include "estrat.h"
 #include "mapa.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 
 static_assert(std::is_same<decltype(abs(1.5)), double>::value,
               "abs() must resolve to the double overload; see the Colebrook "
@@ -433,15 +433,15 @@ double transientLiquidHoldup(const ClosureState &state, int cellIndex) {
         liquidHoldup = 1. - state.cells[cellIndex].alf;
     if (Source::gasForSign(state.cells, cellIndex) < 0)
         liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-    if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).localtiny * 1e-5) {
-        if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) > (*state.globals).localtiny)
+    if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).smallValueTolerance * 1e-5) {
+        if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).smallValueTolerance && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).smallValueTolerance && fabs(state.cells[cellIndex - 1].alfPigD) > (*state.globals).smallValueTolerance && fabs(1. - state.cells[cellIndex - 1].alfPigD) > (*state.globals).smallValueTolerance)
             liquidHoldup = 1. - state.cells[cellIndex - 1].alfPigD;
-        else if (fabs(state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
+        else if (fabs(state.cells[cellIndex - 1].alfPigD) < (*state.globals).smallValueTolerance && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).smallValueTolerance && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).smallValueTolerance && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).smallValueTolerance)
             liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
         else
             liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
     }
-    if (liquidHoldup < (*state.globals).localtiny || liquidHoldup > 1. - (*state.globals).localtiny)
+    if (liquidHoldup < (*state.globals).smallValueTolerance || liquidHoldup > 1. - (*state.globals).smallValueTolerance)
         liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.cells[cellIndex - 1].alfPigD);
     return liquidHoldup;
 }
@@ -518,15 +518,15 @@ double inletLiquidHoldup(const ClosureState &state, int cellIndex) {
     double liquidHoldup = 1 - state.inletVoidFraction;
     if (Source::gasForSign(state.cells, cellIndex) < 0)
         liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
-    if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).localtiny * 1e-5) {
-        if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).localtiny && fabs(state.inletVoidFraction) > (*state.globals).localtiny && fabs(1. - state.inletVoidFraction) > (*state.globals).localtiny)
+    if (fabs(Source::gasForSign(state.cells, cellIndex)) < (*state.globals).smallValueTolerance * 1e-5) {
+        if (fabs(state.cells[cellIndex].alfPigE) < (*state.globals).smallValueTolerance && fabs(1. - state.cells[cellIndex].alfPigE) < (*state.globals).smallValueTolerance && fabs(state.inletVoidFraction) > (*state.globals).smallValueTolerance && fabs(1. - state.inletVoidFraction) > (*state.globals).smallValueTolerance)
             liquidHoldup = 1 - state.inletVoidFraction;
-        else if (fabs(state.inletVoidFraction) < (*state.globals).localtiny && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).localtiny && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).localtiny && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).localtiny)
+        else if (fabs(state.inletVoidFraction) < (*state.globals).smallValueTolerance && fabs(1. - state.cells[cellIndex - 1].alfPigD) < (*state.globals).smallValueTolerance && fabs(state.cells[cellIndex].alfPigE) > (*state.globals).smallValueTolerance && fabs(1. - state.cells[cellIndex].alfPigE) > (*state.globals).smallValueTolerance)
             liquidHoldup = 1. - state.cells[cellIndex].alfPigE;
         else
             liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
     }
-    if (liquidHoldup < (*state.globals).localtiny || liquidHoldup > 1. - (*state.globals).localtiny)
+    if (liquidHoldup < (*state.globals).smallValueTolerance || liquidHoldup > 1. - (*state.globals).smallValueTolerance)
         liquidHoldup = 0.5 * (1. - state.cells[cellIndex].alfPigE + 1. - state.inletVoidFraction);
     return liquidHoldup;
 }

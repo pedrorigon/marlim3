@@ -9,7 +9,7 @@
 #include "TrocaCalor.h"
 #include "Vetor.h"
 #include "acessorios.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include <algorithm>
 #include <complex>
 #include <fstream>
@@ -433,7 +433,7 @@ class Cel {
 
     int miniTabAtraso;
 
-    varGlob1D *vg1dSP;
+    SimulationContext *simulationContext;
 
     int modoParafina;
     int hidratado; //alteracao hidratos modelo 3
@@ -461,7 +461,7 @@ class Cel {
 
     detalhaParafina detParCel;
 
-    Cel(varGlob1D *Vvg1dSP = 0, const DadosGeo vdutoL = DadosGeo(),
+    Cel(SimulationContext *context = 0, const DadosGeo vdutoL = DadosGeo(),
         const DadosGeo vduto = DadosGeo(),
         const DadosGeo vdutoR = DadosGeo(),
         const ProFlu vflui = ProFlu(),

@@ -26,7 +26,7 @@
 #include "SisProd.h"
 #include "estruturas.h"
 #include "SisProdTrendOutput.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 
 #include <cstdio>
 #include <fstream>
@@ -329,8 +329,8 @@ int main(int argc, char **argv) {
         int serviceCrossCount[kSeries] = {3, 4};
         int serviceCrossBase[kSeries] = {2, 1};
 
-        varGlob1D globals;
-        globals.sequenciaAP = 3 + configuration % 4;
+        SimulationContext globals;
+        globals.parametricCaseIndex = 3 + configuration % 4;
 
         const int branchIndex = branch ? 5 : -1;
         const int printPassCount = pass;

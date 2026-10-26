@@ -11,7 +11,7 @@
 // still be compiled on its own.
 class Cel;
 class Ler;
-struct varGlob1D;
+struct SimulationContext;
 
 namespace driftflux {
 namespace correlations {
@@ -128,8 +128,8 @@ struct ClosureState {
     /// Index of the last cell -- SProd::ncel.
     const int &lastCell;
     /// Shared 1D globals; only localtiny is read, plus the pointer handed to
-    /// the flow-pattern map -- SProd::vg1dSP.
-    varGlob1D *const &globals;
+    /// the flow-pattern map -- SProd::simulationContext.
+    SimulationContext *const &globals;
     /// Input deck -- SProd::arq. Read for mapaArranjo, escorregaTran,
     /// escorregaPerm and AceleraConvergPerm.
     const Ler &input;

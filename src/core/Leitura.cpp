@@ -269,7 +269,7 @@ void Ler::iniciarVariaveis() {
 
 	estabCol=0;
 
-	vg1dSP=0;
+	simulationContext=0;
 
 	modoXY=0;
 	xProd0=0;
@@ -503,7 +503,7 @@ void Ler::iniciarVariaveisConstrutorDefault() {
 
 	estabCol=0;
 
-	vg1dSP=0;
+	simulationContext=0;
 
 	modoXY=0;
 	xProd0=0;
@@ -600,14 +600,14 @@ void Ler::iniciarVariaveisConstrutorDefault() {
  * Fields Construtor ligado ao objeto de log da aplicacao.
  */
 Ler::Ler(const string IMPFILE, const string ARQUIVO_LOG,
-		const tipoValidacaoJson_t VALIDACAO, const tipoSimulacao_t SIMULACAO, int vreverso,varGlob1D* Vvg1dSP, int vredeperm) {
+		const tipoValidacaoJson_t VALIDACAO, const tipoSimulacao_t SIMULACAO, int vreverso,SimulationContext* context, int vredeperm) {
 	iniciarVariaveis();
 	impfile = IMPFILE;
 	arquivoLog = ARQUIVO_LOG;
 	validacaoJson = VALIDACAO;
 	tipoSimulacao = SIMULACAO;
 	reverso=vreverso;
-	vg1dSP=Vvg1dSP;
+	simulationContext=context;
 	redeperm=vredeperm;
 	lerArq();
 }
@@ -623,7 +623,7 @@ Ler::Ler(const Ler& vler) {
 	tipoSimulacao = vler.tipoSimulacao;
 	reverso=vler.reverso;
 	redeperm=vler.redeperm;
-	vg1dSP=vler.vg1dSP;
+	simulationContext=vler.simulationContext;
 	lerArq();
 }
 
@@ -1116,7 +1116,7 @@ Ler& Ler::operator =(const Ler& vler) {
 		if(geoAcop.size()>0)geoAcop.clear();
 
 	    iniciarVariaveis();
-	    vg1dSP=vler.vg1dSP;
+	    simulationContext=vler.simulationContext;
 	    impfile = vler.impfile;
 		arquivoLog = vler.arquivoLog;
 		validacaoJson = vler.validacaoJson;
@@ -1124,7 +1124,7 @@ Ler& Ler::operator =(const Ler& vler) {
 		reverso=vler.reverso;
 		redeperm=vler.redeperm;
 		lerArq();
-		if((*vg1dSP).chaverede==1)tabelaDinamica=vler.tabelaDinamica;
+		if((*simulationContext).networkMode==1)tabelaDinamica=vler.tabelaDinamica;
 	}
 
 	return *this;
@@ -1613,14 +1613,14 @@ void Ler::copiaSemJson(Ler& vler) {
 		if(geoAcop.size()>0)geoAcop.clear();
 
 	    iniciarVariaveis();
-	    vg1dSP= vler.vg1dSP;
+	    simulationContext= vler.simulationContext;
 	    impfile = vler.impfile;
 		arquivoLog = vler.arquivoLog;
 		validacaoJson = vler.validacaoJson;
 		tipoSimulacao = vler.tipoSimulacao;
 		reverso=vler.reverso;
 		copiaArq(vler);
-		if((*vg1dSP).chaverede==1)tabelaDinamica=vler.tabelaDinamica;
+		if((*simulationContext).networkMode==1)tabelaDinamica=vler.tabelaDinamica;
 	}
 }
 
@@ -2415,15 +2415,15 @@ void Ler::parse_configuracao_inicial(
 			if (configuracao_inicial_json.tipoFluido().exists())
 				tipoFluido =
 						configuracao_inicial_json.tipoFluido();
-			if((*vg1dSP).tipoFluidoRedeGlob==1)tipoFluido=1;
+			if((*simulationContext).networkFluidBalanceMode==1)tipoFluido=1;
 
 			if (configuracao_inicial_json.tipoModeloDrift().exists())
 				tipoModeloDrift =
 						configuracao_inicial_json.tipoModeloDrift();
-			if((*vg1dSP).chaverede==1 ){
-				tipoModeloDrift=(*vg1dSP).tipoModeloDrift;
+			if((*simulationContext).networkMode==1 ){
+				tipoModeloDrift=(*simulationContext).driftFluxModel;
 			}
-			else (*vg1dSP).tipoModeloDrift=tipoModeloDrift;
+			else (*simulationContext).driftFluxModel=tipoModeloDrift;
 
 			// condicao inicial: 0 â€“ informada pelo usuario, 1 â€“ permanente, 2 â€“ restart, 3 â€“ descarga de gas lift
 			int condicaoInicial = 1;
@@ -2565,11 +2565,11 @@ void Ler::parse_configuracao_inicial(
 						"iniFluidoP requerido", chaveJson,
 						"modeloFluidoTabelaFlash=false");
 			}
-			if((*vg1dSP).chaverede==0){
+			if((*simulationContext).networkMode==0){
 				
 				if(tipoModeloDrift==1){
 					transiente = configuracao_inicial_json.transiente();
-					(*vg1dSP).simulaTransiente=transiente;
+					(*simulationContext).transientSimulationEnabled=transiente;
 				}
 				else{
 					if(configuracao_inicial_json.transiente().exists()){
@@ -2580,12 +2580,12 @@ void Ler::parse_configuracao_inicial(
 		  	      		          "", "");
 					}
 					transiente = 0;
-					(*vg1dSP).simulaTransiente=transiente;
+					(*simulationContext).transientSimulationEnabled=transiente;
 				}
 			}
 			else{
-				if((*vg1dSP).tipoModeloDrift==1)
-					transiente=(*vg1dSP).chaveredeT;
+				if((*simulationContext).driftFluxModel==1)
+					transiente=(*simulationContext).networkTransientEnabled;
 				else transiente=0;
 			}
 
@@ -2634,7 +2634,7 @@ void Ler::parse_configuracao_inicial(
 			    	limTransMass=configuracao_inicial_json.Avancado().limTransMass();
 			    else limTransMass=10.;
 			    if (configuracao_inicial_json.Avancado().CriterioDTMin().exists())
-			    	(*vg1dSP).CritDTMin=configuracao_inicial_json.Avancado().CriterioDTMin();
+                    (*simulationContext).fractionRestartVelocityThreshold=configuracao_inicial_json.Avancado().CriterioDTMin();
 			    if (configuracao_inicial_json.Avancado().CriterioBuscaFalsaCorda().exists())
 			    	buscaFC=configuracao_inicial_json.Avancado().CriterioBuscaFalsaCorda();
 			    if (configuracao_inicial_json.Avancado().CriterioConvergPerm().exists())
@@ -2732,8 +2732,8 @@ void Ler::parse_configuracao_inicial(
 		    	Tempsonico[0]=0.;
 			}
 
-			(*vg1dSP).ntrd=nthrd;
-			(*vg1dSP).ntrd3DP=threadP3D;
+			(*simulationContext).solverThreadCount=nthrd;
+			(*simulationContext).poisson3DThreadCount=threadP3D;
 
 			ConContEntrada = 0;
 			if (configuracao_inicial_json.condicaoPressao().exists()
@@ -3556,7 +3556,7 @@ void Ler::parse_fluidos_producao(
 						vcorrOS =
 								fluidos_producao_json[indAtivo].modeloOleoSubSaturado();
 
-					flup[i] = ProFlu(vg1dSP, api, rgo, deng, bsw,
+					flup[i] = ProFlu(simulationContext, api, rgo, deng, bsw,
 							denag, templ, lvisl, temph, lvish, tipoemul, aemul,
 							bemul, PHI100, bswCorte, tabp, yco2, corrC, corrSat,
 							vcorrOM, vcorrOV, vcorrOS, flashCompleto, identificadores[i]);
@@ -3998,7 +3998,7 @@ void Ler::parse_fluidos_producao(
 
 
 
-					flup[i] = ProFlu(vg1dSP, api, rgo, deng, bsw,
+					flup[i] = ProFlu(simulationContext, api, rgo, deng, bsw,
 							denag, templ, lvisl, temph, lvish, tipoemul, aemul,
 							bemul,PHI100, bswCorte, tabp, yco2, corrC, corrSat,
 							vcorrOM, vcorrOV, vcorrOS, flashCompleto, identificadores[i]);
@@ -4471,7 +4471,7 @@ void Ler::parse_fluidos_producao(
 						api=40.;
 					}
 
-					flup[i] = ProFlu(vg1dSP, api, rgo, deng, bsw,
+					flup[i] = ProFlu(simulationContext, api, rgo, deng, bsw,
 							denag, templ, lvisl, temph, lvish, tipoemul, aemul,
 							bemul, PHI100, bswCorte, tabp, yco2, corrC, corrSat,
 							vcorrOM, vcorrOV, vcorrOS, flashCompleto, identificadores[i],npseudo);
@@ -4750,7 +4750,7 @@ void Ler::parse_fluido_gas(JSON_entrada_fluidoGas& fluido_gas_json) {
 			if (fluido_gas_json.fracCO2().exists())yco2 = fluido_gas_json.fracCO2();
 			int corrC = fluido_gas_json.correlacaoCritica();
 
-			flug = ProFlu(vg1dSP, api, rgo, deng, bsw, denag, templ, lvisl,
+			flug = ProFlu(simulationContext, api, rgo, deng, bsw, denag, templ, lvisl,
 				temph, lvish, tipoemul, aemul, bemul,PHI100, bswCorte, tabg, yco2,
 				corrC);
 			flug.zdranP = zdranP;
@@ -5457,7 +5457,7 @@ void Ler::parse_unidades_producao(
 				}
 
 				if ((perm == 0 && descarga == 0)
-						|| ((*vg1dSP).chaverede == 1 && redeperm==0)) {
+						|| ((*simulationContext).networkMode == 1 && redeperm==0)) {
 					// caso uma das chaves 'temp', 'pressao', 'holdup', 'bet', 'uls', 'ugs' inexista
 					if (!dutos_producao_json[indAtivo].condicoesIniciais().temp().exists()
 							|| !dutos_producao_json[indAtivo].condicoesIniciais().pressao().exists()
@@ -5614,7 +5614,7 @@ void Ler::parse_unidades_producao(
 						unidadeP[ind].dxVar[indj] = 1.0;
 
 					if ((perm == 0 && descarga == 0)
-							|| ((*vg1dSP).chaverede == 1 && redeperm==0)) {
+							|| ((*simulationContext).networkMode == 1 && redeperm==0)) {
 						if(dutos_producao_json[indAtivo].condicoesIniciais().temp().size()>indj)
 						unidadeP[ind].var[0][indj] =
 								dutos_producao_json[indAtivo].condicoesIniciais().temp()[j];
@@ -6097,7 +6097,7 @@ void Ler::parse_unidades_producaoAmb(
 				}
 
 				if ((perm == 0 && descarga == 0)
-						|| ((*vg1dSP).chaverede == 1)) {
+						|| ((*simulationContext).networkMode == 1)) {
 					// caso uma das chaves 'temp', 'pressao', 'holdup', 'bet', 'uls', 'ugs' inexista
 					if (!dutos_producao_json[indAtivo].condicoesIniciaisEAmbiente().temp().exists()
 							|| !dutos_producao_json[indAtivo].condicoesIniciaisEAmbiente().pressao().exists()
@@ -6254,7 +6254,7 @@ void Ler::parse_unidades_producaoAmb(
 						unidadeP[ind].dxVar[indj] = 1.0;
 
 					if ((perm == 0 && descarga == 0)
-							|| ((*vg1dSP).chaverede == 1 )) {
+							|| ((*simulationContext).networkMode == 1 )) {
 						if(dutos_producao_json[indAtivo].condicoesIniciaisEAmbiente().temp().size()>indj)
 						unidadeP[ind].var[0][indj] =
 								dutos_producao_json[indAtivo].condicoesIniciaisEAmbiente().temp()[j];
@@ -6648,7 +6648,7 @@ void Ler::parse_unidades_servico(
 
 				// caso nÃ£o permanente e sem descarga
 				if ((perm == 0 && descarga == 0)
-						|| ((*vg1dSP).chaverede == 1 )) {
+						|| ((*simulationContext).networkMode == 1 )) {
 					// caso uma das chaves "temp", "pressao", "vazaoMassicaGas" inexista
 					if (!dutos_servico_json[indAtivo].condicoesIniciais().temp().exists()
 							|| !dutos_servico_json[indAtivo].condicoesIniciais().pressao().exists()
@@ -6769,7 +6769,7 @@ void Ler::parse_unidades_servico(
 						}
 					}
 					if ((perm == 0 && descarga == 0)
-							|| ((*vg1dSP).chaverede == 1 )) {
+							|| ((*simulationContext).networkMode == 1 )) {
 
 						if(dutos_servico_json[indAtivo].condicoesIniciais().temp().size()>j)
 						unidadeG[i].var[0][j] =
@@ -7134,7 +7134,7 @@ void Ler::parse_unidades_servicoAmb(
 
 				// caso nÃ£o permanente e sem descarga
 				if ((perm == 0 && descarga == 0)
-						|| ((*vg1dSP).chaverede == 1 )) {
+						|| ((*simulationContext).networkMode == 1 )) {
 					// caso uma das chaves "temp", "pressao", "vazaoMassicaGas" inexista
 					if (!dutos_servico_json[indAtivo].condicoesIniciaisEAmbiente().temp().exists()
 							|| !dutos_servico_json[indAtivo].condicoesIniciaisEAmbiente().pressao().exists()
@@ -7255,7 +7255,7 @@ void Ler::parse_unidades_servicoAmb(
 						}
 					}
 					if ((perm == 0 && descarga == 0)
-							|| ((*vg1dSP).chaverede == 1 )) {
+							|| ((*simulationContext).networkMode == 1 )) {
 
 						if(dutos_servico_json[indAtivo].condicoesIniciaisEAmbiente().temp().size()>j)
 						unidadeG[i].var[0][j] =
@@ -12637,7 +12637,7 @@ void Ler::lerArq() {
 			// definir valores default para os atributos do elemento "fluidosProducao"
 			nfluP = 1;
 			flup = new ProFlu [nfluP];
-			flup[0] = ProFlu(vg1dSP, 20, 100., 0.7, 0., 1., 20, 10, 40,
+			flup[0] = ProFlu(simulationContext, 20, 100., 0.7, 0., 1., 20, 10, 40,
 					2, 0, 0.8, tabp, 0, 0);
 			flup[0].npontos = npontos;
 		}
@@ -12703,7 +12703,7 @@ void Ler::lerArq() {
 			int corrC = 1;
 			if(flashCompleto!=2){
 
-					flug = ProFlu(vg1dSP, api, rgo, deng, bsw, denag, templ, lvisl,
+					flug = ProFlu(simulationContext, api, rgo, deng, bsw, denag, templ, lvisl,
 						temph, lvish, tipoemul, aemul, bemul,PHI100, bswCorte, tabg, yco2,
 						corrC);
 					flug.zdranP = zdranP;
@@ -14887,7 +14887,7 @@ void Ler::listaevento(int inic, int extrem) {
 	if (lingas > 0)
 		for (int i = 0; i < master2.parserie; i++)
 			evento.push_back(master2.tempo[i]);
-	if (controDesc == 0 && ((*vg1dSP).chaverede == 0 || extrem == 1)) {
+	if (controDesc == 0 && ((*simulationContext).networkMode == 0 || extrem == 1)) {
 		for (int i = 0; i < psep.parserie; i++)
 			evento.push_back(psep.tempo[i]);
 	}
@@ -14927,11 +14927,11 @@ void Ler::listaevento(int inic, int extrem) {
 				replica = evento[i];
 		}
 	}
-	if (((*vg1dSP).chaverede == 0 || inic == 1) && ConContEntrada == 1) {
+	if (((*simulationContext).networkMode == 0 || inic == 1) && ConContEntrada == 1) {
 		for (int i = 0; i < CCPres.parserie; i++)
 			evento.push_back(CCPres.tempo[i]);
 	}
-	if (((*vg1dSP).chaverede == 0 || inic == 1) && ConContEntrada == 2) {
+	if (((*simulationContext).networkMode == 0 || inic == 1) && ConContEntrada == 2) {
 		for (int i = 0; i < CCVPres.parserie; i++)
 			evento.push_back(CCVPres.tempo[i]);
 	}
@@ -15368,7 +15368,7 @@ void Ler::geraevento(int inic, int extrem) {
 		}
 	}
 
-	if (controDesc == 0 && ((*vg1dSP).chaverede == 0 || extrem == 1)) {
+	if (controDesc == 0 && ((*simulationContext).networkMode == 0 || extrem == 1)) {
 		if (psep.parserie > 1) {
 			for (int j = 0; j < psep.parserie; j++) {
 				if (j < psep.parserie - 1) {
@@ -15537,7 +15537,7 @@ void Ler::geraevento(int inic, int extrem) {
 			logevento.push_back(e);
 		}
 	}
-	if (((*vg1dSP).chaverede == 0 || inic == 1) && ConContEntrada == 1) {
+	if (((*simulationContext).networkMode == 0 || inic == 1) && ConContEntrada == 1) {
 		for (int i = 0; i < CCPres.parserie - 1; i++) {
 			if ((fabs(CCPres.pres[i] - CCPres.pres[i + 1]) > 1e-15)
 					|| (fabs(CCPres.temperatura[i] - CCPres.temperatura[i + 1])
@@ -15546,12 +15546,12 @@ void Ler::geraevento(int inic, int extrem) {
 					|| (fabs(CCPres.bet[i] - CCPres.bet[i + 1]) > 1e-15)) {
 				e.instante = CCPres.tempo[i];
 				e.duracao = CCPres.tempo[i + 1] - CCPres.tempo[i];
-				if (fabs(CCPres.pres[i] - CCPres.pres[i + 1]) > (*vg1dSP).localtiny
+				if (fabs(CCPres.pres[i] - CCPres.pres[i + 1]) > (*simulationContext).smallValueTolerance
 						|| fabs(
 								CCPres.temperatura[i]
-										- CCPres.temperatura[i + 1]) > (*vg1dSP).localtiny
-						|| fabs(CCPres.tit[i] - CCPres.tit[i + 1]) > (*vg1dSP).localtiny
-						|| fabs(CCPres.bet[i] - CCPres.bet[i + 1]) > (*vg1dSP).localtiny)
+										- CCPres.temperatura[i + 1]) > (*simulationContext).smallValueTolerance
+						|| fabs(CCPres.tit[i] - CCPres.tit[i + 1]) > (*simulationContext).smallValueTolerance
+						|| fabs(CCPres.bet[i] - CCPres.bet[i + 1]) > (*simulationContext).smallValueTolerance)
 					e.descricao = "Alterando Coondicao de Entrada da Tubulacao";
 				e.estIni = CCPres.tempo[i];
 				e.estFim = CCPres.tempo[i + 1];
@@ -15560,7 +15560,7 @@ void Ler::geraevento(int inic, int extrem) {
 			}
 		}
 	}
-	if (((*vg1dSP).chaverede == 0 || inic == 1) && ConContEntrada == 2) {
+	if (((*simulationContext).networkMode == 0 || inic == 1) && ConContEntrada == 2) {
 		for (int i = 0; i < CCVPres.parserie - 1; i++) {
 			if ((fabs(CCVPres.pres[i] - CCVPres.pres[i + 1]) > 1e-15)
 					|| (fabs(CCVPres.temperatura[i] - CCVPres.temperatura[i + 1])
@@ -15569,12 +15569,12 @@ void Ler::geraevento(int inic, int extrem) {
 					|| (fabs(CCVPres.bet[i] - CCVPres.bet[i + 1]) > 1e-15)) {
 				e.instante = CCVPres.tempo[i];
 				e.duracao = CCVPres.tempo[i + 1] - CCVPres.tempo[i];
-				if (fabs(CCVPres.pres[i] - CCVPres.pres[i + 1]) > (*vg1dSP).localtiny
+				if (fabs(CCVPres.pres[i] - CCVPres.pres[i + 1]) > (*simulationContext).smallValueTolerance
 						|| fabs(
 								CCVPres.temperatura[i]
-										- CCVPres.temperatura[i + 1]) > (*vg1dSP).localtiny
-						|| fabs(CCVPres.mass[i] - CCVPres.mass[i + 1]) > (*vg1dSP).localtiny
-						|| fabs(CCVPres.bet[i] - CCVPres.bet[i + 1]) > (*vg1dSP).localtiny)
+										- CCVPres.temperatura[i + 1]) > (*simulationContext).smallValueTolerance
+						|| fabs(CCVPres.mass[i] - CCVPres.mass[i + 1]) > (*simulationContext).smallValueTolerance
+						|| fabs(CCVPres.bet[i] - CCVPres.bet[i + 1]) > (*simulationContext).smallValueTolerance)
 					e.descricao = "Alterando Coondicao de Entrada da Tubulacao";
 				e.estIni = CCVPres.tempo[i];
 				e.estFim = CCVPres.tempo[i + 1];
@@ -15742,7 +15742,7 @@ void Ler::novatrans(TransCal& transfer,
 
 	if (equilterm == 1 && fabs(vint)<1e-15)vint=0.1;
 
-	transfer = TransCal(vg1dSP,geom, perm, vncamada, vdrcamada, vTcamada,
+	transfer = TransCal(simulationContext,geom, perm, vncamada, vdrcamada, vTcamada,
 			tint, text, 0., vint, vext, dircon, dt, ki, cpi, rhoi, visci, ke,
 			cpe, rhoe, visce, vformacao, ambext, formacPoc[kL].tempo,
 			formacPoc[kL].cond, formacPoc[kL].cp, formacPoc[kL].rho, pres);
@@ -16090,7 +16090,7 @@ void Ler::geracelp(Cel* celula) {
 				celp[i].cpextern, celp[i].rhoextern, celp[i].viscextern,
 				celp[i].formacCel, celp[i].lito, celp[i].ambext,
 				units::kKgfPerCm2PerBar + celp[i].profundiM * 1000 * 9.81 / units::kPascalPerKgfPerCm2, dxC);
-		celula[i] = Cel(vg1dSP,dutosMRT[idutoL], dutosMRT[iduto],
+		celula[i] = Cel(simulationContext,dutosMRT[idutoL], dutosMRT[iduto],
 				dutosMRT[idutoR], flup[indfluPIni], fluc, tmedL, tmed, tmedR,
 				tmed, pmedL, pmed, pmedR, vML, vMC, vMR, vMliqL, vMliq, vMliqR,
 				vazioL, vazio, vazioR, betL, bet, betR, vdxL, vdx, vdxR, dtmax,
@@ -16106,7 +16106,7 @@ void Ler::geracelp(Cel* celula) {
 			double vdiamI=celula[i].calor.geom.a;
 			int camadaExt=celula[i].calor.geom.ncamadas-1;
 			double vdiamE=celula[i].calor.geom.diamC[camadaExt];
-			celula[i].calor.poisson2D=solverP(vg1dSP,celp[i].difusTerm2DJSON,vCondGlob,vCondLoc,vhE,vhInt,celula[i].calor.Tint,
+			celula[i].calor.poisson2D=solverP(simulationContext,celp[i].difusTerm2DJSON,vCondGlob,vCondLoc,vhE,vhInt,celula[i].calor.Tint,
 					celula[i].calor.Textern1,vdiamI,vdiamE,i);
 		}
 		if(modoDifus3D==1){
@@ -16461,7 +16461,7 @@ void Ler::gerafPoroRadFonte(Cel* celula) {
 	for (int i = 0; i < nPoroRad; i++) {
 
 		int iposp = porosoRad[i].posicP;
-		PorosRadSimp poroRadMR3(porosoRad[i].nomeArquivoEntrada,vg1dSP);
+		PorosRadSimp poroRadMR3(porosoRad[i].nomeArquivoEntrada,simulationContext);
 		celula[iposp].acsr.tipo = 15;
 		celula[iposp].acsr.radialPoro = poroRadMR3;
 		celula[iposp].acsr.radialPoro.posicMarlim=porosoRad[i].comp;
@@ -16474,7 +16474,7 @@ void Ler::gerafPoro2DFonte(Cel* celula) {
 	for (int i = 0; i < nPoro2D; i++) {
 
 		int iposp = poroso2D[i].posicP;
-		solverPoro poro2DMR3(vg1dSP,poroso2D[i].nomeArquivoEntrada);
+		solverPoro poro2DMR3(simulationContext,poroso2D[i].nomeArquivoEntrada);
 		celula[iposp].acsr.tipo = 16;
 		celula[iposp].acsr.poroso2D = poro2DMR3;
 		celula[iposp].acsr.poroso2D.posicMarlim=poroso2D[i].comp;
@@ -16850,7 +16850,7 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 		estadosup = VcorrecaoMassaEspLiq[ind];
 	correcaoMassaEspLiq=(estadoinf * raz + (1 - raz) * estadosup);
 
-	if (ConContEntrada ==1 && ((*vg1dSP).chaverede == 0 || inicio == 1 || (*vg1dSP).chaveRedeParalela!=0)) {
+	if (ConContEntrada ==1 && ((*simulationContext).networkMode == 0 || inicio == 1 || (*simulationContext).parallelNetworkMode!=0)) {
 		indraz(ind, raz, tempo, CCPres.parserie, CCPres.tempo);
 		double inf = CCPres.pres[ind];
 		double sup;
@@ -16892,7 +16892,7 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 
 
 	}
-	else if (ConContEntrada ==2 && ((*vg1dSP).chaverede == 0 || inicio == 1)) {
+	else if (ConContEntrada ==2 && ((*simulationContext).networkMode == 0 || inicio == 1)) {
 		indraz(ind, raz, tempo, CCVPres.parserie, CCVPres.tempo);
 		double inf = CCVPres.pres[ind];
 		double sup;
@@ -17121,7 +17121,7 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 	if (npig > 0) {
 		for (int i = 0; i < npig; i++) {
 			if (tempo < (pig[i].tempo + 0.1)
-					&& tempo > (pig[i].tempo - (*vg1dSP).localtiny)) {
+					&& tempo > (pig[i].tempo - (*simulationContext).smallValueTolerance)) {
 				int celpos = pig[i].lanca;
 				celula[celpos].estadoPig = 1;
 				celula[celpos].razPig = 0.5;
@@ -17156,7 +17156,7 @@ void Ler::atualiza(int inicio, int extrem,int anel,
 		}
     }
 
-	if ((*vg1dSP).chaverede == 0 || extrem == 1) {
+	if ((*simulationContext).networkMode == 0 || extrem == 1) {
 		if (controDesc == 0) {
 			indraz(ind, raz, tempo, psep.parserie, psep.tempo);
 			double presinf = psep.pres[ind];
@@ -17562,7 +17562,7 @@ void Ler::imprimeProfile(Cel* const celula,
 				k++;
 			}
 			if (profp.ug == 1) {
-				if (celula[i].alf > (*vg1dSP).localtiny)
+				if (celula[i].alf > (*simulationContext).smallValueTolerance)
 					flut[i][k] = celula[i].QG
 						/ (celula[i].duto.area * celula[i].alf);
 				else
@@ -17570,7 +17570,7 @@ void Ler::imprimeProfile(Cel* const celula,
 				k++;
 			}
 			if (profp.ul == 1) {
-				if (celula[i].alf < 1. - (*vg1dSP).localtiny)
+				if (celula[i].alf < 1. - (*simulationContext).smallValueTolerance)
 					flut[i][k] = celula[i].QL
 						/ (celula[i].duto.area * (1. - celula[i].alf));
 				else
@@ -17885,7 +17885,7 @@ void Ler::imprimeProfile(Cel* const celula,
 			saidaP << pathPrefixoArqSaida << "PERFISP" << "-" << numero
 					<< ".dat";
 		else if (indTramo < 0 && AP==1)
-			saidaP << pathPrefixoArqSaida << "PERFISP"<<"-seqAP-"<<(*vg1dSP).sequenciaAP << "-" << numero
+			saidaP << pathPrefixoArqSaida << "PERFISP"<<"-seqAP-"<<(*simulationContext).parametricCaseIndex << "-" << numero
 					<< ".dat";
 		else
 			saidaP << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
@@ -17901,7 +17901,7 @@ void Ler::imprimeProfile(Cel* const celula,
 
 		string tmp = saidaP.str();
 		ofstream escreveIni(tmp.c_str(), ios_base::out);
-		escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador
+		escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*simulationContext).timeStepIndex
 				  << t(" # Posicao ANM= ", " # ANM position= ") << master1.comp
 				  << t(" # data e hora da simulacao ", " # simulation date and time ")
 				  << dataStr << " # " << t("Versao ", "Version ") << versao << "\n";
@@ -18281,7 +18281,7 @@ void Ler::imprimeProfileG(CelG* const celula,
 			saidaG << pathPrefixoArqSaida << "PERFISG" << "-" << aproxtempo
 					<< ".dat";
 		else if (indTramo < 0 && AP==1)
-			saidaG << pathPrefixoArqSaida << "PERFISG" <<"-seqAP-"<<(*vg1dSP).sequenciaAP << "-" << aproxtempo
+			saidaG << pathPrefixoArqSaida << "PERFISG" <<"-seqAP-"<<(*simulationContext).parametricCaseIndex << "-" << aproxtempo
 			<< ".dat";
 		else
 			saidaG << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
@@ -18298,7 +18298,7 @@ void Ler::imprimeProfileG(CelG* const celula,
 
 		string tmp = saidaG.str();
 		ofstream escreveIni(tmp.c_str(), ios_base::out);
-		escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador
+		escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*simulationContext).timeStepIndex
 				  << t(" # data e hora da simulacao ", " # simulation date and time ")
 				  << dataStr << " # " << t("Versao ", "Version ") << versao << "\n";
 		escreveIni << t(" Comprimento (m) Fronteira F;", " Length (m) Boundary F;");
@@ -18381,7 +18381,7 @@ void Ler::resumoPermanente(Cel* const celula, CelG* const celulaG, double pGsup,
 	if (indTramo < 0 && AP==0)
 		saidaR << pathPrefixoArqSaida << "resumoPermanente" << ".dat";
 	else if (indTramo < 0 && AP==1)
-		saidaR << pathPrefixoArqSaida << "resumoPermanente"<<"-seqAP-"<<(*vg1dSP).sequenciaAP <<".dat";
+		saidaR << pathPrefixoArqSaida << "resumoPermanente"<<"-seqAP-"<<(*simulationContext).parametricCaseIndex <<".dat";
 	else
 		saidaR << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
 				<< "resumoPermanente" << ".dat";
@@ -18533,7 +18533,7 @@ void Ler::resumoIntermitencia(Cel* const celula, int indTramo, int nrede){
 	if (indTramo < 0 && AP==0)
 		saidaR << pathPrefixoArqSaida << "resumoIntermitencia" << ".dat";
 	else if (indTramo < 0 && AP==1)
-		saidaR << pathPrefixoArqSaida << "resumoIntermitencia"<<"-seqAP-"<<(*vg1dSP).sequenciaAP <<".dat";
+		saidaR << pathPrefixoArqSaida << "resumoIntermitencia"<<"-seqAP-"<<(*simulationContext).parametricCaseIndex <<".dat";
 	else
 		saidaR << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
 				<< "resumoIntermitencia" << ".dat";
@@ -18614,12 +18614,12 @@ void Ler::relatorioCelulaUnitaria(Cel *const celula, int posic, int indTramo, in
 
 	ostringstream saidaR;
 	if (indTramo < 0 && AP==0)
-		saidaR << pathPrefixoArqSaida << "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*vg1dSP).lixo5 << ".dat";
+		saidaR << pathPrefixoArqSaida << "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*simulationContext).simulationTime << ".dat";
 	else if (indTramo < 0 && AP==1)
-		saidaR << pathPrefixoArqSaida <<  "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*vg1dSP).lixo5<<"-seqAP-"<<(*vg1dSP).sequenciaAP <<".dat";
+		saidaR << pathPrefixoArqSaida <<  "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*simulationContext).simulationTime<<"-seqAP-"<<(*simulationContext).parametricCaseIndex <<".dat";
 	else
 		saidaR << pathPrefixoArqSaida << "Tramo" << indTramo<<"-R-"<<nrede << "-"
-				<< "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*vg1dSP).lixo5 << ".dat";
+				<< "relatCelUnit-Pos-"<<posic<<"Tempo-"<<(*simulationContext).simulationTime << ".dat";
 	string tmp = saidaR.str();
 	ofstream escreveIni(tmp.c_str(), ios_base::out);
 	escreveIni << "us (m/s) Velocidade da mistura ; ";
@@ -18694,7 +18694,7 @@ void Ler::imprimeProfileTrans(
 			string tmp = saidaP.str();
 
 			ofstream escreveIni(tmp.c_str(), ios_base::out);
-			escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador << "\n";
+			escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*simulationContext).timeStepIndex << "\n";
 			escreveIni << t("# Tempo (s) = ", "# Time (s) = ") << tempo << "\n";
 			escreveIni << t("# Comprimento a partir do Fundo de Poco(m) = ", "# Length from Bottomhole (m) = ")
 					<< comprimento << "\n";
@@ -18740,7 +18740,7 @@ void Ler::imprimeProfileTransG(
 						<< proftransg.posic[i] << ".dat";
 			string tmp = saidaG.str();
 			ofstream escreveIni(tmp.c_str(), ios_base::out);
-			escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*vg1dSP).contador << "\n";
+			escreveIni << t("# Passo de tempo = ", "# Time step = ") << (*simulationContext).timeStepIndex << "\n";
 			escreveIni << t("# Tempo (s) = ", "# Time (s) = ") << tempo << "\n";
 			escreveIni << t("# Comprimento a partir da Plataforma (m) = ", "# Length from Platform (m) = ")
 					<< comprimento << "\n";
@@ -18800,7 +18800,7 @@ void Ler::imprimeTrend(Cel* const celula,
 			k++;
 		}
 		if (trendp[trend].ug == 1) {
-			if (celula[i].alf > (*vg1dSP).localtiny)
+			if (celula[i].alf > (*simulationContext).smallValueTolerance)
 				flut[linha][k] = celula[i].QG
 						/ (celula[i].duto.area * celula[i].alf);
 			else
@@ -18808,7 +18808,7 @@ void Ler::imprimeTrend(Cel* const celula,
 			k++;
 		}
 		if (trendp[trend].ul == 1) {
-			if (celula[i].alf < 1. - (*vg1dSP).localtiny)
+			if (celula[i].alf < 1. - (*simulationContext).smallValueTolerance)
 				flut[linha][k] = celula[i].QL
 						/ (celula[i].duto.area * (1. - celula[i].alf));
 			else
@@ -19288,7 +19288,7 @@ void Ler::imprimeTrend(Cel* const celula,
 					double alfI;
 					if(celula[i].QG>0)alfI=celula[i].alfL;
 					else alfI=celula[i].alf;
-					if (alfI > (*vg1dSP).localtiny)
+					if (alfI > (*simulationContext).smallValueTolerance)
 						val = celula[i].QG
 								/ (celula[i].duto.area * alfI);
 					else
@@ -19658,9 +19658,9 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 		tempoLatenciaDesc =arqAntigo.tempoLatenciaDesc;
 		indfluPIni = arqAntigo.indfluPIni;
         tipoModeloDrift=arqAntigo.tipoModeloDrift;
-		if((*vg1dSP).chaverede==0) (*vg1dSP).tipoModeloDrift=tipoModeloDrift;
+		if((*simulationContext).networkMode==0) (*simulationContext).driftFluxModel=tipoModeloDrift;
 		transiente = arqAntigo.transiente;
-		if((*vg1dSP).chaverede==0) (*vg1dSP).simulaTransiente=transiente;
+		if((*simulationContext).networkMode==0) (*simulationContext).transientSimulationEnabled=transiente;
 		transmass = arqAntigo.transmass;
 		chkv = arqAntigo.chkv;
 		modoDifus3D=arqAntigo.modoDifus3D;
@@ -19674,7 +19674,7 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 	    desligaPenalizaDT=arqAntigo.desligaPenalizaDT;
 	    controleDTvalv=arqAntigo.controleDTvalv;
 	    limTransMass=arqAntigo.limTransMass;
-	    (*vg1dSP).CritDTMin=(*arqAntigo.vg1dSP).CritDTMin;
+	    (*simulationContext).fractionRestartVelocityThreshold=(*arqAntigo.simulationContext).fractionRestartVelocityThreshold;
 	    buscaFC=arqAntigo.buscaFC;
 	    CriterioConvergPerm=arqAntigo.CriterioConvergPerm;
 	    AceleraConvergPerm=arqAntigo.AceleraConvergPerm;
@@ -19717,8 +19717,8 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 	    miniTabAtraso=arqAntigo.miniTabAtraso;
 	    miniTabDp=arqAntigo.miniTabDp;
 	    miniTabDt=arqAntigo.miniTabDt;
-        (*vg1dSP).ntrd=nthrd;
-		(*vg1dSP).ntrd3DP=threadP3D;
+        (*simulationContext).solverThreadCount=nthrd;
+		(*simulationContext).poisson3DThreadCount=threadP3D;
 		ConContEntrada = arqAntigo.ConContEntrada;
 		CCPres.parserie =arqAntigo.CCPres.parserie;
 		CCPres.indFluido=arqAntigo.CCPres.indFluido;
@@ -19965,7 +19965,7 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 				indFlup[iflu]=arqAntigo.indFlup[iflu];
 
 				//flup[iflu] = arqAntigo.flup[iflu]; //alteracao4
-				flup[iflu] = ProFlu(vg1dSP, arqAntigo.flup[iflu].API, arqAntigo.flup[iflu].RGO, arqAntigo.flup[iflu].Deng,arqAntigo.flup[iflu].BSW,
+				flup[iflu] = ProFlu(simulationContext, arqAntigo.flup[iflu].API, arqAntigo.flup[iflu].RGO, arqAntigo.flup[iflu].Deng,arqAntigo.flup[iflu].BSW,
 						arqAntigo.flup[iflu].Denag, arqAntigo.flup[iflu].TempL, arqAntigo.flup[iflu].LVisL, arqAntigo.flup[iflu].TempH,
 						arqAntigo.flup[iflu].LVisH, arqAntigo.flup[iflu].tipoemul, arqAntigo.flup[iflu].aemul,
 						arqAntigo.flup[iflu].bemul,arqAntigo.flup[iflu].PHI100, arqAntigo.flup[iflu].bswCorte, arqAntigo.flup[iflu].tab,
@@ -20084,7 +20084,7 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 				}
 				flash[i].TwoOrThree = arqAntigo.flash[i].TwoOrThree;
 
-				flup[i] = ProFlu(vg1dSP, arqAntigo.flup[i].API, arqAntigo.flup[i].RGO, arqAntigo.flup[i].Deng,arqAntigo.flup[i].BSW,
+				flup[i] = ProFlu(simulationContext, arqAntigo.flup[i].API, arqAntigo.flup[i].RGO, arqAntigo.flup[i].Deng,arqAntigo.flup[i].BSW,
 						arqAntigo.flup[i].Denag, arqAntigo.flup[i].TempL, arqAntigo.flup[i].LVisL, arqAntigo.flup[i].TempH,
 						arqAntigo.flup[i].LVisH, arqAntigo.flup[i].tipoemul, arqAntigo.flup[i].aemul,
 						arqAntigo.flup[i].bemul,arqAntigo.flup[i].PHI100, arqAntigo.flup[i].bswCorte, arqAntigo.flup[i].tab,
@@ -20187,7 +20187,7 @@ void Ler::copia_fluidos_producao(Ler& arqAntigo) {
 				compDet[i].kij = new double [npseudo*npseudo];
 				for(int inpseudo=0;inpseudo<npseudo*npseudo;inpseudo++)compDet[i].kij[inpseudo]=arqAntigo.compDet[i].kij[inpseudo];
 
-				flup[i] = ProFlu(vg1dSP, arqAntigo.flup[i].API, arqAntigo.flup[i].RGO, arqAntigo.flup[i].Deng,arqAntigo.flup[i].BSW,
+				flup[i] = ProFlu(simulationContext, arqAntigo.flup[i].API, arqAntigo.flup[i].RGO, arqAntigo.flup[i].Deng,arqAntigo.flup[i].BSW,
 						arqAntigo.flup[i].Denag, arqAntigo.flup[i].TempL, arqAntigo.flup[i].LVisL, arqAntigo.flup[i].TempH,
 						arqAntigo.flup[i].LVisH, arqAntigo.flup[i].tipoemul, arqAntigo.flup[i].aemul,
 						arqAntigo.flup[i].bemul,arqAntigo.flup[i].PHI100, arqAntigo.flup[i].bswCorte, arqAntigo.flup[i].tab,
@@ -20332,7 +20332,7 @@ void Ler::copia_fluido_complementar(Ler& arqAntigo) {
 void Ler::copia_fluido_gas(Ler& arqAntigo) {
 
 	/*//flug=arqAntigo.flug;
-	flug = ProFlu(vg1dSP, arqAntigo.flug.API, arqAntigo.flug.RGO, arqAntigo.flug.Deng,arqAntigo.flug.BSW,
+	flug = ProFlu(simulationContext, arqAntigo.flug.API, arqAntigo.flug.RGO, arqAntigo.flug.Deng,arqAntigo.flug.BSW,
 			arqAntigo.flug.Denag, arqAntigo.flug.TempL, arqAntigo.flug.LVisL, arqAntigo.flug.TempH,
 			arqAntigo.flug.LVisH, arqAntigo.flug.tipoemul, arqAntigo.flug.aemul,
 			arqAntigo.flug.bemul,arqAntigo.flug.PHI100, arqAntigo.flug.bswCorte, arqAntigo.flug.tab,

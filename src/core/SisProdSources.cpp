@@ -4,7 +4,7 @@
 #include "Leitura.h"
 #include "SisProdConstants.h"
 #include "celula3.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 
 #include <algorithm>
@@ -19,8 +19,8 @@ using sisprod::kGravity;
 namespace {
 
 void consumeHydrateFormationMass(const SourceState &state, double &gas_consumido_Mg, double &agua_consumida_Mw, int cellIndex) {
-    const bool model2 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 2 && (*state.globals).lixo5 > 0.01;
-    const bool model3 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 3 && (*state.globals).lixo5 > 0.01;
+    const bool model2 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 2 && (*state.globals).simulationTime > 0.01;
+    const bool model3 = state.input.calculaEnvelope == 1 && state.input.tipoHmodel == 3 && (*state.globals).simulationTime > 0.01;
     if (model2 || model3) {
 
         agua_consumida_Mw = state.cells[cellIndex].agua_consumida_massa_step;
@@ -80,7 +80,7 @@ void refreshLeakSource(const SourceState &state, int cellIndex) {
     source.titT = alf * rhog / (alf * rhog + (1 - alf) * (bet * rhoC + (1 - bet) * rhoP));
     source.betIST = bet;
     int iconex = -1;
-    if (!((*state.globals).chaveRedeParalela == 0 || (*state.globals).iterRede > 0 || state.parallelSecondaryBranch == 1 || state.parallelSecondaryBoundaryCondition == 1)) {
+    if (!((*state.globals).parallelNetworkMode == 0 || (*state.globals).networkIteration > 0 || state.parallelSecondaryBranch == 1 || state.parallelSecondaryBoundaryCondition == 1)) {
         int nfonte = state.parallelSourceCells.size();
         for (int ifonte = 0; ifonte < nfonte; ifonte++) {
             if (state.parallelSourceCells[ifonte] == cellIndex) {
@@ -168,7 +168,7 @@ void applyGasInjectionSource(const SourceState &state, int cellIndex, double pr,
     auto &source = cell.acsr.injg;
     if (source.tipoflu == 0) {
         double masgas = source.VMas(pr, tr);
-        if (fabs(masgas) < (*state.globals).localtiny)
+        if (fabs(masgas) < (*state.globals).smallValueTolerance)
             masgas = 0.;
         if (source.seco == 1) {
             cell.fontemassGR += masgas;
@@ -362,9 +362,9 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
     refreshChokeMultipleAndPorousSources(state, cellIndex);
 
     const bool hydrateModel = state.input.calculaEnvelope == 1 && (state.input.tipoHmodel == 2 || state.input.tipoHmodel == 3);
-    if (hydrateModel && state.cells[cellIndex].flui.BSW > 1e-12 && (*state.globals).lixo5 > 0.01) {
-        state.cells[cellIndex].fontemassLR -= (agua_consumida_Mw / (*state.globals).lixo5);
-        state.cells[cellIndex].fontemassGR -= (gas_consumido_Mg / (*state.globals).lixo5);
+    if (hydrateModel && state.cells[cellIndex].flui.BSW > 1e-12 && (*state.globals).simulationTime > 0.01) {
+        state.cells[cellIndex].fontemassLR -= (agua_consumida_Mw / (*state.globals).simulationTime);
+        state.cells[cellIndex].fontemassGR -= (gas_consumido_Mg / (*state.globals).simulationTime);
     }
 }
 

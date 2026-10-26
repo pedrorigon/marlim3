@@ -45,11 +45,11 @@ struct SProd::TransientCallState {
 };
 
 SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidation,
-             tipoSimulacao_t simulationType, varGlob1D *globals, int dynamicTableOverride, int blocking,
+             tipoSimulacao_t simulationType, SimulationContext *globals, int dynamicTableOverride, int blocking,
              int reversedGeometry, double *extraSourceLengths, int *extraSourceCells, int extraSourceCount,
              int steadyBranch)
     : arq(inputFile, logFile, jsonValidation, simulationType, reversedGeometry, globals, steadyBranch),
-      vg1dSP(globals) {
+      simulationContext(globals) {
     if (dynamicTableOverride >= 0)
         arq.tabelaDinamica = dynamicTableOverride;
     assemble({.bloq = blocking, .previousReverseLiquidFraction = 0.}, extraSourceLengths, extraSourceCells,
@@ -58,7 +58,7 @@ SProd::SProd(string inputFile, string logFile, tipoValidacaoJson_t jsonValidatio
 
 SProd::SProd() = default;
 
-SProd::SProd(Ler &parsedInput, const CarriedState &carried) : vg1dSP(parsedInput.vg1dSP) {
+SProd::SProd(Ler &parsedInput, const CarriedState &carried) : simulationContext(parsedInput.simulationContext) {
     arq.copiaSemJson(parsedInput);
     assemble(carried);
 }
@@ -67,7 +67,7 @@ void SProd::loadSection(const SProd &other) {
     if (celula != nullptr)
         throw std::logic_error("SProd::loadSection: this system was already assembled");
     arq = other.arq;
-    vg1dSP = other.vg1dSP;
+    simulationContext = other.simulationContext;
     networkCoupling.takeParallelRole(other.networkCoupling);
     assemble(other.carriedState());
 }
@@ -414,7 +414,7 @@ void SProd::HidroDescargaP() {
 }
 
 bool SProd::hydrateEnvelopeDue() const {
-    return arq.calculaEnvelope == 1 && vg1dSP->lixo5 <= arq.tfinal;
+    return arq.calculaEnvelope == 1 && simulationContext->simulationTime <= arq.tfinal;
 }
 
 void SProd::solveHydrateEnvelopes() {
@@ -443,7 +443,7 @@ sisprod::gaslift::GasLiftState SProd::gasLiftStateOf() {
         .gasCells = gasLift.cells,
         .cells = celula,
         .input = arq,
-        .globals = vg1dSP,
+        .globals = simulationContext,
         .lastGasCell = gasLift.cellCount,
         .lastCell = ncel,
         .gasLiftChokes = gasLift.valveChokes,
@@ -482,7 +482,7 @@ sisprod::steady::SteadyStateState SProd::steadyStateOf() {
         .cells = celula,
         .gasCells = gasLift.cells,
         .input = arq,
-        .globals = vg1dSP,
+        .globals = simulationContext,
         .lastCell = ncel,
         .lastGasCell = gasLift.cellCount,
         .injectionChoke = gasLift.injectionChoke,
@@ -596,7 +596,7 @@ sisprod::transient::TransientStepState SProd::transientStateOf() {
         .initialInterfaceVelocity = gasLift.previousInterfaceVelocity,
         .pigReceiverCells = transient.pigReceiverCells,
         .scheduledPigCount = static_cast<int>(transient.pigReceiverCells.size()),
-        .globals = vg1dSP,
+        .globals = simulationContext,
     };
 }
 
@@ -605,7 +605,7 @@ sisprod::fluidtracking::FluidTrackingState SProd::fluidTrackingStateOf() {
         .cells = celula,
         .lastCell = ncel,
         .input = arq,
-        .globals = vg1dSP,
+        .globals = simulationContext,
         .endNode = noextremo,
         .inletPressure = presE,
         .inletTemperature = tempE,
@@ -679,7 +679,7 @@ driftflux::coefficient::ClosureState SProd::closureStateOf() {
     return driftflux::coefficient::ClosureState{
         .cells = celula,
         .lastCell = ncel,
-        .globals = vg1dSP,
+        .globals = simulationContext,
         .input = arq,
         .selectors = {arq.CorreDisper, arq.CorreAnular, arq.CorreEstrat},
         .gasSurfaceTemperature = tGSup,
@@ -695,7 +695,7 @@ sisprod::sources::SourceState SProd::sourceStateOf() {
     return sisprod::sources::SourceState{
         .cells = celula,
         .input = arq,
-        .globals = vg1dSP,
+        .globals = simulationContext,
         .lastCell = ncel,
         .steadyMode = modoPerm,
         .parallelSecondaryBranch = networkCoupling.parallelSecondaryBranch,
@@ -713,7 +713,7 @@ sisprod::thermal::ThermalState SProd::thermalStateOf() {
         .gasCells = gasLift.cells,
         .input = arq,
         .latentHeatTable = tables.latentHeatTable.rowPointers,
-        .globals = vg1dSP,
+        .globals = simulationContext,
         .thermalSourceDisabled = thermalSourceDisabled,
         .productionNetworkCoupled = networkCoupling.secondaryThermalCoupling,
         .primarySectionStart = networkCoupling.secondaryCouplingStart,
@@ -760,7 +760,7 @@ sisprod::thermal::ThermalState SProd::thermalStateOf() {
 trendoutput::TrendState SProd::trendStateOf() const {
     return trendoutput::TrendState{
         .input = arq,
-        .globals = vg1dSP,
+        .globals = simulationContext,
         .branchIndex = indTramo,
         .printPassCount = trends.trendOutputCount,
         .production = {trends.productionTrendMatrices, trends.productionTrendCounts,

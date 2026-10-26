@@ -66,8 +66,8 @@ mutations=[
  ('denag-publication','transportBlackOilBalances','denag[i] = cell.denagini;','denag[i] = source.denag;'),
  ('property-evaluation','blackOilSourceCellFluid',
   '(void)(state.cells[i].flui.RS(state.cells[i].pres, state.cells[i].temp) * (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre));','(void)0;'),
- ('outlet-direction','updateBlackOilOutletProperties','state.cells[state.lastCell].Mliqini > -(*state.globals).localtiny','state.cells[state.lastCell].Mliqini >= -(*state.globals).localtiny'),
- ('omp-configuration','transportBlackOilProperties','#pragma omp parallel for num_threads((*state.globals).ntrd)','#pragma omp parallel for num_threads(1)'),
+ ('outlet-direction','updateBlackOilOutletProperties','state.cells[state.lastCell].Mliqini > -(*state.globals).smallValueTolerance','state.cells[state.lastCell].Mliqini >= -(*state.globals).smallValueTolerance'),
+ ('omp-configuration','transportBlackOilProperties','#pragma omp parallel for num_threads((*state.globals).solverThreadCount)','#pragma omp parallel for num_threads(1)'),
  ('buffer-construction','transportPhaseMolarFractions','Vcr<double> fracMolF(ncomp);','Vcr<double> fracMolF(ncomp + 1);'),
  ('gas-density-callback','publishBlackOilCellProperties','correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);','correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i + 1);'),
 ]

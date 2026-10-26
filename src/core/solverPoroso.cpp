@@ -19,15 +19,15 @@ solverPoro::solverPoro() : dados(), termolivre(1), matglob(1, 1) {
     lAcopTot = 0;
     dt = 0;
     posicMarlim = 0.;
-    vg1dSP = 0;
+    simulationContext = 0;
 
     precn = 1;
 }
 
-solverPoro::solverPoro(varGlob1D *Vvg1dSP, string nomeArquivoEntrada) : dados(Vvg1dSP, nomeArquivoEntrada), termolivre(dados.nele), matglob(dados.nele, dados.noZero, dados.vecsra, dados.veclm, dados.vecfnz) {
-    vg1dSP = Vvg1dSP;
-    (*vg1dSP).tempo = 0.;
-    malha = malha2dPoro(vg1dSP, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans, dados.flup,
+solverPoro::solverPoro(SimulationContext *context, string nomeArquivoEntrada) : dados(context, nomeArquivoEntrada), termolivre(dados.nele), matglob(dados.nele, dados.noZero, dados.vecsra, dados.veclm, dados.vecfnz) {
+    simulationContext = context;
+    (*simulationContext).solverTime = 0.;
+    malha = malha2dPoro(simulationContext, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans, dados.flup,
                         dados.kRelOA, dados.kRelOG, dados.pcOA, dados.pcGO);
     for (int i = 0; i < malha.nele; i++) {
         malha.mlh2d[i].cel2D.pBolha = dados.pBolha;
@@ -214,10 +214,10 @@ solverPoro::solverPoro(varGlob1D *Vvg1dSP, string nomeArquivoEntrada) : dados(Vv
     }
 }
 
-solverPoro::solverPoro(const solverPoro &vPoroso) : dados(vPoroso.vg1dSP, vPoroso.dados.entrada), termolivre(dados.nele), matglob(dados.nele, dados.noZero, dados.vecsra, dados.veclm, dados.vecfnz) {
-    vg1dSP = vPoroso.vg1dSP;
-    (*vg1dSP).tempo = 0.;
-    malha = malha2dPoro(vg1dSP, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans, dados.flup,
+solverPoro::solverPoro(const solverPoro &vPoroso) : dados(vPoroso.simulationContext, vPoroso.dados.entrada), termolivre(dados.nele), matglob(dados.nele, dados.noZero, dados.vecsra, dados.veclm, dados.vecfnz) {
+    simulationContext = vPoroso.simulationContext;
+    (*simulationContext).solverTime = 0.;
+    malha = malha2dPoro(simulationContext, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans, dados.flup,
                         dados.kRelOA, dados.kRelOG, dados.pcOA, dados.pcGO);
     for (int i = 0; i < malha.nele; i++) {
 
@@ -414,13 +414,13 @@ solverPoro &solverPoro::operator=(const solverPoro &vPoroso) {
             delete[] malhaH;
             dados.nxMH = 0;
         }
-        vg1dSP = vPoroso.vg1dSP;
+        simulationContext = vPoroso.simulationContext;
         dados = vPoroso.dados;
         termolivre = vPoroso.termolivre;
         matglob = vPoroso.matglob;
 
-        (*vg1dSP).tempo = 0.;
-        malha = malha2dPoro(vg1dSP, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans, dados.flup,
+        (*simulationContext).solverTime = 0.;
+        malha = malha2dPoro(simulationContext, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans, dados.flup,
                             dados.kRelOA, dados.kRelOG, dados.pcOA, dados.pcGO);
         for (int i = 0; i < malha.nele; i++) {
             malha.mlh2d[i].cel2D.pBolha = dados.pBolha;
@@ -611,9 +611,9 @@ solverPoro &solverPoro::operator=(const solverPoro &vPoroso) {
 void solverPoro::indrazPW(int &ind, double &raz) {
     for (int i = 0; i <= dados.pW.nserie - 1; i++) {
         if (i < dados.pW.nserie - 1) {
-            if ((*vg1dSP).tempo >= dados.pW.tempo[i] && (*vg1dSP).tempo < dados.pW.tempo[i + 1]) {
+            if ((*simulationContext).solverTime >= dados.pW.tempo[i] && (*simulationContext).solverTime < dados.pW.tempo[i + 1]) {
                 ind = i;
-                raz = 1 - ((*vg1dSP).tempo - dados.pW.tempo[i]) / (dados.pW.tempo[i + 1] - dados.pW.tempo[i]);
+                raz = 1 - ((*simulationContext).solverTime - dados.pW.tempo[i]) / (dados.pW.tempo[i + 1] - dados.pW.tempo[i]);
                 break;
             }
         } else if (i == dados.pW.nserie - 1) {
@@ -627,9 +627,9 @@ void solverPoro::indrazT(int &ind, double &raz) {
 
     for (int i = 0; i <= dados.temp.parserie - 1; i++) {
         if (i < dados.temp.parserie - 1) {
-            if ((*vg1dSP).tempo >= dados.temp.tempo[i] && (*vg1dSP).tempo < dados.temp.tempo[i + 1]) {
+            if ((*simulationContext).solverTime >= dados.temp.tempo[i] && (*simulationContext).solverTime < dados.temp.tempo[i + 1]) {
                 ind = i;
-                raz = 1 - ((*vg1dSP).tempo - dados.temp.tempo[i]) / (dados.temp.tempo[i + 1] - dados.temp.tempo[i]);
+                raz = 1 - ((*simulationContext).solverTime - dados.temp.tempo[i]) / (dados.temp.tempo[i + 1] - dados.temp.tempo[i]);
                 break;
             }
         } else if (i == dados.temp.parserie - 1) {
@@ -642,9 +642,9 @@ void solverPoro::indrazT(int &ind, double &raz) {
 void solverPoro::indraz(int &ind, double &raz, double *serieTempo, int nserie) {
     for (int i = 0; i <= nserie - 1; i++) {
         if (i < nserie - 1) {
-            if ((*vg1dSP).tempo >= serieTempo[i] && (*vg1dSP).tempo < serieTempo[i + 1]) {
+            if ((*simulationContext).solverTime >= serieTempo[i] && (*simulationContext).solverTime < serieTempo[i + 1]) {
                 ind = i;
-                raz = 1 - ((*vg1dSP).tempo - serieTempo[i]) / (serieTempo[i + 1] - serieTempo[i]);
+                raz = 1 - ((*simulationContext).solverTime - serieTempo[i]) / (serieTempo[i + 1] - serieTempo[i]);
                 break;
             }
         } else if (i == nserie - 1) {
@@ -790,7 +790,7 @@ void solverPoro::malhaRegular(double &dx, double &dy) {
 
 void solverPoro::imprimeMalhaRegular(double minP) {
     FullMtx<double> flut(dados.nxMH, dados.nyMH);
-    int numero = round((*vg1dSP).tempo);
+    int numero = round((*simulationContext).solverTime);
     for (int i = 0; i < dados.nxMH; i++) {
         for (int j = 0; j < dados.nyMH; j++) {
             if (malhaH[i][j].buraco == 0) {
@@ -819,7 +819,7 @@ void solverPoro::imprimeMalhaRegular(double minP) {
 
 void solverPoro::imprimeMalhaRegularSW() {
     FullMtx<double> flut(dados.nxMH, dados.nyMH);
-    int numero = round((*vg1dSP).tempo);
+    int numero = round((*simulationContext).solverTime);
     for (int i = 0; i < dados.nxMH; i++) {
         for (int j = 0; j < dados.nyMH; j++) {
             if (malhaH[i][j].buraco == 0) {
@@ -847,7 +847,7 @@ void solverPoro::imprimeMalhaRegularSW() {
 
 void solverPoro::imprimeMalhaRegularAlf() {
     FullMtx<double> flut(dados.nxMH, dados.nyMH);
-    int numero = round((*vg1dSP).tempo);
+    int numero = round((*simulationContext).solverTime);
     for (int i = 0; i < dados.nxMH; i++) {
         for (int j = 0; j < dados.nyMH; j++) {
             if (malhaH[i][j].buraco == 0) {
@@ -1990,11 +1990,11 @@ void solverPoro::transientePoroso(double &delt) {
         malha.mlh2d[i].cel2D.alfC0 = malha.mlh2d[i].cel2D.alfC;
     }
 
-    cout << "Tempo= " << (*vg1dSP).tempo << " norma= " << norma << " iteracoes= " << itera;
+    cout << "Tempo= " << (*simulationContext).solverTime << " norma= " << norma << " iteracoes= " << itera;
     cout << endl;
 
-    if (((*vg1dSP).tempo > 1e-15 && (*vg1dSP).tempo <= dados.temp.tempoImp[kontaTempo] && (*vg1dSP).tempo + delt >= dados.temp.tempoImp[kontaTempo])) {
-        malha.imprime((*vg1dSP).tempo);
+    if (((*simulationContext).solverTime > 1e-15 && (*simulationContext).solverTime <= dados.temp.tempoImp[kontaTempo] && (*simulationContext).solverTime + delt >= dados.temp.tempoImp[kontaTempo])) {
+        malha.imprime((*simulationContext).solverTime);
         imprimeMalhaRegular(minP);
         imprimeMalhaRegularSW();
         imprimeMalhaRegularAlf();
@@ -2002,10 +2002,10 @@ void solverPoro::transientePoroso(double &delt) {
         FullMtx<double> matrizsaida(dados.transfer.nglobal, 11);
         matrizsaida = dados.transfer.perfil();
         ostringstream saida;
-        saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << (*vg1dSP).tempo << "-" << posicMarlim << ".dat";
+        saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << (*simulationContext).solverTime << "-" << posicMarlim << ".dat";
         string tmp = saida.str();
         ofstream escreveIni(tmp.c_str(), ios_base::out);
-        escreveIni << "tempo = " << (*vg1dSP).tempo << endl;
+        escreveIni << "tempo = " << (*simulationContext).solverTime << endl;
         escreveIni << " raio (m) ;" << " raio (pol.) ;" << " pressao (kgf/cm2) ;" << " vazao total (sm3/d) ;" << " vazao de oleo (sm3/d) ;" << " vazao de gas (sm3/d) ;" << " vazao de agua (sm3/d) ;" << "saturacao de liquido (-) ;" << " saturacao de agua (-) ;" << " fracao volumetrica de gas homogeneo (-) ;"
                    << " BSW (-) ;" << endl;
         escreveIni << matrizsaida;
@@ -2769,9 +2769,9 @@ void solverPoro::avancoPressao() {
     }
 
     // To be added to MR3
-    (*vg1dSP).tempo = (*vg1dSP).lixo5;
-    if (((*vg1dSP).tempo > 1e-15 && (*vg1dSP).tempo <= dados.temp.tempoImp[kontaTempo] && (*vg1dSP).tempo + dt >= dados.temp.tempoImp[kontaTempo])) {
-        malha.imprime((*vg1dSP).tempo);
+    (*simulationContext).solverTime = (*simulationContext).simulationTime;
+    if (((*simulationContext).solverTime > 1e-15 && (*simulationContext).solverTime <= dados.temp.tempoImp[kontaTempo] && (*simulationContext).solverTime + dt >= dados.temp.tempoImp[kontaTempo])) {
+        malha.imprime((*simulationContext).solverTime);
         imprimeMalhaRegular(minP);
         imprimeMalhaRegularSW();
         imprimeMalhaRegularAlf();
@@ -2779,11 +2779,11 @@ void solverPoro::avancoPressao() {
         FullMtx<double> matrizsaida(dados.transfer.nglobal, 11);
         matrizsaida = dados.transfer.perfil();
         ostringstream saida;
-        saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << (*vg1dSP).tempo
+        saida << pathPrefixoArqSaida << "PerfisPocoRadial" << "-" << (*simulationContext).solverTime
               << "-" << posicMarlim << ".dat";
         string tmp = saida.str();
         ofstream escreveIni(tmp.c_str(), ios_base::out);
-        escreveIni << "tempo = " << (*vg1dSP).tempo << endl;
+        escreveIni << "tempo = " << (*simulationContext).solverTime << endl;
         escreveIni << " raio (m) ;" << " raio (pol.) ;" << " pressao (kgf/cm2) ;" << " vazao total (sm3/d) ;" << " vazao de oleo (sm3/d) ;" << " vazao de gas (sm3/d) ;" << " vazao de agua (sm3/d) ;" << "saturacao de liquido (-) ;" << " saturacao de agua (-) ;" << " fracao volumetrica de gas homogeneo (-) ;"
                    << " BSW (-) ;" << endl;
         escreveIni << matrizsaida;

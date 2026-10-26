@@ -7,7 +7,7 @@
 #include "RuntimeDiagnostics.h"
 #include "Matriz.h"
 #include "Vetor.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 #include <algorithm>
 #include <complex>
@@ -321,7 +321,7 @@ class ProFlu {
     // ASTM method
     double bASTM2; // Auxiliary values used to calculate dead-oil viscosity with the
     // ASTM method
-    varGlob1D *vg1dSP;
+    SimulationContext *simulationContext;
 
     int modoParafina;
     double *oPressurePoints;
@@ -364,20 +364,20 @@ class ProFlu {
     double quadleg(const double x1, const double x2, int tipo, int fase, const double par, const int n) const; // Gaussian quadrature using Legendre polynomials; x1 -> lower limit; x2 -> upper limit
     // n -> number of quadrature points; tipo -> integrate over pressure (1) or temperature (2); fase -> gas (1) or liquid (2); par -> pressure when tipo=2, temperature when tipo=1
 
-    ProFlu(varGlob1D *Vvg1dSP = 0, double vapi = 1, double vrgo = 1, double vdeng = 1, double vbsw = 1,
+    ProFlu(SimulationContext *context = 0, double vapi = 1, double vrgo = 1, double vdeng = 1, double vbsw = 1,
            double vdenag = 1, double vtempl = 10, double vlvisl = 1,
            double vtemph = 10, double vlvish = 1, int vtipoemul = 0, double vaemul = 0, double vbemul = 0,
            double vPHI100 = 0.765, double vbswCorte = 0, int vtab = 0, double vyco2 = 0, int vcorrC = 0,
            int vcorrSat = 0, int vcorrOM = 0, int vcorrOV = 0, int vcorrOS = 0,
            int vflash = 0, int id = 0, int vnpseudo = 0, double vpcf = 0, double vtcf = 0); // Default constructor
 
-    ProFlu(varGlob1D *Vvg1dSP, const double *const fluido, int vtipoemul,
+    ProFlu(SimulationContext *context, const double *const fluido, int vtipoemul,
            double vaemul, double vbemul, double vPHI100, double vbswCorte,
            int vtab, double vyco2, int vcorrC, int vcorrSat, int vcorrOM, int vcorrOV, int vcorrOS,
            int vflash,
            int vid, int vnpseudo = 0);
 
-    ProFlu(varGlob1D *Vvg1dSP, const double *const fluido, const double *const astm, int vtipoemul, double vaemul, double vbemul, double vPHI100,
+    ProFlu(SimulationContext *context, const double *const fluido, const double *const astm, int vtipoemul, double vaemul, double vbemul, double vPHI100,
            double vbswCorte, int vtab, double vyco2, int vcorrC, int vcorrSat,
            int vcorrOM, int vcorrOV, int vcorrOS, int vflash, int vid, int vnpseudo);
     ProFlu(const ProFlu &); // Copy constructor
@@ -393,7 +393,7 @@ class ProFlu {
             delete[] oCalculatedLiqComposition;
         if (flashCompleto == 2 && npseudo > 0)
             delete[] oCalculatedVapComposition;
-        if (flashCompleto == 2 && npseudo > 0 && (*vg1dSP).simulaTransiente == 1) {
+        if (flashCompleto == 2 && npseudo > 0 && (*simulationContext).transientSimulationEnabled == 1) {
             for (int j = 0; j < 2; j++) {
                 delete[] miniTabDin.rhogF[j];
                 delete[] miniTabDin.rholF[j];
@@ -648,7 +648,7 @@ class ProFlu {
     double m3m() const { return RGO * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre; }                     // Converts gas-oil ratio from ft3/bbl to m3/m3
 
     // The simulation time a diagnostic records; NaN for a fluid built without the run's globals
-    double simulationTime() const { return vg1dSP != nullptr ? (*vg1dSP).lixo5 : NAN; }
+    double simulationTime() const { return simulationContext != nullptr ? (*simulationContext).simulationTime : NAN; }
 
     // Updates compositional-model variables for the specified pressure and temperature
     void atualizaPropCompStandard(double GivenInitialBeta = -1.0, double *GivenInitialLiqComposition = NULL,

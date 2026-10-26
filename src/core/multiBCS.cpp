@@ -221,7 +221,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     	flui.razDegD(pres, temp);
     	double razDengL=flui.rDgL;
     	double razDengD=flui.rDgD;
-    	fluiG=ProFlu(flui.vg1dSP, 60, 10000000000000.0, razDengL*flui.Deng, 0., 1., 10., 10.,
+        fluiG=ProFlu(flui.simulationContext, 60, 10000000000000.0, razDengL*flui.Deng, 0., 1., 10., 10.,
 				50., 50.,0, 0, 0,0, 0, 0,flui.yco2,
 				flui.corrC);
     	fluiL=flui;

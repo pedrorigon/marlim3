@@ -11,10 +11,10 @@ using namespace rapidjson;
 
 int chrisao = 0;
 
-APara::APara(varGlob1D *Vvg1dSP, const string IMPFILE, int vncel, detcelp *vcelp, ProFlu *vflup, detBCS *vbcs, detMultiBCS *vmbcs,
+APara::APara(SimulationContext *context, const string IMPFILE, int vncel, detcelp *vcelp, ProFlu *vflup, detBCS *vbcs, detMultiBCS *vmbcs,
 		detFONGAS *vfonteg) {
     entrada = IMPFILE;
-    vg1dSP = Vvg1dSP;
+    simulationContext = context;
     ncel = vncel;
     celp = vcelp;
     flup = vflup;
@@ -46,7 +46,7 @@ APara::APara(varGlob1D *Vvg1dSP, const string IMPFILE, int vncel, detcelp *vcelp
 
 APara::APara(const APara &vAP) {
     entrada = vAP.entrada;
-    vg1dSP = vAP.vg1dSP;
+    simulationContext = vAP.simulationContext;
     ncel = vAP.ncel;
     celp = vAP.celp;
     flup = vAP.flup;
@@ -141,7 +141,7 @@ APara &APara::operator=(const APara &vAP) {
         releaseSweepVectors();
 
         entrada = vAP.entrada;
-        vg1dSP = vAP.vg1dSP;
+        simulationContext = vAP.simulationContext;
         ncel = vAP.ncel;
         celp = vAP.celp;
         flup = vAP.flup;

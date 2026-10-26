@@ -9,7 +9,7 @@ class choke;
 class ChokeGas;
 class ProFlu;
 class solverP3D;
-struct varGlob1D;
+struct SimulationContext;
 class SProd;
 template <class T> class Vcr;
 template <class T> class FullMtx;
@@ -284,8 +284,8 @@ struct TransientStepState {
     /// The number of pigs, each with its receiver cell: SProd::transient.pigReceiverCells.size().
     int scheduledPigCount;
 
-    /// SProd::vg1dSP -- fixed pointer binding with mutable global-state access.
-    varGlob1D *const &globals;
+    /// SProd::simulationContext -- fixed pointer binding with mutable global-state access.
+    SimulationContext *const &globals;
 
 };
 

@@ -9,7 +9,7 @@
 
 celrad::celrad():
 		localvet(4),localmat(4,11){
-	vg1dSP=0;
+	simulationContext=0;
 	fluc=ProFluCol();
 	flup=ProFlu();
 	drcamada=0;
@@ -180,10 +180,10 @@ celrad::celrad(int vncel,int vicel,double vr0, double vr1, double vrm,double vkX
 		double vpresRes,double vQL, double vQR, double vtRes, double vdt, double vzD0, double vzD,
 		double vzD1,double vdh,double vsL,double vsW,double vsLRes,double vsWRes,double vsWPoc,
 		double vsatConata,const double vip,tabelaPemRelOA vkRelOA,tabelaPemRelOG vkRelOG,tabelaPresCapOA vpcOA,tabelaPresCapGO vpcGO,
-		ProFluCol vfluc, ProFlu vflup,celrad* vcelL, celrad* vcelR,varGlob1D* Vvg1dSP):
+		ProFluCol vfluc, ProFlu vflup,celrad* vcelL, celrad* vcelR,SimulationContext* context):
 		localvet(4),localmat(4,11){
 
-	vg1dSP=Vvg1dSP;
+	simulationContext=context;
 
 	ncel=vncel;
 	icel=vicel;
@@ -382,7 +382,7 @@ celrad::celrad(int vncel,int vicel,double vr0, double vr1, double vrm,double vkX
 celrad::celrad(const celrad& vcel):
 		localvet(4),localmat(4,11){
 
-	vg1dSP=vcel.vg1dSP;
+	simulationContext=vcel.simulationContext;
 	ncel=vcel.ncel;
 	icel=vcel.icel;
 
@@ -556,7 +556,7 @@ celrad::celrad(const celrad& vcel):
 celrad& celrad::operator =(const celrad& vcel){
 	if (this != &vcel){
 
-		vg1dSP=vcel.vg1dSP;
+		simulationContext=vcel.simulationContext;
 		ncel=vcel.ncel;
 		icel=vcel.icel;
 

@@ -48,10 +48,10 @@ import io, re
 TARGETS = [
     ("src/core/SisProdTransient.cpp",
      r'^void computeTimeStep\(const TransientStepState &state, int vexpli\)\s*\{',
-     "vexpli, state.lastCell, (*state.globals).lixo5, state.cells[0].pres, state.timeStep"),
+     "vexpli, state.lastCell, (*state.globals).simulationTime, state.cells[0].pres, state.timeStep"),
     ("src/core/SisProd.cpp",
      r'^void SProd::determinaDT\(int vexpli\)\s*\{',
-     "vexpli, ncel, (*vg1dSP).lixo5, celula[0].pres, dt"),
+     "vexpli, ncel, (*simulationContext).simulationTime, celula[0].pres, dt"),
 ]
 for path, pattern, args in TARGETS:
     s = io.open(path, encoding="utf-8", errors="surrogateescape").read()

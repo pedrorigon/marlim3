@@ -12,7 +12,7 @@
 #include "SisProdThermal.h"
 #include "SisProdThermal.h"
 #include "estruturas.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 
 #include <cstdio>
 #include <fstream>
@@ -88,12 +88,12 @@ const Scenario kScenarios[] = {
     {"reverse-liquid", 110., 70., 0.80, 0.35, -0.18, 0.20},
 };
 
-ProFlu fallbackFluid(varGlob1D *globals) {
+ProFlu fallbackFluid(SimulationContext *globals) {
     return ProFlu(globals, 20, 100., 0.7, 0., 1., 20, 10, 40,
                   2, 0, 0.8, 0, 0, 0);
 }
 
-TransCal seededHeatTransfer(varGlob1D *globals, double diameter,
+TransCal seededHeatTransfer(SimulationContext *globals, double diameter,
                             double insideTemperature,
                             double outsideTemperature) {
     double conductivity[1] = {14.};
@@ -123,7 +123,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     for (int index = -1; index < kCells; ++index) {
         Cel &cell = cells[index];
         const double scale = 1. + 0.04 * (index + 1);
-        cell.flui = fallbackFluid(system.vg1dSP);
+        cell.flui = fallbackFluid(system.simulationContext);
         cell.fluiL = &cell.flui;
         cell.duto.a = 0.10 * scale;
         cell.duto.area = M_PI * cell.duto.a * cell.duto.a / 4.;
@@ -204,7 +204,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
         cell.c0 = 1.15;
         cell.ud = 0.25;
         cell.arranjo = 1;
-        cell.calor = seededHeatTransfer(system.vg1dSP, cell.duto.a,
+        cell.calor = seededHeatTransfer(system.simulationContext, cell.duto.a,
                                         cell.temp, 20. + index +
                                                        0.1 * scenario.temperature);
         cell.calor.Vextern1 = 0.25;
@@ -257,7 +257,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.arq.AceleraConvergPerm = 0;
     system.arq.nCompTotalUnidadesP = 100.;
     system.networkCoupling.primaryThermalCoupling = 0;
-    system.vg1dSP->blackOilTemp = 0;
+    system.simulationContext->temporaryBlackOilMode = 0;
     system.arq.chokep.abertura[0] = scenario.chokeOpening;
 }
 
@@ -265,12 +265,12 @@ void resetAnnulus(SProd &system, const Scenario &scenario) {
     for (int index = 0; index < kCells + 3; ++index) {
         CelG &cell = system.gasLift.cells[index];
         const double scale = 1. + 0.03 * index;
-        cell.flui = fallbackFluid(system.vg1dSP);
+        cell.flui = fallbackFluid(system.simulationContext);
         cell.temp = scenario.temperature + 8. + 0.1 * index;
         cell.VGasR = 0.4 * scale;
         cell.u1L = 2. * scale;
         cell.fluxcal = -801. - index;
-        cell.calor = seededHeatTransfer(system.vg1dSP, 0.16 * scale,
+        cell.calor = seededHeatTransfer(system.simulationContext, 0.16 * scale,
                                         cell.temp, 18. + index);
         cell.calor.Tint = cell.temp;
         cell.calor.Vint = 0.5;
@@ -350,7 +350,7 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
         cells[cellIndex + 1].QG *= 1.8;
         cells[cellIndex + 1].QL *= 1.6;
     } else if (mode == PermMode::gasSource) {
-        const ProFlu fluid = fallbackFluid(system.vg1dSP);
+        const ProFlu fluid = fallbackFluid(system.simulationContext);
         cells[cellIndex - 1].acsr.injg =
             InjGas(100., scenario.temperature + 25., fluid);
         cells[cellIndex + 1].acsr.injg =
@@ -389,7 +389,7 @@ void configurePermCase(SProd &system, Cel *cells, const Scenario &scenario,
         cells[cellIndex - 1].fonteCal = 350.;
         cells[cellIndex + 1].potBT = 1750.;
     } else if (mode == PermMode::velocityCap) {
-        system.vg1dSP->blackOilTemp = 1;
+        system.simulationContext->temporaryBlackOilMode = 1;
         cells[cellIndex].QG = 0.9;
         cells[cellIndex].QL = 0.8;
         cells[cellIndex + 1].QG = 1.1;
@@ -634,9 +634,9 @@ void runScenario(SProd &system, Cel *cells, const Scenario &scenario) {
 }  // namespace
 
 int main() {
-    varGlob1D globals;
+    SimulationContext globals;
     SProd &system = *new SProd();
-    system.vg1dSP = &globals;
+    system.simulationContext = &globals;
     system.arq.chokep.parserie = 1;
     system.arq.chokep.abertura = new double[1];
 

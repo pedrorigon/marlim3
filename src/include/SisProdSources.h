@@ -8,7 +8,7 @@
 // compiled on its own.
 class Cel;
 class Ler;
-struct varGlob1D;
+struct SimulationContext;
 
 namespace sisprod::sources {
 
@@ -22,8 +22,8 @@ struct SourceState {
     Cel *const &cells;
     /// Input deck -- SProd::arq. Read only.
     const Ler &input;
-    /// Shared 1D globals -- SProd::vg1dSP. Read only.
-    const varGlob1D *const &globals;
+    /// Shared 1D globals -- SProd::simulationContext. Read only.
+    const SimulationContext *const &globals;
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;
     /// Steady-state mode -- SProd::modoPerm. In it the porous media advance

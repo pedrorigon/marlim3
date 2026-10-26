@@ -8,7 +8,7 @@
 #include "UnitConversions.h"
 
 
-celradSimp::celradSimp(varGlob1D* Vvg1dSP, int vncel,int vicel,double vr0, double vr1, double vrm,double vkXL,double vkXR,
+celradSimp::celradSimp(SimulationContext* context, int vncel,int vicel,double vr0, double vr1, double vrm,double vkXL,double vkXR,
 		double vkYL,double vkYR,double vporo,double vcompresPoro,double vPcamada,double vPint,
 		double vpresRes2,double vpresRes,double vQL, double vQR, double vtRes, double vdt, double vzD0,
 		double vzD,
@@ -18,7 +18,7 @@ celradSimp::celradSimp(varGlob1D* Vvg1dSP, int vncel,int vicel,double vr0, doubl
 		ProFluCol vfluc, ProFlu vflup):
 		localvet(4),localmat(4,11){
 
-	vg1dSP=Vvg1dSP;
+	simulationContext=context;
 	tipoModelOleo=0;
 	compOleo=1e-5;
 	rhoRef=900;
@@ -221,7 +221,7 @@ celradSimp::celradSimp(varGlob1D* Vvg1dSP, int vncel,int vicel,double vr0, doubl
 celradSimp::celradSimp(const celradSimp& vcel):
 		localvet(4),localmat(4,11){
 
-	vg1dSP=vcel.vg1dSP;
+	simulationContext=vcel.simulationContext;
 	ncel=vcel.ncel;
 	icel=vcel.icel;
 
@@ -397,7 +397,7 @@ celradSimp::celradSimp(const celradSimp& vcel):
 
 celradSimp& celradSimp::operator =(const celradSimp& vcel){
 	if (this != &vcel){
-		vg1dSP=vcel.vg1dSP;
+		simulationContext=vcel.simulationContext;
 		ncel=vcel.ncel;
 		icel=vcel.icel;
 

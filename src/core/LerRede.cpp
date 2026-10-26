@@ -13,7 +13,7 @@ Rede::Rede() {
     entradaLog = "lixo";
     validacaoJson = tipoValidacaoJson_t::json;
     tipoSimulacao = tipoSimulacao_t::rede;
-    vg1dSP = 0;
+    simulationContext = 0;
     impfiles = 0;
     malha = 0;
     conexFR = 0;
@@ -39,12 +39,12 @@ Rede::Rede() {
     tramoSecundario = -1;
 }
 
-Rede::Rede(const string IMPFILE, const string ARQUIVO_LOG, const tipoValidacaoJson_t VALIDACAO, const tipoSimulacao_t SIMULACAO, varGlob1D *Vvg1dSP) {
+Rede::Rede(const string IMPFILE, const string ARQUIVO_LOG, const tipoValidacaoJson_t VALIDACAO, const tipoSimulacao_t SIMULACAO, SimulationContext *context) {
     entrada = IMPFILE;
     entradaLog = ARQUIVO_LOG;
     validacaoJson = VALIDACAO;
     tipoSimulacao = SIMULACAO;
-    vg1dSP = Vvg1dSP;
+    simulationContext = context;
     logger.changeResultadoSimulacao(entrada, entradaLog);
     lerArq();
 }
@@ -52,7 +52,7 @@ Rede::Rede(const string IMPFILE, const string ARQUIVO_LOG, const tipoValidacaoJs
 Rede::Rede(const Rede &vrede) {
     entrada = vrede.entrada;
     entradaLog = vrede.entradaLog;
-    vg1dSP = vrede.vg1dSP;
+    simulationContext = vrede.simulationContext;
     lerArq();
 }
 
@@ -62,7 +62,7 @@ Rede &Rede::operator=(const Rede &vrede) {
         entradaLog = vrede.entradaLog;
         validacaoJson = vrede.validacaoJson;
         tipoSimulacao = vrede.tipoSimulacao;
-        vg1dSP = vrede.vg1dSP;
+        simulationContext = vrede.simulationContext;
         lerArq();
     }
     return *this;
@@ -531,7 +531,7 @@ void Rede::lerArq() {
         // parse do documento raiz do arquivo de entrada
         Document jsonDoc = parseEntrada();
         // caso configurada opcao de termino apos validacao do formato do arquivo JSON
-        if (validacaoJson == tipoValidacaoJson_t::json && (*vg1dSP).ntrdGlob == 1) {
+        if (validacaoJson == tipoValidacaoJson_t::json && (*simulationContext).networkThreadCount == 1) {
             // gerar o arquivo de saida da simulacao
             logger.writeOutputLog();
             // encerrar a aplicacao
@@ -546,18 +546,18 @@ void Rede::lerArq() {
         }
 
         // caso configurada opcao de termino apos validacao do formato do arquivo JSON
-        if (validacaoJson == tipoValidacaoJson_t::schema && (*vg1dSP).ntrdGlob == 1) {
+        if (validacaoJson == tipoValidacaoJson_t::schema && (*simulationContext).networkThreadCount == 1) {
             // gravar arquivo de log
             logger.writeOutputLog();
             // abandonar a simulacao
             exit(EXIT_SUCCESS);
         }
 
-        (*vg1dSP).chaverede = 1;
+        (*simulationContext).networkMode = 1;
 
         // parse da chave configuracaoInicial
         parse_configuracao_inicial(jsonDoc["configuracaoInicial"]);
-        (*vg1dSP).tipoModeloDrift = tipoModeloDrift;
+        (*simulationContext).driftFluxModel = tipoModeloDrift;
         // parse da chave Arquivos
         parse_arquivos(jsonDoc["Arquivos"]);
         // caso a quantidade de arquivos indique simulacao em rede

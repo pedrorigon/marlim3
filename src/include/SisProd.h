@@ -31,7 +31,7 @@
 #include "estruturaTabDin.h"
 #include "mapa.h"
 #include "solver3DPoisson.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include <ctime>
 #include <cmath>
 #include <array>
@@ -571,7 +571,7 @@ class SProd {
     /// Constructs and initializes a production-system simulation from the input and log files. A
     /// dynamicTableOverride that is not negative replaces the input's choice of dynamic property table.
     SProd(std::string inputFile, std::string logFile, tipoValidacaoJson_t jsonValidation,
-          tipoSimulacao_t simulationType, varGlob1D *globals = nullptr, int dynamicTableOverride = -1,
+          tipoSimulacao_t simulationType, SimulationContext *globals = nullptr, int dynamicTableOverride = -1,
           int blocking = 0, int reversedGeometry = 0, double *extraSourceLengths = nullptr,
           int *extraSourceCells = nullptr, int extraSourceCount = 0, int steadyBranch = 1);
 
@@ -785,8 +785,8 @@ class SProd {
 
     /// The coupling with the three-dimensional thermal model.
     sisprod::Coupling3D coupling3D;
-    /// Shared one-dimensional simulation settings.
-    varGlob1D *vg1dSP = nullptr;
+    /// Shared simulation settings and runtime state.
+    SimulationContext *simulationContext = nullptr;
 
   private:
     /// Per-call views shared by steady marches and their boundary searches.

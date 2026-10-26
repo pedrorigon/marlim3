@@ -2,7 +2,7 @@
 #include "SisProdTrendOutputInternal.h"
 
 #include "Leitura.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 
 #include <cstddef>
 #include <fstream>
@@ -301,7 +301,7 @@ void writeTrendRowsFile(const TrendState &state, const std::string &fileName,
                     break;
                 if (apSequenceColumn) {
                     trendFile.width(kValueWidth);
-                    trendFile << (*state.globals).sequenciaAP << " ; ";
+                    trendFile << (*state.globals).parametricCaseIndex << " ; ";
                 }
                 for (int columnIndex = 0; columnIndex < window.columnCount; columnIndex++) {
                     trendFile.width(kValueWidth);

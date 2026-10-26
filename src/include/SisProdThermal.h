@@ -14,7 +14,7 @@ namespace sisprod::sources { struct SourceState; }
 namespace sisprod::transient { struct TransientStepState; }
 class choke;
 class solverP3D;
-struct varGlob1D;
+struct SimulationContext;
 
 namespace sisprod::thermal {
 
@@ -31,7 +31,7 @@ struct ThermalState {
     const Ler &input;
     /// The latent heat table's row pointers -- SProd::tables.latentHeatTable.
     const std::vector<double *> &latentHeatTable;
-    varGlob1D *const &globals;
+    SimulationContext *const &globals;
     const bool &thermalSourceDisabled;
     const bool &productionNetworkCoupled;
     const int &primarySectionStart;

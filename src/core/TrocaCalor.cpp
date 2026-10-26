@@ -17,7 +17,7 @@
 
 using namespace std;
 
-TransCal::TransCal(varGlob1D *Vvg1dSP, const DadosGeo vgeom, const int vpermanente, const int *const vncamada,
+TransCal::TransCal(SimulationContext *context, const DadosGeo vgeom, const int vpermanente, const int *const vncamada,
                    const double *const vdrcamada, double **const vTcamada, const double vTint,
                    const double vTextern1, const double vTextern2, const double vVint, const double vVextern1,
                    const int vdirconvExt, const double vdt, const double vkint, const double vcpint,
@@ -29,7 +29,7 @@ TransCal::TransCal(varGlob1D *Vvg1dSP, const DadosGeo vgeom, const int vpermanen
                    const double vcpextern2, const double vrhoextern2,
                    const double vviscextern2, const int vcoluna, const double vcolunaDia) : localvet(2),
                                                                                             localmat(2, 6) {
-    vg1dSP = Vvg1dSP;
+    simulationContext = context;
     geom = vgeom;
     permanente = vpermanente;
     lenth = geom.ncamadas;
@@ -179,7 +179,7 @@ TransCal::TransCal(varGlob1D *Vvg1dSP, const DadosGeo vgeom, const int vpermanen
 TransCal::TransCal(const TransCal &vTransCal) : localvet(2),
                                                 localmat(2, 6) {
 
-    vg1dSP = vTransCal.vg1dSP;
+    simulationContext = vTransCal.simulationContext;
     geom = vTransCal.geom;
     permanente = vTransCal.permanente;
     lenth = geom.ncamadas;
@@ -335,7 +335,7 @@ TransCal &TransCal::operator=(const TransCal &vTransCal) {
 
     localvet = vTransCal.localvet;
     localmat = vTransCal.localmat;
-    vg1dSP = vTransCal.vg1dSP;
+    simulationContext = vTransCal.simulationContext;
     if (lenth > 0) {
         if (this != &vTransCal) {
             geom = vTransCal.geom;
@@ -1965,7 +1965,7 @@ double TransCal::transtrans2D() {
     double rug = geom.rug / geom.dia;
     dimExt = poisson2D.dados.diamExt;
 
-    if ((*vg1dSP).lixo5 < 1e-15) {
+    if ((*simulationContext).simulationTime < 1e-15) {
         if (poisson2D.dados.temp.perm == 1 && poisson2D.dados.temp.trans == 1) {
             for (int i = 0; i < poisson2D.malha.nele; i++) {
                 poisson2D.malha.mlh2d[i].perm = 0;

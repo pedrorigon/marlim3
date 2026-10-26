@@ -5,7 +5,7 @@
 class Cel;
 class Ler;
 class ProFlu;
-struct varGlob1D;
+struct SimulationContext;
 class SProd;
 
 namespace sisprod::fluidtracking {
@@ -20,7 +20,7 @@ struct FluidTrackingState {
     Cel *&cells;                          // celula
     int &lastCell;                        // ncel
     Ler &input;                           // arq
-    varGlob1D *&globals;                  // vg1dSP
+    SimulationContext *&globals;                  // simulationContext
     int &endNode;                         // noextremo
     double &inletPressure;                // presE
     double &inletTemperature;             // tempE

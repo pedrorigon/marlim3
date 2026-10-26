@@ -10,7 +10,7 @@ class Cel;
 class CelG;
 class ChokeGas;
 class Ler;
-struct varGlob1D;
+struct SimulationContext;
 namespace sisprod::thermal { struct ThermalState; }
 template <class T> class Vcr;
 template <class T> class BandMtx;
@@ -33,8 +33,8 @@ struct GasLiftState {
     /// accessories and writing it back, and clears descarga when the
     /// interface reaches the end of the gas line.
     Ler &input;
-    /// Shared 1D globals.
-    varGlob1D *const &globals;
+    /// Shared simulation settings and runtime state.
+    SimulationContext *const &globals;
 
     /// Index of the last gas-line cell.
     const int &lastGasCell;

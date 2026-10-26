@@ -7,7 +7,7 @@
 /// name in arqRelatorioPerfis, except for injection-well simulations.
 
 class Ler;
-struct varGlob1D;
+struct SimulationContext;
 
 namespace trendoutput {
 
@@ -28,8 +28,8 @@ struct TrendSeries {
 struct TrendState {
     /// Input deck, output settings and mesh geometry -- SProd::arq.
     const Ler &input;
-    /// Shared globals; sequenciaAP is read only for an AP sequence column -- SProd::vg1dSP.
-    const varGlob1D *const &globals;
+    /// Shared globals; sequenciaAP is read only for an AP sequence column -- SProd::simulationContext.
+    const SimulationContext *const &globals;
     /// Branch index; negative outside a network -- SProd::indTramo.
     const int &branchIndex;
     /// Output-pass count; captions are emitted only when it equals one -- SProd::trends.trendOutputCount.

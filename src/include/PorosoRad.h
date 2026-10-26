@@ -16,7 +16,7 @@
 #include "celRad.h"
 #include "estruturaTabDin.h"
 #include "estruturasPoroso.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 
 extern detTempoPoroso temp;
@@ -78,11 +78,11 @@ class PorosRad {
     double pBolha;
     double BSW;
 
-    varGlob1D *vg1dSP;
+    SimulationContext *simulationContext;
 
     PorosRad();
 
-    PorosRad(const DadosGeoPoro vgeom, varGlob1D *Vvg1dSP, const int vpermanente, const int *const vncamada,
+    PorosRad(const DadosGeoPoro vgeom, SimulationContext *context, const int vpermanente, const int *const vncamada,
              const double *const vdrcamada, double **const vPcamada, const double vPint,
              const double vpresRes, const double vtRes, const double vdt, const double pres, const double vzD0, const double vzD1, const double vdh,
              double **const vsL, double **const vsW, const double vsLRes, const double vsWRes,

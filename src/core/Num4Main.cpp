@@ -60,7 +60,7 @@
 #include "solver3DPoisson.h"
 #include "solverPoisson.h"
 #include "solverPoroso.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "versao.h"
 #include "RunInfo.h"
 #include "UnitConversions.h"
@@ -743,7 +743,7 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
         }
 
         rst << endl;
-        rst << " Tempo =  " << (*sis.vg1dSP).lixo5;
+        rst << " Tempo =  " << (*sis.simulationContext).simulationTime;
         rst.close();
 
     } else {
@@ -765,7 +765,7 @@ void WriteSnapShot(SProd &sis, double porc = 10, int tramo = -1) {
         rst << " t [s] " << ";" << " HL [] " << ";" << " slipRatio [] " << ";" << " Usg [m/s] " << ";" << " Usl [m/s] " << ";" << " Flow Pattern " << ";" << " cell " << "\n"; //<< i
         for (int i = 1; i < ncel; i++) {                                                                                                                                       // i=0 não possui velocidades (condição de parede fechada)
             // rst << " t [s] " << " HL [] " << " slipRatio [] " << " Usg [m/s] " << " Usl [m/s]" << " cell " << "\n"; //<< i
-            rst << (*sis.vg1dSP).lixo5 << " ; " << 1 - sis.celula[i].alf << " ; " << (sis.celula[i].QG / sis.celula[i].duto.area * (sis.celula[i].alf + 0.001)) / (sis.celula[i].QL / (sis.celula[i].duto.area * ((1 - sis.celula[i].alf) + 0.001))) << " ; " << sis.celula[i].QG / sis.celula[i].duto.area << " ; " << sis.celula[i].QL / sis.celula[i].duto.area << " ; " << sis.celula[i].arranjo << " ; " << i << " ; ";
+            rst << (*sis.simulationContext).simulationTime << " ; " << 1 - sis.celula[i].alf << " ; " << (sis.celula[i].QG / sis.celula[i].duto.area * (sis.celula[i].alf + 0.001)) / (sis.celula[i].QL / (sis.celula[i].duto.area * ((1 - sis.celula[i].alf) + 0.001))) << " ; " << sis.celula[i].QG / sis.celula[i].duto.area << " ; " << sis.celula[i].QL / sis.celula[i].duto.area << " ; " << sis.celula[i].arranjo << " ; " << i << " ; ";
 
             rst << "\n";
         }
@@ -1739,7 +1739,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                         double MassAfluC = 0.;
                         double MassAfluG = 0.;
 
-                        if ((*arqRede.vg1dSP).lixo5 >= 4999) {
+                        if ((*arqRede.simulationContext).simulationTime >= 4999) {
                         }
 
                         int afluAlimenta = 0;
@@ -1748,7 +1748,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             int ind = indAflu[k];
                             int fim = malha[ind].ncel - 1;
 
-                            if ((*arqRede.vg1dSP).iterRedeT == 0) {
+                            if ((*arqRede.simulationContext).transientNetworkIteration == 0) {
 
                                 MasstempC[k] = malha[ind].celula[fim + 1].fontemassCR;
                                 MasstempP[k] = malha[ind].celula[fim + 1].fontemassLR;
@@ -1875,7 +1875,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             temp[k + afluAlimenta] = malha[ind].celula[ini].temp;
                             tempFim[k + afluAlimenta] = malha[ind].celula[ini].temp;
                             double pres;
-                            if ((*arqRede.vg1dSP).iterRedeT == 0)
+                            if ((*arqRede.simulationContext).transientNetworkIteration == 0)
                                 pres = malha[ind].celula[ini].pres;
                             else
                                 pres = malha[ind].celula[ini].presBuf;
@@ -1888,7 +1888,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             double CoMassP;
                             double CoMassL;
                             double CoMassG;
-                            if ((*arqRede.vg1dSP).iterRedeT == 0) {
+                            if ((*arqRede.simulationContext).transientNetworkIteration == 0) {
                                 CoMassC = (malha[ind].celula[ini].Mliqini / rholini) * betini * rcini;
                                 CoMassP = (malha[ind].celula[ini].Mliqini / rholini) * (1. - betini) * rpini;
                                 CoMassL = CoMassP + CoMassC;
@@ -1996,12 +1996,12 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             coleAlimenta += 1;
                         }
 
-                        if (mliqmist > (*arqRede.vg1dSP).localtiny * 1e-5 || mgasmist > (*arqRede.vg1dSP).localtiny * 1e-5) {
+                        if (mliqmist > (*arqRede.simulationContext).smallValueTolerance * 1e-5 || mgasmist > (*arqRede.simulationContext).smallValueTolerance * 1e-5) {
                             tempmist = tempmist / cpmist;
 
                             alfmist = malha[aux0].celula[0].alf;
 
-                            if (qostdTot > (*arqRede.vg1dSP).localtiny * 1e-5) {
+                            if (qostdTot > (*arqRede.simulationContext).smallValueTolerance * 1e-5) {
                                 RGOmist = qgstdTot / qostdTot;
                                 apimist = apimist / qostdTot;
                                 apimist = 141.5 / apimist - 131.5;
@@ -2013,22 +2013,22 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                                 LVisL = malha[aux0].celula[0].flui.VisOM(tL);
                                 LVisH = malha[aux0].celula[0].flui.VisOM(tH);
                             }
-                            if ((qgstdTot) > (*arqRede.vg1dSP).localtiny * 1e-5) {
+                            if ((qgstdTot) > (*arqRede.simulationContext).smallValueTolerance * 1e-5) {
                                 dengmist = dengmist / qgstdTot;
                                 yco2mist = yco2mist / qgstdTot;
                             } else {
                                 dengmist = malha[aux0].celula[0].flui.Deng;
                                 yco2mist = malha[aux0].celula[0].flui.yco2;
                             }
-                            if ((qostdTot + qwmist) > (*arqRede.vg1dSP).localtiny * 1e-5)
+                            if ((qostdTot + qwmist) > (*arqRede.simulationContext).smallValueTolerance * 1e-5)
                                 bswmist = qwmist / (qostdTot + qwmist);
                             else
                                 bswmist = malha[aux0].celula[0].flui.BSW;
-                            if (qwmist > (*arqRede.vg1dSP).localtiny * 1e-5)
+                            if (qwmist > (*arqRede.simulationContext).smallValueTolerance * 1e-5)
                                 denagmist = denagmist / qwmist;
                             else
                                 denagmist = malha[aux0].celula[0].flui.Denag;
-                            if (Qlmist > (*arqRede.vg1dSP).localtiny * 1e-5)
+                            if (Qlmist > (*arqRede.simulationContext).smallValueTolerance * 1e-5)
                                 betmist = betmist / Qlmist;
                             else
                                 betmist = malha[aux0].celula[0].bet;
@@ -2073,7 +2073,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                         }
 
                         int naflu = arqRede.malha[i].nafluente;
-                        if ((*arqRede.vg1dSP).iterRedeT == 0) {
+                        if ((*arqRede.simulationContext).transientNetworkIteration == 0) {
                             for (int k = 0; k < naflu; k++) {
                                 int iaflu = arqRede.malha[i].afluente[k];
                                 titrev[iaflu] = titmist;
@@ -2089,7 +2089,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                             double massC;
                             double massG;
 
-                            if ((*arqRede.vg1dSP).iterRedeT == 0) {
+                            if ((*arqRede.simulationContext).transientNetworkIteration == 0) {
 
                                 massC = malha[aux].celula[0].QL * malha[aux].celula[0].bet *
                                         malha[aux].celula[0].fluicol.MasEspFlu(malha[aux].celula[0].pres, malha[aux].celula[0].temp);
@@ -2123,7 +2123,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                         for (int icol = nderiva - 1; icol >= 0; icol--) {
                             if (icol == nderiva - 1) {
                                 int aux = ordCol[icol];
-                                if ((*arqRede.vg1dSP).iterRedeT == 0) {
+                                if ((*arqRede.simulationContext).transientNetworkIteration == 0) {
                                     malha[aux].celula[0].acsr.injm.temp = tempmist;
                                     malha[aux].celula[0].acsr.injm.FluidoPro.RGO = RGOmist;
                                     malha[aux].celula[0].acsr.injm.FluidoPro.Deng = dengmist;
@@ -2152,13 +2152,13 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                                 malha[aux].celula[0].acsr.injm.MassP = MassAfluP;
                                 malha[aux].celula[0].acsr.injm.MassC = MassAfluC;
                                 malha[aux].celula[0].acsr.injm.MassG = MassAfluG;
-                                if (MassAfluP < 0 && (malha[aux].celula[0].alf > 1 - (*arqRede.vg1dSP).localtiny)) {
+                                if (MassAfluP < 0 && (malha[aux].celula[0].alf > 1 - (*arqRede.simulationContext).smallValueTolerance)) {
                                     malha[aux].celula[0].acsr.injm.MassP = 0.;
                                 }
-                                if (MassAfluC < 0 && ((malha[aux].celula[0].alf > 1 - (*arqRede.vg1dSP).localtiny) || malha[aux].celula[0].bet < (*arqRede.vg1dSP).localtiny)) {
+                                if (MassAfluC < 0 && ((malha[aux].celula[0].alf > 1 - (*arqRede.simulationContext).smallValueTolerance) || malha[aux].celula[0].bet < (*arqRede.simulationContext).smallValueTolerance)) {
                                     malha[aux].celula[0].acsr.injm.MassC = 0.;
                                 }
-                                if (MassAfluG < 0 && (malha[aux].celula[0].alf < (*arqRede.vg1dSP).localtiny)) {
+                                if (MassAfluG < 0 && (malha[aux].celula[0].alf < (*arqRede.simulationContext).smallValueTolerance)) {
                                     malha[aux].celula[0].acsr.injm.MassG = 0.;
                                 }
 
@@ -2170,13 +2170,13 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                                     malha[indaflu].networkCoupling.reverseQuality = alfmist;
                                     malha[indaflu].networkCoupling.reverseLiquidFraction = betmist;
 
-                                    if ((*arqRede.vg1dSP).iterRedeT == 0)
+                                    if ((*arqRede.simulationContext).transientNetworkIteration == 0)
                                         malha[indaflu].tGSup = tempmist;
-                                    if (malha[indaflu].celula[malha[indaflu].ncel].MC < -(*arqRede.vg1dSP).localtiny) {
+                                    if (malha[indaflu].celula[malha[indaflu].ncel].MC < -(*arqRede.simulationContext).smallValueTolerance) {
                                         malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].flui;
                                     }
                                     if (arqRede.malha[indaflu].presimposta == 0) {
-                                        if ((*arqRede.vg1dSP).iterRedeT == 0)
+                                        if ((*arqRede.simulationContext).transientNetworkIteration == 0)
                                             malha[indaflu].gasLift.separatorPressure = malha[aux].celula[0].pres;
                                         else
                                             malha[indaflu].gasLift.separatorPressure = malha[aux].celula[0].presBuf;
@@ -2201,7 +2201,7 @@ void CicloRedeTrans(span<SProd> malha, Rede &arqRede,
                                 malha[aux].titE = titmist;
                                 malha[aux].betaE = betmist;
 
-                                if ((*arqRede.vg1dSP).iterRedeT == 0) {
+                                if ((*arqRede.simulationContext).transientNetworkIteration == 0) {
                                     malha[aux].presE = malha[auxfim].celula[0].pres;
                                 } else {
                                     malha[aux].presE = malha[auxfim].celula[0].presBuf;
@@ -2308,7 +2308,7 @@ void celAfluFinal(int naflu, int ncol, span<SProd> malha, Rede &arqRede, Vcr<int
 void corrigeVazNo(span<SProd> malha, int ind) {
     int ncel = malha[ind].ncel;
 
-    if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality >= 1. - (*malha[ind].vg1dSP).localtiny)) {
+    if (((*malha[ind].simulationContext).networkMode == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality >= 1. - (*malha[ind].simulationContext).smallValueTolerance)) {
         if ((malha[ind].celula[ncel - 1].MliqiniR < 0)) {
             malha[ind].celula[ncel - 1].MR -= (malha[ind].celula[ncel - 1].MliqiniR);
             malha[ind].celula[ncel - 1].MliqiniR = 0;
@@ -2324,7 +2324,7 @@ void corrigeVazNo(span<SProd> malha, int ind) {
             malha[ind].celula[ncel - 1].QLR = 0;
             malha[ind].celula[ncel].QL = 0;
         }
-    } else if (((*malha[ind].vg1dSP).chaverede == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality <= (*malha[ind].vg1dSP).localtiny)) {
+    } else if (((*malha[ind].simulationContext).networkMode == 1 && malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality <= (*malha[ind].simulationContext).smallValueTolerance)) {
         if (malha[ind].celula[ncel - 1].MliqiniR < 0) {
             malha[ind].celula[ncel - 1].MR = malha[ind].celula[ncel - 1].MliqiniR;
             malha[ind].celula[ncel - 1].term1R = 1;
@@ -2339,7 +2339,7 @@ void corrigeVazNo(span<SProd> malha, int ind) {
 void corrigeVazNoBuf(span<SProd> malha, int ind) {
     int ncel = malha[ind].ncel;
 
-    if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality >= 1. - (*malha[ind].vg1dSP).localtiny)) {
+    if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality >= 1. - (*malha[ind].simulationContext).smallValueTolerance)) {
         if ((malha[ind].transient.bufferedLiquidMassSource + malha[ind].transient.bufferedComplementaryMassSource) < 0) {
             malha[ind].transient.bufferedLiquidMassSource = 0;
             malha[ind].transient.bufferedComplementaryMassSource = 0;
@@ -2349,7 +2349,7 @@ void corrigeVazNoBuf(span<SProd> malha, int ind) {
             malha[ind].celula[ncel].term1 = 0;
             malha[ind].celula[ncel].term2 = 0;
         }
-    } else if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality <= (*malha[ind].vg1dSP).localtiny)) {
+    } else if ((malha[ind].noextremo != 1 && malha[ind].networkCoupling.reverseQuality <= (*malha[ind].simulationContext).smallValueTolerance)) {
         if (malha[ind].transient.bufferedGasMassSource < 0) {
             malha[ind].transient.bufferedGasMassSource = 0;
             malha[ind].celula[ncel - 1].term1R = 1;
@@ -2374,7 +2374,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].transient.finalTime = (*arqRede.vg1dSP).TmaxR;
+        malha[i].arq.tfinal = malha[i].transient.finalTime = (*arqRede.simulationContext).networkFinalTime;
         if (inativo[i] == 0) {
             malha[i].arq.master1.razareaativ = 0.4;
             if (arqRede.malha[i].nafluente > 0) {
@@ -2565,27 +2565,27 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
     }
 
     double dtteste;
-    (*arqRede.vg1dSP).lixo5R = 0.;
-    while ((*arqRede.vg1dSP).lixo5R < (*arqRede.vg1dSP).TmaxR) {
+    (*arqRede.simulationContext).networkSimulationTime = 0.;
+    while ((*arqRede.simulationContext).networkSimulationTime < (*arqRede.simulationContext).networkFinalTime) {
 
         for (int i = 0; i < narq; i++) {
-            if (malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].arq.calculaEnvelope == 1 && (*arqRede.simulationContext).simulationTime <= (*arqRede.simulationContext).networkFinalTime) { //*simulationContext).lixo5>0 && //chris - Hidratos
                 FA_Hidrato solverHidrato(malha[i]);
                 solverHidrato.solverHidrato();
             }
 
-            if (malha[i].arq.lingas > 0 && malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].arq.lingas > 0 && malha[i].arq.calculaEnvelope == 1 && (*arqRede.simulationContext).simulationTime <= (*arqRede.simulationContext).networkFinalTime) { //*simulationContext).lixo5>0 && //chris - Hidratos
                 FA_Hidrato_Servico solverHidratoG(malha[i]);
                 solverHidratoG.solverHidratoG();
             }
 
-            if (malha[i].arq.flashCompleto == 2 && (*arqRede.vg1dSP).lixo5 < 1e-15) {
+            if (malha[i].arq.flashCompleto == 2 && (*arqRede.simulationContext).simulationTime < 1e-15) {
                 malha[i].atualizaMiniTab();
             }
 
-            if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
+            if ((*arqRede.simulationContext).simulationTime < 1e-15) {
                 for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.productionTrendMatrices[j], (*arqRede.vg1dSP).lixo5, j, malha[i].trends.productionTrendCounts[j]);
+                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.productionTrendMatrices[j], (*arqRede.simulationContext).simulationTime, j, malha[i].trends.productionTrendCounts[j]);
                 }
                 malha[i].renovaTemp();
             }
@@ -2627,7 +2627,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                                       malha[i].gasLift.injectionChoke, malha[i].celula,
                                       malha[i].gasLift.cells, malha[i].gasLift.separatorPressure, malha[i].temperatura,
                                       malha[i].gasLift.injectionPressure, malha[i].gasLift.injectionTemperature,
-                                      malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
+                                      malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.simulationContext).networkSimulationTime);
                 malha[i].atualizaCC1();
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
                     malha[i].transient.masterValveCriticalRatios[j] = 0.5;
@@ -2635,7 +2635,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                 if (arqRede.malha[i].ncoleta > 0 &&
                     (malha[i].chokeSup.AreaGarg / malha[i].celula[malha[i].ncel - 1].duto.area) < 0.6)
                     malha[i].arq.chkv = 1;
-                if ((*arqRede.vg1dSP).lixo5R >= 4000) {
+                if ((*arqRede.simulationContext).networkSimulationTime >= 4000) {
                 }
                 for (int j = 0; j <= malha[i].arq.nvalv; j++)
                     if (malha[i].transient.valveAreaRatiosAfterUpdate[j] != malha[i].transient.valveAreaRatiosBeforeUpdate[j])
@@ -2697,7 +2697,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
         for (int kontaAcop = 0; kontaAcop <= 1 * modeloCompletoGlob; kontaAcop++) {
             int reiniGlob = 0;
 
-            if ((*arqRede.vg1dSP).lixo5R >= 1000) {
+            if ((*arqRede.simulationContext).networkSimulationTime >= 1000) {
             }
 
             for (int i = 0; i < narq; i++) {
@@ -2810,8 +2810,8 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                     }
                 }
             }
-            if ((*arqRede.vg1dSP).lixo5R <= 1e-15)
-                (*arqRede.vg1dSP).dtrede = dtteste;
+            if ((*arqRede.simulationContext).networkSimulationTime <= 1e-15)
+                (*arqRede.simulationContext).networkTimeStep = dtteste;
 
             for (int i = 0; i < narq; i++) {
                 if (inativo[i] == 0 && arqRede.malha[i].ncoleta > 0) {
@@ -2872,7 +2872,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                 }
             }
 
-            (*arqRede.vg1dSP).iterRedeT = 0;
+            (*arqRede.simulationContext).transientNetworkIteration = 0;
             Vcr<int> segundoAcop(narq, 0);
             for (int i = 0; i < narq; i++) {
                 if (inativo[i] == 0 && (malha[i].noextremo == 1 ||
@@ -2881,7 +2881,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                                           malha[i].masChkSup == 0))))
                     segundoAcop[i] = 1;
             }
-            while ((*arqRede.vg1dSP).iterRedeT < 1) {
+            while ((*arqRede.simulationContext).transientNetworkIteration < 1) {
                 CicloRedeTrans(malha, arqRede, inativo, alfRev, betRev, titRev);
                 for (int i = 0; i < narq; i++) {
                     if (segundoAcop[i]) {
@@ -2894,7 +2894,7 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                         malha[i].renovaBufferCego();
                     }
                 }
-                (*arqRede.vg1dSP).iterRedeT++;
+                (*arqRede.simulationContext).transientNetworkIteration++;
             }
             CicloRedeTrans(malha, arqRede, inativo, alfRev, betRev, titRev);
             for (int i = 0; i < narq; i++) {
@@ -3058,14 +3058,14 @@ void SolveRedeTrans(span<SProd> malha, Rede &arqRede,
                 } else
                     malha[i].SolveTrans(titRev[i], alfRev[i], betRev[i], nrede);
                 for (int kontasnp = 0; kontasnp < malha[i].arq.nsnp; kontasnp++) {
-                    if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
+                    if (fabs((*arqRede.simulationContext).simulationTime - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
                         WriteSnapShot(malha[i], kontasnp, i); // registro do arquivo SNP
                     }
                 }
             }
         }
-        (*arqRede.vg1dSP).lixo5R += dtteste;
-        (*arqRede.vg1dSP).dtrede = dtteste;
+        (*arqRede.simulationContext).networkSimulationTime += dtteste;
+        (*arqRede.simulationContext).networkTimeStep = dtteste;
     }
 
     delete[] fluiInjM;
@@ -3230,8 +3230,8 @@ void avaliaBloq(int i, Rede &arqRede,
 
 int chutePresRede(int indprod, span<SProd> malha, Rede &arqRede, double chutehol,
                   Vcr<double> &razcolet, Vcr<double> &prescolet) {
-    double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
-    double vazG = (*arqRede.vg1dSP).somavazG * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
+    double vaz = (*arqRede.simulationContext).estimatedStandardLiquidFlowRate * malha[indprod].celula[0].duto.area / (*arqRede.simulationContext).totalInletArea;
+    double vazG = (*arqRede.simulationContext).estimatedStandardGasFlowRate * malha[indprod].celula[0].duto.area / (*arqRede.simulationContext).totalInletArea;
     double presno = malha[indprod].hidroreverso(chutehol, vaz, vazG);
     int contarecur = 1;
     for (int i = 0; i < arqRede.malha[indprod].nafluente; i++) {
@@ -3301,7 +3301,7 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
     int kpos = 0;
 
     int aplicaFluiCol = 0;
-    if ((*arqRede.vg1dSP).fluidoRede == 1)
+    if ((*arqRede.simulationContext).networkFluidMode == 1)
         malha[i].celula[recb].acsr.injl.fluidocol = malha[i].celula[recb].fluicol;
 
     for (int k = 0; k < naflu; k++) {
@@ -3323,7 +3323,7 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
                 temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
-                if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
+                if (Bet[k] > (*arqRede.simulationContext).smallValueTolerance && aplicaFluiCol == 0 && (*arqRede.simulationContext).networkFluidMode == 1) {
                     malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[fim].fluicol;
                     aplicaFluiCol = 1;
                 }
@@ -3457,7 +3457,7 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
             temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
             Bet[k] = malha[ind].celula[ini].bet;
 
-            if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
+            if (Bet[k] > (*arqRede.simulationContext).smallValueTolerance && aplicaFluiCol == 0 && (*arqRede.simulationContext).networkFluidMode == 1) {
                 malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[ini].fluicol;
                 aplicaFluiCol = 1;
             }
@@ -3581,30 +3581,30 @@ void totalizaCicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, 
                 noConv.flu.atualizaPropCompStandard();
         }
 
-        if (noConv.qostdTot > (*arqRede.vg1dSP).localtiny) {
+        if (noConv.qostdTot > (*arqRede.simulationContext).smallValueTolerance) {
             noConv.LVisL = noConv.LVisL / noConv.qostdTot;
             noConv.LVisH = noConv.LVisH / noConv.qostdTot;
         } else {
             noConv.LVisL = malha[i].celula[recb].flui.VisOM(noConv.tL);
             noConv.LVisH = malha[i].celula[recb].flui.VisOM(noConv.tH);
         }
-        if ((noConv.qostdTot + noConv.qwmist) > (*arqRede.vg1dSP).localtiny)
+        if ((noConv.qostdTot + noConv.qwmist) > (*arqRede.simulationContext).smallValueTolerance)
             noConv.bswmist = noConv.qwmist / (noConv.qostdTot + noConv.qwmist);
         else
             noConv.bswmist = malha[i].celula[recb].flui.BSW;
-        if (noConv.qwmist > (*arqRede.vg1dSP).localtiny)
+        if (noConv.qwmist > (*arqRede.simulationContext).smallValueTolerance)
             noConv.denagmist = noConv.denagmist / noConv.qwmist;
         else
             noConv.denagmist = malha[i].celula[recb].flui.Denag;
-        if (noConv.cpmist > (*arqRede.vg1dSP).localtiny)
+        if (noConv.cpmist > (*arqRede.simulationContext).smallValueTolerance)
             noConv.tempmist = noConv.tempmist / noConv.cpmist;
         else
             noConv.tempmist = 0.;
-        if (noConv.qlmistStd > (*arqRede.vg1dSP).localtiny)
+        if (noConv.qlmistStd > (*arqRede.simulationContext).smallValueTolerance)
             noConv.betmist = noConv.betmist / noConv.qlmistStd;
         else
             noConv.betmist = 0.;
-        if (noConv.mliqCmist > (*arqRede.vg1dSP).localtiny * 1e-15)
+        if (noConv.mliqCmist > (*arqRede.simulationContext).smallValueTolerance * 1e-15)
             noConv.TRmist /= noConv.mliqCmist;
         else
             noConv.TRmist = 0.;
@@ -3649,13 +3649,13 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
     double norma = 0.;
     int nnos = 0;
     int narq = arqRede.nsisprod - 0 * indativo;
-    (*arqRede.vg1dSP).relax = arqRede.relax;
+    (*arqRede.simulationContext).networkRelaxationFactor = arqRede.relax;
     Vcr<int> Resolv(narq, 0);
     Vcr<int> IndNorma(narq, 0);
     Vcr<int> Retorna(narq, 0);
-    if ((*arqRede.vg1dSP).iterRede >= 5) {
+    if ((*arqRede.simulationContext).networkIteration >= 5) {
     }
-    cout << "#################Iniciando ciclo iterativo: " << (*arqRede.vg1dSP).iterRede << endl;
+    cout << "#################Iniciando ciclo iterativo: " << (*arqRede.simulationContext).networkIteration << endl;
     int ciclomalha = 0;
     double valor;
     for (int i = 0; i < narq; i++) {
@@ -3666,8 +3666,8 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
     }
     int testaNMalha = ciclomalha - narq + 1;
     while (ciclomalha < narq - 1) {
-        int ntrdLocal = (*arqRede.vg1dSP).ntrd;
-        if ((*arqRede.vg1dSP).ntrd > narq)
+        int ntrdLocal = (*arqRede.simulationContext).solverThreadCount;
+        if ((*arqRede.simulationContext).solverThreadCount > narq)
             ntrdLocal = narq;
 #pragma omp parallel for num_threads(ntrdLocal)
         for (int i = 0; i < narq; i++) {
@@ -3682,7 +3682,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                 Resolv[i] == 0 && inativo[i] == 0) {
                 double valor = 0.;
                 if (arqRede.malha[i].perm == 1) {
-                    (*arqRede.vg1dSP).qualTramo = i;
+                    (*arqRede.simulationContext).branchIndex = i;
                     if (malha[i].arq.ConContEntrada == 0) {
                         int reverso = 0;
                         if (malha[i].celula[0].acsr.tipo == 1) {
@@ -3699,10 +3699,10 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                         malha[i].modoPerm = 1;
                         if (reverso == 0) {
                             if (malha[i].arq.chokep.abertura[0] > 0.6) {
-                                if ((*arqRede.vg1dSP).iterRede == 0) { // mudancaChute
+                                if ((*arqRede.simulationContext).networkIteration == 0) { // mudancaChute
 
                                     if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].gasLift.cells[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.vg1dSP).arearef;
+                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.simulationContext).referenceFlowArea;
                                     if (malha[i].arq.lingas == 1 && malha[i].gasLift.cells[0].tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
@@ -3758,9 +3758,9 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                     //}//mudancaChute
                                 }
                             } else {
-                                if ((*arqRede.vg1dSP).iterRede == 0) { // mudancaChute
+                                if ((*arqRede.simulationContext).networkIteration == 0) { // mudancaChute
                                     if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].gasLift.cells[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.vg1dSP).arearef;
+                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.simulationContext).referenceFlowArea;
                                     if (malha[i].arq.lingas == 1 && malha[i].gasLift.cells[0].tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
@@ -3817,7 +3817,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                 }
                             }
                         } else {
-                            if ((*arqRede.vg1dSP).iterRede == 0)
+                            if ((*arqRede.simulationContext).networkIteration == 0)
                                 valor = malha[i].buscaProdPfundoPermRev();
                             else
                                 valor = malha[i].buscaProdPfundoPermRev(malha[i].celula[0].pres);
@@ -3845,12 +3845,12 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                     inativoColetor(i, arqRede, inativo, narq);
                     if (valor < -1e9) {
                         aviso(i);
-                        (*arqRede.vg1dSP).iterRede = 200;
+                        (*arqRede.simulationContext).networkIteration = 200;
                     } else {
                         aviso2(i);
-                        (*arqRede.vg1dSP).iterRede = 200;
+                        (*arqRede.simulationContext).networkIteration = 200;
                     }
-                    (*arqRede.vg1dSP).restartRede = 1;
+                    (*arqRede.simulationContext).networkRestartRequested = 1;
                     Retorna[i] = -1;
                 }
                 Resolv[i] = 1;
@@ -3980,7 +3980,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                             int celProp = 1 - verificaFonteDuplaReversa(malha, auxMaster);
                             malha[indaflu].steadySearch.reverseNetworkFluid = malha[auxMaster].celula[celProp].flui;
                             malha[indaflu].steadySearch.reverseFlowTemperature = malha[auxMaster].celula[0].temp;
-                            if ((*arqRede.vg1dSP).fluidoRede == 0)
+                            if ((*arqRede.simulationContext).networkFluidMode == 0)
                                 malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[celProp].acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
@@ -4001,7 +4001,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                             noConv1.qgstdTotNeg = ((noConv1.mgasmistNeg + noConv1.moleomistNeg) /
                                                    (noConv1.dengmist * 1.225)) *
                                                   noConv1.flu.dStockTankVaporMassFraction;
-                            if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                            if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                 malha[i].celula[1].acsr.tipo = 2;
                                 if (malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
                                     malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
@@ -4014,7 +4014,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                 noConv1.qgstdTot *= 86400;
 
                                 malha[i].celula[1].acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
-                            } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                            } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                 malha[i].celula[1].acsr.tipo = 1;
                                 if (malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
                                     malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
@@ -4055,7 +4055,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                             noConv2.qgstdTotNeg = ((noConv2.mgasmistNeg + noConv2.moleomistNeg) /
                                                    (noConv2.dengmist * 1.225)) *
                                                   noConv2.flu.dStockTankVaporMassFraction;
-                            if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                            if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                 malha[col2].celula[1].acsr.tipo = 2;
                                 if (malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
                                     malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
@@ -4068,7 +4068,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                 noConv2.qgstdTot *= 86400;
 
                                 malha[col2].celula[1].acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
-                            } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                            } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                 malha[col2].celula[1].acsr.tipo = 1;
                                 if (malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
                                     malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
@@ -4111,7 +4111,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                         for (int icol = 0; icol < nderiva; icol++) {
                             if (icol == nderiva - 1) {
                                 int aux = ordCol[icol];
-                                if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                                if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                     malha[aux].celula[0].acsr.tipo = 2;
                                     if (malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto == 0)
                                         malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto = 2;
@@ -4128,7 +4128,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                                  2.);
                                     malha[aux].celula[0].acsr.injl.QLiq = noConv.qlmistStd + noConv.qlmistStdNeg;
 
-                                } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                                } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                     malha[aux].celula[0].acsr.tipo = 1;
                                     if (malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto == 0)
                                         malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto = 2;
@@ -4173,7 +4173,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                 }
 
                                 int trocou = trocaFonteColetor(malha, aux);
-                                (*arqRede.vg1dSP).qualTramo = aux;
+                                (*arqRede.simulationContext).branchIndex = aux;
                                 double pini = malha[aux].celula[0].pres;
                                 if (arqRede.malha[aux].perm == 1) {
                                     malha[aux].modoPerm = 1;
@@ -4191,18 +4191,18 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                     }
                                     if (reverso == 0) {
                                         if (malha[aux].arq.chokep.abertura[0] > 0.6) {
-                                            if ((*arqRede.vg1dSP).iterRede == 0)
+                                            if ((*arqRede.simulationContext).networkIteration == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm();
                                             else
                                                 valor = malha[aux].buscaProdPfundoPerm(malha[i].celula[0].pres);
                                         } else {
-                                            if ((*arqRede.vg1dSP).iterRede == 0)
+                                            if ((*arqRede.simulationContext).networkIteration == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm2();
                                             else
                                                 valor = malha[aux].buscaProdPfundoPerm2(malha[i].celula[0].pres);
                                         }
                                     } else {
-                                        if ((*arqRede.vg1dSP).iterRede == 0)
+                                        if ((*arqRede.simulationContext).networkIteration == 0)
                                             valor = malha[aux].buscaProdPfundoPermRev();
                                         else
                                             valor = malha[aux].buscaProdPfundoPermRev(malha[aux].celula[0].pres);
@@ -4217,12 +4217,12 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                     inativoAfluente(aux, arqRede, inativo);
                                     if (valor < -1e9) {
                                         aviso(aux);
-                                        (*arqRede.vg1dSP).iterRede = 200;
+                                        (*arqRede.simulationContext).networkIteration = 200;
                                     } else {
                                         aviso2(aux);
-                                        (*arqRede.vg1dSP).iterRede = 200;
+                                        (*arqRede.simulationContext).networkIteration = 200;
                                     }
-                                    (*arqRede.vg1dSP).restartRede = 1;
+                                    (*arqRede.simulationContext).networkRestartRequested = 1;
                                     return 9000.;
                                 }
                                 Resolv[aux] = 1;
@@ -4248,9 +4248,9 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                     }
                                     for (int iaflu = 0; iaflu < arqRede.malha[aux].nafluente; iaflu++) {
                                         int indaflu = arqRede.malha[aux].afluente[iaflu];
-                                        if ((*arqRede.vg1dSP).fluidoRede == 1)
+                                        if ((*arqRede.simulationContext).networkFluidMode == 1)
                                             malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
-                                        else if ((*arqRede.vg1dSP).fluidoRede == 0)
+                                        else if ((*arqRede.simulationContext).networkFluidMode == 0)
                                             malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
                                         else
                                             malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
@@ -4264,7 +4264,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                                 }
                                             }
                                             if (arqRede.malha[indaflu].presimposta == 0)
-                                                malha[indaflu].gasLift.separatorPressure = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres + (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].gasLift.separatorPressure;
+                                                malha[indaflu].gasLift.separatorPressure = ((*arqRede.simulationContext).networkRelaxationFactor) * malha[aux].celula[0].pres + (1. - (*arqRede.simulationContext).networkRelaxationFactor) * malha[indaflu].gasLift.separatorPressure;
                                         } else {
                                             malha[indaflu].gasLift.separatorPressure = malha[aux].celula[0].pres;
                                             malha[indaflu].tGSup = malha[aux].celula[0].temp;
@@ -4281,17 +4281,17 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                 for (int icol2 = 0; icol2 < nderiva - 1; icol2++) {
                                     norma += pow((malha[ordCol[icol2]].celula[0].pres - malha[aux].celula[0].pres) / malha[aux].celula[0].pres, 2.);
                                     nnos++;
-                                    if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
+                                    if ((*arqRede.simulationContext).networkIteration <= 1 && (*arqRede.simulationContext).networkRelaxationFactor > 0.5) {
                                         malha[ordCol[icol2]].celula[0].pres = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
                                     } else {
-                                        malha[ordCol[icol2]].celula[0].pres = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                              (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].celula[0].pres = ((*arqRede.simulationContext).networkRelaxationFactor) * malha[aux].celula[0].pres +
+                                                                              (1. - (*arqRede.simulationContext).networkRelaxationFactor) * malha[ordCol[icol2]].celula[0].pres;
                                     }
-                                    if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
+                                    if ((*arqRede.simulationContext).networkIteration <= 1 && (*arqRede.simulationContext).networkRelaxationFactor > 0.5) {
                                         malha[ordCol[icol2]].presE = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
                                     } else {
-                                        malha[ordCol[icol2]].presE = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                     (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].presE = ((*arqRede.simulationContext).networkRelaxationFactor) * malha[aux].celula[0].pres +
+                                                                     (1. - (*arqRede.simulationContext).networkRelaxationFactor) * malha[ordCol[icol2]].celula[0].pres;
                                     }
                                     malha[ordCol[icol2]].tempE = noConv.tempmist;
                                     malha[ordCol[icol2]].betaE = noConv.betmist;
@@ -4302,14 +4302,14 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                 double chutemass = 0.;
                                 double area = 0.;
                                 int aux = ordCol[icol];
-                                if ((*arqRede.vg1dSP).iterRede == 0) {
+                                if ((*arqRede.simulationContext).networkIteration == 0) {
                                     int indAflu = arqRede.malha[aux].afluente[0];
                                     malha[aux].celula[0].pres = malha[indAflu].gasLift.separatorPressure;
                                 }
                                 if (arqRede.malha[aux].perm == 1) {
-                                    (*arqRede.vg1dSP).qualTramo = aux;
+                                    (*arqRede.simulationContext).branchIndex = aux;
                                     if (malha[aux].arq.ConContEntrada != 2) {
-                                        if ((*arqRede.vg1dSP).fluidoRede != 0) {
+                                        if ((*arqRede.simulationContext).networkFluidMode != 0) {
                                             malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
                                             malha[aux].celula[0].acsr.injl.FluidoPro.tabelaDinamica = 0;
                                             malha[aux].celula[0].acsr.tipo = 2;
@@ -4320,7 +4320,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                             malha[aux].celula[0].acsr.injl.fluidocol.TR = noConv.TRmist;
 
                                             malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
-                                            if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].celula[0].acsr.injl.QLiq < 0) {
+                                            if ((*arqRede.simulationContext).networkIteration > 0 && malha[aux].celula[0].acsr.injl.QLiq < 0) {
                                                 malha[aux].celula[0].acsr.injl.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                             }
 
@@ -4335,7 +4335,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                             malha[aux].celula[0].acsr.injg.fluidocol.TR = noConv.TRmist;
 
                                             malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
-                                            if ((*arqRede.vg1dSP).iterRede > 0 && malha[aux].celula[0].acsr.injg.QGas < 0) {
+                                            if ((*arqRede.simulationContext).networkIteration > 0 && malha[aux].celula[0].acsr.injg.QGas < 0) {
                                                 malha[aux].celula[0].acsr.injg.FluidoPro = malha[aux].steadySearch.reverseNetworkFluid;
                                             }
                                         }
@@ -4354,8 +4354,8 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                     if (malha[aux].arq.ConContEntrada != 2) {
                                         for (int icol2 = icol; icol2 < nderiva; icol2++)
                                             area += malha[ordCol[icol2]].celula[0].duto.area;
-                                        if ((*arqRede.vg1dSP).iterRede == 0) {
-                                            if ((*arqRede.vg1dSP).fluidoRede != 0)
+                                        if ((*arqRede.simulationContext).networkIteration == 0) {
+                                            if ((*arqRede.simulationContext).networkFluidMode != 0)
                                                 chutemass = (noConv.qlmistStd + noConv.qlmistStdNeg) * malha[aux].celula[0].duto.area / area;
                                             else {
                                                 chutemass = (noConv.qgstdTot * 86400 + noConv.qgstdTotNeg * 86400) *
@@ -4367,9 +4367,9 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                                     malha[aux].celula[0].acsr.injg.razCompGas = 0.;
                                             }
                                         } else {
-                                            if ((*arqRede.vg1dSP).fluidoRede == 1)
+                                            if ((*arqRede.simulationContext).networkFluidMode == 1)
                                                 chutemass = malha[aux].celula[0].acsr.injl.QLiq;
-                                            else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                                            else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                                 chutemass = malha[aux].celula[0].acsr.injg.QGas;
                                                 if (fabs(noConv.qgstdTot * 86400. + noConv.qgstdTotNeg * 86400) > 1e-15)
                                                     malha[aux].celula[0].acsr.injg.razCompGas = (noConv.qcmistStd + noConv.qcmistStdNeg) /
@@ -4389,7 +4389,7 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                                 malha[aux].celula[0].acsr.injg.razCompGas = malha[aux].arq.razCompGasReves;
                                                 valor = malha[aux].buscaProdPresPresPermRev(chutemass, -noConv.qgstdTot * 86400);
                                             }
-                                            if ((*arqRede.vg1dSP).fluidoRede != 0) {
+                                            if ((*arqRede.simulationContext).networkFluidMode != 0) {
                                                 if (malha[aux].celula[0].acsr.injl.QLiq > (noConv.qlmistStd + noConv.qlmistStdNeg)) {
                                                     malha[aux].celula[0].acsr.injl.QLiq = chutemass;
                                                     cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo: " << aux << endl;
@@ -4413,28 +4413,28 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                             inativoAfluente(aux, arqRede, inativo);
                                             if (valor < -1e9) {
                                                 aviso(aux);
-                                                (*arqRede.vg1dSP).iterRede = 200;
+                                                (*arqRede.simulationContext).networkIteration = 200;
                                             } else {
                                                 aviso2(aux);
-                                                (*arqRede.vg1dSP).iterRede = 200;
+                                                (*arqRede.simulationContext).networkIteration = 200;
                                             }
-                                            (*arqRede.vg1dSP).restartRede = 1;
+                                            (*arqRede.simulationContext).networkRestartRequested = 1;
                                             return 9000.;
                                         }
                                         Resolv[aux] = 1;
                                         resolvGlob += Resolv[aux];
                                         ciclomalha++;
-                                        if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                                        if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                             if (arqRede.malha[aux].perm == 1 && malha[aux].celula[0].acsr.injl.QLiq > 0.)
                                                 noConv.qlmistStd -= malha[aux].celula[0].acsr.injl.QLiq;
                                             if (fabs(malha[aux].celula[0].acsr.injl.QLiq) < 1e-15)
                                                 cout << "#################Sem vazao no tramo : " << aux << endl;
-                                        } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                                        } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                             if (arqRede.malha[aux].perm == 1 && malha[aux].celula[0].acsr.injg.QGas > 0.)
                                                 noConv.qgstdTot -= malha[aux].celula[0].acsr.injg.QGas / 86400.;
                                             if (fabs(malha[aux].celula[0].acsr.injg.QGas) < 1e-15)
                                                 cout << "#################Sem vazao no tramo : " << aux << endl;
-                                        } else if ((*arqRede.vg1dSP).fluidoRede == 2) {
+                                        } else if ((*arqRede.simulationContext).networkFluidMode == 2) {
                                             if (arqRede.malha[aux].perm == 1 &&
                                                 (malha[aux].celula[0].acsr.injl.QLiq) > 0) {
                                                 double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.standardDensity();
@@ -4470,12 +4470,12 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                             inativoAfluente(aux, arqRede, inativo);
                                             if (valor < -1e9) {
                                                 aviso(aux);
-                                                (*arqRede.vg1dSP).iterRede = 200;
+                                                (*arqRede.simulationContext).networkIteration = 200;
                                             } else {
                                                 aviso2(aux);
-                                                (*arqRede.vg1dSP).iterRede = 200;
+                                                (*arqRede.simulationContext).networkIteration = 200;
                                             }
-                                            (*arqRede.vg1dSP).restartRede = 1;
+                                            (*arqRede.simulationContext).networkRestartRequested = 1;
                                             return 9000.;
                                         }
                                         Resolv[aux] = 1;
@@ -4489,13 +4489,13 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
                                                                             (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW));
                                         double fracmasshidra = malha[aux].celula[0].acsr.injm.FluidoPro.FracMassHidra(malha[aux].celula[0].pres,
                                                                                                                       malha[aux].celula[0].temp);
-                                        if ((*arqRede.vg1dSP).fluidoRede == 1 && malha[aux].celula[0].acsr.injm.MassP > 0.) {
+                                        if ((*arqRede.simulationContext).networkFluidMode == 1 && malha[aux].celula[0].acsr.injm.MassP > 0.) {
                                             if (arqRede.malha[aux].perm == 1) {
                                                 noConv.qlmistStd -= (malha[aux].celula[0].acsr.injm.MassP * 86400. /
                                                                          ((1. - fracmasshidra) * multiplicador) +
                                                                      malha[aux].celula[0].acsr.injm.MassC * 86400. / rlcA);
                                             }
-                                        } else if ((*arqRede.vg1dSP).fluidoRede == 0 && malha[aux].celula[0].acsr.injm.MassG > 0.) {
+                                        } else if ((*arqRede.simulationContext).networkFluidMode == 0 && malha[aux].celula[0].acsr.injm.MassG > 0.) {
                                             double tit = malha[aux].celula[0].acsr.injm.FluidoPro.dStockTankVaporMassFraction;
                                             noConv.qgstdTot -= malha[aux].celula[0].acsr.injm.MassG * tit /
                                                                (malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225 * fracmasshidra);
@@ -4520,8 +4520,8 @@ double cicloRedeComp(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int in
     }
 
     if (fabs(testaNMalha) > 0) {
-        (*arqRede.vg1dSP).erroRede = fabs(sqrt(norma) / nnos - (*arqRede.vg1dSP).norma0) / (*arqRede.vg1dSP).norma0;
-        (*arqRede.vg1dSP).norma0 = sqrt(norma) / nnos;
+        (*arqRede.simulationContext).networkNormRelativeChange = fabs(sqrt(norma) / nnos - (*arqRede.simulationContext).previousNetworkNorm) / (*arqRede.simulationContext).previousNetworkNorm;
+        (*arqRede.simulationContext).previousNetworkNorm = sqrt(norma) / nnos;
         return sqrt(norma) / nnos;
     } else
         return 0;
@@ -5054,7 +5054,7 @@ void preparaTabDin(SProd &sistem1) {
             sistem1.tables.dynamicTables[i].viscO[k + 1][0] = sistem1.tables.dynamicTables[i].viscO[k][0] + sistem1.tables.dynamicTables[i].delP;
             sistem1.tables.dynamicTables[i].viscG[k + 1][0] = sistem1.tables.dynamicTables[i].viscG[k][0] + sistem1.tables.dynamicTables[i].delP;
         }
-#pragma omp parallel for num_threads((*sistem1.vg1dSP).ntrd)
+#pragma omp parallel for num_threads((*sistem1.simulationContext).solverThreadCount)
         for (int k = 1; k < sistem1.tables.dynamicTables[i].npontosP + 1; k++) {
             ProFlu fluF;
             for (int j = 1; j < sistem1.tables.dynamicTables[i].npontosT + 1; j++) {
@@ -5185,7 +5185,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
     int kpos = 0;
 
     int aplicaFluiCol = 0;
-    if ((*arqRede.vg1dSP).fluidoRede == 1)
+    if ((*arqRede.simulationContext).networkFluidMode == 1)
         malha[i].celula[recb].acsr.injl.fluidocol = malha[i].celula[recb].fluicol;
 
     for (int k = 0; k < naflu; k++) {
@@ -5207,7 +5207,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
                 temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
-                if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
+                if (Bet[k] > (*arqRede.simulationContext).smallValueTolerance && aplicaFluiCol == 0 && (*arqRede.simulationContext).networkFluidMode == 1) {
                     malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[fim].fluicol;
                     aplicaFluiCol = 1;
                 }
@@ -5333,7 +5333,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
             temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
             Bet[k] = malha[ind].celula[ini].bet;
 
-            if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
+            if (Bet[k] > (*arqRede.simulationContext).smallValueTolerance && aplicaFluiCol == 0 && (*arqRede.simulationContext).networkFluidMode == 1) {
                 malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[ini].fluicol;
                 aplicaFluiCol = 1;
             }
@@ -5448,7 +5448,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
             }
             noConv.flu.atualizaPropCompStandard();
         }
-        if (noConv.mliqCmist > (*arqRede.vg1dSP).localtiny * 1e-15)
+        if (noConv.mliqCmist > (*arqRede.simulationContext).smallValueTolerance * 1e-15)
             noConv.TRmist /= noConv.mliqCmist;
         else
             noConv.TRmist = 0.;
@@ -5477,7 +5477,7 @@ void totalizaCicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inati
 
 void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indativo, vector<tramoPart> &bloq) {
     int narq = arqRede.nsisprod - 0 * indativo;
-    (*arqRede.vg1dSP).relax = arqRede.relax;
+    (*arqRede.simulationContext).networkRelaxationFactor = arqRede.relax;
     Vcr<int> Resolv(narq, 0);
     Vcr<int> IndNorma(narq, 0);
     Vcr<int> prepTab(narq, 0);
@@ -5489,8 +5489,8 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
         }
     }
     while (ciclomalha < narq - 1) {
-        int ntrdLocal = (*arqRede.vg1dSP).ntrd;
-        if ((*arqRede.vg1dSP).ntrd > narq)
+        int ntrdLocal = (*arqRede.simulationContext).solverThreadCount;
+        if ((*arqRede.simulationContext).solverThreadCount > narq)
             ntrdLocal = narq;
 #pragma omp parallel for num_threads(ntrdLocal)
         for (int i = 0; i < narq; i++) {
@@ -5627,7 +5627,7 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
                             malha[indaflu].steadySearch.reverseNetworkFluid = malha[auxMaster].celula[0].flui;
                             malha[indaflu].steadySearch.reverseFlowTemperature = malha[auxMaster].celula[0].temp;
-                            if ((*arqRede.vg1dSP).fluidoRede == 0)
+                            if ((*arqRede.simulationContext).networkFluidMode == 0)
                                 malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[0].acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
@@ -5648,7 +5648,7 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                             noConv1.qgstdTotNeg = ((noConv1.mgasmistNeg + noConv1.moleomistNeg) /
                                                    (noConv1.dengmist * 1.225)) *
                                                   noConv1.flu.dStockTankVaporMassFraction;
-                            if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                            if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                 malha[i].celula[1].acsr.tipo = 2;
                                 if (malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
                                     malha[i].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
@@ -5661,7 +5661,7 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                                 noConv1.qgstdTot *= 86400;
 
                                 malha[i].celula[1].acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
-                            } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                            } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                 malha[i].celula[1].acsr.tipo = 1;
                                 if (malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
                                     malha[i].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
@@ -5703,7 +5703,7 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                             noConv2.qgstdTotNeg = ((noConv2.mgasmistNeg + noConv2.moleomistNeg) /
                                                    (noConv2.dengmist * 1.225)) *
                                                   noConv2.flu.dStockTankVaporMassFraction;
-                            if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                            if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                 malha[col2].celula[1].acsr.tipo = 2;
                                 if (malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto == 0)
                                     malha[col2].celula[1].acsr.injl.FluidoPro.flashCompleto = 2;
@@ -5716,7 +5716,7 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                                 noConv2.qgstdTot *= 86400;
 
                                 malha[col2].celula[1].acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
-                            } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                            } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                 malha[col2].celula[1].acsr.tipo = 1;
                                 if (malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto == 0)
                                     malha[col2].celula[1].acsr.injg.FluidoPro.flashCompleto = 2;
@@ -5752,9 +5752,9 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                         for (int icol = 0; icol < nderiva; icol++) {
                             if (icol == nderiva - 1) {
                                 int aux = ordCol[icol];
-                                if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                                if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                     malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
-                                } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                                } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                     malha[aux].celula[0].acsr.injg.FluidoPro = noConv.flu;
                                 } else {
                                     malha[aux].celula[0].acsr.injm.FluidoPro = noConv.flu;
@@ -5763,7 +5763,7 @@ void cicloRedeCompCego(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                             } else {
                                 int aux = ordCol[icol];
                                 if (malha[aux].arq.ConContEntrada != 2) {
-                                    if ((*arqRede.vg1dSP).fluidoRede != 0) {
+                                    if ((*arqRede.simulationContext).networkFluidMode != 0) {
                                         malha[aux].celula[0].acsr.injl.FluidoPro = noConv.flu;
                                         malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
                                         if ((malha[aux].celula[0].acsr.injl.QLiq) < 0) {
@@ -5961,7 +5961,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
     noConv.qcmistStdNeg = 0.;
     noConv.TRmist = 0.;
     int aplicaFluiCol = 0;
-    if ((*arqRede.vg1dSP).fluidoRede == 1)
+    if ((*arqRede.simulationContext).networkFluidMode == 1)
         malha[i].celula[recb].acsr.injl.fluidocol = malha[i].celula[recb].fluicol;
     int kpos = 0;
     for (int k = 0; k < naflu; k++) {
@@ -5978,7 +5978,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
                 Bet[k] = malha[ind].celula[fim].bet;
 
-                if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
+                if (Bet[k] > (*arqRede.simulationContext).smallValueTolerance && aplicaFluiCol == 0 && (*arqRede.simulationContext).networkFluidMode == 1) {
                     malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[fim].fluicol;
                     aplicaFluiCol = 1;
                 }
@@ -6011,7 +6011,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
 
                 noConv.qostdTot += qostd[k];
                 double qgtemp;
-                if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
+                if ((*arqRede.simulationContext).networkFluidBalanceMode == 0)
                     qgtemp = qostd[k] * RGO[k];
                 else
                     qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
@@ -6075,7 +6075,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
                 Denag[k] = malha[ind].celula[fim].flui.Denag;
 
                 double qgtemp;
-                if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
+                if ((*arqRede.simulationContext).networkFluidBalanceMode == 0)
                     qgtemp = qostd[k] * RGO[k];
                 else
                     qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[fim].flui.RS(pres, temp[k]) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
@@ -6117,7 +6117,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
             temp[k] = malha[ind].networkCoupling.chokeOutletTemperature;
             Bet[k] = malha[ind].celula[ini].bet;
 
-            if (Bet[k] > (*arqRede.vg1dSP).localtiny && aplicaFluiCol == 0 && (*arqRede.vg1dSP).fluidoRede == 1) {
+            if (Bet[k] > (*arqRede.simulationContext).smallValueTolerance && aplicaFluiCol == 0 && (*arqRede.simulationContext).networkFluidMode == 1) {
                 malha[i].celula[recb].acsr.injl.fluidocol = malha[ind].celula[ini].fluicol;
                 aplicaFluiCol = 1;
             }
@@ -6150,7 +6150,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
 
             noConv.qostdTot += qostd[k];
             double qgtemp;
-            if ((*arqRede.vg1dSP).tipoFluidoRedeGlob == 0)
+            if ((*arqRede.simulationContext).networkFluidBalanceMode == 0)
                 qgtemp = qostd[k] * RGO[k];
             else
                 qgtemp = Mgas[k] / rhogST[k] + qostd[k] * malha[ind].celula[ini].flui.RS(pres, temp[k]) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre;
@@ -6186,7 +6186,7 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
         }
     }
     if (kpos > 0) {
-        if (noConv.qostdTot > (*arqRede.vg1dSP).localtiny) {
+        if (noConv.qostdTot > (*arqRede.simulationContext).smallValueTolerance) {
             noConv.RGOmist = noConv.qgstdTot / noConv.qostdTot;
             noConv.apimist = noConv.apimist / noConv.qostdTot;
             noConv.apimist = 141.5 / noConv.apimist - 131.5;
@@ -6198,30 +6198,30 @@ void totalizaCicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int 
             noConv.LVisL = malha[i].celula[recb].flui.VisOM(noConv.tL);
             noConv.LVisH = malha[i].celula[recb].flui.VisOM(noConv.tH);
         }
-        if (noConv.qgstdTot > (*arqRede.vg1dSP).localtiny) {
+        if (noConv.qgstdTot > (*arqRede.simulationContext).smallValueTolerance) {
             noConv.dengmist = noConv.dengmist / noConv.qgstdTot;
             noConv.yco2mist = noConv.yco2mist / noConv.qgstdTot;
         } else {
             noConv.dengmist = malha[i].celula[recb].flui.Deng;
             noConv.yco2mist = malha[i].celula[recb].flui.yco2;
         }
-        if ((noConv.qostdTot + noConv.qwmist) > (*arqRede.vg1dSP).localtiny)
+        if ((noConv.qostdTot + noConv.qwmist) > (*arqRede.simulationContext).smallValueTolerance)
             noConv.bswmist = noConv.qwmist / (noConv.qostdTot + noConv.qwmist);
         else
             noConv.bswmist = malha[i].celula[recb].flui.BSW;
-        if (noConv.qwmist > (*arqRede.vg1dSP).localtiny)
+        if (noConv.qwmist > (*arqRede.simulationContext).smallValueTolerance)
             noConv.denagmist = noConv.denagmist / noConv.qwmist;
         else
             noConv.denagmist = malha[i].celula[recb].flui.Denag;
-        if (noConv.cpmist > (*arqRede.vg1dSP).localtiny)
+        if (noConv.cpmist > (*arqRede.simulationContext).smallValueTolerance)
             noConv.tempmist = noConv.tempmist / noConv.cpmist;
         else
             noConv.tempmist = 0.;
-        if (noConv.qlmistStd > (*arqRede.vg1dSP).localtiny)
+        if (noConv.qlmistStd > (*arqRede.simulationContext).smallValueTolerance)
             noConv.betmist = noConv.betmist / noConv.qlmistStd;
         else
             noConv.betmist = 0.;
-        if (noConv.mliqCmist > (*arqRede.vg1dSP).localtiny * 1e-15)
+        if (noConv.mliqCmist > (*arqRede.simulationContext).smallValueTolerance * 1e-15)
             noConv.TRmist /= noConv.mliqCmist;
         else
             noConv.TRmist = 0.;
@@ -6262,13 +6262,13 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
     double norma = 0.;
     int nnos = 0;
     int narq = arqRede.nsisprod - 0 * indativo;
-    (*arqRede.vg1dSP).relax = arqRede.relax;
+    (*arqRede.simulationContext).networkRelaxationFactor = arqRede.relax;
     Vcr<int> Resolv(narq, 0);
     Vcr<int> IndNorma(narq, 0);
     Vcr<int> Retorna(narq, 0);
-    if ((*arqRede.vg1dSP).iterRede >= 5) {
+    if ((*arqRede.simulationContext).networkIteration >= 5) {
     }
-    cout << "#################Iniciando ciclo iterativo: " << (*arqRede.vg1dSP).iterRede << endl;
+    cout << "#################Iniciando ciclo iterativo: " << (*arqRede.simulationContext).networkIteration << endl;
     int ciclomalha = 0;
     double valor;
     for (int i = 0; i < narq; i++) {
@@ -6279,8 +6279,8 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
     }
     int testaNMalha = ciclomalha - narq + 1;
     while (ciclomalha < narq - 1) {
-        int ntrdLocal = (*arqRede.vg1dSP).ntrd;
-        if ((*arqRede.vg1dSP).ntrd > narq)
+        int ntrdLocal = (*arqRede.simulationContext).solverThreadCount;
+        if ((*arqRede.simulationContext).solverThreadCount > narq)
             ntrdLocal = narq;
 #pragma omp parallel for num_threads(ntrdLocal)
         for (int i = 0; i < narq; i++) {
@@ -6295,7 +6295,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                 Resolv[i] == 0 && inativo[i] == 0) {
                 double valor = 0.;
                 if (arqRede.malha[i].perm == 1) {
-                    (*arqRede.vg1dSP).qualTramo = i;
+                    (*arqRede.simulationContext).branchIndex = i;
                     if (malha[i].arq.ConContEntrada == 0) {
                         int reverso = 0;
                         if (malha[i].celula[0].acsr.tipo == 1) {
@@ -6312,10 +6312,10 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                         malha[i].modoPerm = 1;
                         if (reverso == 0) {
                             if (malha[i].arq.chokep.abertura[0] > 0.6) {
-                                if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0) { // mudancaChute
+                                if ((*arqRede.simulationContext).networkIteration == 0 && arqRede.chute == 0) { // mudancaChute
 
                                     if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].gasLift.cells[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.vg1dSP).arearef;
+                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.simulationContext).referenceFlowArea;
                                     if (malha[i].arq.lingas == 1 && malha[i].gasLift.cells[0].tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
@@ -6372,9 +6372,9 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                     //}//mudancaChute
                                 }
                             } else {
-                                if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0) { // mudancaChute
+                                if ((*arqRede.simulationContext).networkIteration == 0 && arqRede.chute == 0) { // mudancaChute
                                     if (malha[i].arq.lingas == 1 && malha[i].arq.gasinj.chuteVaz == 0 && malha[i].gasLift.cells[0].tipoCC == 0)
-                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.vg1dSP).arearef;
+                                        malha[i].arq.gasinj.vazgas[0] = 150000 * malha[i].gasLift.cells[0].duto.area / (*arqRede.simulationContext).referenceFlowArea;
                                     if (malha[i].arq.lingas == 1 && malha[i].gasLift.cells[0].tipoCC == 0) {
                                         double ciclo = 1.1e9;
                                         int konta = 0;
@@ -6431,7 +6431,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                 }
                             }
                         } else {
-                            if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
+                            if ((*arqRede.simulationContext).networkIteration == 0 && arqRede.chute == 0)
                                 valor = malha[i].buscaProdPfundoPermRev();
                             else
                                 valor = malha[i].buscaProdPfundoPermRev(malha[i].celula[0].pres);
@@ -6465,12 +6465,12 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                     inativoColetor(i, arqRede, inativo, narq);
                     if (valor < -1e9) {
                         aviso(i);
-                        (*arqRede.vg1dSP).iterRede = 200;
+                        (*arqRede.simulationContext).networkIteration = 200;
                     } else {
                         aviso2(i);
-                        (*arqRede.vg1dSP).iterRede = 200;
+                        (*arqRede.simulationContext).networkIteration = 200;
                     }
-                    (*arqRede.vg1dSP).restartRede = 1;
+                    (*arqRede.simulationContext).networkRestartRequested = 1;
                     Retorna[i] = -1;
                 }
                 Resolv[i] = 1;
@@ -6627,7 +6627,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                             int indaflu = arqRede.malha[auxMaster].afluente[iaflu];
                             malha[indaflu].steadySearch.reverseNetworkFluid = malha[auxMaster].celula[celProp].flui;
                             malha[indaflu].steadySearch.reverseFlowTemperature = malha[auxMaster].celula[0].temp;
-                            if ((*arqRede.vg1dSP).fluidoRede == 0)
+                            if ((*arqRede.simulationContext).networkFluidMode == 0)
                                 malha[indaflu].arq.razCompGasReves = malha[auxMaster].celula[celProp].acsr.injg.razCompGas;
                         }
                         for (int icol = 0; icol < nderiva - 1; icol++) {
@@ -6646,7 +6646,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                             recb = 0;
                         if (totBloq1 > 0) {
                             totalizaCicloRede(malha, arqRede, inativo, indativo, naflu, i, recb, nBloq1, noConv1, auxMaster);
-                            if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                            if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                 if (malha[i].celula[recb].acsr.injl.FluidoPro.flashCompleto == 2)
                                     malha[i].celula[recb].acsr.injl.FluidoPro.flashCompleto = 0;
                                 malha[i].celula[recb].acsr.tipo = 2;
@@ -6667,7 +6667,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
 
                                 malha[i].celula[recb].acsr.injl.QLiq = noConv1.qlmistStd + noConv1.qlmistStdNeg;
 
-                            } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                            } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                 if (malha[i].celula[recb].acsr.injg.FluidoPro.flashCompleto == 2)
                                     malha[i].celula[recb].acsr.injg.FluidoPro.flashCompleto = 0;
                                 malha[i].celula[recb].acsr.tipo = 1;
@@ -6719,7 +6719,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                         }
                         if (totBloq2 > 0) {
                             totalizaCicloRede(malha, arqRede, inativo, indativo, naflu, col2, recb, nBloq2, noConv2, auxMaster);
-                            if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                            if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                 if (malha[col2].celula[recb].acsr.injl.FluidoPro.flashCompleto == 2)
                                     malha[col2].celula[recb].acsr.injl.FluidoPro.flashCompleto = 0;
                                 malha[col2].celula[recb].acsr.tipo = 2;
@@ -6740,7 +6740,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
 
                                 malha[col2].celula[recb].acsr.injl.QLiq = noConv2.qlmistStd + noConv2.qlmistStdNeg;
 
-                            } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                            } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                 if (malha[col2].celula[recb].acsr.injg.FluidoPro.flashCompleto == 2)
                                     malha[col2].celula[recb].acsr.injg.FluidoPro.flashCompleto = 0;
                                 malha[col2].celula[recb].acsr.tipo = 1;
@@ -6794,8 +6794,8 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                         for (int icol = 0; icol < nderiva; icol++) {
                             if (icol == nderiva - 1) {
                                 int aux = ordCol[icol];
-                                (*arqRede.vg1dSP).qualTramo = aux;
-                                if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                                (*arqRede.simulationContext).branchIndex = aux;
+                                if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                     if (malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto == 2)
                                         malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto = 0;
                                     malha[aux].celula[0].acsr.tipo = 2;
@@ -6820,7 +6820,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                     malha[aux].celula[0].acsr.injl.QLiq = noConv.qlmistStd + noConv.qlmistStdNeg;
 
                                     malha[aux].celula[0].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
-                                } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                                } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                     if (malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto == 2)
                                         malha[aux].celula[0].acsr.injg.FluidoPro.flashCompleto = 0;
                                     malha[aux].celula[0].acsr.tipo = 1;
@@ -6903,18 +6903,18 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                     }
                                     if (reverso == 0) {
                                         if (malha[aux].arq.chokep.abertura[0] > 0.6) {
-                                            if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
+                                            if ((*arqRede.simulationContext).networkIteration == 0 && arqRede.chute == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm();
                                             else
                                                 valor = malha[aux].buscaProdPfundoPerm(malha[i].celula[0].pres);
                                         } else {
-                                            if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
+                                            if ((*arqRede.simulationContext).networkIteration == 0 && arqRede.chute == 0)
                                                 valor = malha[aux].buscaProdPfundoPerm2();
                                             else
                                                 valor = malha[aux].buscaProdPfundoPerm2(malha[i].celula[0].pres);
                                         }
                                     } else {
-                                        if ((*arqRede.vg1dSP).iterRede == 0 && arqRede.chute == 0)
+                                        if ((*arqRede.simulationContext).networkIteration == 0 && arqRede.chute == 0)
                                             valor = malha[aux].buscaProdPfundoPermRev();
                                         else
                                             valor = malha[aux].buscaProdPfundoPermRev(malha[aux].celula[0].pres);
@@ -6929,12 +6929,12 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                     inativoAfluente(aux, arqRede, inativo);
                                     if (valor < -1e9) {
                                         aviso(aux);
-                                        (*arqRede.vg1dSP).iterRede = 200;
+                                        (*arqRede.simulationContext).networkIteration = 200;
                                     } else {
                                         aviso2(aux);
-                                        (*arqRede.vg1dSP).iterRede = 200;
+                                        (*arqRede.simulationContext).networkIteration = 200;
                                     }
-                                    (*arqRede.vg1dSP).restartRede = 1;
+                                    (*arqRede.simulationContext).networkRestartRequested = 1;
                                     return 9000.;
                                 }
                                 Resolv[aux] = 1;
@@ -6959,9 +6959,9 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                     }
                                     for (int iaflu = 0; iaflu < arqRede.malha[aux].nafluente; iaflu++) {
                                         int indaflu = arqRede.malha[aux].afluente[iaflu];
-                                        if ((*arqRede.vg1dSP).fluidoRede == 1)
+                                        if ((*arqRede.simulationContext).networkFluidMode == 1)
                                             malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injl.FluidoPro;
-                                        else if ((*arqRede.vg1dSP).fluidoRede == 0)
+                                        else if ((*arqRede.simulationContext).networkFluidMode == 0)
                                             malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injg.FluidoPro;
                                         else
                                             malha[indaflu].celula[malha[indaflu].ncel].flui = malha[aux].celula[0].acsr.injm.FluidoPro;
@@ -6975,11 +6975,11 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                 }
                                             }
                                             if (arqRede.malha[indaflu].presimposta == 0) {
-                                                if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5)
+                                                if ((*arqRede.simulationContext).networkIteration <= 1 && (*arqRede.simulationContext).networkRelaxationFactor > 0.5)
                                                     malha[indaflu].gasLift.separatorPressure = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[indaflu].gasLift.separatorPressure;
                                                 else
-                                                    malha[indaflu].gasLift.separatorPressure = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                           (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].gasLift.separatorPressure;
+                                                    malha[indaflu].gasLift.separatorPressure = ((*arqRede.simulationContext).networkRelaxationFactor) * malha[aux].celula[0].pres +
+                                                                           (1. - (*arqRede.simulationContext).networkRelaxationFactor) * malha[indaflu].gasLift.separatorPressure;
                                             }
                                         } else {
                                             malha[indaflu].gasLift.separatorPressure = malha[aux].celula[0].pres;
@@ -6997,17 +6997,17 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                 for (int icol2 = 0; icol2 < nderiva - 1; icol2++) {
                                     norma += pow((malha[ordCol[icol2]].celula[0].pres - malha[aux].celula[0].pres) / malha[aux].celula[0].pres, 2.);
                                     nnos++;
-                                    if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
+                                    if ((*arqRede.simulationContext).networkIteration <= 1 && (*arqRede.simulationContext).networkRelaxationFactor > 0.5) {
                                         malha[ordCol[icol2]].celula[0].pres = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
                                     } else {
-                                        malha[ordCol[icol2]].celula[0].pres = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                              (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].celula[0].pres = ((*arqRede.simulationContext).networkRelaxationFactor) * malha[aux].celula[0].pres +
+                                                                              (1. - (*arqRede.simulationContext).networkRelaxationFactor) * malha[ordCol[icol2]].celula[0].pres;
                                     }
-                                    if ((*arqRede.vg1dSP).iterRede <= 1 && (*arqRede.vg1dSP).relax > 0.5) {
+                                    if ((*arqRede.simulationContext).networkIteration <= 1 && (*arqRede.simulationContext).networkRelaxationFactor > 0.5) {
                                         malha[ordCol[icol2]].presE = (0.5) * malha[aux].celula[0].pres + (1. - 0.5) * malha[ordCol[icol2]].celula[0].pres;
                                     } else {
-                                        malha[ordCol[icol2]].presE = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres +
-                                                                     (1. - (*arqRede.vg1dSP).relax) * malha[ordCol[icol2]].celula[0].pres;
+                                        malha[ordCol[icol2]].presE = ((*arqRede.simulationContext).networkRelaxationFactor) * malha[aux].celula[0].pres +
+                                                                     (1. - (*arqRede.simulationContext).networkRelaxationFactor) * malha[ordCol[icol2]].celula[0].pres;
                                     }
                                     malha[ordCol[icol2]].tempE = noConv.tempmist;
                                     malha[ordCol[icol2]].betaE = noConv.betmist;
@@ -7018,20 +7018,20 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                 double chutemass = 0.;
                                 double area = 0.;
                                 int aux = ordCol[icol];
-                                if ((*arqRede.vg1dSP).iterRede == 0) {
+                                if ((*arqRede.simulationContext).networkIteration == 0) {
                                     int indAflu = arqRede.malha[aux].afluente[0];
                                     malha[aux].celula[0].pres = malha[indAflu].gasLift.separatorPressure;
                                 }
-                                (*arqRede.vg1dSP).qualTramo = aux;
+                                (*arqRede.simulationContext).branchIndex = aux;
                                 if (malha[aux].arq.ConContEntrada != 2) {
                                     if (malha[aux].arq.perm == 1) {
-                                        if ((*arqRede.vg1dSP).fluidoRede != 0) {
+                                        if ((*arqRede.simulationContext).networkFluidMode != 0) {
                                             if (malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto == 2)
                                                 malha[aux].celula[0].acsr.injl.FluidoPro.flashCompleto = 0;
                                             malha[aux].celula[0].acsr.tipo = 2;
                                             malha[aux].celula[0].acsr.injl.bet = noConv.betmist;
                                             malha[aux].celula[0].acsr.injl.temp = noConv.tempmist;
-                                            if ((*arqRede.vg1dSP).iterRede == 0 || malha[aux].celula[0].acsr.injl.QLiq > 0) {
+                                            if ((*arqRede.simulationContext).networkIteration == 0 || malha[aux].celula[0].acsr.injl.QLiq > 0) {
                                                 malha[aux].celula[0].acsr.injl.FluidoPro.RGO = noConv.RGOmist;
                                                 malha[aux].celula[0].acsr.injl.FluidoPro.Deng = noConv.dengmist;
                                                 malha[aux].celula[0].acsr.injl.FluidoPro.Denag = noConv.denagmist;
@@ -7056,7 +7056,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                             malha[aux].celula[0].acsr.tipo = 1;
                                             malha[aux].celula[0].acsr.injg.seco = 0;
                                             malha[aux].celula[0].acsr.injg.temp = noConv.tempmist;
-                                            if ((*arqRede.vg1dSP).iterRede == 0 || malha[aux].celula[0].acsr.injg.QGas > 0) {
+                                            if ((*arqRede.simulationContext).networkIteration == 0 || malha[aux].celula[0].acsr.injg.QGas > 0) {
                                                 malha[aux].celula[0].acsr.injg.FluidoPro.RGO = noConv.RGOmist;
                                                 malha[aux].celula[0].acsr.injg.FluidoPro.API = noConv.apimist;
                                                 malha[aux].celula[0].acsr.injg.FluidoPro.BSW = noConv.bswmist;
@@ -7107,8 +7107,8 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                         int indicadorVP = aux;
                                         indicadorVP = -1;
                                         if (indicadorVP == -1) {
-                                            if ((*arqRede.vg1dSP).iterRede == 0) {
-                                                if ((*arqRede.vg1dSP).fluidoRede != 0)
+                                            if ((*arqRede.simulationContext).networkIteration == 0) {
+                                                if ((*arqRede.simulationContext).networkFluidMode != 0)
                                                     chutemass = (noConv.qlmistStd + noConv.qlmistStdNeg) * malha[aux].celula[0].duto.area / area;
                                                 else {
                                                     chutemass = (noConv.qgstdTot * 86400. +
@@ -7121,9 +7121,9 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                         malha[aux].celula[0].acsr.injg.razCompGas = 0.;
                                                 }
                                             } else {
-                                                if ((*arqRede.vg1dSP).fluidoRede == 1)
+                                                if ((*arqRede.simulationContext).networkFluidMode == 1)
                                                     chutemass = malha[aux].celula[0].acsr.injl.QLiq;
-                                                else if ((*arqRede.vg1dSP).fluidoRede == 0)
+                                                else if ((*arqRede.simulationContext).networkFluidMode == 0)
                                                     chutemass = malha[aux].celula[0].acsr.injg.QGas;
                                             }
                                         }
@@ -7141,7 +7141,7 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                     malha[aux].celula[0].acsr.injg.razCompGas = malha[aux].arq.razCompGasReves;
                                                     valor = malha[aux].buscaProdPresPresPermRev(chutemass, -1 * noConv.qgstdTot * 86400);
                                                 }
-                                                if ((*arqRede.vg1dSP).fluidoRede != 0) {
+                                                if ((*arqRede.simulationContext).networkFluidMode != 0) {
                                                     if (malha[aux].celula[0].acsr.injl.QLiq > (noConv.qlmistStd + noConv.qlmistStdNeg)) {
                                                         malha[aux].celula[0].acsr.injl.QLiq = chutemass;
                                                         cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo: " << aux << endl;
@@ -7167,28 +7167,28 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                             inativoAfluente(aux, arqRede, inativo);
                                             if (valor < -1e9) {
                                                 aviso(aux);
-                                                (*arqRede.vg1dSP).iterRede = 200;
+                                                (*arqRede.simulationContext).networkIteration = 200;
                                             } else {
                                                 aviso2(aux);
-                                                (*arqRede.vg1dSP).iterRede = 200;
+                                                (*arqRede.simulationContext).networkIteration = 200;
                                             }
-                                            (*arqRede.vg1dSP).restartRede = 1;
+                                            (*arqRede.simulationContext).networkRestartRequested = 1;
                                             return 9000.;
                                         }
                                         Resolv[aux] = 1;
                                         resolvGlob += Resolv[aux];
                                         ciclomalha++;
-                                        if ((*arqRede.vg1dSP).fluidoRede == 1) {
+                                        if ((*arqRede.simulationContext).networkFluidMode == 1) {
                                             if (arqRede.malha[aux].perm == 1 && (malha[aux].celula[0].acsr.injl.QLiq) > 0)
                                                 noConv.qlmistStd -= malha[aux].celula[0].acsr.injl.QLiq;
                                             if (fabs(malha[aux].celula[0].acsr.injl.QLiq - sisprod::kNoFlowSolutionMarker) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo  : " << aux << endl;
-                                        } else if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                                        } else if ((*arqRede.simulationContext).networkFluidMode == 0) {
                                             if (arqRede.malha[aux].perm == 1 && (malha[aux].celula[0].acsr.injg.QGas) > 0)
                                                 noConv.qgstdTot -= malha[aux].celula[0].acsr.injg.QGas / 86400;
                                             if (fabs(malha[aux].celula[0].acsr.injg.QGas - sisprod::kNoFlowSolutionMarker) < 1e-15)
                                                 cout << "Tramo de bifurcacao com problemas-aceitando mais vazao do que a soma das correntes-revisar condiçao de contorno no tramo : " << aux << endl;
-                                        } else if ((*arqRede.vg1dSP).fluidoRede == 2) {
+                                        } else if ((*arqRede.simulationContext).networkFluidMode == 2) {
                                             if (arqRede.malha[aux].perm == 1 &&
                                                 (malha[aux].celula[0].acsr.injl.QLiq) > 0) {
                                                 double rlcA = malha[aux].celula[0].acsr.injl.fluidocol.standardDensity();
@@ -7225,12 +7225,12 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                 inativoAfluente(aux, arqRede, inativo);
                                                 if (valor < -1e9) {
                                                     aviso(aux);
-                                                    (*arqRede.vg1dSP).iterRede = 200;
+                                                    (*arqRede.simulationContext).networkIteration = 200;
                                                 } else {
                                                     aviso2(aux);
-                                                    (*arqRede.vg1dSP).iterRede = 200;
+                                                    (*arqRede.simulationContext).networkIteration = 200;
                                                 }
-                                                (*arqRede.vg1dSP).restartRede = 1;
+                                                (*arqRede.simulationContext).networkRestartRequested = 1;
                                                 return 9000.;
                                             }
                                             Resolv[aux] = 1;
@@ -7244,13 +7244,13 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
                                                                                 (1 - malha[aux].celula[0].acsr.injm.FluidoPro.BSW));
                                             double fracmasshidra = malha[aux].celula[0].acsr.injm.FluidoPro.FracMassHidra(malha[aux].celula[0].pres,
                                                                                                                           malha[aux].celula[0].temp);
-                                            if ((*arqRede.vg1dSP).fluidoRede == 1 && malha[aux].celula[0].acsr.injm.MassP > 0.) {
+                                            if ((*arqRede.simulationContext).networkFluidMode == 1 && malha[aux].celula[0].acsr.injm.MassP > 0.) {
                                                 if (arqRede.malha[aux].perm == 1) {
                                                     noConv.qlmistStd -= (malha[aux].celula[0].acsr.injm.MassP * 86400. /
                                                                              ((1. - fracmasshidra) * multiplicador) +
                                                                          malha[aux].celula[0].acsr.injm.MassC * 86400. / rlcA);
                                                 }
-                                            } else if ((*arqRede.vg1dSP).fluidoRede == 0 && malha[aux].celula[0].acsr.injm.MassG > 0.) {
+                                            } else if ((*arqRede.simulationContext).networkFluidMode == 0 && malha[aux].celula[0].acsr.injm.MassG > 0.) {
                                                 double tit = malha[aux].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
                                                 noConv.qgstdTot -= malha[aux].celula[0].acsr.injm.MassG * tit /
                                                                    (malha[aux].celula[0].acsr.injm.FluidoPro.Deng * 1.225 * fracmasshidra);
@@ -7277,8 +7277,8 @@ double cicloRede(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int indati
     }
 
     if (fabs(testaNMalha) > 0) {
-        (*arqRede.vg1dSP).erroRede = fabs(sqrt(norma) / nnos - (*arqRede.vg1dSP).norma0) / (*arqRede.vg1dSP).norma0;
-        (*arqRede.vg1dSP).norma0 = sqrt(norma) / nnos;
+        (*arqRede.simulationContext).networkNormRelativeChange = fabs(sqrt(norma) / nnos - (*arqRede.simulationContext).previousNetworkNorm) / (*arqRede.simulationContext).previousNetworkNorm;
+        (*arqRede.simulationContext).previousNetworkNorm = sqrt(norma) / nnos;
         return sqrt(norma) / nnos;
     } else {
         return 0;
@@ -7291,7 +7291,7 @@ void alteraModoFluidoCompBlack(span<SProd> malha, int narq, Vcr<int> &calclat0, 
         calclat0[j] = malha[j].CalcLat;
         malha[j].CalcLat = 0;
         tipoFluido0[j] = malha[j].arq.tipoFluido;
-        (*malha[j].vg1dSP).blackOilTemp = 1;
+        (*malha[j].simulationContext).temporaryBlackOilMode = 1;
         malha[j].arq.tipoFluido = 0;
         malha[j].steadySearch.reverseNetworkFluid.flashCompleto = 0;
         malha[j].steadySearch.reverseNetworkFluid.modoBlackTemp = 0;
@@ -7341,7 +7341,7 @@ void alteraModoFluidoBlackComp(span<SProd> malha, int narq, Vcr<int> calclat0, V
         malha[j].arq.flashCompleto = 2;
         malha[j].CalcLat = calclat0[j];
         malha[j].arq.tipoFluido = tipoFluido0[j];
-        (*malha[j].vg1dSP).blackOilTemp = 0;
+        (*malha[j].simulationContext).temporaryBlackOilMode = 0;
         malha[j].steadySearch.reverseNetworkFluid.flashCompleto = 2;
         malha[j].steadySearch.reverseNetworkFluid.modoBlackTemp = 0;
         for (int i = 0; i <= malha[j].ncel; i++) {
@@ -7396,31 +7396,31 @@ int convergeRede(span<SProd> malha, Rede &arqRede, int narq, Vcr<int> &inativo, 
         limConvergeLocal *= 2.1;
         convergeaux = 1;
     }
-    while (norma > limConvergeLocal && indativo < narq && (*arqRede.vg1dSP).restartRede == 0 && (*arqRede.vg1dSP).iterRede < 200) {
-        if ((*arqRede.vg1dSP).erroRede < 0.01) {
+    while (norma > limConvergeLocal && indativo < narq && (*arqRede.simulationContext).networkRestartRequested == 0 && (*arqRede.simulationContext).networkIteration < 200) {
+        if ((*arqRede.simulationContext).networkNormRelativeChange < 0.01) {
             cout << "convergencia da Rede se tornando lenta ou perdida, "
                     "um motivo provável para isto sao os limites de valores de tabela, caso a opçao PVTSim puro esteja sendo usada"
                  << endl;
-            (*arqRede.vg1dSP).relax *= 0.5;
-            if ((*arqRede.vg1dSP).relax < 0.1)
-                (*arqRede.vg1dSP).relax = 0.1;
+            (*arqRede.simulationContext).networkRelaxationFactor *= 0.5;
+            if ((*arqRede.simulationContext).networkRelaxationFactor < 0.1)
+                (*arqRede.simulationContext).networkRelaxationFactor = 0.1;
         }
         indativo = 0;
         for (int i = 0; i < narq; i++)
             indativo += inativo[i];
         if (malha[0].arq.flashCompleto != 2) {
-            (*arqRede.vg1dSP).verificaTramo = 0;
+            (*arqRede.simulationContext).branchCheckEnabled = 0;
             norma = cicloRede(malha, arqRede, inativo, indativo, normaEvol, bloq);
-            if (convergeaux == 1 && (*arqRede.vg1dSP).iterRede > 20)
+            if (convergeaux == 1 && (*arqRede.simulationContext).networkIteration > 20)
                 norma = limConvergeLocal / 2.;
         } else {
-            (*arqRede.vg1dSP).verificaTramo = 1;
+            (*arqRede.simulationContext).branchCheckEnabled = 1;
             norma = cicloRedeComp(malha, arqRede, inativo, indativo, normaEvol, bloq);
         }
-        cout << "iteracao= " << (*arqRede.vg1dSP).iterRede << " norma= " << norma << " tramos inativos= " << indativo << endl;
-        (*arqRede.vg1dSP).iterRede++;
+        cout << "iteracao= " << (*arqRede.simulationContext).networkIteration << " norma= " << norma << " tramos inativos= " << indativo << endl;
+        (*arqRede.simulationContext).networkIteration++;
     }
-    if ((*arqRede.vg1dSP).iterRede >= 200) {
+    if ((*arqRede.simulationContext).networkIteration >= 200) {
         cout << "Problema na convergencia da rede, abortando calculo " << endl;
         return -1;
     } else
@@ -7458,7 +7458,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
             if (reverso == 0) { // caso o escoamento siga o sentido montante-jusante pre definido
                 if (sistem1.celula[0].acsr.tipo == 1 && sistem1.celula[0].acsr.injg.seco == 1)
                     sistem1.celula[0].flui.RGO =
-                        sistem1.celula[0].acsr.injg.FluidoPro.RGO = 1e6 + (*sistem1.vg1dSP).localtiny; // para o caso de fonte
+                        sistem1.celula[0].acsr.injg.FluidoPro.RGO = 1e6 + (*sistem1.simulationContext).smallValueTolerance; // para o caso de fonte
                 // de gas seco, neste caso, não existe condensado e, pelas limitações do modelo de propriedade black oil, é necessário admitir
                 // um valor de RGO nop sistema de produção, neste caso, impoe-se um valor muito alto de RGO, par que não cause impacto
                 // na simulacao de gas seco
@@ -7474,7 +7474,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                         // com uma estimativa inicial obtida de uma solucao com vazao de injecao
                         // caso este chute nao seja fornecido no json
                         // faz-se uma estimativa:
-                        sistem1.arq.gasinj.vazgas[0] = 150000 * sistem1.gasLift.cells[0].duto.area / (*sistem1.vg1dSP).arearef;
+                        sistem1.arq.gasinj.vazgas[0] = 150000 * sistem1.gasLift.cells[0].duto.area / (*sistem1.simulationContext).referenceFlowArea;
                     // com esta estimativa, faz-se uma primeira solucao
                     // permanente com condicao de contorno vazao de injecao
                     if (sistem1.arq.lingas == 1 && sistem1.gasLift.cells[0].tipoCC == 0) {
@@ -7549,7 +7549,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                         // com uma estimativa inicial obtida de uma solucao com vazao de injecao
                         // caso este chute nao seja fornecido no json
                         // faz-se uma estimativa:
-                        sistem1.arq.gasinj.vazgas[0] = 150000 * sistem1.gasLift.cells[0].duto.area / (*sistem1.vg1dSP).arearef;
+                        sistem1.arq.gasinj.vazgas[0] = 150000 * sistem1.gasLift.cells[0].duto.area / (*sistem1.simulationContext).referenceFlowArea;
                     // com esta estimativa, faz-se uma primeira solucao
                     // permanente com condicao de contorno vazao de injecao
                     if (sistem1.arq.lingas == 1 && sistem1.gasLift.cells[0].tipoCC == 0) {
@@ -7627,7 +7627,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
             else
                 fluCP = sistem1.arq.flup[sistem1.arq.CCPres.indFluido];
             // valçores de condicao de contorno
-            if (tit < (1. - (*sistem1.vg1dSP).localtiny) && sistem1.arq.tipoFluido == 0) { // caso em que se injeta uma corrente bifasica,
+            if (tit < (1. - (*sistem1.simulationContext).smallValueTolerance) && sistem1.arq.tipoFluido == 0) { // caso em que se injeta uma corrente bifasica,
                 // preparacao das condicoes de entrada
                 // RGO de entrada para a solucao permanente neste caso, observar
                 // que nao se indica a RGO de entrada e sim o título de entrada
@@ -7738,9 +7738,9 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                     titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                     sistem1.titE = titT;
                     sistem1.betaE = val1 / (val2 + val1);
-                    rgoentrada = 1e6 + (*sistem1.vg1dSP).localtiny;
+                    rgoentrada = 1e6 + (*sistem1.simulationContext).smallValueTolerance;
                     if (rgoentrada > 1400.)
-                        rgoentrada = 1e6 + (*sistem1.vg1dSP).localtiny;
+                        rgoentrada = 1e6 + (*sistem1.simulationContext).smallValueTolerance;
                     fluCP.RGO = sistem1.celula[0].flui.RGO = sistem1.celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
                     sistem1.celula[0].acsr.injg.FluidoPro.Deng = fluCP.Deng;
                     sistem1.celula[0].acsr.injg.FluidoPro.Denag = fluCP.Denag;
@@ -7763,7 +7763,7 @@ double permanenteSimples(SProd &sistem1, double inichute = -1.) {
                     sistem1.betaE = val1 / (val2 + val1);
                     sistem1.celula[0].acsr.injg.FluidoPro = fluCP;
                 }
-                if (tit >= (1. - (*sistem1.vg1dSP).localtiny)) {
+                if (tit >= (1. - (*sistem1.simulationContext).smallValueTolerance)) {
                     sistem1.celula[0].acsr.injg.seco = 0;
                     sistem1.celula[0].acsr.injg.razCompGas = sistem1.arq.CCPres.bet[0];
                 } else {
@@ -8013,7 +8013,7 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
         }
     }
     // impressão de perfis apos a obtencao de solucao permanente
-    if ((*sistem1.vg1dSP).chaverede == 0 && sistem1.arq.transiente == 0 && sistem1.arq.AP == 0) { // impŕessao de perfis e tendencias, quando a opcao transiente
+    if ((*sistem1.simulationContext).networkMode == 0 && sistem1.arq.transiente == 0 && sistem1.arq.AP == 0) { // impŕessao de perfis e tendencias, quando a opcao transiente
         // nao esta ativa
         sistem1.arq.imprimeProfile(sistem1.celula, sistem1.flut, 0, sistem1.indTramo);
         sistem1.arq.resumoPermanente(sistem1.celula, sistem1.gasLift.cells, sistem1.gasLift.separatorPressure, sistem1.gasLift.injectionPressure, sistem1.indTramo);
@@ -8061,7 +8061,7 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
             }
         }
     }
-    if ((*sistem1.vg1dSP).chaverede == 0 && sistem1.arq.transiente == 0) { // impressao do arquivo de log, quando a
+    if ((*sistem1.simulationContext).networkMode == 0 && sistem1.arq.transiente == 0) { // impressao do arquivo de log, quando a
         // opcao transiente nao esta ativa
         ostringstream saidaT;
         if (sistem1.indTramo < 0) {
@@ -8182,7 +8182,7 @@ double SolveTramoSolteiro(SProd &sistem1, double chute0 = -1.) {
 void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson, SProd &sistem1) {
     // metodo em que e feita a sequencia de simulacoes de analise de sensibilidade, observando que a analise de sensibilidade e
     // feita apenas para tramos simples.
-    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
+    APara analisePara(sistem1.simulationContext, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
                       sistem1.arq.flup, sistem1.arq.bcs, sistem1.arq.multiBcs, sistem1.arq.fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
     // json onde se esta registradoas variaveis que estao envolvidas na analise de sensibilidade e os valores que se
     // testara destas variaveis na analise de sensibilidade
@@ -8226,19 +8226,19 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
 
     Ler *vecArq;
     vecArq = new Ler[analisePara.nVariaveis];
-    varGlob1D *vg1dTramo;
-    vg1dTramo = new varGlob1D[analisePara.nVariaveis];
-    for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++)vg1dTramo[iSeq] = (*sistem1.vg1dSP);
+    SimulationContext *parametricContexts;
+    parametricContexts = new SimulationContext[analisePara.nVariaveis];
+    for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++)parametricContexts[iSeq] = (*sistem1.simulationContext);
     const SProd::CarriedState carried = sistem1.carriedState();
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) {
     	indfalha[iSeq]=0;
-        vg1dTramo[iSeq].sequenciaAP = iSeq;
+        parametricContexts[iSeq].parametricCaseIndex = iSeq;
         string nomeArquivoLogAP = nomeArquivoLog;
         nomeArquivoLogAP.erase(nomeArquivoLogAP.size() - 4);
         std::string sIseq = std::to_string(iSeq);
         nomeArquivoLogAP = nomeArquivoLogAP + "_AP_" + sIseq + ".log";
         vecArq[iSeq].copiaSemJson(sistem1.arq);
-        vecArq[iSeq].vg1dSP = &vg1dTramo[iSeq];
+        vecArq[iSeq].simulationContext = &parametricContexts[iSeq];
     }
     double chute=-1;
     if(sistem1.arq.pocinjec==0){
@@ -8467,7 +8467,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
             	}
         	}
         }
-        (*sistem2.vg1dSP).contaExit = 0;
+        (*sistem2.simulationContext).propertyIterationLimitCount = 0;
     }
 
     // saidaAP << "sucessoAP.dat";//arquivo com o relatorio de sucessos e falhas da AP
@@ -8575,7 +8575,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
 
 
 	escreveAP2.close();
-	delete [] vg1dTramo;
+	delete [] parametricContexts;
 	delete [] vecArq;
 	dadosAP.clear();
 }
@@ -8583,7 +8583,7 @@ void leituraAPparalelo(string nomeArquivoAP, string nomeArquivoLog, tipoValidaca
 void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson, SProd &sistem1) {
     // metodo em que e feita a sequencia de simulacoes de analise de sensibilidade, observando que a analise de sensibilidade e
     // feita apenas para tramos simples.
-    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
+    APara analisePara(sistem1.simulationContext, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
                       sistem1.arq.flup, sistem1.arq.bcs, sistem1.arq.multiBcs, sistem1.arq.fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
     // json onde se esta registradoas variaveis que estao envolvidas na analise de sensibilidade e os valores que se
     // testara destas variaveis na analise de sensibilidade
@@ -8614,10 +8614,10 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
                    "", "");
     }
     SProd sistem2[analisePara.nVariaveis];
-    varGlob1D vg1dTramo[analisePara.nVariaveis];
+    SimulationContext parametricContexts[analisePara.nVariaveis];
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) {
         string nomeArquivoLogAP = nomeArquivoLog;
-        sistem2[iSeq].loadSection(SProd(sistem1.arq.impfile, nomeArquivoLogAP, validacaoJson, sistem1.arq.tipoSimulacao, &vg1dTramo[iSeq]));
+        sistem2[iSeq].loadSection(SProd(sistem1.arq.impfile, nomeArquivoLogAP, validacaoJson, sistem1.arq.tipoSimulacao, &parametricContexts[iSeq]));
     }
 #pragma omp parallel for num_threads(analisePara.nthrdAP)
     for (int iSeq = 0; iSeq < analisePara.nVariaveis; iSeq++) { // laco onde e calculado o permanente de cada combinacao
@@ -8693,7 +8693,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
             }
         }
         cout << "Resolvendo Sequencia " << iSeq << " da analise de sensibilidade" << endl;
-        (*sistem2[iSeq].vg1dSP).sequenciaAP = iSeq;
+        (*sistem2[iSeq].simulationContext).parametricCaseIndex = iSeq;
         falha = SolveTramoSolteiro(sistem2[iSeq]);
         if (fabs(falha) > 0.9e10) {
             // caso ocorre uma falha nma busca da solucao para um caso da analise de sensibilidade
@@ -8732,7 +8732,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
                 sistem2[iSeq].ImprimeTrendG(i);
             }
         }
-        (*sistem2[iSeq].vg1dSP).contaExit = 0;
+        (*sistem2[iSeq].simulationContext).propertyIterationLimitCount = 0;
     }
 
     // saidaAP << "sucessoAP.dat";//arquivo com o relatorio de sucessos e falhas da AP
@@ -8802,7 +8802,7 @@ void leituraAPparaleloReserva(string nomeArquivoAP, string nomeArquivoLog, tipoV
 void leituraAP(string nomeArquivoAP, SProd &sistem1) {
     // metodo em que e feita a sequencia de simulacoes de analise de sensibilidade, observando que a analise de sensibilidade e
     // feita apenas para tramos simples.
-    APara analisePara(sistem1.vg1dSP, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
+    APara analisePara(sistem1.simulationContext, nomeArquivoAP, sistem1.ncel, sistem1.arq.celp,
                       sistem1.arq.flup, sistem1.arq.bcs,sistem1.arq.multiBcs, sistem1.arq.fonteg); // construtor do sistema de analise de sensibilidade, ver a classe LerAP. Neste cosntrutor é lido um arquivo
     // json onde se esta registradoas variaveis que estao envolvidas na analise de sensibilidade e os valores que se
     // testara destas variaveis na analise de sensibilidade
@@ -8894,7 +8894,7 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
         }
         double chute = -1.;
         cout << "Resolvendo Sequencia " << iSeq << " da analise de sensibilidade" << endl;
-        (*sistem1.vg1dSP).sequenciaAP = iSeq;
+        (*sistem1.simulationContext).parametricCaseIndex = iSeq;
         if (iSeq == 0 || sistem1.arq.ConContEntrada == 2 || sistem1.arq.pocinjec == 1) {
             // se for o primeiro caso da analise de sensibilidade, não se usa nenhum valor para o chute, chute=-1
             chute = -1.;
@@ -8988,7 +8988,7 @@ void leituraAP(string nomeArquivoAP, SProd &sistem1) {
                                        presE, tempE, titE, betaE, vazE, iSeq, indChk, sistem1.arq.correcao.dPdLHidro, sistem1.arq.correcao.dPdLFric,
                                        sistem1.arq.correcao.dTdL, BHP);
         }
-        (*sistem1.vg1dSP).contaExit = 0;
+        (*sistem1.simulationContext).propertyIterationLimitCount = 0;
     }
 
     // saidaAP << "sucessoAP.dat";//arquivo com o relatorio de sucessos e falhas da AP
@@ -9269,19 +9269,19 @@ void avaliaPerm(span<SProd> malha, Rede &arqRede, int narq, int &semPerm) {
 }
 
 void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
-                     tipoSimulacao_t tipoSimulacaoMrt, int nrede, int &contapermRede, varGlob1D *vG1d) {
+                     tipoSimulacao_t tipoSimulacaoMrt, int nrede, int &contapermRede, SimulationContext *context) {
     if (narq > 1) { // narq=numero de tramos ativos da rede
-        (*arqRede.vg1dSP).simulaTransiente = arqRede.chaveredeT;
+        (*arqRede.simulationContext).transientSimulationEnabled = arqRede.chaveredeT;
         for (int i = 0; i < narq; i++) { // laco em que se constroe os tramos da rede
             vector<tramoPart> bloq;
             int bloqR = testaBloqueio(arqRede, i, bloq); // verifica se em uma rede de manifold existe uma configuracao de derivacao especial
             // em que parte dos tramos coletados no manifold e desviado para a linha de teste
             int tD = arqRede.tabelaDinamica; // rede com modelo composicional e uso de tabela dinamica
-            if ((*arqRede.vg1dSP).fluidoRede == 0)
-                (*arqRede.vg1dSP).tipoFluidoRedeGlob = 1; // tipoFluidoRede==1 implica em que a rede será uma rede dominada pela fase líquida
+            if ((*arqRede.simulationContext).networkFluidMode == 0)
+                (*arqRede.simulationContext).networkFluidBalanceMode = 1; // tipoFluidoRede==1 implica em que a rede será uma rede dominada pela fase líquida
             // construtor do tramo temporario com as caracteristicas basicas do tramo i da rede
             SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, bloqR, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
+                             tipoValidacaoMrt, tipoSimulacaoMrt, context, tD, bloqR, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
 
             if (arqRede.malha[i].ncoleta > 0)
                 temporario.noextremo = 0; // caso o tramo não esteja no fim da rede, tomando como referencia o sentido
@@ -9342,7 +9342,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                 //  se gas, a fonte sera de gas
                 double tit = malha[i].arq.CCPres.tit[0];
                 /// atencao, verificar se aposicao do if esta correta.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                if ((*arqRede.simulationContext).networkFluidMode == 0) {
                     if (arqRede.chutHol > 0.1)
                         arqRede.chutHol = 0.1;
                     if (arqRede.relax > 0.5)
@@ -9354,7 +9354,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                 else
                     fluCP = malha[i].arq.flup[malha[i].arq.CCPres.indFluido];
 
-                if (tit < (1. - (*arqRede.vg1dSP).localtiny)) {
+                if (tit < (1. - (*arqRede.simulationContext).smallValueTolerance)) {
 
                     malha[i].tempE = malha[i].arq.CCPres.temperatura[0];
                     malha[i].presE = malha[i].arq.CCPres.pres[0];
@@ -9391,7 +9391,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                         rgoentrada /= ((1 - malha[i].titE) * rgST * Ost);
                     }
 
-                    if ((*arqRede.vg1dSP).fluidoRede == 1) { // dominado por liquido
+                    if ((*arqRede.simulationContext).networkFluidMode == 1) { // dominado por liquido
                         if (rgoentrada > 1400.)
                             rgoentrada = 1400.;
                         malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
@@ -9444,9 +9444,9 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                             double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                             malha[i].titE = titT;
                             malha[i].betaE = val1 / (val2 + val1);
-                            rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                            rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                             if (rgoentrada > 1400.)
-                                rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                                rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                             fluCP.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
                             malha[i].celula[0].acsr.injg.FluidoPro.Deng = fluCP.Deng;
                             malha[i].celula[0].acsr.injg.FluidoPro.Denag = fluCP.Denag;
@@ -9497,9 +9497,9 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
                         double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                         malha[i].titE = titT;
                         malha[i].betaE = val1 / (val2 + val1);
-                        rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                        rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                         if (rgoentrada > 1400.)
-                            rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                            rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                         fluCP.RGO = malha[i].celula[0].flui.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
                         malha[i].celula[0].acsr.injg.FluidoPro.Deng = fluCP.Deng;
                         malha[i].celula[0].acsr.injg.FluidoPro.Denag = fluCP.Denag;
@@ -9535,20 +9535,20 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
             // no caso de condicao de contorno pressao, esta vazao e apenas um chuet, alem de nao contabilizar a vazao em celulas que não a
             // inicial do tramo
             if (malha[i].celula[0].acsr.tipo == 2 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavaz += malha[i].celula[0].acsr.injl.QLiq / 86400.;
+                (*arqRede.simulationContext).estimatedStandardLiquidFlowRate += malha[i].celula[0].acsr.injl.QLiq / 86400.;
             else if (malha[i].celula[0].acsr.tipo == 1 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavazG += malha[i].celula[0].acsr.injg.QGas / 86400.;
+                (*arqRede.simulationContext).estimatedStandardGasFlowRate += malha[i].celula[0].acsr.injg.QGas / 86400.;
             else if (malha[i].celula[0].acsr.tipo == 10 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2) {
                 double massTot = malha[i].celula[0].acsr.injm.MassP + malha[i].celula[0].acsr.injm.MassG;
                 double rhopstd = 141.5 * 1000. / (malha[i].celula[0].acsr.injm.FluidoPro.API + 131.5);
                 double bsw = malha[i].celula[0].acsr.injm.FluidoPro.BSW;
                 double rhogstd = malha[i].celula[0].acsr.injm.FluidoPro.Deng * 1.225;
                 double tit = malha[i].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
-                (*arqRede.vg1dSP).somavaz += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
+                (*arqRede.simulationContext).estimatedStandardLiquidFlowRate += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
                                              malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.standardDensity();
-                (*arqRede.vg1dSP).somavazG += massTot * tit / rhogstd;
+                (*arqRede.simulationContext).estimatedStandardGasFlowRate += massTot * tit / rhogstd;
             }
-            (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
+            (*arqRede.simulationContext).totalInletArea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
             // referencia a razao entre a area do tramo e somaarea, esta razao sera aplicada para distribuir o chute inicial da vazao de cada tramo,
             // tomando somavaz e somavazG e aplicando a razao de area
             if (arqRede.malha[i].perm == 0)
@@ -9571,7 +9571,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
         int i = 0;
         int tD = arqRede.tabelaDinamica;
         SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                         tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD);
+                         tipoValidacaoMrt, tipoSimulacaoMrt, context, tD);
         temporario.noextremo = 1;
         temporario.noinicial = 1;
         malha[i].loadSection(temporario);
@@ -9615,7 +9615,7 @@ void preparaRedeProd(span<SProd> malha, Rede &arqRede, int narq, string nomeArqu
 
 void solveRedeProd(span<SProd> malha, Rede &arqRede, int narq,
                    Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
-                   tipoSimulacao_t tipoSimulacaoMrt, int nrede, int &contapermRede, varGlob1D *vG1d, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
+                   tipoSimulacao_t tipoSimulacaoMrt, int nrede, int &contapermRede, SimulationContext *context, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
     int convergido = 0;
     if (narq > 1) {
         for (int i = 0; i < narq; i++)
@@ -9660,7 +9660,7 @@ void solveRedeProd(span<SProd> malha, Rede &arqRede, int narq,
             }
 
             if (contapermRede < narq) {
-                while ((*arqRede.vg1dSP).restartRede == 1) {
+                while ((*arqRede.simulationContext).networkRestartRequested == 1) {
                     vector<int> coletorfinal;
                     for (int i = 0; i < narq; i++)
                         if (arqRede.malha[i].ncoleta == 0 && inativo[i] == 0 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2)
@@ -9743,7 +9743,7 @@ void solveRedeProd(span<SProd> malha, Rede &arqRede, int narq,
                             }
                         }
                     }
-                    (*arqRede.vg1dSP).restartRede = 0;
+                    (*arqRede.simulationContext).networkRestartRequested = 0;
                     indativo = 0;
                     if (narq - semPerm > 1) {
                         if (malha[0].arq.flashCompleto != 2)
@@ -9759,7 +9759,7 @@ void solveRedeProd(span<SProd> malha, Rede &arqRede, int narq,
                                 alteraModoFluidoBlackComp(malha, narq, calclat0, tipoFluido0);
                                 if (malha[0].arq.tabelaDinamica == 1)
                                     cicloRedeCompCego(malha, arqRede, inativo, indativo, bloq);
-                                (*arqRede.vg1dSP).iterRede = 1;
+                                (*arqRede.simulationContext).networkIteration = 1;
                                 convergido = convergeRede(malha, arqRede, narq, inativo, indativo, normaEvol, bloq);
                             }
                         }
@@ -10025,19 +10025,19 @@ void solveRedeProd(span<SProd> malha, Rede &arqRede, int narq,
 
 void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
               Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
-              tipoSimulacao_t tipoSimulacaoMrt, int nrede, int contapermRede, varGlob1D *vG1d, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
+              tipoSimulacao_t tipoSimulacaoMrt, int nrede, int contapermRede, SimulationContext *context, vector<noRede> &normaEvol, vector<tramoPart> &bloq) {
     // neste metodo e feita a construcao de um objeto rede e a sua resolucao permanente
     if (narq > 1) { // narq=numero de tramos ativos da rede
-        (*arqRede.vg1dSP).simulaTransiente = arqRede.chaveredeT;
+        (*arqRede.simulationContext).transientSimulationEnabled = arqRede.chaveredeT;
         for (int i = 0; i < narq; i++) {                 // laco em que se constroe os tramos da rede
             int bloqR = testaBloqueio(arqRede, i, bloq); // verifica se em uma rede de manifold existe uma configuracao de derivacao especial
             // em que parte dos tramos coletados no manifold e desviado para a linha de teste
             int tD = arqRede.tabelaDinamica; // rede com modelo composicional e uso de tabela dinamica
-            if ((*arqRede.vg1dSP).fluidoRede == 0)
-                (*arqRede.vg1dSP).tipoFluidoRedeGlob = 1; // tipoFluidoRede==1 implica em que a rede será uma rede dominada pela fase líquida
+            if ((*arqRede.simulationContext).networkFluidMode == 0)
+                (*arqRede.simulationContext).networkFluidBalanceMode = 1; // tipoFluidoRede==1 implica em que a rede será uma rede dominada pela fase líquida
             // construtor do tramo temporario com as caracteristicas basicas do tramo i da rede
             SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, bloqR, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
+                             tipoValidacaoMrt, tipoSimulacaoMrt, context, tD, bloqR, arqRede.malha[i].reverso, 0, 0, 0, arqRede.malha[i].perm);
 
             if (arqRede.malha[i].ncoleta > 0)
                 temporario.noextremo = 0; // caso o tramo não esteja no fim da rede, tomando como referencia o sentido
@@ -10098,13 +10098,13 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                 //  se gas, a fonte sera de gas
                 double tit = malha[i].arq.CCPres.tit[0];
                 /// atencao, verificar se aposicao do if esta correta.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                if ((*arqRede.vg1dSP).fluidoRede == 0) {
+                if ((*arqRede.simulationContext).networkFluidMode == 0) {
                     if (arqRede.chutHol > 0.1)
                         arqRede.chutHol = 0.1;
                     if (arqRede.relax > 0.5)
                         arqRede.relax = 0.5;
                 }
-                if (tit < (1. - (*arqRede.vg1dSP).localtiny)) {
+                if (tit < (1. - (*arqRede.simulationContext).smallValueTolerance)) {
 
                     malha[i].tempE = malha[i].arq.CCPres.temperatura[0];
                     malha[i].presE = malha[i].arq.CCPres.pres[0];
@@ -10133,7 +10133,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                         rgoentrada /= ((1 - malha[i].titE) * rgST * Ost);
                     }
 
-                    if ((*arqRede.vg1dSP).fluidoRede == 1) { // dominado por liquido
+                    if ((*arqRede.simulationContext).networkFluidMode == 1) { // dominado por liquido
                         if (rgoentrada > 1400.)
                             rgoentrada = 1400.;
                         malha[i].celula[0].pres = malha[i].arq.CCPres.pres[0];
@@ -10186,9 +10186,9 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                             double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                             malha[i].titE = titT;
                             malha[i].betaE = val1 / (val2 + val1);
-                            rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                            rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                             if (rgoentrada > 1400.)
-                                rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                                rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                             malha[i].celula[0].flui.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
                             malha[i].celula[0].acsr.injg.FluidoPro.Deng = malha[i].celula[0].flui.Deng;
                             malha[i].celula[0].acsr.injg.FluidoPro.Denag = malha[i].celula[0].flui.Denag;
@@ -10239,9 +10239,9 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                         double titT = rg / (((1. - tit) / tit) * (rg / rl) + rg + val1);
                         malha[i].titE = titT;
                         malha[i].betaE = val1 / (val2 + val1);
-                        rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                        rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                         if (rgoentrada > 1400.)
-                            rgoentrada = 1e6 + (*arqRede.vg1dSP).localtiny;
+                            rgoentrada = 1e6 + (*arqRede.simulationContext).smallValueTolerance;
                         malha[i].celula[0].flui.RGO = malha[i].celula[0].acsr.injg.FluidoPro.RGO = rgoentrada;
                         malha[i].celula[0].acsr.injg.FluidoPro.Deng = malha[i].celula[0].flui.Deng;
                         malha[i].celula[0].acsr.injg.FluidoPro.Denag = malha[i].celula[0].flui.Denag;
@@ -10277,20 +10277,20 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
             // no caso de condicao de contorno pressao, esta vazao e apenas um chuet, alem de nao contabilizar a vazao em celulas que não a
             // inicial do tramo
             if (malha[i].celula[0].acsr.tipo == 2 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavaz += malha[i].celula[0].acsr.injl.QLiq / 86400.;
+                (*arqRede.simulationContext).estimatedStandardLiquidFlowRate += malha[i].celula[0].acsr.injl.QLiq / 86400.;
             else if (malha[i].celula[0].acsr.tipo == 1 && arqRede.malha[i].perm == 1)
-                (*arqRede.vg1dSP).somavazG += malha[i].celula[0].acsr.injg.QGas / 86400.;
+                (*arqRede.simulationContext).estimatedStandardGasFlowRate += malha[i].celula[0].acsr.injg.QGas / 86400.;
             else if (malha[i].celula[0].acsr.tipo == 10 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2) {
                 double massTot = malha[i].celula[0].acsr.injm.MassP + malha[i].celula[0].acsr.injm.MassG;
                 double rhopstd = 141.5 * 1000. / (malha[i].celula[0].acsr.injm.FluidoPro.API + 131.5);
                 double bsw = malha[i].celula[0].acsr.injm.FluidoPro.BSW;
                 double rhogstd = malha[i].celula[0].acsr.injm.FluidoPro.Deng * 1.225;
                 double tit = malha[i].celula[0].acsr.injm.FluidoPro.FracMassHidra(1., 20.);
-                (*arqRede.vg1dSP).somavaz += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
+                (*arqRede.simulationContext).estimatedStandardLiquidFlowRate += massTot * (1 - tit) * ((1 - bsw) / rhopstd + bsw / 1000.) +
                                              malha[i].celula[0].acsr.injm.MassC / malha[i].celula[0].acsr.injm.fluidocol.standardDensity();
-                (*arqRede.vg1dSP).somavazG += massTot * tit / rhogstd;
+                (*arqRede.simulationContext).estimatedStandardGasFlowRate += massTot * tit / rhogstd;
             }
-            (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
+            (*arqRede.simulationContext).totalInletArea += malha[i].celula[0].duto.area; // somaarea sera utilizado para fazer uma distribuicao inicial da vazao em cada tramo, tomando como
             // referencia a razao entre a area do tramo e somaarea, esta razao sera aplicada para distribuir o chute inicial da vazao de cada tramo,
             // tomando somavaz e somavazG e aplicando a razao de area
             if (arqRede.malha[i].perm == 0)
@@ -10343,7 +10343,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
             }
 
             if (contapermRede < narq) {
-                while ((*arqRede.vg1dSP).restartRede == 1) {
+                while ((*arqRede.simulationContext).networkRestartRequested == 1) {
                     vector<int> coletorfinal;
                     for (int i = 0; i < narq; i++)
                         if (arqRede.malha[i].ncoleta == 0 && inativo[i] == 0 && arqRede.malha[i].perm == 1 && malha[i].arq.ConContEntrada != 2)
@@ -10426,7 +10426,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                             }
                         }
                     }
-                    (*arqRede.vg1dSP).restartRede = 0;
+                    (*arqRede.simulationContext).networkRestartRequested = 0;
                     indativo = 0;
                     if (narq - semPerm > 1) {
                         if (malha[0].arq.flashCompleto != 2)
@@ -10441,7 +10441,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
                             alteraModoFluidoBlackComp(malha, narq, calclat0, tipoFluido0);
                             if (malha[0].arq.tabelaDinamica == 1)
                                 cicloRedeCompCego(malha, arqRede, inativo, indativo, bloq);
-                            (*arqRede.vg1dSP).iterRede = 1;
+                            (*arqRede.simulationContext).networkIteration = 1;
                             convergeRede(malha, arqRede, narq, inativo, indativo, normaEvol, bloq);
                         }
                     } else {
@@ -10563,7 +10563,7 @@ void RedeProd(span<SProd> malha, Rede &arqRede, int narq,
         int i = 0;
         int tD = arqRede.tabelaDinamica;
         SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                         tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD);
+                         tipoValidacaoMrt, tipoSimulacaoMrt, context, tD);
         temporario.noextremo = 1;
         temporario.noinicial = 1;
         malha[i].loadSection(temporario);
@@ -10684,11 +10684,11 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].transient.finalTime = (*arqRede.vg1dSP).TmaxR;
+        malha[i].arq.tfinal = malha[i].transient.finalTime = (*arqRede.simulationContext).networkFinalTime;
     }
     double dtteste;
-    (*arqRede.vg1dSP).lixo5R = 0.;
-    while ((*arqRede.vg1dSP).lixo5R < (*arqRede.vg1dSP).TmaxR) {
+    (*arqRede.simulationContext).networkSimulationTime = 0.;
+    while ((*arqRede.simulationContext).networkSimulationTime < (*arqRede.simulationContext).networkFinalTime) {
         dtteste = 1e6;
         for (int i = 0; i < narq; i++) {
             malha[i].determinaDT();
@@ -10706,12 +10706,12 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                 malha[i].celula[j].dtPig = malha[i].dt;
             }
         }
-        if ((*arqRede.vg1dSP).lixo5 < 1e-5) {
+        if ((*arqRede.simulationContext).simulationTime < 1e-5) {
             for (int i = 0; i < narq; i++)
                 malha[i].renovaTemp();
         }
 
-        if ((*arqRede.vg1dSP).lixo5R >= 600) {
+        if ((*arqRede.simulationContext).networkSimulationTime >= 600) {
         }
 
         for (int i = 0; i < narq; i++) {
@@ -10725,7 +10725,7 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                                   malha[i].gasLift.injectionChoke, malha[i].celula,
                                   malha[i].gasLift.cells, malha[i].gasLift.separatorPressure, malha[i].temperatura,
                                   malha[i].gasLift.injectionPressure, malha[i].gasLift.injectionTemperature,
-                                  malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
+                                  malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.simulationContext).networkSimulationTime);
             razMast[i] = malha[i].celula[celpos[i]].acsr.chk.AreaGarg / malha[i].celula[celpos[i]].duto.area;
             malha[i].transient.fullModel = malha[i].arq.correcaoMassaEspLiq;
             if (razMast[i] != razMast0[i])
@@ -10788,8 +10788,8 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
                     malha[i].transient.rollbackRequested = 0;
                 }
             }
-            if ((*arqRede.vg1dSP).lixo5R <= 1e-15)
-                (*arqRede.vg1dSP).dtrede = dtteste;
+            if ((*arqRede.simulationContext).networkSimulationTime <= 1e-15)
+                (*arqRede.simulationContext).networkTimeStep = dtteste;
 
             for (int i = 0; i < narq; i++) {
 
@@ -10819,18 +10819,18 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
             }
         }
 
-        (*arqRede.vg1dSP).iterRedeT = 0;
-        while ((*arqRede.vg1dSP).iterRedeT < 1) {
+        (*arqRede.simulationContext).transientNetworkIteration = 0;
+        while ((*arqRede.simulationContext).transientNetworkIteration < 1) {
 
             for (int i = 0; i < narq; i++) {
                 malha[i].SolveTrans();
                 for (int kontasnp = 0; kontasnp < malha[i].arq.nsnp; kontasnp++) {
-                    if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
+                    if (fabs((*arqRede.simulationContext).simulationTime - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
                         WriteSnapShot(malha[i], kontasnp, i); // registro do arquivo SNP
                     }
                 }
             }
-            (*arqRede.vg1dSP).iterRedeT++;
+            (*arqRede.simulationContext).transientNetworkIteration++;
         }
 
         for (int i = 0; i < dreno.size(); i++) {
@@ -10842,8 +10842,8 @@ void TransAnel(int narq, int nfontes, int *indfonte, int *indtramo, int *posicfo
             }
         }
 
-        (*arqRede.vg1dSP).lixo5R += dtteste;
-        (*arqRede.vg1dSP).dtrede = dtteste;
+        (*arqRede.simulationContext).networkSimulationTime += dtteste;
+        (*arqRede.simulationContext).networkTimeStep = dtteste;
     }
 
     for (int i = 0; i < narq; i++)
@@ -11047,7 +11047,7 @@ double chutePresRedeParalelaSec(span<SProd> malha, int iP, int iS, double pchute
         double dxmed = 0.5 * (malha[iS].celula[i].dx + malha[iS].celula[i - 1].dx);
         // avanco da pressao por meio da hidrostatica e da perda por friccao estimada
         pchute += (rhomix * 9.81 * sin(malha[iS].celula[i].duto.teta) * dxmed) / units::kPascalPerKgfPerCm2;
-        if (malha[iS].arq.usaTabela == 1 && (malha[iS].arq.tabent.pmax - pchute) < (*malha[iS].vg1dSP).localtiny)
+        if (malha[iS].arq.usaTabela == 1 && (malha[iS].arq.tabent.pmax - pchute) < (*malha[iS].simulationContext).smallValueTolerance)
             pchute = 0.9 * malha[iS].arq.tabent.pmax;
     }
     if (pchute > 1000)
@@ -11070,14 +11070,14 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
 
     for (int i = 0; i < narq; i++) {
         malha[i].modoPerm = 0;
-        malha[i].arq.tfinal = malha[i].transient.finalTime = (*arqRede.vg1dSP).TmaxR;
+        malha[i].arq.tfinal = malha[i].transient.finalTime = (*arqRede.simulationContext).networkFinalTime;
     }
 
     double dtteste;
-    (*arqRede.vg1dSP).lixo5R = 0.;
-    while ((*arqRede.vg1dSP).lixo5R < (*arqRede.vg1dSP).TmaxR) {
+    (*arqRede.simulationContext).networkSimulationTime = 0.;
+    while ((*arqRede.simulationContext).networkSimulationTime < (*arqRede.simulationContext).networkFinalTime) {
         for (int i = 0; i < narq; i++) {
-            if ((*arqRede.vg1dSP).lixo5R >= 7480) {
+            if ((*arqRede.simulationContext).networkSimulationTime >= 7480) {
             }
         }
 
@@ -11091,23 +11091,23 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
         }
 
         for (int i = 0; i < narq; i++) {
-            if (malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].arq.calculaEnvelope == 1 && (*arqRede.simulationContext).simulationTime <= (*arqRede.simulationContext).networkFinalTime) { //*simulationContext).lixo5>0 && //chris - Hidratos
                 FA_Hidrato solverHidrato(malha[i]);
                 solverHidrato.solverHidrato();
             }
 
-            if (malha[i].arq.lingas > 0 && malha[i].arq.calculaEnvelope == 1 && (*arqRede.vg1dSP).lixo5 <= (*arqRede.vg1dSP).TmaxR) { //*vg1dSP).lixo5>0 && //chris - Hidratos
+            if (malha[i].arq.lingas > 0 && malha[i].arq.calculaEnvelope == 1 && (*arqRede.simulationContext).simulationTime <= (*arqRede.simulationContext).networkFinalTime) { //*simulationContext).lixo5>0 && //chris - Hidratos
                 FA_Hidrato_Servico solverHidratoG(malha[i]);
                 solverHidratoG.solverHidratoG();
             }
 
-            if (malha[i].arq.flashCompleto == 2 && (*arqRede.vg1dSP).lixo5 < 1e-15) {
+            if (malha[i].arq.flashCompleto == 2 && (*arqRede.simulationContext).simulationTime < 1e-15) {
                 malha[i].atualizaMiniTab();
             }
 
-            if ((*arqRede.vg1dSP).lixo5 < 1e-15) {
+            if ((*arqRede.simulationContext).simulationTime < 1e-15) {
                 for (int j = 0; j < malha[i].arq.ntendp; j++) {
-                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.productionTrendMatrices[j], (*arqRede.vg1dSP).lixo5, j, malha[i].trends.productionTrendCounts[j]);
+                    malha[i].arq.imprimeTrend(malha[i].celula, malha[i].trends.productionTrendMatrices[j], (*arqRede.simulationContext).simulationTime, j, malha[i].trends.productionTrendCounts[j]);
                 }
                 malha[i].renovaTemp();
             }
@@ -11141,7 +11141,7 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
                                   malha[i].gasLift.injectionChoke, malha[i].celula,
                                   malha[i].gasLift.cells, malha[i].gasLift.separatorPressure, malha[i].temperatura,
                                   malha[i].gasLift.injectionPressure, malha[i].gasLift.injectionTemperature,
-                                  malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.vg1dSP).lixo5R);
+                                  malha[i].presE, malha[i].tempE, malha[i].titE, malha[i].betaE, (*arqRede.simulationContext).networkSimulationTime);
             malha[i].atualizaCC1();
             for (int j = 0; j <= malha[i].arq.nvalv; j++)
                 malha[i].transient.masterValveCriticalRatios[j] = 0.5;
@@ -11273,8 +11273,8 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
                     }
                 }
             }
-            if ((*arqRede.vg1dSP).lixo5R <= 1e-15)
-                (*arqRede.vg1dSP).dtrede = dtteste;
+            if ((*arqRede.simulationContext).networkSimulationTime <= 1e-15)
+                (*arqRede.simulationContext).networkTimeStep = dtteste;
             for (int i = 0; i < narq; i++) {
                 malha[i].AtualizaPig();
 
@@ -11388,14 +11388,14 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
         for (int i = 0; i < narq; i++) {
             malha[i].SolveTrans(1., 1., 0., nrede);
             for (int kontasnp = 0; kontasnp < malha[i].arq.nsnp; kontasnp++) {
-                if (fabs((*arqRede.vg1dSP).lixo5 - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
+                if (fabs((*arqRede.simulationContext).simulationTime - malha[i].arq.tempsnp[kontasnp]) < malha[i].dt) {
                     WriteSnapShot(malha[i], kontasnp, i); // registro do arquivo SNP
                 }
             }
         }
 
-        (*arqRede.vg1dSP).lixo5R += dtteste;
-        (*arqRede.vg1dSP).dtrede = dtteste;
+        (*arqRede.simulationContext).networkSimulationTime += dtteste;
+        (*arqRede.simulationContext).networkTimeStep = dtteste;
     }
 
     for (int i = 0; i < narq; i++) {
@@ -11405,7 +11405,7 @@ void SolveRedeParalelaTrans(span<SProd> malha, Rede &arqRede, int nrede) {
 
 void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
                   Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
-                  int transiente, tipoSimulacao_t tipoSimulacaoMrt, varGlob1D *vG1d) {
+                  int transiente, tipoSimulacao_t tipoSimulacaoMrt, SimulationContext *context) {
 
     int nfontes = arqRede.nfonteR;
     int iS = arqRede.tramoSecundario;
@@ -11413,7 +11413,7 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
     int tD = arqRede.tabelaDinamica;
     for (int i = 0; i < narq; i++) {
         SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                         tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
+                         tipoValidacaoMrt, tipoSimulacaoMrt, context, tD, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
         malha[i].loadSection(temporario);
         malha[i].indTramo = i;
     }
@@ -11507,7 +11507,7 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
     double resulS = 1000;
     double resulS0 = 0.;
     int konta = 0;
-    (*vG1d).iterRede = konta;
+    (*context).networkIteration = konta;
     double resulmed;
     while (erro > 1.e-5) {
         for (int i = 0; i < nfontes; i++) {
@@ -11601,7 +11601,7 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
                 erro = fabs(resulP - resulP0) + fabs(resulS - resulS0);
         }
         konta++;
-        (*vG1d).iterRede = konta;
+        (*context).networkIteration = konta;
     }
 
     int nrede = 0;
@@ -11745,16 +11745,16 @@ void RedeParalela(span<SProd> malha, Rede &arqRede, int narq,
                 }
             }
         }
-        (*vG1d).modoTransiente = 1;
-         (*malha[iP].vg1dSP).modoTransiente = 1;
-         (*malha[iS].vg1dSP).modoTransiente = 1;
+        (*context).transientPropertyMode = 1;
+         (*malha[iP].simulationContext).transientPropertyMode = 1;
+         (*malha[iS].simulationContext).transientPropertyMode = 1;
         SolveRedeParalelaTrans(malha, arqRede, nrede);
     }
 }
 
 void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
                 Vcr<int> &inativo, int indativo, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
-                int transiente, tipoSimulacao_t tipoSimulacaoMrt, varGlob1D *vG1d) {
+                int transiente, tipoSimulacao_t tipoSimulacaoMrt, SimulationContext *context) {
     int nfontes = narq - 1;
     vector<fonteposic> dreno;
     double *compfonte;
@@ -11771,7 +11771,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
     for (int i = 0; i < narq; i++) {
         if (arqRede.malha[i].tipoanel == 0) {
             SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog,
-                             tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
+                             tipoValidacaoMrt, tipoSimulacaoMrt, context, tD, 0, 0, 0, 0, 0, arqRede.malha[i].perm);
             compfonte[konta] = arqRede.malha[i].compfonte;
             indfonte[konta] = i;
             indtramo[i] = konta;
@@ -11790,7 +11790,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
             } else {
                 int dimen = dreno.size();
                 for (int j = 0; j < dimen; j++) {
-                    if (fabs(dreno[j].posicmani - arqRede.malha[i].compfonte) < (*arqRede.vg1dSP).localtiny) {
+                    if (fabs(dreno[j].posicmani - arqRede.malha[i].compfonte) < (*arqRede.simulationContext).smallValueTolerance) {
                         dreno[j].nmani++;
                         dreno[j].mani[dreno[j].nmani - 1] = i;
                         j = dimen;
@@ -11816,7 +11816,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
     for (int i = 0; i < dreno.size(); i++)
         compdreno[i] = dreno[i].posicmani;
     SProd temporario(pathArqEntrada + arqRede.impfiles[indAnel], nomeArquivoLog,
-                     tipoValidacaoMrt, tipoSimulacaoMrt, vG1d, tD, 0, 0, compdreno, posicdreno, dreno.size(), arqRede.malha[indAnel].perm);
+                     tipoValidacaoMrt, tipoSimulacaoMrt, context, tD, 0, 0, compdreno, posicdreno, dreno.size(), arqRede.malha[indAnel].perm);
     for (int i = 0; i < dreno.size(); i++)
         for (int j = 0; j < dreno[i].nmani; j++)
             posicfonte[dreno[i].mani[j]] = posicdreno[i];
@@ -11858,7 +11858,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
     for (int i = 0; i < narq; i++) {
         if (i != indAnel) {
             if (malha[i].arq.gasinj.chuteVaz == 0 && malha[indAnel].arq.ConContEntrada == 1) {
-                malha[i].arq.gasinj.vazgas[0] = 150000. * malha[i].gasLift.cells[0].duto.area / (*arqRede.vg1dSP).arearef;
+                malha[i].arq.gasinj.vazgas[0] = 150000. * malha[i].gasLift.cells[0].duto.area / (*arqRede.simulationContext).referenceFlowArea;
                 int ifposic = posicfonte[indtramo[i]];
                 malha[indAnel].celula[ifposic].acsr.injg.QGas -= malha[i].arq.gasinj.vazgas[0];
             } else if (malha[i].arq.gasinj.chuteVaz == 1) {
@@ -11871,7 +11871,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
         malha[indAnel].celula[0].pres = malha[indAnel].arq.CCPres.pres[0];
         malha[indAnel].celula[0].acsr.injg.temp = malha[indAnel].arq.CCPres.temperatura[0];
         malha[indAnel].celula[0].flui.RGO = malha[indAnel].celula[0].acsr.injg.FluidoPro.RGO =
-            1e6 + (*arqRede.vg1dSP).localtiny;
+            1e6 + (*arqRede.simulationContext).smallValueTolerance;
         malha[indAnel].celula[0].acsr.injg.FluidoPro.Deng = malha[indAnel].celula[0].flui.Deng;
         malha[indAnel].celula[0].acsr.injg.FluidoPro.yco2 = malha[indAnel].celula[0].flui.yco2;
         malha[indAnel].celula[0].acsr.injg.FluidoPro.RenovaFluido();
@@ -11908,7 +11908,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
                 malha[indAnel].celula[ifposic].calor.Textern1;
         }
         malha[indAnel].celula[0].flui.RGO =
-            malha[indAnel].celula[0].acsr.injg.FluidoPro.RGO = 1e6 + (*arqRede.vg1dSP).localtiny; // verificar
+            malha[indAnel].celula[0].acsr.injg.FluidoPro.RGO = 1e6 + (*arqRede.simulationContext).smallValueTolerance; // verificar
         int itramo = dreno[pocodist].mani[0];
         malha[itramo].arq.gasinj.vazgas[0] = -sumid / dreno[pocodist].nmani;
         malha[itramo].gasLift.cells[0].tipoCC = 1;
@@ -12100,8 +12100,8 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
     malha[indAnel].chokeSup.AreaGarg = 0.;
     for (int i = 0; i < malha[indAnel].arq.chokep.parserie; i++)
         malha[indAnel].arq.chokep.abertura[i] = 0.;
-    (*arqRede.vg1dSP).modoTransiente = 1;
-    (*arqRede.vg1dSP).RGOMax = 14000.;
+    (*arqRede.simulationContext).transientPropertyMode = 1;
+    (*arqRede.simulationContext).maximumGasOilRatio = 14000.;
     if (arqRede.chaveredeT == 1)
         TransAnel(narq, nfontes, indfonte, indtramo, posicdreno, indAnel, dreno, malha, arqRede);
 
@@ -12116,7 +12116,7 @@ void RedeAnelGL(span<SProd> malha, Rede &arqRede, int narq,
 
 int chutePresRedeInj(int indprod, span<SProd> malha, Rede &arqRede, double chutehol,
                      Vcr<double> &razcolet, Vcr<double> &prescolet) {
-    double vaz = (*arqRede.vg1dSP).somavaz * malha[indprod].celula[0].duto.area / (*arqRede.vg1dSP).somaarea;
+    double vaz = (*arqRede.simulationContext).estimatedStandardLiquidFlowRate * malha[indprod].celula[0].duto.area / (*arqRede.simulationContext).totalInletArea;
     double presno = malha[indprod].hidroreversoInj(chutehol, vaz);
     int contarecur = 1;
     for (int i = 0; i < arqRede.malha[indprod].nafluente; i++) {
@@ -12134,12 +12134,12 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
     double norma = 0.;
     int nnos = 0;
     int narq = arqRede.nsisprod - 0 * indativo;
-    (*arqRede.vg1dSP).relax = arqRede.relax;
+    (*arqRede.simulationContext).networkRelaxationFactor = arqRede.relax;
     Vcr<int> Resolv(narq, 0);
     Vcr<int> IndNorma(narq, 0);
     int ciclomalha = 0;
     double valor;
-    cout << "#################Iniciando ciclo iterativo: " << (*arqRede.vg1dSP).iterRede << endl;
+    cout << "#################Iniciando ciclo iterativo: " << (*arqRede.simulationContext).networkIteration << endl;
     while (ciclomalha < narq - 1) {
         for (int i = 0; i < narq; i++) {
             if (arqRede.malha[i].nafluente == 0 && Resolv[i] == 0 && inativo[i] == 0) {
@@ -12153,12 +12153,12 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
                     inativoColetor(i, arqRede, inativo, narq);
                     if (valor < -1e9) {
                         aviso(i);
-                        (*arqRede.vg1dSP).iterRede = 200;
+                        (*arqRede.simulationContext).networkIteration = 200;
                     } else {
                         aviso2(i);
-                        (*arqRede.vg1dSP).iterRede = 200;
+                        (*arqRede.simulationContext).networkIteration = 200;
                     }
-                    (*arqRede.vg1dSP).restartRede = 1;
+                    (*arqRede.simulationContext).networkRestartRequested = 1;
                     return 9000.;
                 }
                 Resolv[i] = 1;
@@ -12220,7 +12220,7 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
                             }
                         }
                     }
-                    if (cpmist > (*arqRede.vg1dSP).localtiny)
+                    if (cpmist > (*arqRede.simulationContext).smallValueTolerance)
                         tempmist = tempmist / cpmist;
                     else
                         tempmist = 0.;
@@ -12276,12 +12276,12 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
                                 inativoAfluente(aux, arqRede, inativo);
                                 if (valor < -1e9) {
                                     aviso(aux);
-                                    (*arqRede.vg1dSP).iterRede = 200;
+                                    (*arqRede.simulationContext).networkIteration = 200;
                                 } else {
                                     aviso2(aux);
-                                    (*arqRede.vg1dSP).iterRede = 200;
+                                    (*arqRede.simulationContext).networkIteration = 200;
                                 }
-                                (*arqRede.vg1dSP).restartRede = 1;
+                                (*arqRede.simulationContext).networkRestartRequested = 1;
                                 return 9000.;
                             }
                             Resolv[aux] = 1;
@@ -12301,7 +12301,7 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
                                         norma += pow(malha[indaflu].arq.condpocinj.presfundo - pini, 2.);
                                         nnos++;
                                     }
-                                    malha[indaflu].arq.condpocinj.presfundo = ((*arqRede.vg1dSP).relax) * malha[aux].celula[0].pres + (1. - (*arqRede.vg1dSP).relax) * malha[indaflu].arq.condpocinj.presfundo;
+                                    malha[indaflu].arq.condpocinj.presfundo = ((*arqRede.simulationContext).networkRelaxationFactor) * malha[aux].celula[0].pres + (1. - (*arqRede.simulationContext).networkRelaxationFactor) * malha[indaflu].arq.condpocinj.presfundo;
                                 }
                             }
                             int indaflu = arqRede.malha[aux].afluente[0];
@@ -12343,12 +12343,12 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
                                 inativoAfluente(aux, arqRede, inativo);
                                 if (valor < -1e9) {
                                     aviso(aux);
-                                    (*arqRede.vg1dSP).iterRede = 200;
+                                    (*arqRede.simulationContext).networkIteration = 200;
                                 } else {
                                     aviso2(aux);
-                                    (*arqRede.vg1dSP).iterRede = 200;
+                                    (*arqRede.simulationContext).networkIteration = 200;
                                 }
-                                (*arqRede.vg1dSP).restartRede = 1;
+                                (*arqRede.simulationContext).networkRestartRequested = 1;
                                 return 9000.;
                             }
                             Resolv[aux] = 1;
@@ -12367,10 +12367,10 @@ double cicloRedeInj(span<SProd> malha, Rede &arqRede, Vcr<int> &inativo, int ind
 }
 
 void RedeInj(span<SProd> malha, Rede &arqRede, int narq, string nomeArquivoLog, tipoValidacaoJson_t tipoValidacaoMrt,
-             tipoSimulacao_t tipoSimulacaoMrt, varGlob1D *vG1d) {
+             tipoSimulacao_t tipoSimulacaoMrt, SimulationContext *context) {
     int testaFlashComp = 0;
     for (int i = 0; i < narq; i++) {
-        SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog, tipoValidacaoMrt, tipoSimulacaoMrt, vG1d);
+        SProd temporario(pathArqEntrada + arqRede.impfiles[i], nomeArquivoLog, tipoValidacaoMrt, tipoSimulacaoMrt, context);
 
         if (arqRede.malha[i].ncoleta > 0)
             temporario.noextremo = 0; // caso o tramo não esteja no fim da rede, tomando como referencia o sentido
@@ -12388,15 +12388,15 @@ void RedeInj(span<SProd> malha, Rede &arqRede, int narq, string nomeArquivoLog, 
         malha[i].loadSection(temporario);
         malha[i].indTramo = i;
         if (malha[i].celula[0].acsr.tipo == 2)
-            (*arqRede.vg1dSP).somavaz += malha[i].celula[0].acsr.injl.QLiq / 86400.;
-        (*arqRede.vg1dSP).somaarea += malha[i].celula[0].duto.area;
+            (*arqRede.simulationContext).estimatedStandardLiquidFlowRate += malha[i].celula[0].acsr.injl.QLiq / 86400.;
+        (*arqRede.simulationContext).totalInletArea += malha[i].celula[0].duto.area;
         testaFlashComp += malha[i].arq.flashCompleto;
     }
     if (testaFlashComp != 0 && testaFlashComp != narq && testaFlashComp != 2 * narq)
         NumError("Rede com modelos de fluido diferentes");
     Vcr<int> inativo(narq, 0);
     int indativo = 0;
-    while ((*arqRede.vg1dSP).restartRede == 1) {
+    while ((*arqRede.simulationContext).networkRestartRequested == 1) {
         vector<int> coletorfinal;
         for (int i = 0; i < narq; i++)
             if (arqRede.malha[i].ncoleta == 0 && inativo[i] == 0)
@@ -12432,21 +12432,21 @@ void RedeInj(span<SProd> malha, Rede &arqRede, int narq, string nomeArquivoLog, 
             }
         }
         double norma = 1000.;
-        (*arqRede.vg1dSP).restartRede = 0;
+        (*arqRede.simulationContext).networkRestartRequested = 0;
         indativo = 0;
-        while (norma > 0.001 * (*arqRede.vg1dSP).relax && indativo < narq && (*arqRede.vg1dSP).restartRede == 0) {
+        while (norma > 0.001 * (*arqRede.simulationContext).networkRelaxationFactor && indativo < narq && (*arqRede.simulationContext).networkRestartRequested == 0) {
             indativo = 0;
             for (int i = 0; i < narq; i++)
                 indativo += inativo[i];
             norma = cicloRedeInj(malha, arqRede, inativo, indativo);
-            cout << "iteracao= " << (*arqRede.vg1dSP).iterRede << " norma= " << norma << " tramos inativos= " << indativo << endl;
+            cout << "iteracao= " << (*arqRede.simulationContext).networkIteration << " norma= " << norma << " tramos inativos= " << indativo << endl;
             for (int i = 0; i < narq - indativo; i++) {
                 for (int j = 0; j < ncoletfim; j++) {
                     if (i == coletorfinal[j]) {
                     }
                 }
             }
-            (*arqRede.vg1dSP).iterRede++;
+            (*arqRede.simulationContext).networkIteration++;
         }
     }
     cout << "Convergencia atingida" << endl;
@@ -12828,27 +12828,27 @@ int main(int argc, char **argv) {
         // caso simulacao de sistema de rede
         if (tipoSimulacao == tipoSimulacao_t::rede) { // simulacao do tipo rede
             logRede = 1;
-            varGlob1D vg1dRedeSimples = varGlob1D();
-            vg1dRedeSimples.chaverede = 1;
+            SimulationContext networkContext = SimulationContext();
+            networkContext.networkMode = 1;
             nomeRedePrincipal = nomeArquivoEntrada;
-            Rede arqRede(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, &vg1dRedeSimples); // leitura
+            Rede arqRede(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, &networkContext); // leitura
             // do arquivo rede
             int narq = arqRede.nsisprod; // numero de tramos
-            vg1dRedeSimples.narq = narq;
-            vg1dRedeSimples.chaveredeT = arqRede.chaveredeT; // indica se vai haver simulacao de rede transiente
-            vg1dRedeSimples.chaveAnelGL = arqRede.anelGL;    // indica se a rede e do tipo anel de gas-lift
-            vg1dRedeSimples.chaveRedeParalela = arqRede.redeParalela;
-            vg1dRedeSimples.fluidoRede = arqRede.fluidoRede; // para o caso de rede, indicacao se a rede vai ser de com um fluido dominado por gas ou liquido
-            vg1dRedeSimples.ntrd = arqRede.nthrRede;
-            if (vg1dRedeSimples.chaveredeT > 0)
-                vg1dRedeSimples.TmaxR = arqRede.TmaxR; // tempo maximo de simulacao transiente para rede
+            networkContext.branchCount = narq;
+            networkContext.networkTransientEnabled = arqRede.chaveredeT; // indica se vai haver simulacao de rede transiente
+            networkContext.gasLiftRingNetworkEnabled = arqRede.anelGL;    // indica se a rede e do tipo anel de gas-lift
+            networkContext.parallelNetworkMode = arqRede.redeParalela;
+            networkContext.networkFluidMode = arqRede.fluidoRede; // para o caso de rede, indicacao se a rede vai ser de com um fluido dominado por gas ou liquido
+            networkContext.solverThreadCount = arqRede.nthrRede;
+            if (networkContext.networkTransientEnabled > 0)
+                networkContext.networkFinalTime = arqRede.TmaxR; // tempo maximo de simulacao transiente para rede
             else
-                vg1dRedeSimples.TmaxR = 1;
+                networkContext.networkFinalTime = 1;
 
             // malha=new SProd [narq];//vetor com os objetos tramos
             // Vcr<int> inativo(narq,0);//indica se algum tramo falhou na sua busca pela soluçao transiente
             // falha de convergencia
-            if ((*arqRede.vg1dSP).chaveAnelGL == 0 && (*arqRede.vg1dSP).chaveRedeParalela == 0) { // nao é anel de GL
+            if ((*arqRede.simulationContext).gasLiftRingNetworkEnabled == 0 && (*arqRede.simulationContext).parallelNetworkMode == 0) { // nao é anel de GL
                 // caso nao seja simulacao de POCO INJETOR
                 // SProd* malha;//alteracao7
                 if (arqRede.injec == 0) {
@@ -12868,78 +12868,78 @@ int main(int argc, char **argv) {
                         // The internal networks: their inputs and globals, then the branches of each one, declared
                         // last so that the branches, which point into the others, are released first.
                         auto arqRedeTemp = make_unique<Rede[]>(redeLeitura);
-                        auto vg1dRede = make_unique<varGlob1D[]>(redeLeitura);
+                        auto networkContexts = make_unique<SimulationContext[]>(redeLeitura);
                         auto contapermRede = make_unique<int[]>(redeLeitura);
                         vector<unique_ptr<SProd[]>> malha(redeLeitura);
-                        varGlob1D vg1dTemp = varGlob1D();
+                        SimulationContext defaultContext = SimulationContext();
                         for (int i = 0; i < redeLeitura; i++)
-                            vg1dRede[i] = vg1dTemp;
-                        vg1dRedeSimples.ntrdGlob = 1;
+                            networkContexts[i] = defaultContext;
+                        networkContext.networkThreadCount = 1;
                         if (redeLeitura > 1) {
-                            vg1dRedeSimples.ntrdGlob = arqRede.nthrRede;
+                            networkContext.networkThreadCount = arqRede.nthrRede;
                             arqRede.nthrRede = 1;
                         }
                         for (int i = 0; i < redeLeitura; i++) {
-                            vg1dRede[i].chaverede = 1;
-                            vg1dRede[i].chaveredeT = arqRede.chaveredeT; // indica se vai haver simulacao de rede transiente
-                            vg1dRede[i].chaveAnelGL = arqRede.anelGL;    // indica se a rede e do tipo anel de gas-lift
-                            vg1dRede[i].fluidoRede = arqRede.fluidoRede; // para o caso de rede, indicacao se a rede vai ser de com um fluido dominado por gas ou liquido
-                            vg1dRede[i].ntrd = arqRede.nthrRede;
-                            vg1dRede[i].ntrdGlob = vg1dRedeSimples.ntrdGlob;
-                            if (vg1dRede[i].chaveredeT > 0)
-                                vg1dRede[i].TmaxR = arqRede.TmaxR; // tempo maximo de simulacao transiente para rede
+                            networkContexts[i].networkMode = 1;
+                            networkContexts[i].networkTransientEnabled = arqRede.chaveredeT; // indica se vai haver simulacao de rede transiente
+                            networkContexts[i].gasLiftRingNetworkEnabled = arqRede.anelGL;    // indica se a rede e do tipo anel de gas-lift
+                            networkContexts[i].networkFluidMode = arqRede.fluidoRede; // para o caso de rede, indicacao se a rede vai ser de com um fluido dominado por gas ou liquido
+                            networkContexts[i].solverThreadCount = arqRede.nthrRede;
+                            networkContexts[i].networkThreadCount = networkContext.networkThreadCount;
+                            if (networkContexts[i].networkTransientEnabled > 0)
+                                networkContexts[i].networkFinalTime = arqRede.TmaxR; // tempo maximo de simulacao transiente para rede
                             else
-                                vg1dRede[i].TmaxR = 1;
-                            vg1dRede[i].qualRede = i;
+                                networkContexts[i].networkFinalTime = 1;
+                            networkContexts[i].networkIndex = i;
 
                             ostringstream entrada;
                             entrada << pathPrefixoArqSaida << "RedeInterna-" << i << ".json";
                             string tmp = entrada.str();
                             // leitura do arquivo json da rede interna i
-                            Rede arqRedeTemp2(tmp, nomeArquivoLog, validacaoJson, tipoSimulacao, &vg1dRede[i]); // leitura
+                            Rede arqRedeTemp2(tmp, nomeArquivoLog, validacaoJson, tipoSimulacao, &networkContexts[i]); // leitura
                             arqRedeTemp[i] = arqRedeTemp2;
-                            vg1dRede[i].narq = arqRedeTemp[i].nsisprod; // numero de tramos da rede interna i
-                            vg1dRede[i].narq = arqRedeTemp[i].nsisprod;
-                            vg1dRede[i].fluidoRede = arqRedeTemp[i].fluidoRede;
+                            networkContexts[i].branchCount = arqRedeTemp[i].nsisprod; // numero de tramos da rede interna i
+                            networkContexts[i].branchCount = arqRedeTemp[i].nsisprod;
+                            networkContexts[i].networkFluidMode = arqRedeTemp[i].fluidoRede;
                         }
                         for (int i = 0; i < redeLeitura; i++) {
                             contapermRede[i] = 0;
-                            malha[i] = make_unique<SProd[]>(vg1dRede[i].narq);
-                            preparaRedeProd(span<SProd>(malha[i].get(), vg1dRede[i].narq), arqRedeTemp[i], vg1dRede[i].narq, nomeArquivoLog, validacaoJson,
-                                            tipoSimulacao_t::transiente, i, contapermRede[i], &vg1dRede[i]);
+                            malha[i] = make_unique<SProd[]>(networkContexts[i].branchCount);
+                            preparaRedeProd(span<SProd>(malha[i].get(), networkContexts[i].branchCount), arqRedeTemp[i], networkContexts[i].branchCount, nomeArquivoLog, validacaoJson,
+                                            tipoSimulacao_t::transiente, i, contapermRede[i], &networkContexts[i]);
                         }
-#pragma omp parallel for num_threads(vg1dRedeSimples.ntrdGlob)
+#pragma omp parallel for num_threads(networkContext.networkThreadCount)
                         for (int i = 0; i < redeLeitura; i++) {
-                            Vcr<int> inativo(vg1dRede[i].narq, 0); // indica se algum tramo falhou na sua busca pela solu�ao transiente
+                            Vcr<int> inativo(networkContexts[i].branchCount, 0); // indica se algum tramo falhou na sua busca pela solu�ao transiente
                             int indativo = 0;                      // indica o numero de tramso que foram inativados na solucao permanente por
                             // falha de convergencia
                             cout << "!!!!!! Resolvendo REDE INTERNA " << i << "!!!!!!" << "\n";
                             vector<noRede> normaEvol;
                             vector<tramoPart> bloq;
-                            solveRedeProd(span<SProd>(malha[i].get(), vg1dRede[i].narq), arqRedeTemp[i], vg1dRede[i].narq, inativo, indativo, nomeArquivoLog, validacaoJson,
-                                          tipoSimulacao_t::transiente, i, contapermRede[i], &vg1dRede[i], normaEvol, bloq); // construcao dos objetos tramos de uma rede
+                            solveRedeProd(span<SProd>(malha[i].get(), networkContexts[i].branchCount), arqRedeTemp[i], networkContexts[i].branchCount, inativo, indativo, nomeArquivoLog, validacaoJson,
+                                          tipoSimulacao_t::transiente, i, contapermRede[i], &networkContexts[i], normaEvol, bloq); // construcao dos objetos tramos de uma rede
                             // neste metodo e criado o vetor de tramos da rede, avaliado se algum tramo encontra-se em uma condicao sem vazao,
                             // neste caso o tramo e retirado da rede interna, e e feita a resolucao permenente da rede interna, apos esta resolucao
                             // os perfis permanentes sao gravados.
                             // de producao e busca de sua solucao permanente
                             saidaClassica = malha[i][0].arq.saidaClassica;
                             // solucao transiente de uma rede de producao classica, sem anel.
-                            if (vg1dRede[i].chaveredeT == 1 && arqRede.injec == 0 && (*arqRede.vg1dSP).chaveAnelGL == 0) {
-                                vg1dRede[i].RGOMax = 14000.;
-                                vg1dRede[i].modoTransiente = 1;
-                                SolveRedeTrans(span<SProd>(malha[i].get(), vg1dRede[i].narq), arqRedeTemp[i], inativo, indativo, i); // metodo em que se faz a resolucao transiente da rede interna
-                                vg1dRede[i].modoTransiente = 0;
+                            if (networkContexts[i].networkTransientEnabled == 1 && arqRede.injec == 0 && (*arqRede.simulationContext).gasLiftRingNetworkEnabled == 0) {
+                                networkContexts[i].maximumGasOilRatio = 14000.;
+                                networkContexts[i].transientPropertyMode = 1;
+                                SolveRedeTrans(span<SProd>(malha[i].get(), networkContexts[i].branchCount), arqRedeTemp[i], inativo, indativo, i); // metodo em que se faz a resolucao transiente da rede interna
+                                networkContexts[i].transientPropertyMode = 0;
                             }
-                            vg1dRede[i].restartRede = 1;
+                            networkContexts[i].networkRestartRequested = 1;
                             // reiniciando os parametros globais de solucao de rede para a resolucao da proxima rede interna
-                            vg1dRede[i].restartRede = 1;
-                            vg1dRede[i].somaarea = 0;
-                            vg1dRede[i].somavaz = 0;
-                            vg1dRede[i].somavazG = 0;
-                            vg1dRede[i].relax = 0.5;
-                            vg1dRede[i].iterRedeT = 0;
-                            vg1dRede[i].erroRede = 1000;
-                            vg1dRede[i].arearef = 0.25 * M_PI * (7 * 7 - 5 * 5) * 2.54 * 2.54 / 10000;
+                            networkContexts[i].networkRestartRequested = 1;
+                            networkContexts[i].totalInletArea = 0;
+                            networkContexts[i].estimatedStandardLiquidFlowRate = 0;
+                            networkContexts[i].estimatedStandardGasFlowRate = 0;
+                            networkContexts[i].networkRelaxationFactor = 0.5;
+                            networkContexts[i].transientNetworkIteration = 0;
+                            networkContexts[i].networkNormRelativeChange = 1000;
+                            networkContexts[i].referenceFlowArea = 0.25 * M_PI * (7 * 7 - 5 * 5) * 2.54 * 2.54 / 10000;
 
                             normaEvol.clear();
                             bloq.clear();
@@ -12992,9 +12992,9 @@ int main(int argc, char **argv) {
 
                 } else { // caso rede de injecao, resolucao permanente da rede de injecao
                     // OBS: sistemas de injecao so tem solucao permanente
-                    vg1dRedeSimples.narq = narq;
+                    networkContext.branchCount = narq;
                     auto malha = make_unique<SProd[]>(narq); // the branches, released at the end of this block
-                    RedeInj(span<SProd>(malha.get(), narq), arqRede, narq, nomeArquivoLog, validacaoJson, tipoSimulacao_t::poco_injetor, &vg1dRedeSimples); // construcao
+                    RedeInj(span<SProd>(malha.get(), narq), arqRede, narq, nomeArquivoLog, validacaoJson, tipoSimulacao_t::poco_injetor, &networkContext); // construcao
                     // dos objetos tramos de uma rede de injecao e busca de sua solucao permanente
                     if (saidaClassica == 1) {
                         cout << "*******************************************************************************" << endl;
@@ -13006,16 +13006,16 @@ int main(int argc, char **argv) {
                         cout << "                                  FIM                                  " << endl;
                 }
             } else {
-                if ((*arqRede.vg1dSP).chaveAnelGL == 1) {
+                if ((*arqRede.simulationContext).gasLiftRingNetworkEnabled == 1) {
                     // solucao de rede de anel de Gas Lift
                     // SProd* malha;//alteracao7
-                    vg1dRedeSimples.narq = narq;
+                    networkContext.branchCount = narq;
                     auto malha = make_unique<SProd[]>(narq); // the branches, released at the end of this block
                     Vcr<int> inativo(narq, 0); // indica se algum tramo falhou na sua busca pela soluçao transiente
                     int indativo = 0;          // indica o numero de tramso que foram inativados na solucao permanente por
                     // falha de convergencia
                     RedeAnelGL(span<SProd>(malha.get(), narq), arqRede, narq, inativo, indativo, nomeArquivoLog,
-                               validacaoJson, arqRede.chaveredeT, tipoSimulacao_t::transiente, &vg1dRedeSimples); // cosntrucao dos objetos tramos
+                               validacaoJson, arqRede.chaveredeT, tipoSimulacao_t::transiente, &networkContext); // cosntrucao dos objetos tramos
                     // de uma rede de anel de GL, dentro deste metodo e feita a solucao permanente e
                     // eventualmente a solucao transiente tambem
 
@@ -13029,7 +13029,7 @@ int main(int argc, char **argv) {
                     } else
                         cout << "                                  FIM                                  " << endl;
                 } else {
-                    vg1dRedeSimples.narq = narq;
+                    networkContext.branchCount = narq;
                     auto malha = make_unique<SProd[]>(narq); // the branches, released at the end of this block
                     Vcr<int> inativo(narq, 0); // indica se algum tramo falhou na sua busca pela soluçao transiente
                     int indativo = 0;          // indica o numero de tramso que foram inativados na solucao permanente por
@@ -13037,7 +13037,7 @@ int main(int argc, char **argv) {
 
                     RedeParalela(span<SProd>(malha.get(), narq), arqRede, narq,
                                  inativo, indativo, nomeArquivoLog, validacaoJson, arqRede.chaveredeT,
-                                 tipoSimulacao_t::transiente, &vg1dRedeSimples);
+                                 tipoSimulacao_t::transiente, &networkContext);
 
                     saidaClassica = malha[0].arq.saidaClassica;
                     if (saidaClassica == 1) {
@@ -13053,10 +13053,10 @@ int main(int argc, char **argv) {
             // solucao transiente de uma rede de producao classica, sem anel.
 
         } else if (tipoSimulacao != tipoSimulacao_t::convecNatural) { // solucao de tramos solitarios, sem rede
-            varGlob1D vg1dTramo = varGlob1D();
+            SimulationContext branchContext = SimulationContext();
             // criar objeto de simulacao
             // construtor do objeto que representa o tramo
-            SProd sistem1(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, &vg1dTramo);
+            SProd sistem1(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, &branchContext);
             ptrSistemaProducao = &sistem1;
 
             // atualiza objeto de logger com registros anteriores
@@ -13164,14 +13164,14 @@ int main(int argc, char **argv) {
                 // prepara o modelo de transferência de massa e atualiza os termos fontes existentes em um tramo para o inicio da simulacao transiente
                 sistem1.renovaTemp();
                 sistem1.modoPerm = 0;
-                vg1dTramo.modoTransiente = 1;
-                (*sistem1.vg1dSP).modoTransiente = 1;
+                branchContext.transientPropertyMode = 1;
+                (*sistem1.simulationContext).transientPropertyMode = 1;
                 if (sistem1.arq.modoDifus3D == 1) {
                     int icel = sistem1.arq.celAcop[0].indCel;
                     double hiv = sistem1.celula[icel].calor.hi;
                     double hev = sistem1.celula[icel].calor.he; // sistem1.celula[icel].calor.he;
                     double tiv = sistem1.celula[icel].temp;
-                    sistem1.coupling3D.poissonSolver3D = solverP3D(sistem1.arq.modoDifus3DJson, sistem1.vg1dSP,
+                    sistem1.coupling3D.poissonSolver3D = solverP3D(sistem1.arq.modoDifus3DJson, sistem1.simulationContext,
                                                   sistem1.arq.nacop, sistem1.arq.geoAcop, hiv, hev, tiv);
                     if (sistem1.arq.nacop != sistem1.coupling3D.poissonSolver3D.dados.CC.nAcop)
                         NumError(
@@ -13208,7 +13208,7 @@ int main(int argc, char **argv) {
                     double deltFic = 1.;
                     double qparede0 = 1e15;
                     double erroParede = 1e101;
-                    (*sistem1.vg1dSP).tempo = 0.;
+                    (*sistem1.simulationContext).solverTime = 0.;
                     deltFic = sistem1.coupling3D.poissonSolver3D.defineDeltPoisson();
                     while (erroParede > 1e-1) {
                         sistem1.coupling3D.poissonSolver3D.transientePoissonDummy(deltFic, kontaperm);
@@ -13222,36 +13222,36 @@ int main(int argc, char **argv) {
                         qparede0 = sistem1.coupling3D.poissonSolver3D.dados.qTotal[0];
                     }
                     kontaperm = 0;
-                    while ((*sistem1.vg1dSP).tempo < 2000.) {
+                    while ((*sistem1.simulationContext).solverTime < 2000.) {
                         deltFic = sistem1.coupling3D.poissonSolver3D.defineDeltPoisson();
-                        if ((*sistem1.vg1dSP).tempo > 100. && (*sistem1.vg1dSP).tempo < 1000.) {
+                        if ((*sistem1.simulationContext).solverTime > 100. && (*sistem1.simulationContext).solverTime < 1000.) {
                             for (int iric = 0; iric < sistem1.coupling3D.poissonSolver3D.dados.CC.nRic; iric++) {
                                 sistem1.coupling3D.poissonSolver3D.dados.CC.ccRic[iric].valAmb[0] =
                                     sistem1.celula[icel].temp + (tamb[iric] - sistem1.celula[icel].temp) *
-                                                                    ((*sistem1.vg1dSP).tempo - 100.) / 900.;
+                                                                    ((*sistem1.simulationContext).solverTime - 100.) / 900.;
                             }
                         }
                         sistem1.coupling3D.poissonSolver3D.transientePoissonDummy(deltFic, kontaperm);
-                        (*sistem1.vg1dSP).tempo += deltFic;
+                        (*sistem1.simulationContext).solverTime += deltFic;
                         kontaperm++;
-                        cout << "tempo= " << (*sistem1.vg1dSP).tempo;
+                        cout << "tempo= " << (*sistem1.simulationContext).solverTime;
                         cout << endl;
                     }
                     sistem1.coupling3D.poissonSolver3D.malha.imprime(0);
                 }
-                while ((*sistem1.vg1dSP).lixo5 < sistem1.transient.finalTime) {
-                    vg1dTramo.RGOMax = 14000.;
-                    (*sistem1.vg1dSP).RGOMax = 14000.; // RGO maximo admitido para um eventual modelo black oil, isto e necessario pois como o modelo
+                while ((*sistem1.simulationContext).simulationTime < sistem1.transient.finalTime) {
+                    branchContext.maximumGasOilRatio = 14000.;
+                    (*sistem1.simulationContext).maximumGasOilRatio = 14000.; // RGO maximo admitido para um eventual modelo black oil, isto e necessario pois como o modelo
                     // foi originalmente baseado em um sistema black-oil, teria problemas nas equacoes de transferencia de massa caso
                     // nao tenha um valor, mesmo que pequeno de oleo como referencia para o oleo morto
                     sistem1.SolveTrans(); // metodo onde se faz o avanco de tempo transiente
                     for (int kontasnp = 0; kontasnp < sistem1.arq.nsnp; kontasnp++) {
-                        if (fabs((*sistem1.vg1dSP).lixo5 - sistem1.arq.tempsnp[kontasnp]) < sistem1.dt) {
-                            WriteSnapShot(sistem1, (*sistem1.vg1dSP).lixo5); // registro do arquivo SNP
+                        if (fabs((*sistem1.simulationContext).simulationTime - sistem1.arq.tempsnp[kontasnp]) < sistem1.dt) {
+                            WriteSnapShot(sistem1, (*sistem1.simulationContext).simulationTime); // registro do arquivo SNP
                         }
                     }
                 }
-                WriteSnapShot(sistem1, (*sistem1.vg1dSP).lixo5); // registro do SNP do tempo final
+                WriteSnapShot(sistem1, (*sistem1.simulationContext).simulationTime); // registro do SNP do tempo final
             }
             if (saidaClassica == 1) {
                 cout << "*******************************************************************************" << endl;
@@ -13265,10 +13265,10 @@ int main(int argc, char **argv) {
             nowGlobFim = time(0);
             ltmGlobFim = localtime(&nowGlobFim);
         } else {
-            varGlob1D vg1dConvec2D = varGlob1D();
+            SimulationContext convectionContext = SimulationContext();
             // solucao de caso 2D de conveccao natural em espaco confinado
             // construtor do solver de volumes finitos para uma malha e condicao de contorno especificada em um json
-            solv2D resolucao(nomeArquivoEntrada, nomeArquivoLog, &vg1dConvec2D);
+            solv2D resolucao(nomeArquivoEntrada, nomeArquivoLog, &convectionContext);
             // solver do problema de conveccao natural em espaco confinado 2D
             resolucao.resolve();
         }

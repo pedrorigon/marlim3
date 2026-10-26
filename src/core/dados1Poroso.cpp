@@ -9,19 +9,19 @@
 #include "InputPaths.h"
 #include "UnitConversions.h"
 
-dadosPoro::dadosPoro(varGlob1D *Vvg1dSP, string nomeArquivoEntrada) {
-    vg1dSP = Vvg1dSP;
+dadosPoro::dadosPoro(SimulationContext *context, string nomeArquivoEntrada) {
+    simulationContext = context;
     iniciaVariaveis();
     lerPoroso(nomeArquivoEntrada);
 }
 
 dadosPoro::dadosPoro() {
-    vg1dSP = 0;
+    simulationContext = 0;
     iniciaVariaveis();
 }
 
 dadosPoro::dadosPoro(const dadosPoro &vPoroso) {
-    vg1dSP = vPoroso.vg1dSP;
+    simulationContext = vPoroso.simulationContext;
     iniciaVariaveis();
     lerPoroso(vPoroso.entrada);
 }
@@ -144,7 +144,7 @@ dadosPoro &dadosPoro::operator=(const dadosPoro &vPoroso) {
             delete[] satLRes;
             delete[] tempoSatLRes;
         }
-        vg1dSP = vPoroso.vg1dSP;
+        simulationContext = vPoroso.simulationContext;
         iniciaVariaveis();
         lerPoroso(vPoroso.entrada);
     }
@@ -468,7 +468,7 @@ void dadosPoro::lerPoroso(string nomeArquivoEntrada) {
         int perm = -1;
 
         pInt = pW.val[0];
-        transfer = PorosRad(dutosMRT, vg1dSP, perm, vncamada, vdrcamada, vPcamada,
+        transfer = PorosRad(dutosMRT, simulationContext, perm, vncamada, vdrcamada, vPcamada,
                             pInt, pRes, tRes, temp.dtmax[0], pW.val[0], corte.zDatum0 - zDatumRef, corte.zDatum1 - zDatumRef, espessuraRes,
                             vsO, vsW, satLRes[0], satAPoc[0], satAPoc[0], satAconat, ippoco,
                             kRelOA, kRelOG, pcOA, pcGO, fluc, flup);
@@ -1350,7 +1350,7 @@ void dadosPoro::parse_fluido_producao(
             corrDeng =
                 fluidos_producao_json["correcaoDenGas"].GetInt();
 
-        flup = ProFlu(vg1dSP, api, rgo, deng, bsw,
+        flup = ProFlu(simulationContext, api, rgo, deng, bsw,
                       denag, templ, lvisl, temph, lvish, tipoemul, aemul,
                       bemul, PHI100, bswCorte, tabp, yco2, corrC, corrSat,
                       vcorrOM, vcorrOV, vcorrOS, flashCompleto, 0);
@@ -1618,7 +1618,7 @@ void dadosPoro::parse_fluido_producao(
         api /= 1000.;
         api = 141.5 / api - 131.5;
 
-        flup = ProFlu(vg1dSP, api, rgo, deng, bsw,
+        flup = ProFlu(simulationContext, api, rgo, deng, bsw,
                       denag, templ, lvisl, temph, lvish, tipoemul, aemul,
                       bemul, PHI100, bswCorte, tabp, yco2, corrC, corrSat,
                       vcorrOM, vcorrOV, vcorrOS, flashCompleto, 0);
@@ -2005,7 +2005,7 @@ void dadosPoro::parse_fluido_producao(
             }
         }
 
-        flup = ProFlu(vg1dSP, api, rgo, deng, bsw,
+        flup = ProFlu(simulationContext, api, rgo, deng, bsw,
                       denag, templ, lvisl, temph, lvish, tipoemul, aemul,
                       bemul, PHI100, bswCorte, tabp, yco2, corrC, corrSat,
                       vcorrOM, vcorrOV, vcorrOS, flashCompleto, 0, npseudo);

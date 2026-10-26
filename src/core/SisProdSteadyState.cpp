@@ -12,7 +12,7 @@
 #include "celula3.h"
 #include "celulaGas.h"
 #include "chokegas.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 
 #include <math.h>
@@ -64,7 +64,7 @@ void publishSteadyVoidFraction(const SteadyStateState &state, int i) {
 /// After publication, the reverse black-oil march zeroes the complementary-liquid
 /// residence time; the reverse compositional march propagates it from the upstream cell.
 void applyReverseSteadyPhaseFractions(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhol, double rhog) {
-    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
+    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).smallValueTolerance) {
         if (state.input.tipoFluido == 1) {
             state.cells[i].alf = 0.;
         } else {
@@ -72,11 +72,11 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, const Stead
         }
         publishSteadyVoidFraction(state, i);
         publishSteadyComplementaryFraction(state, i);
-    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny) { // liquid only:
+    } else if (fabs(state.cells[i].QG) < (*state.globals).smallValueTolerance) { // liquid only:
         state.cells[i].alf = 0.;
         publishSteadyVoidFraction(state, i);
         publishSteadyComplementaryFraction(state, i);
-    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-6) { // gas only:
+    } else if (fabs(state.cells[i].QL) < (*state.globals).smallValueTolerance * 1e-6) { // gas only:
         state.cells[i].alf = 1.;
         publishSteadyVoidFraction(state, i);
         state.cells[i].c0 = 1.;
@@ -85,11 +85,11 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, const Stead
     } else { // two-phase
         double c0 = 1.;
         double ud = 0.;
-        if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6) {
+        if (fabs(state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-6) {
             if (state.steadyIteration == 0) { // first estimate, first iteration
                 // the no-slip void fraction is used, since the correlation that gives the
                 // void fraction depends on the void fraction itself
-                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
+                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).smallValueTolerance) {
                     state.cells[i].alf = fabs(state.cells[i].QG) /
                                     (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
                     driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
@@ -104,12 +104,12 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, const Stead
 
             // at steady state, the void fraction comes from the slip relations,
             // so this is where Co and Ud are obtained:
-            else if (fabs(state.cells[i].QG) > (*state.globals).localtiny && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6)
+            else if (fabs(state.cells[i].QG) > (*state.globals).smallValueTolerance && fabs(state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-6)
                 driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
             state.cells[i].c0 = c0;
             state.cells[i].ud = ud;
             double area = state.cells[i].duto.area;
-            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny) {
+            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).smallValueTolerance) {
                 // void fraction with slip:
                 state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
                 double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
@@ -118,7 +118,7 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, const Stead
 
             } else
                 state.cells[i].alf = 0.;
-            if (state.cells[i].alf > (1 - (*state.globals).localtiny))
+            if (state.cells[i].alf > (1 - (*state.globals).smallValueTolerance))
                 state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
         } else {
             state.cells[i].alf = 1.;
@@ -140,10 +140,10 @@ void applyReverseSteadyPhaseFractions(const SteadyStateState &state, const Stead
 /// upstream or downstream that has a usable calculated beta. Shared by
 /// advanceReverseCompositionalSteadyMass and advanceCompositionalSteadyMass.
 void refreshCompositionalFlashFromNeighbour(const SteadyStateState &state, int i, double pmed, double tmed) {
-    if (((state.steadyIteration == 0 && i <= 1 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) && state.input.tabelaDinamica == 0) {
+    if (((state.steadyIteration == 0 && i <= 1 && state.searchOrigin == 0) && ((*state.globals).networkMode == 0 || (*state.globals).networkIteration == 1)) && state.input.tabelaDinamica == 0) {
         state.cells[i].flui.atualizaPropComp(pmed, tmed, -1, NULL, NULL, state.input.pocinjec);
     } else if (state.input.tabelaDinamica == 0) {
-        if ((state.steadyIteration == 0 && state.searchOrigin == 0) && ((*state.globals).chaverede == 0 || (*state.globals).iterRede == 1)) {
+        if ((state.steadyIteration == 0 && state.searchOrigin == 0) && ((*state.globals).networkMode == 0 || (*state.globals).networkIteration == 1)) {
             int veriI = i - 1;
             while ((state.cells[veriI].flui.dCalculatedBeta > 1 - (0.0 + 1e-15) || state.cells[veriI].flui.dCalculatedBeta < (0.0 + 1e-15)) && (veriI > 0))
                 veriI--;
@@ -190,11 +190,11 @@ void refreshCompositionalFlashFromNeighbour(const SteadyStateState &state, int i
 void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhol, double rhog) {
     double c0 = 1.;
     double ud = 0.;
-    if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5) {
+    if (fabs(state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-5) {
         if (state.steadyIteration == 0) { // first estimate, first iteration
             // the no-slip void fraction is used, since the correlation that gives the
             // void fraction depends on the void fraction itself
-            if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
+            if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).smallValueTolerance) {
                 if (state.convergenceMonitor > 0.01)
                     state.cells[i].alf = fabs(state.cells[i].QG) /
                                     (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
@@ -210,12 +210,12 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, const Stead
             }
             // at steady state, the void fraction comes from the slip relations,
             // so this is where Co and Ud are obtained:
-            else if (fabs(state.cells[i].QG) > (*state.globals).localtiny * 1e-5 && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-5)
+            else if (fabs(state.cells[i].QG) > (*state.globals).smallValueTolerance * 1e-5 && fabs(state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-5)
                 driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
             state.cells[i].c0 = c0;
             state.cells[i].ud = ud;
             double area = state.cells[i].duto.area;
-            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny * 1e-5) {
+            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-5) {
                 // void fraction with slip:
                 state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
                 double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
@@ -223,9 +223,9 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, const Stead
                     state.cells[i].alf = alfHomo;
             } else
                 state.cells[i].alf = 0.;
-            if (state.cells[i].alf > (1 - (*state.globals).localtiny) && fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny * 1e-5)
+            if (state.cells[i].alf > (1 - (*state.globals).smallValueTolerance) && fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-5)
                 state.cells[i].alf = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
-            else if (state.cells[i].alf > (1 - (*state.globals).localtiny))
+            else if (state.cells[i].alf > (1 - (*state.globals).smallValueTolerance))
                 state.cells[i].alf = 1.;
         } else {
             state.cells[i].alf = 1.;
@@ -265,7 +265,7 @@ void applyCompositionalTwoPhaseRegime(const SteadyStateState &state, const Stead
 ///
 /// Uses localtiny * 1e-5 for the no-flow and phase-presence thresholds.
 void applyCompositionalPhaseRegime(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhol, double rhog) {
-    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny * 1e-5) {
+    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).smallValueTolerance * 1e-5) {
         if (state.input.tipoFluido == 1) {
             state.cells[i].alf = 0.;
         } else {
@@ -273,11 +273,11 @@ void applyCompositionalPhaseRegime(const SteadyStateState &state, const SteadyDe
         }
         publishSteadyVoidFraction(state, i);
         publishSteadyComplementaryFraction(state, i);
-    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny * 1e-5) { // liquid only:
+    } else if (fabs(state.cells[i].QG) < (*state.globals).smallValueTolerance * 1e-5) { // liquid only:
         state.cells[i].alf = 0.;
         publishSteadyVoidFraction(state, i);
         publishSteadyComplementaryFraction(state, i);
-    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-5) { // gas only:
+    } else if (fabs(state.cells[i].QL) < (*state.globals).smallValueTolerance * 1e-5) { // gas only:
         state.cells[i].alf = 1.;
         publishSteadyVoidFraction(state, i);
         state.cells[i].c0 = 1.;
@@ -510,10 +510,10 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
-        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
+        if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance))
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * left.oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-        if (state.cells[i].flui.RGO > (*state.globals).RGOMax && state.cells[i].flui.RGO < 1e6)
-            state.cells[i].flui.RGO = (*state.globals).RGOMax;
+        if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio && state.cells[i].flui.RGO < 1e6)
+            state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
     }
 
     double waterFlowRate1;
@@ -569,7 +569,7 @@ void mixUpstreamSourceIntoCell(const SteadyStateState &state, SteadyFace &left, 
                       (state.cells[i - 1].QL + qlpF + qlcF);
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / left.oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny * 1e-5))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance * 1e-5))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -639,7 +639,7 @@ void carryUpstreamCompositionIntoCell(const SteadyStateState &state, SteadyFace 
         double waterCutInSitu = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
         double oilFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].FW) * (1 - state.cells[i - 1].bet) * oilVolumeFactorInSitu / left.oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny * 1e-5))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance * 1e-5))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet);
@@ -680,10 +680,10 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, double o
 
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
-        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
+        if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance))
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-        if (state.cells[i].flui.RGO > (*state.globals).RGOMax && state.cells[i].flui.RGO < 1e7)
-            state.cells[i].flui.RGO = (*state.globals).RGOMax;
+        if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio && state.cells[i].flui.RGO < 1e7)
+            state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
     } else
         state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
 
@@ -693,7 +693,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, double o
         // the variables that matter to the black-oil model
         state.cells[i].flui.Deng = state.cells[i - 1].flui.Deng;
         state.cells[i].flui.yco2 = state.cells[i - 1].flui.yco2;
-        if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+        if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
             state.cells[i].flui.API = state.cells[i - 1].flui.API;
             state.cells[i].flui.Denag = state.cells[i - 1].flui.Denag;
             state.cells[i].flui.TempL = state.cells[i - 1].flui.TempL;
@@ -704,7 +704,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, double o
         state.cells[i].flui.RenovaFluido();
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
-    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6) { // re-evaluates the complementary-liquid volume fraction;
+    if (state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6) { // re-evaluates the complementary-liquid volume fraction;
         // even without a source it can change, because the produced liquid shrinks
         if (state.cells[i].flui.RGO < 1e6)
             oilVolumeFactorInSitu = state.cells[i].flui.BOFunc(state.cells[i].presaux, tmed);
@@ -714,7 +714,7 @@ void applySteadyMassWithoutSource(const SteadyStateState &state, int i, double o
         waterCutInSitu = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
         double oilFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].FW) * (1 - state.cells[i - 1].bet) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet);
@@ -746,7 +746,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, double
     double deng;
     double yco2;
     // balance that sets the gas density and the CO2 fraction from the gas source
-    if (fabs(qgstd) > (*state.globals).localtiny && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
         deng = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.Deng / units::kSecondsPerDay) / qgstd;
         yco2 = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.yco2 / units::kSecondsPerDay) / qgstd;
     } else {
@@ -767,14 +767,14 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, double
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
-        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
+        if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance))
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-        if (state.cells[i].flui.RGO > (*state.globals).RGOMax && state.cells[i].flui.RGO < 1e7)
-            state.cells[i].flui.RGO = (*state.globals).RGOMax;
+        if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio && state.cells[i].flui.RGO < 1e7)
+            state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
     }
     double rgo;
     // new separator GOR, without slip, from the standard gas and oil flow rates
-    if (qostd > (*state.globals).localtiny)
+    if (qostd > (*state.globals).smallValueTolerance)
         rgo = qgstd / qostd;
     else
         rgo = state.cells[i - 1].flui.RGO;
@@ -786,7 +786,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, double
         // the variables that matter to the black-oil model
         state.cells[i].flui.Deng = deng;
         state.cells[i].flui.yco2 = yco2;
-        if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+        if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
             state.cells[i].flui.API = state.cells[i - 1].flui.API;
             state.cells[i].flui.TempL = state.cells[i - 1].flui.TempL;
             state.cells[i].flui.TempH = state.cells[i - 1].flui.TempH;
@@ -797,7 +797,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, double
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
 
-    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && state.cells[i - 1].alf < 1. - (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
+    if (state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6 && state.cells[i - 1].alf < 1. - (*state.globals).smallValueTolerance * 1e-6 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
         // even without a liquid source it can change,
         // because the produced liquid shrinks
@@ -806,7 +806,7 @@ void applySteadyMassDryGasInjection(const SteadyStateState &state, int i, double
         waterCutInSitu = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
         double oilFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].FW) * (1 - state.cells[i - 1].bet) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet);
@@ -848,7 +848,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, double
     double deng;
     double yco2;
     // balance that sets the gas density and the CO2 fraction from the gas source
-    if (fabs(qgstd) > (*state.globals).localtiny * 1e-10 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance * 1e-10 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
         deng = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.Deng / units::kSecondsPerDay) / qgstd;
         yco2 = (qostd * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + state.cells[i - 1].acsr.injg.QGas * state.cells[i - 1].acsr.injg.FluidoPro.yco2 / units::kSecondsPerDay) / qgstd;
     } else {
@@ -869,21 +869,21 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, double
         state.cells[i - 1].VolLeveST = 0.;
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
-        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
+        if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance))
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-        if (state.cells[i].flui.RGO > (*state.globals).RGOMax && state.cells[i].flui.RGO < 1e7)
-            state.cells[i].flui.RGO = (*state.globals).RGOMax;
+        if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio && state.cells[i].flui.RGO < 1e7)
+            state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
     }
 
     // new separator GOR, changed by the liquid source
-    if (fabs(qostd + qostd2) > (*state.globals).localtiny && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15)
+    if (fabs(qostd + qostd2) > (*state.globals).smallValueTolerance && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15)
         state.cells[i].flui.RGO = qgstd / (qostd + qostd2);
     else if (fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15)
-        state.cells[i].flui.RGO = (*state.globals).RGOMax;
+        state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
     else
         state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
 
-    if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+    if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
         // when the model is ASTM. Note that this only makes sense with more than one
         // production fluid in the JSON, or when the simulation is part of a network
         // with several branches feeding others with fluids of different properties
@@ -935,7 +935,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, double
         // the variables that matter to the black-oil model
         state.cells[i].flui.Deng = deng;
         state.cells[i].flui.yco2 = yco2;
-        if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+        if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
             state.cells[i].flui.API = state.cells[i - 1].flui.API;
             state.cells[i].flui.TempL = state.cells[i - 1].flui.TempL;
             state.cells[i].flui.TempH = state.cells[i - 1].flui.TempH;
@@ -946,7 +946,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, double
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
 
-    if (state.cells[i - 1].bet > (*state.globals).localtiny && state.cells[i - 1].alf < 1. - (*state.globals).localtiny * 1e-10 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
+    if (state.cells[i - 1].bet > (*state.globals).smallValueTolerance && state.cells[i - 1].alf < 1. - (*state.globals).smallValueTolerance * 1e-10 && fabs(state.cells[i - 1].acsr.injg.QGas) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
         double oilVolumeFactorNeighbour = state.cells[i].flui.BOFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
         double waterVolumeFactorNeighbour = state.cells[i].flui.BAFunc(state.cells[i - 1].pres, state.cells[i - 1].temp);
@@ -961,7 +961,7 @@ void applySteadyMassWetGasInjection(const SteadyStateState &state, int i, double
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / oilVolumeFactor;
 
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -1018,32 +1018,32 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, double
     if (fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15) {
         if (state.input.trackRGO == -1) {
             // Accounts for dissolved gas in the gas-oil ratio.
-            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
+            if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance))
                 state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-            if (state.cells[i].flui.RGO > (*state.globals).RGOMax)
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+            if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio)
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else {
             // new separator GOR, changed by the liquid source
-            if (fabs(qostd1 + qostd2) > (*state.globals).localtiny)
+            if (fabs(qostd1 + qostd2) > (*state.globals).smallValueTolerance)
                 state.cells[i].flui.RGO = qgstd / (qostd1 + qostd2);
             else
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         }
     } else
         state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
     // new gas density at standard conditions, changed by the liquid source
-    if (fabs(qgstd) > (*state.globals).localtiny && state.input.flashCompleto == 0 && fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15 &&
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance && state.input.flashCompleto == 0 && fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15 &&
         fabs(qgstd) > 1e-15)
         state.cells[i].flui.Deng = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + qostd2 * state.cells[i - 1].acsr.injl.FluidoPro.RGO * state.cells[i - 1].acsr.injl.FluidoPro.Deng) / qgstd;
     else if (fabs(state.cells[i - 1].acsr.injl.QLiq) <= 1e-15)
         state.cells[i].flui.Deng = state.cells[i - 1].flui.Deng;
     // new CO2 fraction, changed by the liquid source
-    if (fabs(qgstd) > (*state.globals).localtiny && state.input.flashCompleto == 0 && fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15 &&
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance && state.input.flashCompleto == 0 && fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15 &&
         fabs(qgstd) > 1e-15)
         state.cells[i].flui.yco2 = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + qostd2 * state.cells[i - 1].acsr.injl.FluidoPro.RGO * state.cells[i - 1].acsr.injl.FluidoPro.yco2) / qgstd;
     else if (fabs(state.cells[i - 1].acsr.injl.QLiq) <= 1e-15)
         state.cells[i].flui.yco2 = state.cells[i - 1].flui.yco2;
-    if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+    if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
         // when the model is ASTM. Note that this only makes sense with more than one
         // production fluid in the JSON, or when the simulation is part of a network
         // with several branches feeding others with fluids of different properties
@@ -1099,7 +1099,7 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, double
         state.cells[i].flui.RenovaFluido();
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
-    if ((state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny * 1e-6) &&
+    if ((state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).smallValueTolerance * 1e-6) &&
         fabs(state.cells[i - 1].acsr.injl.QLiq) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
         // note that the liquid source can have a complementary-liquid fraction
@@ -1115,7 +1115,7 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, double
         double betN = (state.cells[i - 1].QL * state.cells[i - 1].bet + qlcF) / (state.cells[i - 1].QL + qlpF + qlcF);
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -1169,20 +1169,20 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, doub
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
         if ((state.cells[i - 1].fontemassLR) > 1e-15 && (state.cells[i - 1].fontemassGR) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
+            if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance) &&
                 fabs(state.cells[i - 1].fontemassLR) > 1e-15)
                 state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-            if (state.cells[i].flui.RGO > (*state.globals).RGOMax)
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+            if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio)
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
 
     } else { // new separator GOR, changed by the IPR
         if ((state.cells[i - 1].fontemassLR) > 1e-15 && (state.cells[i - 1].fontemassGR) > 1e-15) {
-            if (fabs(qostd1 + qostd2) > (*state.globals).localtiny * 1e-10)
+            if (fabs(qostd1 + qostd2) > (*state.globals).smallValueTolerance * 1e-10)
                 state.cells[i].flui.RGO = qgstd / (qostd1 + qostd2);
             else
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
     }
@@ -1197,7 +1197,7 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, doub
         state.cells[i].flui.yco2 = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + qostd2 * state.cells[i - 1].acsr.ipr.FluidoPro.RGO * state.cells[i - 1].acsr.ipr.FluidoPro.yco2) / qgstd;
     else
         state.cells[i].flui.yco2 = state.cells[i - 1].flui.yco2;
-    if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+    if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
         // when the model is ASTM. Note that this only makes sense with more than one
         // production fluid in the JSON, or when the simulation is part of a network
         // with several branches feeding others with fluids of different properties
@@ -1251,7 +1251,7 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, doub
         state.cells[i].flui.RenovaFluido();
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
-    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
+    if (state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
         // note that the IPR can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
@@ -1266,7 +1266,7 @@ void applySteadyMassInflowPerformance(const SteadyStateState &state, int i, doub
         double betN = (state.cells[i - 1].QL * state.cells[i - 1].bet + qlcF) / (state.cells[i - 1].QL + qlpF + qlcF);
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -1321,35 +1321,35 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, double 
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
         if ((state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny))
+            if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance))
                 state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-            if (state.cells[i].flui.RGO > (*state.globals).RGOMax)
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+            if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio)
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
     } else {
         // new separator GOR, changed by the liquid source
         if ((state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP) > 1e-15) {
-            if (fabs(qostd1 + qostd2) > (*state.globals).localtiny)
+            if (fabs(qostd1 + qostd2) > (*state.globals).smallValueTolerance)
                 state.cells[i].flui.RGO = qgstd / (qostd1 + qostd2);
             else
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
     }
     // new gas density at standard conditions, changed by the liquid source
-    if (fabs(qgstd) > (*state.globals).localtiny * 1e-10 && state.input.flashCompleto == 0 &&
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance * 1e-10 && state.input.flashCompleto == 0 &&
         (state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP) > 1e-15)
         state.cells[i].flui.Deng = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + qostd2 * state.cells[i - 1].acsr.injm.FluidoPro.RGO * state.cells[i - 1].acsr.injm.FluidoPro.Deng) / qgstd;
     else
         state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
     // new CO2 fraction, changed by the liquid source
-    if (fabs(qgstd) > (*state.globals).localtiny * 1e-10 && state.input.flashCompleto == 0 &&
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance * 1e-10 && state.input.flashCompleto == 0 &&
         (state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP) > 1e-15)
         state.cells[i].flui.yco2 = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + qostd2 * state.cells[i - 1].acsr.injm.FluidoPro.RGO * state.cells[i - 1].acsr.injm.FluidoPro.yco2) / qgstd;
     else
         state.cells[i].flui.yco2 = state.cells[i - 1].flui.yco2;
-    if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+    if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
         // when the model is ASTM. Note that this only makes sense with more than one
         // production fluid in the JSON, or when the simulation is part of a network
         // with several branches feeding others with fluids of different properties
@@ -1407,7 +1407,7 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, double 
         state.cells[i].flui.RenovaFluido();
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
-    if ((state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny) &&
+    if ((state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).smallValueTolerance) &&
         fabs(state.cells[i - 1].acsr.injm.MassG + state.cells[i - 1].acsr.injm.MassP + state.cells[i - 1].acsr.injm.MassC) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
         // note that the liquid source can have a complementary-liquid fraction
@@ -1423,7 +1423,7 @@ void applySteadyMassMultipleSource(const SteadyStateState &state, int i, double 
         double betN = (state.cells[i - 1].QL * state.cells[i - 1].bet + qlcF) / (state.cells[i - 1].QL + qlpF + qlcF);
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -1479,31 +1479,31 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, double temp
 
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
-        if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny * 1e-6) && bsw < (1. - (*state.globals).localtiny))
+        if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance * 1e-6) && bsw < (1. - (*state.globals).smallValueTolerance))
             state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-        if (state.cells[i].flui.RGO > (*state.globals).RGOMax)
-            state.cells[i].flui.RGO = (*state.globals).RGOMax;
+        if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio)
+            state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
     } else { // new separator GOR, changed by the IPR
-        if (fabs(qostd1 + qostd2) > (*state.globals).localtiny * 1e-6)
+        if (fabs(qostd1 + qostd2) > (*state.globals).smallValueTolerance * 1e-6)
             state.cells[i].flui.RGO = qgstd / (qostd1 + qostd2);
         else
-            state.cells[i].flui.RGO = (*state.globals).RGOMax;
+            state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
     }
     // new gas density at standard conditions, changed by the leak
-    if (fabs(qgstd) > (*state.globals).localtiny && state.input.flashCompleto == 0) {
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance && state.input.flashCompleto == 0) {
         if (fabs(qostd2) > 0)
             state.cells[i].flui.Deng = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + qostd2 * fluF.RGO * fluF.Deng) / qgstd;
         else
             state.cells[i].flui.Deng = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.Deng + state.cells[i - 1].fontemassGR / (fluF.Deng * kAirDensityAtStandardConditions)) / qgstd;
     }
     // new CO2 fraction, changed by the leak
-    if (fabs(qgstd) > (*state.globals).localtiny && state.input.flashCompleto == 0) {
+    if (fabs(qgstd) > (*state.globals).smallValueTolerance && state.input.flashCompleto == 0) {
         if (fabs(qostd2) > 0)
             state.cells[i].flui.yco2 = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + qostd2 * fluF.RGO * fluF.yco2) / qgstd;
         else
             state.cells[i].flui.yco2 = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + fluF.yco2 * state.cells[i - 1].fontemassGR / (fluF.Deng * kAirDensityAtStandardConditions)) / qgstd;
     }
-    if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+    if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
         // when the model is ASTM. Note that this only makes sense with more than one
         // production fluid in the JSON, or when the simulation is part of a network
         // with several branches feeding others with fluids of different properties
@@ -1550,7 +1550,7 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, double temp
         state.cells[i].flui.RenovaFluido();
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
-    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).localtiny * 1e-6) {
+    if (state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6 || fabs(state.cells[i - 1].fontemassCR) > (*state.globals).smallValueTolerance * 1e-6) {
         // re-evaluates the complementary-liquid volume fraction;
         // note that the leak can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
@@ -1565,7 +1565,7 @@ void applySteadyMassLeakSource(const SteadyStateState &state, int i, double temp
         double betN = (state.cells[i - 1].QL * state.cells[i - 1].bet + qlcF) / (state.cells[i - 1].QL + qlpF + qlcF);
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -1619,20 +1619,20 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, double te
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
         if (fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
+            if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance) &&
                 fabs(state.cells[i - 1].fontemassLR) > 1e-15)
                 state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-            if (state.cells[i].flui.RGO > (*state.globals).RGOMax)
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+            if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio)
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
 
     } else { // new separator GOR, changed by the IPR
         if ((state.cells[i - 1].fontemassLR) > 1e-15 && (state.cells[i - 1].fontemassGR) > 1e-15) {
-            if (fabs(qostd1 + qostd2) > (*state.globals).localtiny * 1e-10)
+            if (fabs(qostd1 + qostd2) > (*state.globals).smallValueTolerance * 1e-10)
                 state.cells[i].flui.RGO = qgstd / (qostd1 + qostd2);
             else
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
     }
@@ -1647,7 +1647,7 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, double te
         state.cells[i].flui.yco2 = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + qostd2 * state.cells[i - 1].acsr.radialPoro.flup.RGO * state.cells[i - 1].acsr.radialPoro.flup.yco2) / qgstd;
     else
         state.cells[i].flui.yco2 = state.cells[i - 1].flui.yco2;
-    if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+    if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
         // when the model is ASTM. Note that this only makes sense with more than one
         // production fluid in the JSON, or when the simulation is part of a network
         // with several branches feeding others with fluids of different properties
@@ -1701,7 +1701,7 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, double te
         state.cells[i].flui.RenovaFluido();
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
-    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
+    if (state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
         // note that the IPR can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
@@ -1716,7 +1716,7 @@ void applySteadyMassRadialPorous(const SteadyStateState &state, int i, double te
         double betN = (state.cells[i - 1].QL * state.cells[i - 1].bet + qlcF) / (state.cells[i - 1].QL + qlpF + qlcF);
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -1770,20 +1770,20 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, double temper
     if (state.input.trackRGO == -1) {
         // Accounts for dissolved gas in the gas-oil ratio.
         if (fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
-            if (liquidHoldup > (*state.globals).localtiny && complementaryFraction < (1. - (*state.globals).localtiny) && bsw < (1. - (*state.globals).localtiny) &&
+            if (liquidHoldup > (*state.globals).smallValueTolerance && complementaryFraction < (1. - (*state.globals).smallValueTolerance) && bsw < (1. - (*state.globals).smallValueTolerance) &&
                 fabs(state.cells[i - 1].fontemassLR) > 1e-15)
                 state.cells[i].flui.RGO = state.cells[i - 1].VolLeveST * oilVolumeFactor / (liquidHoldup * (1 - complementaryFraction) * (1 - bsw));
-            if (state.cells[i].flui.RGO > (*state.globals).RGOMax)
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+            if (state.cells[i].flui.RGO > (*state.globals).maximumGasOilRatio)
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
 
     } else { // new separator GOR, changed by the IPR
         if ((state.cells[i - 1].fontemassLR) > 1e-15 && (state.cells[i - 1].fontemassGR) > 1e-15) {
-            if (fabs(qostd1 + qostd2) > (*state.globals).localtiny * 1e-10)
+            if (fabs(qostd1 + qostd2) > (*state.globals).smallValueTolerance * 1e-10)
                 state.cells[i].flui.RGO = qgstd / (qostd1 + qostd2);
             else
-                state.cells[i].flui.RGO = (*state.globals).RGOMax;
+                state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         } else
             state.cells[i].flui.RGO = state.cells[i - 1].flui.RGO;
     }
@@ -1798,7 +1798,7 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, double temper
         state.cells[i].flui.yco2 = (qostd1 * state.cells[i - 1].flui.RGO * state.cells[i - 1].flui.yco2 + qostd2 * state.cells[i - 1].acsr.poroso2D.dados.flup.RGO * state.cells[i - 1].acsr.poroso2D.dados.flup.yco2) / qgstd;
     else
         state.cells[i].flui.yco2 = state.cells[i - 1].flui.yco2;
-    if (state.productionFluidCount > 1 || (*state.globals).chaverede == 1) {
+    if (state.productionFluidCount > 1 || (*state.globals).networkMode == 1) {
         // when the model is ASTM. Note that this only makes sense with more than one
         // production fluid in the JSON, or when the simulation is part of a network
         // with several branches feeding others with fluids of different properties
@@ -1853,7 +1853,7 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, double temper
         state.cells[i].flui.RenovaFluido();
         fluidtracking::correctGasSpecificGravity(state.cells, state.input, state.steadyIteration, i);
     }
-    if (state.cells[i - 1].bet > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
+    if (state.cells[i - 1].bet > (*state.globals).smallValueTolerance * 1e-6 && fabs(state.cells[i - 1].fontemassLR) > 1e-15) {
         // re-evaluates the complementary-liquid volume fraction;
         // note that the IPR can have a complementary-liquid fraction
         // different from the one at the left of cell i-1
@@ -1868,7 +1868,7 @@ void applySteadyMassPorous2D(const SteadyStateState &state, int i, double temper
         double betN = (state.cells[i - 1].QL * state.cells[i - 1].bet + qlcF) / (state.cells[i - 1].QL + qlpF + qlcF);
         double oilFlowRate = (state.cells[i - 1].QL + qlpF + qlcF) * (1 - waterCutNeighbour) * (1 - betN) * oilVolumeFactorInSitu / oilVolumeFactor;
         double waterFlowRate;
-        if (waterCutInSitu < (1 - (*state.globals).localtiny))
+        if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
             waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
         else
             waterFlowRate = state.cells[i - 1].QL * (1 - state.cells[i - 1].bet) + qlpF;
@@ -1889,17 +1889,17 @@ void finalizeSteadyMassWithLiquid(const SteadyStateState &state, int i, double w
         double rhoa = state.cells[i].flui.Denag * 1000.;
 
         double denom = state.cells[i].flui.RGO * rhogstd + rhololeostd;
-        if (fabs(1 - state.cells[i].flui.BSW) > (*state.globals).localtiny) {
+        if (fabs(1 - state.cells[i].flui.BSW) > (*state.globals).smallValueTolerance) {
             denom += rhoa * state.cells[i].flui.BSW / (1 - state.cells[i].flui.BSW);
-            if (fabs(1 - state.cells[i].bet) > (*state.globals).localtiny * 1e-6 && fabs(state.cells[i].bet) > (*state.globals).localtiny * 1e-10) {
+            if (fabs(1 - state.cells[i].bet) > (*state.globals).smallValueTolerance * 1e-6 && fabs(state.cells[i].bet) > (*state.globals).smallValueTolerance * 1e-10) {
                 denom += (state.cells[i].fluicol.MasEspFlu(pmed, tmed) * state.cells[i].bet / (1 - state.cells[i].bet)) * oilVolumeFactor * (1. + waterCutInSitu / (1 - waterCutInSitu));
             }
         }
-        if (fabs(1 - state.cells[i].bet) > (*state.globals).localtiny * 1e-6 && fabs(1 - state.cells[i].flui.BSW) > (*state.globals).localtiny)
+        if (fabs(1 - state.cells[i].bet) > (*state.globals).smallValueTolerance * 1e-6 && fabs(1 - state.cells[i].flui.BSW) > (*state.globals).smallValueTolerance)
             oilFlowRate = state.cells[i].MC / denom;
 
-        if (fabs(1 - state.cells[i].bet) > (*state.globals).localtiny * 1e-6 && fabs(1 - state.cells[i].flui.BSW) > (*state.globals).localtiny) {
-            if ((*state.globals).tipoFluidoRedeGlob == 0)
+        if (fabs(1 - state.cells[i].bet) > (*state.globals).smallValueTolerance * 1e-6 && fabs(1 - state.cells[i].flui.BSW) > (*state.globals).smallValueTolerance) {
+            if ((*state.globals).networkFluidBalanceMode == 0)
                 state.cells[i].Mliqini = state.cells[i].MC - (state.cells[i].flui.RGO - solutionGasRatio) * rhogstd * oilFlowRate;
             else {
                 double masoleo = oilFlowRate * oilVolumeFactor * state.cells[i].flui.MasEspoleo(pmed, tmed, solutionGasRatio) + oilFlowRate * rhoa * state.cells[i].flui.BSW / (1 - state.cells[i].flui.BSW);
@@ -1956,12 +1956,12 @@ void finalizeSteadyMassGasOnly(const SteadyStateState &state, int i) {
 void finalizeSteadyMassTwoPhase(const SteadyStateState &state, const SteadyDependencies &dependencies, int i, double rhog, double rhol) {
     double c0 = 1.;
     double ud = 0.;
-    if (fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6) {
+    if (fabs(state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-6) {
         if (state.input.tipoModeloDrift == 1) {
             if (state.steadyIteration == 0) { // first estimate, first iteration
                 // the no-slip void fraction is used, since the correlation that gives the
                 // void fraction depends on the void fraction itself
-                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).localtiny) {
+                if ((fabs(state.cells[i].QG) + fabs(state.cells[i].QL)) > (*state.globals).smallValueTolerance) {
                     if (state.convergenceMonitor > 0.01)
                         state.cells[i].alf = fabs(state.cells[i].QG) /
                                         (fabs(state.cells[i].QG) + fabs(state.cells[i].QL));
@@ -1977,12 +1977,12 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, const SteadyDepen
 
             // at steady state, the void fraction comes from the slip relations,
             // so this is where Co and Ud are obtained:
-            else if (fabs(state.cells[i].QG) > (*state.globals).localtiny && fabs(state.cells[i].QL) > (*state.globals).localtiny * 1e-6)
+            else if (fabs(state.cells[i].QG) > (*state.globals).smallValueTolerance && fabs(state.cells[i].QL) > (*state.globals).smallValueTolerance * 1e-6)
                 driftflux::coefficient::steadyState(dependencies.closure, i, c0, ud);
             state.cells[i].c0 = c0;
             state.cells[i].ud = ud;
             double area = state.cells[i].duto.area;
-            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny) {
+            if (fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).smallValueTolerance) {
                 // void fraction with slip:
                 state.cells[i].alf = state.cells[i].QG / (c0 * (state.cells[i].QG + state.cells[i].QL) + ud * area);
                 double alfHomo = state.cells[i].QG / (state.cells[i].QG + state.cells[i].QL);
@@ -1991,9 +1991,9 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, const SteadyDepen
 
             } else
                 state.cells[i].alf = 0.;
-            if (state.cells[i].alf > (1 - (*state.globals).localtiny) && fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).localtiny)
+            if (state.cells[i].alf > (1 - (*state.globals).smallValueTolerance) && fabs(state.cells[i].QG + state.cells[i].QL) > (*state.globals).smallValueTolerance)
                 state.cells[i].alf = fabs(state.cells[i].QG) / fabs(state.cells[i].QG + state.cells[i].QL);
-            else if (state.cells[i].alf > (1 - (*state.globals).localtiny))
+            else if (state.cells[i].alf > (1 - (*state.globals).smallValueTolerance))
                 state.cells[i].alf = 1.;
         } else {
             double holdup;
@@ -2243,18 +2243,18 @@ void marchGasLineAndCoupleAnnulus(const SteadyStateState &state, const SteadyDep
 }
 
 bool advanceProductionCells(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, int &i, double &abortValue) {
-    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).smallValueTolerance) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
         // of cell i
         // checks whether something went wrong:
-        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).smallValueTolerance)
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
         if (marchPressureTooLow(state.cells[i].presaux) ||
-            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).localtiny)) {
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).smallValueTolerance)) {
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
@@ -2273,21 +2273,21 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
             thermal::advanceSteadyTemperature(dependencies.thermal, i, 0); // advances the temperature from cell i-1 to cell i
         // checks whether the temperature went out of bounds
         // when working with a PVTSim table
-        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
             state.cells[i].temp = state.input.tabent.tmin;
         thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i); // just updates the left and right temperature fields
         advanceDownstreamSteadyPressure(state, i, 0); // advances the pressure from the left boundary of cell i to
         // its cell centre
         // checks whether something went wrong in this pressure advance to the centre of the
         // cell
-        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).localtiny) {
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).smallValueTolerance) {
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
         }
         if (marchPressureTooLow(state.cells[i].pres) ||
-            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).smallValueTolerance)) {
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
@@ -2327,7 +2327,7 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
                     // only shows a warning
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
                     // if in a network iteration, after the first iteration
-                    if ((*state.globals).iterRede > 0)
+                    if ((*state.globals).networkIteration > 0)
                         {
                             abortValue = -kSteadyConvergenceFailure;
                             return true;
@@ -2371,13 +2371,13 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any
         if (marchPressureTooLow(state.cells[i - 1].pres) ||
-            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).smallValueTolerance)) {
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
             }
         } else if ((state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
-                    ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).localtiny) && i == 1)) {
+                    ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).smallValueTolerance) && i == 1)) {
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
@@ -2388,18 +2388,18 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
 }
 
 bool advanceReverseProductionCells(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, int &i, double &abortValue) {
-    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).smallValueTolerance) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
         // of cell i
         // checks whether something went wrong:
-        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).smallValueTolerance)
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
         if (marchPressureTooLow(state.cells[i].presaux) ||
-            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).localtiny)) {
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).smallValueTolerance)) {
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
@@ -2417,21 +2417,21 @@ bool advanceReverseProductionCells(const SteadyStateState &state, const SteadyDe
         // when working with a PVTSim table
         if (isnan(state.cells[i].temp))
             NumError("Temperatrura na linha de producao com valor NaN");
-        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
             state.cells[i].temp = state.input.tabent.tmin;
         thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i); // just updates the left and right temperature fields
         advanceDownstreamSteadyPressure(state, i, 0); // advances the pressure from the left boundary of cell i to
         // its cell centre
         // checks whether something went wrong in this pressure advance to the centre of the
         // cell
-        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).localtiny) {
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).smallValueTolerance) {
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
         }
         if (marchPressureTooLow(state.cells[i].pres) ||
-            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).localtiny)) {
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).smallValueTolerance)) {
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
@@ -2469,7 +2469,7 @@ bool advanceReverseProductionCells(const SteadyStateState &state, const SteadyDe
         i++;
 
         if (marchPressureTooLow(state.cells[i - 1].pres) ||
-            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny)) {
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).smallValueTolerance)) {
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
@@ -2480,12 +2480,12 @@ bool advanceReverseProductionCells(const SteadyStateState &state, const SteadyDe
 }
 
 bool advanceProductionCellsSecondary(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, int &i, double &abortValue) {
-    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).localtiny) {
+    while (i <= state.lastCell && state.cells[i - 1].pres >= kMarchMinimumPressure && fabs(pchute - state.cells[0].pres) < (*state.globals).smallValueTolerance) {
 
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
         // of cell i
         // checks whether something went wrong:
-        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).smallValueTolerance)
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
@@ -2513,7 +2513,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, const Steady
                 // only shows a warning
                 cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
                 // if in a network iteration, after the first iteration
-                if ((*state.globals).iterRede > 0)
+                if ((*state.globals).networkIteration > 0)
                     {
                         abortValue = -kSteadyConvergenceFailure;
                         return true;
@@ -2526,14 +2526,14 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, const Steady
                     }
             }
         }
-        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
             state.cells[i].temp = state.input.tabent.tmin;
         thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i); // just updates the left and right temperature fields
         advanceDownstreamSteadyPressure(state, i, 0); // advances the pressure from the left boundary of cell i to
         // its cell centre
         // checks whether something went wrong in this pressure advance to the centre of the
         // cell
-        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).smallValueTolerance)
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
@@ -2584,28 +2584,28 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, const Steady
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any, or fell too low
         if (marchPressureTooLow(state.cells[i - 1].pres) ||
-            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).localtiny))
+            (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).smallValueTolerance))
             {
                 abortValue = -kSteadyMarchLimit;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).localtiny && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).smallValueTolerance && i == 1))
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && ((state.cells[i - 1].acsr.radialPoro.pRes[0] - state.cells[i - 1].pres) < (*state.globals).localtiny && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && ((state.cells[i - 1].acsr.radialPoro.pRes[0] - state.cells[i - 1].pres) < (*state.globals).smallValueTolerance && i == 1))
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
-        else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && ((state.cells[i - 1].acsr.poroso2D.dados.pRes - state.cells[i - 1].pres) < (*state.globals).localtiny && i == 1))
+        else if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && ((state.cells[i - 1].acsr.poroso2D.dados.pRes - state.cells[i - 1].pres) < (*state.globals).smallValueTolerance && i == 1))
             {
                 abortValue = kSteadyMarchLimit;
                 return true;
             }
         else if (state.input.usaTabela == 1) {
-            if ((state.input.tabent.pmax - state.cells[i - 1].pres) < (*state.globals).localtiny)
+            if ((state.input.tabent.pmax - state.cells[i - 1].pres) < (*state.globals).smallValueTolerance)
                 {
                     abortValue = kSteadyMarchLimit;
                     return true;
@@ -2732,7 +2732,7 @@ void advanceProductionCellsPressureToPressureSecondary(const SteadyStateState &s
         thermal::advanceSteadyTemperature(dependencies.thermal, i, 0);
         if (isnan(state.cells[i].temp))
             NumError("Temperatrura na linha de producao com valor NaN");
-        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+        if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
             state.cells[i].temp = state.input.tabent.tmin;
         thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
         advanceDownstreamSteadyPressure(state, i, 0);
@@ -2875,7 +2875,7 @@ void advanceReverseSteadyMass(const SteadyStateState &state, const SteadyDepende
     double waterCutInSitu = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
     double oilFlowRate = MasLiqProd * (1 - state.cells[i - 1].FW) / state.cells[i].rpCi;
     double waterFlowRate;
-    if (waterCutInSitu < (1 - (*state.globals).localtiny))
+    if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
         waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
     else
         waterFlowRate = MasLiqProd / state.cells[i].flui.MasEspAgua(pmed, tmed);
@@ -2902,12 +2902,12 @@ void advanceReverseSteadyMass(const SteadyStateState &state, const SteadyDepende
     // ASTM method when fluids mix and the dead-oil viscosity model, if it is
     // the ASTM one working with a pair of temperatures, is to be updated
     double temperatureLow;
-    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).smallValueTolerance)
         temperatureLow = state.input.tabent.tmin + 0.1;
     else
         temperatureLow = 0.;
     double temperatureHigh;
-    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) < (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) < (*state.globals).smallValueTolerance)
         temperatureHigh = state.input.tabent.tmax - 0.1;
     else
         temperatureHigh = 70.;
@@ -3056,7 +3056,7 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, const 
     double waterCutInSitu = state.cells[i].flui.BSW * waterVolumeFactorInSitu / (oilVolumeFactorInSitu + waterVolumeFactorInSitu * state.cells[i].flui.BSW - state.cells[i].flui.BSW * oilVolumeFactorInSitu);
     double oilFlowRate = MasLiqProd * (1 - state.cells[i - 1].FW) / state.cells[i].rpCi;
     double waterFlowRate;
-    if (waterCutInSitu < (1 - (*state.globals).localtiny))
+    if (waterCutInSitu < (1 - (*state.globals).smallValueTolerance))
         waterFlowRate = waterCutInSitu * oilFlowRate / (1 - waterCutInSitu);
     else
         waterFlowRate = MasLiqProd / state.cells[i].flui.MasEspAgua(pmed, tmed);
@@ -3083,12 +3083,12 @@ void advanceReverseCompositionalSteadyMass(const SteadyStateState &state, const 
     // ASTM method when fluids mix and the dead-oil viscosity model, if it is
     // the ASTM one working with a pair of temperatures, is to be updated
     double temperatureLow;
-    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).smallValueTolerance)
         temperatureLow = state.input.tabent.tmin + 0.1;
     else
         temperatureLow = 0.;
     double temperatureHigh;
-    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) < (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) < (*state.globals).smallValueTolerance)
         temperatureHigh = state.input.tabent.tmax - 0.1;
     else
         temperatureHigh = 70.;
@@ -3325,12 +3325,12 @@ void advanceSteadyMass(const SteadyStateState &state, const SteadyDependencies &
     // ASTM method when fluids mix and the dead-oil viscosity model, if it is
     // the ASTM one working with a pair of temperatures, is to be updated
     double temperatureLow;
-    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).smallValueTolerance)
         temperatureLow = state.input.tabent.tmin + 0.1;
     else
         temperatureLow = 0.;
     double temperatureHigh;
-    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) < (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) < (*state.globals).smallValueTolerance)
         temperatureHigh = state.input.tabent.tmax - 0.1;
     else
         temperatureHigh = 70.;
@@ -3419,11 +3419,11 @@ void advanceSteadyMass(const SteadyStateState &state, const SteadyDependencies &
         state.cells[i].QG = (state.cells[i].MC) / rhog;
     }
     // Volume fractions:
-    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).localtiny) {
+    if (fabs(state.cells[i].QG + state.cells[i].QL) < (*state.globals).smallValueTolerance) {
         finalizeSteadyMassNoFlow(state, i);
-    } else if (fabs(state.cells[i].QG) < (*state.globals).localtiny) { // liquid only:
+    } else if (fabs(state.cells[i].QG) < (*state.globals).smallValueTolerance) { // liquid only:
         finalizeSteadyMassLiquidOnly(state, i);
-    } else if (fabs(state.cells[i].QL) < (*state.globals).localtiny * 1e-6) { // gas only:
+    } else if (fabs(state.cells[i].QL) < (*state.globals).smallValueTolerance * 1e-6) { // gas only:
         finalizeSteadyMassGasOnly(state, i);
     } else { // two-phase
         finalizeSteadyMassTwoPhase(state, dependencies, i, rhog, rhol);
@@ -4112,11 +4112,11 @@ double marchGasSteady(const SteadyStateState &state, const SteadyDependencies &d
         erro1 = fabs(presteste - presteste0) / presteste0; // error in the pressure of the last cell
     }
     if (itera >= 600) {
-        if ((*state.globals).chaverede == 0 && state.input.AP == 0) {
+        if ((*state.globals).networkMode == 0 && state.input.AP == 0) {
             NumError("Busca de valores iniciais para calculo de zero de funcao em marchaGasPerm1 atingiu maximo de iteracoes");
             return 0.0;
         } else {
-            if ((*state.globals).iterRede > 0)
+            if ((*state.globals).networkIteration > 0)
                 return -kSteadyConvergenceFailure;
             else
                 return kSteadyConvergenceFailure;
@@ -4223,10 +4223,10 @@ double marchProductionSteady(const SteadyStateState &state, const SteadyDependen
             state.cells[1].betLI = state.cells[0].bet;
             // checks whether something is already wrong at the start of the march
             if (marchPressureTooLow(state.cells[0].pres) ||
-                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).localtiny))
+                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).smallValueTolerance))
                 return -kSteadyMarchLimit;
             else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
-                      (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).localtiny))
+                      (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).smallValueTolerance))
                 return kSteadyMarchLimit;
             // IniciaVazValvGasPerm estimates the flow rate through a gas-lift valve
             // before the gas line has been marched. It receives the
@@ -4264,7 +4264,7 @@ double marchProductionSteady(const SteadyStateState &state, const SteadyDependen
     }
 
     double corrigePresF = 0.;
-    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.corrigeContSep == 1)
+    if (((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1) && state.input.corrigeContSep == 1)
         corrigePresF = steadyPressureAtLastCell(state);
 
     state.baseConvergenceMonitor = state.gasSurfacePressure;
@@ -4370,7 +4370,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, const SteadyD
             state.cells[1].betLI = state.cells[0].bet;
             // checks whether something is already wrong at the start of the march
             if (marchPressureTooLow(state.cells[0].pres) ||
-                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).localtiny))
+                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).smallValueTolerance))
                 return -kSteadyMarchLimit;
 
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0)
@@ -4417,7 +4417,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, const SteadyD
                     thermal::advanceReverseSteadyTemperature(dependencies.thermal, ktemp, 0); // advances the temperature from cell i-1 to cell i
                     // checks whether the temperature went out of bounds
                     // when working with a PVTSim table
-                    if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+                    if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
                         state.cells[ktemp].temp = state.input.tabent.tmin;
                     thermal::updateProductionTemperaturePeriphery(dependencies.thermal, ktemp); // just updates the left and right temperature fields
                 }
@@ -4445,7 +4445,7 @@ double marchReverseProductionSteady(const SteadyStateState &state, const SteadyD
     }
 
     double corrigePresF = 0.;
-    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1) && state.input.corrigeContSep == 1)
+    if (((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1) && state.input.corrigeContSep == 1)
         corrigePresF = steadyPressureAtLastCell(state);
 
     state.baseConvergenceMonitor = state.gasSurfacePressure;
@@ -4548,13 +4548,13 @@ double marchProductionSteadySecondary(const SteadyStateState &state, const Stead
 
             // checks whether something is already wrong at the start of the march
             if (marchPressureTooLow(state.cells[0].pres) ||
-                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].presaux) > (*state.globals).localtiny))
+                (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].presaux) > (*state.globals).smallValueTolerance))
                 return -kSteadyMarchLimit;
-            else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).localtiny)) {
+            else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance && (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).smallValueTolerance)) {
                 return kSteadyMarchLimit;
-            } else if ((state.cells[0].acsr.tipo == kAccessoryRadialPorous && (state.cells[0].acsr.radialPoro.pRes[0] - state.cells[0].pres) < (*state.globals).localtiny)) {
+            } else if ((state.cells[0].acsr.tipo == kAccessoryRadialPorous && (state.cells[0].acsr.radialPoro.pRes[0] - state.cells[0].pres) < (*state.globals).smallValueTolerance)) {
                 return kSteadyMarchLimit;
-            } else if ((state.cells[0].acsr.tipo == kAccessoryPorous2D && (state.cells[0].acsr.poroso2D.dados.pRes - state.cells[0].pres) < (*state.globals).localtiny)) {
+            } else if ((state.cells[0].acsr.tipo == kAccessoryPorous2D && (state.cells[0].acsr.poroso2D.dados.pRes - state.cells[0].pres) < (*state.globals).smallValueTolerance)) {
                 return kSteadyMarchLimit;
             }
             // IniciaVazValvGasPerm estimates the flow rate through a gas-lift valve
@@ -4676,7 +4676,7 @@ double marchProductionPressureToPressure(const SteadyStateState &state, const St
             else
                 advanceCompositionalSteadyMass(state, dependencies, i);
             thermal::advanceSteadyTemperature(dependencies.thermal, i, 0);
-            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
                 state.cells[i].temp = state.input.tabent.tmin;
             thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
             advanceDownstreamSteadyPressure(state, i, 0);
@@ -4717,7 +4717,7 @@ double marchProductionPressureToPressure(const SteadyStateState &state, const St
     }
 
     double corrigePresF = 0.;
-    if ((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)
+    if ((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1)
         corrigePresF = steadyPressureAtLastCell(state);
 
     state.baseConvergenceMonitor = state.gasSurfacePressure;
@@ -4794,7 +4794,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, c
                 advanceCompositionalSteadyMass(state, dependencies, i);
             if (isnan(state.cells[i].temp))
                 NumError("Temperatrura na linha de producao com valor NaN");
-            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
                 state.cells[i].temp = state.input.tabent.tmin;
             thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
             advanceDownstreamSteadyPressure(state, i, 0);
@@ -4854,7 +4854,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, c
                 }
                 for (int ktemp = state.lastCell - 1; ktemp >= 0; ktemp--) {
                     thermal::advanceReverseSteadyTemperature(dependencies.thermal, ktemp, 0);
-                    if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+                    if (state.input.usaTabela == 1 && (state.cells[ktemp].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
                         state.cells[ktemp].temp = state.input.tabent.tmin;
                     thermal::updateProductionTemperaturePeriphery(dependencies.thermal, ktemp); // just updates the left and right temperature fields
                 }
@@ -4881,7 +4881,7 @@ double marchReverseProductionPressureToPressure(const SteadyStateState &state, c
         }
     }
     double corrigePresF = 0.;
-    if ((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)
+    if ((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1)
         corrigePresF = steadyPressureAtLastCell(state);
     state.baseConvergenceMonitor = state.gasSurfacePressure;
     return state.cells[state.lastCell].pres + corrigePresF - state.gasSurfacePressure;
@@ -5127,7 +5127,7 @@ double marchProductionPressureToPressureTertiary(const SteadyStateState &state, 
             thermal::advanceSteadyTemperature(dependencies.thermal, i, 0);
             if (isnan(state.cells[i].temp))
                 NumError("Temperatrura na linha de producao com valor NaN");
-            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).localtiny)
+            if (state.input.usaTabela == 1 && (state.cells[i].temp - state.input.tabent.tmin) < (*state.globals).smallValueTolerance)
                 state.cells[i].temp = state.input.tabent.tmin;
             thermal::updateProductionTemperaturePeriphery(dependencies.thermal, i);
             advanceDownstreamSteadyPressure(state, i, 0);
@@ -5385,7 +5385,7 @@ double marchInjectionSteady(const SteadyStateState &state, const SteadyDependenc
         state.cells[0].betI = state.cells[0].bet;
         state.cells[1].betLI = state.cells[0].bet;
         i = 1;
-        while (i <= state.lastCell && state.cells[i - 1].pres >= 1. && masfim >= -(*state.globals).localtiny) {
+        while (i <= state.lastCell && state.cells[i - 1].pres >= 1. && masfim >= -(*state.globals).smallValueTolerance) {
 
             advanceUpstreamSteadyPressure(state, i, 0);
             refreshUpstreamProductionPeriphery(state, i);
@@ -5418,9 +5418,9 @@ double marchInjectionSteady(const SteadyStateState &state, const SteadyDependenc
             }
             masfim += (state.cells[i - 1].fontemassCR + state.cells[i - 1].fontemassLR + state.cells[i - 1].fontemassGR);
             i++;
-            if (state.cells[i - 1].pres <= 1 || (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) > -(*state.globals).localtiny))
+            if (state.cells[i - 1].pres <= 1 || (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) > -(*state.globals).smallValueTolerance))
                 return -kSteadyMarchLimit;
-            else if (i < (state.lastCell + 1) && masfim < -(*state.globals).localtiny)
+            else if (i < (state.lastCell + 1) && masfim < -(*state.globals).smallValueTolerance)
                 return kSteadyMarchLimit;
         }
         if (i == state.lastCell + 1)
@@ -5492,11 +5492,11 @@ double reverseHydrostatic(const SteadyStateState &state, double liquidHoldup, do
         pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2);
         if (state.cells[i - 1].acsr.tipo == 7)
             pchute -= state.cells[i - 1].acsr.delp;
-        if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).smallValueTolerance)
             pchute = 0.99 * state.cells[i - 1].acsr.ipr.Pres;
-        if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && (state.cells[i - 1].acsr.radialPoro.pRes[0] - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryRadialPorous && (state.cells[i - 1].acsr.radialPoro.pRes[0] - pchute) < (*state.globals).smallValueTolerance)
             pchute = 0.99 * state.cells[i - 1].acsr.radialPoro.pRes[0];
-        if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && (state.cells[i - 1].acsr.poroso2D.dados.pRes - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryPorous2D && (state.cells[i - 1].acsr.poroso2D.dados.pRes - pchute) < (*state.globals).smallValueTolerance)
             pchute = 0.99 * state.cells[i - 1].acsr.poroso2D.dados.pRes;
 
         state.cells[i - 1].dpB = 0.;
@@ -5566,7 +5566,7 @@ double reverseInjectionHydrostatic(const SteadyStateState &state, double liquidH
         pchute += ((rhomix * 9.81 * sin(state.cells[i].duto.teta) * dxmed + perdafric * dxmed) / units::kPascalPerKgfPerCm2);
         if (state.cells[i - 1].acsr.tipo == 7)
             pchute -= state.cells[i - 1].acsr.delp;
-        if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).localtiny)
+        if (state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance && (state.cells[i - 1].acsr.ipr.Pres - pchute) < (*state.globals).smallValueTolerance)
             pchute = 0.99 * state.cells[i - 1].acsr.ipr.Pres;
         state.cells[i - 1].pres = pchute;
     }

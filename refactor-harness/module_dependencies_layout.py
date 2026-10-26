@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import json
 import subprocess
+from simulation_context_names import restore as restore_context_names
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT
@@ -19,7 +20,8 @@ def reference(path):
         _CACHE[path] = subprocess.check_output(['git','show',f'{REFERENCE}:{path}'],cwd=ROOT,text=True)
     return _CACHE[path]
 def candidate(path, overrides):
-    return overrides.get(path, (ROOT/path).read_text() if (ROOT/path).exists() else reference(path))
+    source = overrides.get(path, (ROOT/path).read_text() if (ROOT/path).exists() else reference(path))
+    return restore_context_names(source, path)
 
 LEX = re.compile(r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
 
@@ -178,8 +180,8 @@ def verify_interfaces(overrides):
     old_sprod=reference('src/include/SisProd.h');new_sprod=candidate('src/include/SisProd.h',overrides)
     def public(text):return text[text.index('class SProd {'):].split('  public:',1)[1].split('  private:',1)[0]
     assert tokens(public(old_sprod))==tokens(public(new_sprod)),'SProd public interface'
-    headers={str(p.relative_to(ROOT)):p.read_text() for p in (ROOT/'src/include').glob('SisProd*.h')}
-    headers.update({p:t for p,t in overrides.items() if p.endswith('.h')})
+    headers={str(p.relative_to(ROOT)):restore_context_names(p.read_text(),str(p.relative_to(ROOT))) for p in (ROOT/'src/include').glob('SisProd*.h')}
+    headers.update({p:restore_context_names(t,p) for p,t in overrides.items() if p.endswith('.h')})
     reference_headers=set(subprocess.check_output(
         ['git','ls-tree','-r','--name-only',REFERENCE,'src/include'],cwd=ROOT,text=True).splitlines())
     for path,text in headers.items():

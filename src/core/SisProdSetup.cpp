@@ -313,8 +313,8 @@ void SProd::buildProductionCells(double *extraSourceLengths, int *extraSourceCel
     arq.fluc.injPoc = injPoc;
     if (arq.flashCompleto == 1)
         arq.fluc.injPoc = 0;
-    (*vg1dSP).localtiny = arq.mono;
-    (*vg1dSP).CritCond = arq.critcond;
+    (*simulationContext).smallValueTolerance = arq.mono;
+    (*simulationContext).condensationVoidFractionThreshold = arq.critcond;
     networkCoupling.reverseQuality = -1;
     const bool requiresLastCellIpr = injPoc >= 1 && arq.condpocinj.CC != 3 &&
                                      arq.condpocinj.CC != 4 && arq.condpocinj.CC != 5;
@@ -404,14 +404,14 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
                    "Foi escolhida uma condicao de contorno de pressao no inicio da tubulacao e foi colocada uma fonte de massa neste inicio, isto pode causar inconsistencias",
                    "", "");
     }
-    const bool needsInletSource = (arq.perm == 1 || (*vg1dSP).chaverede > 0) &&
+    const bool needsInletSource = (arq.perm == 1 || (*simulationContext).networkMode > 0) &&
                                   celula[0].acsr.tipo == kAccessoryNone;
     if (needsInletSource) {
-        if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*vg1dSP).chaverede == 0)) {
+        if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*simulationContext).networkMode == 0)) {
             NumError("O simulador pede calculo de permanente com condicao de vazao na entrada, mas sem nenhuma fonte na entrada");
         }
-        if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*vg1dSP).chaverede > 0) ||
-            arq.CCPres.tit[0] < (1 - (*vg1dSP).localtiny)) {
+        if ((arq.ConContEntrada == 0 && extraSourceCount == 0 && (*simulationContext).networkMode > 0) ||
+            arq.CCPres.tit[0] < (1 - (*simulationContext).smallValueTolerance)) {
             celula[0].acsr.tipo = inletSourceKind(arq.tipoFluido);
             attachEmptySources(celula[0], celula[0]);
         } else if (extraSourceCount == 0 || arq.ConContEntrada == 1) {
@@ -421,9 +421,9 @@ void SProd::configureInletSourcesAndAccessories(int extraSourceCount) {
         }
     }
     if (bloq == 1 && celula[1].acsr.tipo == kAccessoryNone) {
-        if ((*vg1dSP).fluidoRede == 1)
+        if ((*simulationContext).networkFluidMode == 1)
             celula[1].acsr.tipo = kAccessoryLiquidInjection;
-        else if ((*vg1dSP).fluidoRede == 0)
+        else if ((*simulationContext).networkFluidMode == 0)
             celula[1].acsr.tipo = kAccessoryGasInjection;
         else
             celula[1].acsr.tipo = kAccessoryMultipleSource;
@@ -557,7 +557,7 @@ void SProd::validateSetupAndApplyInitialState() {
     }
 
     arq.geraevento(noinicial, noextremo);
-    if (arq.saidaClassica == 1 && (arq.transiente == 1 || (*vg1dSP).chaveredeT == 1)) {
+    if (arq.saidaClassica == 1 && (arq.transiente == 1 || (*simulationContext).networkTransientEnabled == 1)) {
         cout << "------------------------------------------   Eventos no Tramo -------------------------------------------" << endl;
         int contaImp = 0;
         for (const auto &event : arq.logevento)
@@ -567,7 +567,7 @@ void SProd::validateSetupAndApplyInitialState() {
             }
     }
 
-    if (arq.pocinjec == 0 && arq.perm == 1 && ((*vg1dSP).chaverede == 0 || noextremo == 1) && arq.ConContEntrada != 2 && arq.psep.pres[0] < -1e6) {
+    if (arq.pocinjec == 0 && arq.perm == 1 && ((*simulationContext).networkMode == 0 || noextremo == 1) && arq.ConContEntrada != 2 && arq.psep.pres[0] < -1e6) {
         NumError("sem pressao a jusante como condição de contorno para um tramo onde esta condicao é necessaria ");
     }
 
@@ -575,12 +575,12 @@ void SProd::validateSetupAndApplyInitialState() {
         NumError("As duas celulas finais não devem ter acessorios, estas duas celulas devem ser preservadas, principalmente para simulacoes transientes ");
     }
 
-    (*vg1dSP).lixo5 = 0.;
-    (*vg1dSP).contador = 0;
+    (*simulationContext).simulationTime = 0.;
+    (*simulationContext).timeStepIndex = 0;
     if (arq.pocinjec == 0) {
         arq.atualiza(noinicial, noextremo, derivaAnel, chokeSup, gasLift.injectionChoke, celula, gasLift.cells,
                      gasLift.separatorPressure, temperatura, gasLift.injectionPressure, gasLift.injectionTemperature,
-                     presE, tempE, titE, betaE, (*vg1dSP).lixo5, dt);
+                     presE, tempE, titE, betaE, (*simulationContext).simulationTime, dt);
         transient.previousSeparatorPressure = gasLift.separatorPressure;
         if (chokeSup.AreaGarg >= 0.6 * celula[ncel - 1].duto.area) {
             transient.surfaceChokeOpen = 1;
@@ -770,32 +770,32 @@ void SProd::allocateEventProfileAndTrendArrays() {
         }
     }
 
-    if ((*vg1dSP).chaverede == 0)
-        (*vg1dSP).TmaxR = arq.tfinal;
+    if ((*simulationContext).networkMode == 0)
+        (*simulationContext).networkFinalTime = arq.tfinal;
     if (arq.ntendp > 0) {
         trends.productionTrendSet.allocate(
             arq.ntendp,
-            [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendp[i].dt); },
+            [&](int i) -> int { return 1 + 1 + ceil((*simulationContext).networkFinalTime / arq.trendp[i].dt); },
             [&](int i) { return arq.nvartrendp[i] + 2; }, [&](int i) { return arq.nvartrendp[i] + 1; },
             trends.productionTrendMatrices, trends.productionTrendResetTimes, trends.productionTrendCounts,
             trends.productionTrendBufferedCounts);
     }
     if (arq.ntendg > 0) {
         trends.gasTrendSet.allocate(
-            arq.ntendg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendg[i].dt); },
+            arq.ntendg, [&](int i) -> int { return 1 + 1 + ceil((*simulationContext).networkFinalTime / arq.trendg[i].dt); },
             [&](int i) { return arq.nvartrendg[i] + 2; }, [&](int i) { return arq.nvartrendg[i] + 1; },
             trends.gasTrendMatrices, trends.gasTrendResetTimes, trends.gasTrendCounts, trends.gasTrendBufferedCounts);
     }
     if (arq.ntendtransp > 0) {
         trends.productionWallTrendSet.allocate(
-            arq.ntendtransp, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransp[i].dt); },
+            arq.ntendtransp, [&](int i) -> int { return 1 + 1 + ceil((*simulationContext).networkFinalTime / arq.trendtransp[i].dt); },
             [](int) { return 2; }, [](int) { return 2; }, trends.productionWallTrendMatrices,
             trends.productionWallTrendResetTimes, trends.productionWallTrendCounts,
             trends.productionWallTrendBufferedCounts);
     }
     if (arq.ntendtransg > 0) {
         trends.gasWallTrendSet.allocate(
-            arq.ntendtransg, [&](int i) -> int { return 1 + 1 + ceil((*vg1dSP).TmaxR / arq.trendtransg[i].dt); },
+            arq.ntendtransg, [&](int i) -> int { return 1 + 1 + ceil((*simulationContext).networkFinalTime / arq.trendtransg[i].dt); },
             [](int) { return 2; }, [](int) { return 2; }, trends.gasWallTrendMatrices, trends.gasWallTrendResetTimes,
             trends.gasWallTrendCounts, trends.gasWallTrendBufferedCounts);
     }
@@ -804,36 +804,36 @@ void SProd::allocateEventProfileAndTrendArrays() {
 void SProd::initializeProfileOutputState() {
     if (arq.AP == 0) {
         if (arq.nperfisp > 0) {
-            arq.imprimeProfile(celula, flut, (*vg1dSP).lixo5, indTramo);
+            arq.imprimeProfile(celula, flut, (*simulationContext).simulationTime, indTramo);
         }
         if (arq.nperfisg > 0 && arq.lingas > 0) {
-            arq.imprimeProfileG(gasLift.cells, flutG, (*vg1dSP).lixo5, indTramo);
+            arq.imprimeProfileG(gasLift.cells, flutG, (*simulationContext).simulationTime, indTramo);
         }
         if (arq.nperfistransp > 0) {
-            arq.imprimeProfileTrans(celula, trends.productionWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
+            arq.imprimeProfileTrans(celula, trends.productionWallProfileCells.data(), (*simulationContext).simulationTime, indTramo);
         }
         if (arq.nperfistransg > 0 && arq.lingas > 0) {
-            arq.imprimeProfileTransG(gasLift.cells, trends.gasWallProfileCells.data(), (*vg1dSP).lixo5, indTramo);
+            arq.imprimeProfileTransG(gasLift.cells, trends.gasWallProfileCells.data(), (*simulationContext).simulationTime, indTramo);
         }
     }
     trends.productionProfileTimeIndex = 0;
     trends.gasProfileTimeIndex = 0;
     if (arq.nperfisp > 0) {
-        if (arq.profp.tempo[0] <= 0 + (*vg1dSP).localtiny)
+        if (arq.profp.tempo[0] <= 0 + (*simulationContext).smallValueTolerance)
             trends.productionProfileTimeIndex++;
     }
     if (arq.nperfisg > 0 && arq.lingas > 0) {
-        if (arq.profg.tempo[0] <= 0 + (*vg1dSP).localtiny)
+        if (arq.profg.tempo[0] <= 0 + (*simulationContext).smallValueTolerance)
             trends.gasProfileTimeIndex++;
     }
     trends.productionWallProfileTimeIndex = 0;
     trends.gasWallProfileTimeIndex = 0;
     if (arq.nperfistransp > 0) {
-        if (arq.proftransp.tempo[0] <= 0 + (*vg1dSP).localtiny)
+        if (arq.proftransp.tempo[0] <= 0 + (*simulationContext).smallValueTolerance)
             trends.productionWallProfileTimeIndex++;
     }
     if (arq.nperfistransg > 0 && arq.lingas > 0) {
-        if (arq.proftransg.tempo[0] <= 0 + (*vg1dSP).localtiny)
+        if (arq.proftransg.tempo[0] <= 0 + (*simulationContext).smallValueTolerance)
             trends.gasWallProfileTimeIndex++;
     }
 }
@@ -847,7 +847,7 @@ void SProd::writeInitialEventLog() {
         transient.eventLogCount = 0;
         int nevent = arq.logevento.size();
         while (transient.eventLogCount < nevent &&
-               fabs(arq.logevento[transient.eventLogCount].instante - (*vg1dSP).lixo5) < dt) {
+               fabs(arq.logevento[transient.eventLogCount].instante - (*simulationContext).simulationTime) < dt) {
             time_t now = time(0);
             tm *ltm = localtime(&now);
             ofstream escreveIni(tmpLog.c_str(), ios_base::app);

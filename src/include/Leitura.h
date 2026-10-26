@@ -43,7 +43,7 @@
 #include "solverPoisson.h"
 #include "solverPoroso.h"
 #include "validaTipoJson.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "SlugFlow_TaitelBarnea.h"
 #include <algorithm>
 #include <fstream>
@@ -1377,7 +1377,7 @@ class Ler {
 
     int estabCol;
 
-    varGlob1D *vg1dSP;
+    SimulationContext *simulationContext;
 
     int modoXY;
     double xProd0;
@@ -1447,7 +1447,7 @@ class Ler {
      * Fields Constructor
      */
     Ler(const string IMPFILE, const string ARQUIVO_LOG, const tipoValidacaoJson_t VALIDACAO_MRT,
-        const tipoSimulacao_t SIMULACAO_MRT, int vreverso = 0, varGlob1D *Vvg1dSP = 0, int vredeperm = 1);
+        const tipoSimulacao_t SIMULACAO_MRT, int vreverso = 0, SimulationContext *context = 0, int vredeperm = 1);
     /*
      * Copy Constructor
      */

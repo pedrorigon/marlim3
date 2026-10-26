@@ -16,7 +16,7 @@
 #include "celRad-Simples.h"
 #include "estruturaTabDin.h"
 #include "estruturasPoroso.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 
 // Simulation output report stream
@@ -164,10 +164,10 @@ class PorosRadSimp {
     int ntabDin;
 
     double BSW;
-    varGlob1D *vg1dSP;
+    SimulationContext *simulationContext;
 
     PorosRadSimp();
-    PorosRadSimp(string nomeArquivoEntrada, varGlob1D *Vvg1dSP = 0);
+    PorosRadSimp(string nomeArquivoEntrada, SimulationContext *context = 0);
     PorosRadSimp(const PorosRadSimp &); // Copy constructor
     PorosRadSimp &operator=(const PorosRadSimp &);
     ~PorosRadSimp() {

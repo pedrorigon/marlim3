@@ -20,7 +20,7 @@
 #include "SisProdGasLift.h"
 #include "SisProdGasLiftInternal.h"
 #include "estruturas.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 
 #include <cstdio>
 #include <fstream>
@@ -96,12 +96,12 @@ const Scenario kScenarios[] = {
     {"reverse-liquid", 110., 70., 0.80, 0.35, -0.18, 0.20},
 };
 
-ProFlu fallbackFluid(varGlob1D *globals) {
+ProFlu fallbackFluid(SimulationContext *globals) {
     return ProFlu(globals, 20, 100., 0.7, 0., 1., 20, 10, 40,
                   2, 0, 0.8, 0, 0, 0);
 }
 
-TransCal seededHeatTransfer(varGlob1D *globals, double diameter,
+TransCal seededHeatTransfer(SimulationContext *globals, double diameter,
                             double insideTemperature,
                             double outsideTemperature) {
     double conductivity[1] = {14.};
@@ -131,7 +131,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     for (int index = -1; index < kCells; ++index) {
         Cel &cell = cells[index];
         const double scale = 1. + 0.04 * (index + 1);
-        cell.flui = fallbackFluid(system.vg1dSP);
+        cell.flui = fallbackFluid(system.simulationContext);
         cell.fluiL = &cell.flui;
         // The thermal sweep never needed fluicol seeded because the paths it
         // drives read it only through cached cell fields. delpInjPerm calls it
@@ -232,7 +232,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
         cell.c0 = 1.15;
         cell.ud = 0.25;
         cell.arranjo = 1;
-        cell.calor = seededHeatTransfer(system.vg1dSP, cell.duto.a,
+        cell.calor = seededHeatTransfer(system.simulationContext, cell.duto.a,
                                         cell.temp, 20. + index +
                                                        0.1 * scenario.temperature);
         cell.calor.Vextern1 = 0.25;
@@ -285,7 +285,7 @@ void resetCells(SProd &system, Cel *cells, const Scenario &scenario) {
     system.arq.AceleraConvergPerm = 0;
     system.arq.nCompTotalUnidadesP = 100.;
     system.networkCoupling.primaryThermalCoupling = 0;
-    system.vg1dSP->blackOilTemp = 0;
+    system.simulationContext->temporaryBlackOilMode = 0;
     system.arq.chokep.abertura[0] = scenario.chokeOpening;
 }
 
@@ -293,12 +293,12 @@ void resetAnnulus(SProd &system, const Scenario &scenario) {
     for (int index = 0; index < kCells + 3; ++index) {
         CelG &cell = system.gasLift.cells[index];
         const double scale = 1. + 0.03 * index;
-        cell.flui = fallbackFluid(system.vg1dSP);
+        cell.flui = fallbackFluid(system.simulationContext);
         cell.temp = scenario.temperature + 8. + 0.1 * index;
         cell.VGasR = 0.4 * scale;
         cell.u1L = 2. * scale;
         cell.fluxcal = -801. - index;
-        cell.calor = seededHeatTransfer(system.vg1dSP, 0.16 * scale,
+        cell.calor = seededHeatTransfer(system.simulationContext, 0.16 * scale,
                                         cell.temp, 18. + index);
         cell.calor.Tint = cell.temp;
         cell.calor.Vint = 0.5;
@@ -332,7 +332,7 @@ void resetGasLine(SProd &system, const Scenario &scenario) {
     for (int index = 0; index <= kGasCells + 1; ++index) {
         CelG &cell = system.gasLift.cells[index];
         const double scale = 1. + 0.04 * index;
-        cell.flui = fallbackFluid(system.vg1dSP);
+        cell.flui = fallbackFluid(system.simulationContext);
         cell.duto.a = 0.09 * scale;
         cell.duto.area = M_PI * cell.duto.a * cell.duto.a / 4.;
         cell.duto.peri = M_PI * cell.duto.a;
@@ -366,7 +366,7 @@ void resetGasLine(SProd &system, const Scenario &scenario) {
         cell.rg = 0.8 * scale;
         cell.razInter = 0.3;
         cell.fluxcal = -801. - index;
-        cell.calor = seededHeatTransfer(system.vg1dSP, 0.16 * scale,
+        cell.calor = seededHeatTransfer(system.simulationContext, 0.16 * scale,
                                         cell.temp, 18. + index);
     }
     for (int index = 0; index < 3 * (kGasCells + 2); ++index)
@@ -382,7 +382,7 @@ void resetValves(SProd &system) {
         choke.tempEstag = 60. + 2. * valve;
         choke.presGarg = 70. + 5. * valve;
         choke.areagarg = 1.2e-4 * (1. + 0.3 * valve);
-        choke.flui = fallbackFluid(system.vg1dSP);
+        choke.flui = fallbackFluid(system.simulationContext);
     }
 }
 
@@ -406,9 +406,7 @@ void resetValves(SProd &system) {
 //   - celInter must be at least 1. celulaG is allocated WITHOUT the guard-cell
 //     offset that celula gets, so advanceInterface reading celulaG[celInter - 1]
 //     at celInter == 0 walks off the front of the array.
-//   - lixo5 must exceed tempoLatenciaDesc. Despite the name, lixo5 is not
-//     scratch here: searchUnloadingInjectionPressure gates its entire body on
-//     `lixo5 > tempoLatenciaDesc`, using it as the simulation clock.
+//   - simulationTime must exceed tempoLatenciaDesc to enable the unloading search.
 constexpr int kInterfaceCell = 2;
 
 // The gas line must stand ABOVE the tubing it feeds, or nothing is injected.
@@ -437,7 +435,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     system.arq.salinDescarga = 35. + 40. * scenario.voidFraction;
     system.arq.gasinj.tipoCC = 0;
     system.arq.gasinj.presinj[0] = scenario.pressure * 1.1;
-    (*system.vg1dSP).lixo5 = 5000.;
+    (*system.simulationContext).simulationTime = 5000.;
 
     system.gasLift.interfaceCell = kInterfaceCell;
     system.gasLift.previousInterfaceCell = kInterfaceCell;
@@ -544,7 +542,7 @@ void resetUnloading(SProd &system, const Scenario &scenario) {
     // moving the bound changes nothing.
     system.gasLift.injectionChoke.areagarg =
         (0.15 + 0.3 * scenario.voidFraction) * system.gasLift.cells[0].duto.area;
-    system.gasLift.injectionChoke.flui = fallbackFluid(system.vg1dSP);
+    system.gasLift.injectionChoke.flui = fallbackFluid(system.simulationContext);
 
     for (int index = 0; index <= kGasCells + 1; ++index) {
         CelG &cell = system.gasLift.cells[index];
@@ -809,9 +807,9 @@ void runGasScenario(SProd &system, Cel *cells, const Scenario &scenario) {
 }  // namespace
 
 int main() {
-    varGlob1D globals;
+    SimulationContext globals;
     SProd &system = *new SProd();
-    system.vg1dSP = &globals;
+    system.simulationContext = &globals;
     system.arq.chokep.parserie = 1;
     system.arq.chokep.abertura = new double[1];
 

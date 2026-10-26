@@ -13,7 +13,7 @@
 #include "solver3DPoisson.h"
 #include "celula3.h"
 #include "celulaGas.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "RunInfo.h"
 #include "UnitConversions.h"
 
@@ -39,7 +39,7 @@ double inSituGasMassFraction(const Cel &cell, double voidFraction, double pressu
 
 void reportAcceptedArtificialGas(const TransientStepState &state) {
     for (const diagnostics::ArtificialGasAddition &addition : state.artificialGasThisStep)
-        diagnostics::recordArtificialGas(state.input.impfile, addition, state.stepIndex, (*state.globals).lixo5,
+        diagnostics::recordArtificialGas(state.input.impfile, addition, state.stepIndex, (*state.globals).simulationTime,
                                          state.timeStep);
     state.artificialGasThisStep.clear();
 }
@@ -122,29 +122,29 @@ void advanceCouplingIteration(const TransientSolveState &state, const TransientD
 void writeProfiles(const TransientSolveState &state, int nrede) {
     if (state.step.input.nperfisp > 0) {
         if (profileIsDue(state.step, state.step.input.profp.tempo, state.productionProfileTimeCounter)) {
-            state.step.input.imprimeProfile(state.step.cells, state.step.productionFreeTerms, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
-            state.step.input.profp.tempo[state.productionProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.step.input.imprimeProfile(state.step.cells, state.step.productionFreeTerms, (*state.step.globals).simulationTime, state.step.branchIndex, nrede);
+            state.step.input.profp.tempo[state.productionProfileTimeCounter] = (*state.step.globals).simulationTime;
             advanceProfileIndex(state.productionProfileTimeCounter, state.step.input.profp.n);
         }
     }
     if (state.step.input.nperfisg > 0 && state.step.input.lingas > 0) {
         if (profileIsDue(state.step, state.step.input.profg.tempo, state.gasProfileTimeCounter)) {
-            state.step.input.imprimeProfileG(state.step.gasCells, state.step.gasFreeTerms, (*state.step.globals).lixo5, state.step.branchIndex, nrede);
-            state.step.input.profg.tempo[state.gasProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.step.input.imprimeProfileG(state.step.gasCells, state.step.gasFreeTerms, (*state.step.globals).simulationTime, state.step.branchIndex, nrede);
+            state.step.input.profg.tempo[state.gasProfileTimeCounter] = (*state.step.globals).simulationTime;
             advanceProfileIndex(state.gasProfileTimeCounter, state.step.input.profg.n);
         }
     }
     if (state.step.input.nperfistransp > 0) {
         if (profileIsDue(state.step, state.step.input.proftransp.tempo, state.productionCrossSectionProfileTimeCounter)) {
-            state.step.input.imprimeProfileTrans(state.step.cells, state.step.productionCrossSectionCount.data(), (*state.step.globals).lixo5, state.step.branchIndex, nrede);
-            state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.step.input.imprimeProfileTrans(state.step.cells, state.step.productionCrossSectionCount.data(), (*state.step.globals).simulationTime, state.step.branchIndex, nrede);
+            state.step.input.proftransp.tempo[state.productionCrossSectionProfileTimeCounter] = (*state.step.globals).simulationTime;
             advanceProfileIndex(state.productionCrossSectionProfileTimeCounter, state.step.input.proftransp.n);
         }
     }
     if (state.step.input.nperfistransg > 0 && state.step.input.lingas > 0) {
         if (profileIsDue(state.step, state.step.input.proftransg.tempo, state.gasCrossSectionProfileTimeCounter)) {
-            state.step.input.imprimeProfileTransG(state.step.gasCells, state.gasCrossSectionCellCounts.data(), (*state.step.globals).lixo5, state.step.branchIndex, nrede);
-            state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] = (*state.step.globals).lixo5;
+            state.step.input.imprimeProfileTransG(state.step.gasCells, state.gasCrossSectionCellCounts.data(), (*state.step.globals).simulationTime, state.step.branchIndex, nrede);
+            state.step.input.proftransg.tempo[state.gasCrossSectionProfileTimeCounter] = (*state.step.globals).simulationTime;
             advanceProfileIndex(state.gasCrossSectionProfileTimeCounter, state.step.input.proftransg.n);
         }
     }
@@ -152,7 +152,7 @@ void writeProfiles(const TransientSolveState &state, int nrede) {
         for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++){
             if (profileIsDue(state.step, state.step.input.celUnit[iCelU].tempo, state.unitCellTimeCounters[iCelU])) {
                 state.step.input.relatorioCelulaUnitaria(state.step.cells,state.step.input.celUnit[iCelU].posicP, state.step.branchIndex,nrede);
-                state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]] = (*state.step.globals).lixo5;
+                state.step.input.celUnit[iCelU].tempo[state.unitCellTimeCounters[iCelU]] = (*state.step.globals).simulationTime;
                 advanceProfileIndex(state.unitCellTimeCounters[iCelU], state.step.input.celUnit[iCelU].parserie);
             }
         }
@@ -163,10 +163,10 @@ void writeTrends(const TransientSolveState &state, const TransientDependencies &
     if (state.step.input.ntendp > 0) {
         for (int i = 0; i < state.step.input.ntendp; i++) {
             if (state.productionTrendResetTimers[i] == 0) {
-                if ((*state.step.globals).lixo5 < 1e-15)
+                if ((*state.step.globals).simulationTime < 1e-15)
                     trendoutput::writeProductionTrendHeader(dependencies.trends, i, nrede);
-                if ((*state.step.globals).lixo5 > 1e-15)
-                    state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).lixo5, i, state.productionTrendCounts[i]);
+                if ((*state.step.globals).simulationTime > 1e-15)
+                    state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).simulationTime, i, state.productionTrendCounts[i]);
                 state.productionTrendCounts[i]++;
             }
             if (ordemImpT == 1) {
@@ -180,10 +180,10 @@ void writeTrends(const TransientSolveState &state, const TransientDependencies &
     }
     if (state.step.input.ntendg > 0 && state.step.input.lingas > 0) {
         for (int i = 0; i < state.step.input.ntendg; i++) {
-            if (state.gasTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
-                if ((*state.step.globals).lixo5 < 1e-15)
+            if (state.gasTrendResetTimers[i] == 0 || (*state.step.globals).simulationTime < 1e-15) {
+                if ((*state.step.globals).simulationTime < 1e-15)
                     trendoutput::writeGasLineTrendHeader(dependencies.trends, i, nrede);
-                state.step.input.imprimeTrendG(state.step.gasCells, state.gasTrendMatrix[i], (*state.step.globals).lixo5, i, state.gasTrendCounts[i], velmaxdesc);
+                state.step.input.imprimeTrendG(state.step.gasCells, state.gasTrendMatrix[i], (*state.step.globals).simulationTime, i, state.gasTrendCounts[i], velmaxdesc);
                 state.gasTrendCounts[i]++;
             }
             if (ordemImpT == 1) {
@@ -197,10 +197,10 @@ void writeTrends(const TransientSolveState &state, const TransientDependencies &
     }
     if (state.step.input.ntendtransp > 0) {
         for (int i = 0; i < state.step.input.ntendtransp; i++) {
-            if (state.productionCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
-                if ((*state.step.globals).lixo5 < 1e-15)
+            if (state.productionCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).simulationTime < 1e-15) {
+                if ((*state.step.globals).simulationTime < 1e-15)
                     trendoutput::writeProductionCrossSectionTrendHeader(dependencies.trends, i);
-                state.productionCrossSectionTrendMatrix[i][state.productionCrossSectionTrendCounts[i]][0] = (*state.step.globals).lixo5;
+                state.productionCrossSectionTrendMatrix[i][state.productionCrossSectionTrendCounts[i]][0] = (*state.step.globals).simulationTime;
                 int poscel = state.step.input.trendtransp[i].posic;
                 int poscam = state.step.input.trendtransp[i].camada - 1;
                 int posdiscre = state.step.input.trendtransp[i].discre - 1;
@@ -218,10 +218,10 @@ void writeTrends(const TransientSolveState &state, const TransientDependencies &
     }
     if (state.step.input.ntendtransg > 0 && state.step.input.lingas > 0) {
         for (int i = 0; i < state.step.input.ntendtransg; i++) {
-            if (state.gasCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).lixo5 < 1e-15) {
-                if ((*state.step.globals).lixo5 < 1e-15)
+            if (state.gasCrossSectionTrendResetTimers[i] == 0 || (*state.step.globals).simulationTime < 1e-15) {
+                if ((*state.step.globals).simulationTime < 1e-15)
                     trendoutput::writeGasLineCrossSectionTrendHeader(dependencies.trends, i);
-                state.gasCrossSectionTrendMatrix[i][state.gasCrossSectionTrendCounts[i]][0] = (*state.step.globals).lixo5;
+                state.gasCrossSectionTrendMatrix[i][state.gasCrossSectionTrendCounts[i]][0] = (*state.step.globals).simulationTime;
                 int poscel = state.step.input.trendtransg[i].posic;
                 int poscam = state.step.input.trendtransg[i].camada - 1;
                 int posdiscre = state.step.input.trendtransg[i].discre - 1;
@@ -241,7 +241,7 @@ void writeTrends(const TransientSolveState &state, const TransientDependencies &
 
 void writeScreenOutput(const TransientSolveState &state, const chrono::steady_clock::time_point &begin, const chrono::steady_clock::time_point &end) {
     if (state.step.input.saidaTela == 1) {
-        cout << state.step.stepIndex << "  " << (*state.step.globals).lixo5 << " " << state.step.timeStep;
+        cout << state.step.stepIndex << "  " << (*state.step.globals).simulationTime << " " << state.step.timeStep;
         for (int i = 0; i < state.step.input.ntela; i++) {
             int posic = state.step.input.tela[i].posic;
             if (state.step.input.tela[i].col == 1) {
@@ -286,7 +286,7 @@ void writeScreenOutput(const TransientSolveState &state, const chrono::steady_cl
 
 void writeEventLog(const TransientSolveState &state, int maxEvento) {
     if (state.logCounter < maxEvento) {
-        while (fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).lixo5) < state.step.timeStep) {
+        while (fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).simulationTime) < state.step.timeStep) {
             time_t now = time(0);
             tm *ltm = localtime(&now);
             ostringstream saidaT;
@@ -312,7 +312,7 @@ void writeEventLog(const TransientSolveState &state, int maxEvento) {
 void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
     if (progressReportIsDue(state, MaxKontaImpres)) {
         if (state.step.input.saidaTela == 0)
-            cout << (*state.step.globals).lixo5 * (100.) / state.step.input.tfinal << " % da simulacao alcancado" << endl;
+            cout << (*state.step.globals).simulationTime * (100.) / state.step.input.tfinal << " % da simulacao alcancado" << endl;
         state.printCounter = 0;
         ostringstream saidaT;
         appendLogPath(saidaT, state);
@@ -320,8 +320,8 @@ void writeProgressReport(const TransientSolveState &state, int MaxKontaImpres) {
         ofstream escreveIni(tmp.c_str(), ios_base::app);
         escreveIni << "************************************************************************************************"
                    << endl;
-        escreveIni << "Percentual alcancado = " << (*state.step.globals).lixo5 * (100.) / state.step.input.tfinal << " % da simulacao alcancado" << endl;
-        escreveIni << "| Passo de Tempo = " << state.step.stepIndex << "| Tempo (s) = " << (*state.step.globals).lixo5 << "| Incremento de Tempo (s) = " << state.step.timeStep
+        escreveIni << "Percentual alcancado = " << (*state.step.globals).simulationTime * (100.) / state.step.input.tfinal << " % da simulacao alcancado" << endl;
+        escreveIni << "| Passo de Tempo = " << state.step.stepIndex << "| Tempo (s) = " << (*state.step.globals).simulationTime << "| Incremento de Tempo (s) = " << state.step.timeStep
                    << " |" << " Incremento de Tempo Medio CFL (s) = "
                    << state.step.meanCflTimeStep << "| Incremento de Tempo Medio Simulado (s) = " << state.step.meanSimulationTimeStep
                    << " |" << endl;
@@ -405,9 +405,9 @@ void assignCellTimeSteps(const TransientStepState &state) {
 }
 
 bool profileIsDue(const TransientStepState &state, double *const &times, const int &index) {
-    return (*state.globals).lixo5 > (*state.globals).localtiny &&
-           (*state.globals).lixo5 <= times[index] &&
-           (*state.globals).lixo5 + state.timeStep >= times[index];
+    return (*state.globals).simulationTime > (*state.globals).smallValueTolerance &&
+           (*state.globals).simulationTime <= times[index] &&
+           (*state.globals).simulationTime + state.timeStep >= times[index];
 }
 
 void advanceProfileIndex(int &index, const int &limit) {
@@ -436,7 +436,7 @@ void writeLogTimestamp(std::ostream &escreveIni, const std::tm *ltm) {
 }
 
 void writeRunCompletionReport(const TransientSolveState &state, std::ostream &escreveIni) {
-    if (fabs((*state.step.globals).lixo5 - state.step.input.tfinal) <= state.step.timeStep) {
+    if (fabs((*state.step.globals).simulationTime - state.step.input.tfinal) <= state.step.timeStep) {
         time_t now = time(0);
         tm *ltm = localtime(&now);
         int diaFim = (ltm->tm_mday);
@@ -466,7 +466,7 @@ void writeRunCompletionReport(const TransientSolveState &state, std::ostream &es
 }
 
 bool progressReportIsDue(const TransientSolveState &state, int MaxKontaImpres) {
-    return (fabs((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).lixo5 * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).lixo5 + state.step.timeStep >= state.step.input.tfinal);
+    return (fabs((*state.step.globals).simulationTime * (100. / 5.) / state.step.input.tfinal - round((*state.step.globals).simulationTime * (100. / 5.) / state.step.input.tfinal)) < 0.5 * state.step.timeStep * (100 / 5.) / state.step.input.tfinal) || state.printCounter > MaxKontaImpres || ((*state.step.globals).simulationTime + state.step.timeStep >= state.step.input.tfinal);
 }
 
 double updateInteriorAuxiliaryPressure(const TransientStepState &state, int i) {
@@ -704,7 +704,7 @@ void applyChokeTimeStepControls(const TransientStepState &state) {
     double mgas = state.cells[state.lastCell].MC - state.cells[state.lastCell].Mliqini;
     double mgas0 = state.cells[state.lastCell].MCini - state.cells[state.lastCell].Mliqini0;
     if (state.input.RelaxaDTChoke == 0 &&
-        (((*state.globals).lixo5 > 1e-15 && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
+        (((*state.globals).simulationTime > 1e-15 && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area &&
           state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area &&
           ((state.cells[state.lastCell].Mliqini >= 0 && state.cells[state.lastCell].Mliqini0 < 0 && mgas > 0) || (state.cells[state.lastCell].Mliqini >= 0 && mgas < 0 && mgas0 > 0))) ||
          state.slugCount < multChoke * 200)) {
@@ -730,14 +730,14 @@ void applyChokeTimeStepControls(const TransientStepState &state) {
         state.timeStep =
             1.;
     for (int i = 0; i < state.input.eventoabre; i++) {
-        if ((*state.globals).lixo5 > state.input.Tevento[i] - state.input.dtmax && (*state.globals).lixo5 < state.input.Tevento[i] + 30) {
+        if ((*state.globals).simulationTime > state.input.Tevento[i] - state.input.dtmax && (*state.globals).simulationTime < state.input.Tevento[i] + 30) {
             if (state.timeStep > state.smallestCellLength / 100.) {
                 state.timeStep = state.smallestCellLength / 100.;
             }
         }
     }
     state.multiplier = 0.8;
-    if ((((*state.globals).lixo5 - 2 * state.input.dtmax) > state.movingMeanStartTime && (fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure > 0.4)) || (state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area) || (state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area && state.surfaceChokeOpen == 0)) {
+    if ((((*state.globals).simulationTime - 2 * state.input.dtmax) > state.movingMeanStartTime && (fabs(state.movingMeanPressure - state.outletPressure) / state.outletPressure > 0.4)) || (state.outletPressure < state.gasSurfacePressure && state.surfaceChokeMassFlag == 1 && state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area) || (state.cells[state.lastCell].alf <= 0.1 && state.surfaceChoke.AreaGarg < 0.6 * state.cells[state.lastCell - 1].duto.area && state.surfaceChoke.AreaGarg > 1e-3 * state.cells[state.lastCell - 1].duto.area && state.surfaceChokeOpen == 0)) {
         double denominador = 10.;
         double progres = 0.95;
 
@@ -808,23 +808,23 @@ void restrictTimeStepByTransport(const TransientStepState &state) {
 
 void applyScheduledTimeStepEvents(const TransientStepState &state) {
     if (state.input.evento.size() > state.eventIndex) {
-        if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) > (state.input.evento[state.eventIndex] + 0.1)) {
-            state.timeStep = state.input.evento[state.eventIndex] - (*state.globals).lixo5;
+        if ((*state.globals).simulationTime < state.input.evento[state.eventIndex] && ((*state.globals).simulationTime + state.timeStep) > (state.input.evento[state.eventIndex] + 0.1)) {
+            state.timeStep = state.input.evento[state.eventIndex] - (*state.globals).simulationTime;
             state.eventIndex++;
-        } else if ((*state.globals).lixo5 < state.input.evento[state.eventIndex] && ((*state.globals).lixo5 + state.timeStep) >= (state.input.evento[state.eventIndex]))
+        } else if ((*state.globals).simulationTime < state.input.evento[state.eventIndex] && ((*state.globals).simulationTime + state.timeStep) >= (state.input.evento[state.eventIndex]))
             state.eventIndex++;
     }
 
     state.masterState = 1;
     for (int i = 0; i < state.masterCloseCount; i++) {
-        if ((*state.globals).lixo5 > state.masterCloseSchedule[i]) {
+        if ((*state.globals).simulationTime > state.masterCloseSchedule[i]) {
             for (int j = 0; j < state.masterOpenCount; j++) {
-                if ((*state.globals).lixo5 < state.masterOpenSchedule[j]) {
+                if ((*state.globals).simulationTime < state.masterOpenSchedule[j]) {
                     state.masterState = 0;
                     state.masterCounter++;
                     if (state.masterCounter > 19)
                         state.masterCounter = 20;
-                    if ((*state.globals).lixo5 >= state.masterOpenSchedule[j] - state.timeStep)
+                    if ((*state.globals).simulationTime >= state.masterOpenSchedule[j] - state.timeStep)
                         state.masterCounter = 0;
                     break;
                 }
@@ -911,7 +911,7 @@ double valveRestrictedTimeStep(const TransientStepState &state, int i, double dt
 }
 
 void updateOutletVoidFraction(const TransientStepState &state, int i, double alfrev) {
-    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
+    if (((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1)) {
         if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
             state.cells[i].alf = state.cells[i - 1].alf;
         else
@@ -927,7 +927,7 @@ void updateOutletVoidFraction(const TransientStepState &state, int i, double alf
 }
 
 void updateOutletComplementaryFraction(const TransientStepState &state, int i) {
-    if (((*state.globals).chaverede == 0 || state.endNode == 1 || (*state.globals).chaveRedeParalela == 1)) {
+    if (((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1)) {
         if (state.surfaceChokeMassFlag == 0 || state.cells[state.lastCell].Mliqini > 0)
             state.cells[i].bet = state.cells[i - 1].bet;
         else
@@ -996,11 +996,11 @@ bool currentOutletUsesPressureDrop(const TransientStepState &state, double choke
 
 bool currentOutletCanRemainOpen(const TransientStepState &state, double delp) {
     return surfaceChokeIsOpen(state) &&
-            ((((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
+            ((((*state.globals).simulationTime - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
               fabs(state.movingMeanPressure - state.gasSurfacePressure) / state.movingMeanPressure < 0.05 && fabs(state.movingMeanFlux) < 0.5) ||
-             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
+             (((*state.globals).simulationTime - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) &&
               fabs(state.movingMeanPressure - state.gasSurfacePressure) < (0.05 * state.gasSurfacePressure) && fabs(state.movingMeanFlux) < 5. && delp < 0.01 * state.gasSurfacePressure) ||
-             (((*state.globals).lixo5 - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) / state.movingMeanPressure > 0.001 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.input.chkv == 0));
+             (((*state.globals).simulationTime - 2 * state.input.dtmax > state.movingMeanStartTime || state.input.perm == 2) && (state.gasSurfacePressure - state.movingMeanPressure) / state.movingMeanPressure > 0.001 && state.input.chkv == 0) || (fabs(delp) < 0.1 && (state.outletPressure - state.gasSurfacePressure) / state.outletPressure < 0.05 && state.input.chkv == 0));
 }
 
 bool bufferedOutletUsesPressureDrop(const TransientStepState &state, double chokeGasMassFraction,
@@ -1172,7 +1172,7 @@ void updateTransientMovingMeans(const TransientSolveState &state) {
     state.totalPressure += state.step.outletPressure * state.step.timeStep;
     state.totalFlux += jtemporario * state.step.timeStep;
     state.totalVoidFraction += state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep;
-    if ((*state.step.globals).lixo5 > state.step.movingMeanStartTime) {
+    if ((*state.step.globals).simulationTime > state.step.movingMeanStartTime) {
         state.totalPressure -= state.pressureHistory.front();
         state.pressureHistory.erase(state.pressureHistory.begin());
         state.totalFlux -= state.fluxHistory.front();
@@ -1741,7 +1741,7 @@ void applyOutletPressureCondition(const TransientStepState &state, [[maybe_unuse
         }
     }
 
-    if (state.surfaceChokeMassFlag == 0 && (*state.globals).chaverede == 1) {
+    if (state.surfaceChokeMassFlag == 0 && (*state.globals).networkMode == 1) {
         double betloc;
         if ((state.cells[state.lastCell - 1].MR - state.cells[state.lastCell - 1].MliqiniR) * 0 + 1 * state.cells[state.lastCell - 1].MliqiniR > 0.)
             betloc = state.cells[state.lastCell - 1].bet;
@@ -1779,7 +1779,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
     else if (massgas <= 0 && state.cells[state.lastCell - 1].MliqiniRBuf >= 0)
         chokeGasMassFraction = 0.;
     else if (masentrada < 0) {
-        if ((*state.globals).chaverede == 0 || state.endNode == 1)
+        if ((*state.globals).networkMode == 0 || state.endNode == 1)
             chokeGasMassFraction = 1.;
         else {
             chokeGasMassFraction = titRev;
@@ -1793,7 +1793,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
     if (chokeGasMassFraction > 1)
         chokeGasMassFraction = 1;
     if (state.cells[state.lastCell].presBuf < state.gasSurfacePressure) {
-        if ((*state.globals).chaverede == 0 || state.endNode == 1)
+        if ((*state.globals).networkMode == 0 || state.endNode == 1)
             chokeGasMassFraction = 1.;
         else {
             chokeGasMassFraction = titRev;
@@ -1819,7 +1819,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
             sinal = -1.;
         else
             sinal = 0.;
-        if ((*state.globals).chaverede == 0 || state.endNode == 1)
+        if ((*state.globals).networkMode == 0 || state.endNode == 1)
             chokeGasMassFraction = 1.;
         else {
             chokeGasMassFraction = titRev;
@@ -1864,7 +1864,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
             state.bufferedComplementaryMassSource = -masliq * betSup * rholc / rholmix;
             state.bufferedGasMassSource = -masgas;
         }
-        if (state.surfaceChokeMassFlag == 1 && (*state.globals).chaverede == 1) {
+        if (state.surfaceChokeMassFlag == 1 && (*state.globals).networkMode == 1) {
             state.cells[state.lastCell].fontemassCR = state.bufferedComplementaryMassSource;
             state.cells[state.lastCell].fontemassLR = state.bufferedLiquidMassSource;
             state.cells[state.lastCell].fontemassGR = state.bufferedGasMassSource;
@@ -1872,7 +1872,7 @@ void applyOutletBufferCondition(const TransientStepState &state, double titRev, 
             state.cells[state.lastCell].DmasschokeG = 0.;
             state.cells[state.lastCell].DmasschokeL = 0.;
             state.cells[state.lastCell].DmasschokeC = 0.;
-        } else if (state.surfaceChokeMassFlag == 0 && (*state.globals).chaverede == 1) {
+        } else if (state.surfaceChokeMassFlag == 0 && (*state.globals).networkMode == 1) {
             updateBufferedNetworkSources(state, betRev);
         }
     }
@@ -1926,11 +1926,11 @@ void computeExplicitTimeStep(const TransientStepState &state) {
 
 void computeTimeStep(const TransientStepState &state, int vexpli) {
 
-    if ((*state.globals).lixo5 < (*state.globals).localtiny && (*state.globals).chaverede == 0) {
-        state.input.imprimeProfile(state.cells, state.productionFreeTerms, (*state.globals).lixo5, state.branchIndex);
+    if ((*state.globals).simulationTime < (*state.globals).smallValueTolerance && (*state.globals).networkMode == 0) {
+        state.input.imprimeProfile(state.cells, state.productionFreeTerms, (*state.globals).simulationTime, state.branchIndex);
         if (state.input.lingas > 0 && state.input.nvalvgas > 0)
-            state.input.imprimeProfileG(state.gasCells, state.gasFreeTerms, (*state.globals).lixo5, state.branchIndex);
-        state.input.imprimeProfileTrans(state.cells, state.productionCrossSectionCount.data(), (*state.globals).lixo5, state.branchIndex);
+            state.input.imprimeProfileG(state.gasCells, state.gasFreeTerms, (*state.globals).simulationTime, state.branchIndex);
+        state.input.imprimeProfileTrans(state.cells, state.productionCrossSectionCount.data(), (*state.globals).simulationTime, state.branchIndex);
     }
     state.timeStep = state.input.dtmax;
 
@@ -2056,7 +2056,7 @@ void evaluatePressureRateOfChange(const TransientStepState &state, int vexpli) {
 
 void restrictTimeStepByValve(const TransientStepState &state) {
 
-    if (state.input.ConContEntrada == 0 && (*state.globals).chaveRedeParalela == 0) {
+    if (state.input.ConContEntrada == 0 && (*state.globals).parallelNetworkMode == 0) {
         double dtaux = state.cells[0].dt;
         if (state.restart == -1) {
             for (int i = 1; i <= state.lastCell; i++)
@@ -2119,7 +2119,7 @@ void restartFractionEvolution(const TransientStepState &state, const gaslift::Ga
 
 void evolveFractions(const TransientStepState &state, double alfrev, [[maybe_unused]] double betrev, [[maybe_unused]] int ciclo) {
 
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = 0; i <= state.lastCell; i++) {
 
         if (i < state.lastCell) {
@@ -2129,7 +2129,7 @@ void evolveFractions(const TransientStepState &state, double alfrev, [[maybe_unu
             updateOutletVoidFraction(state, i, alfrev);
         }
     }
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = 0; i <= state.lastCell; i++) {
         if (i < state.lastCell) {
             state.cells[i].avancbet(state.restart, state.lastCell);
@@ -2138,7 +2138,7 @@ void evolveFractions(const TransientStepState &state, double alfrev, [[maybe_unu
             updateOutletComplementaryFraction(state, i);
         }
     }
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = 0; i <= state.lastCell; i++) {
         if (i < state.lastCell && state.cells[i].estadoPig == 1) {
             state.cells[i].avancPig(state.restart);
@@ -2171,7 +2171,7 @@ void updatePig(const TransientStepState &state) {
     for (int i = 1; i <= state.lastCell; i++) {
         if (i < state.lastCell && state.cells[i].estadoPig == 1) {
             if (state.cells[i].velPig >= 0) {
-                if (state.cells[i].razPig >= 1. - (*state.globals).localtiny) {
+                if (state.cells[i].razPig >= 1. - (*state.globals).smallValueTolerance) {
                     state.cells[i].estadoPig = 0;
                     state.cells[i + 1].estadoPig = 1;
 
@@ -2184,7 +2184,7 @@ void updatePig(const TransientStepState &state) {
                     state.cells[i + 1].betPigE = state.cells[i].bet;
                 }
             } else {
-                if (state.cells[i].razPig <= (*state.globals).localtiny) {
+                if (state.cells[i].razPig <= (*state.globals).smallValueTolerance) {
                     state.cells[i].estadoPig = 0;
                     state.cells[i - 1].estadoPig = 1;
                     state.cells[i].razPig = 0.;
@@ -2203,7 +2203,7 @@ void updatePig(const TransientStepState &state) {
 }
 
 void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, int ciclo) {
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = 0; i <= state.lastCell; i++) {
         state.cells[i].GeraLocal(state.outletPressure, state.surfaceChokeMassFlag, state.lastCell, state.input.master1.razareaativ, state.inletPressure, state.inletTemperature, state.inletQuality, state.inletComplementaryFraction, ciclo,
                             state.fullModel, state.endNode, state.input.corrigeContSep, state.surfaceChoke.AreaGarg, vexpli);
@@ -2279,25 +2279,25 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
     begin = chrono::steady_clock::now();
     double velmaxdesc = 0;
 
-    if ((*state.step.globals).chaverede == 0) {
+    if ((*state.step.globals).networkMode == 0) {
 
         dependencies.hydrates();
 
-        if (state.step.input.flashCompleto == 2 && (*state.step.globals).lixo5 < 1e-15 && state.step.input.miniTabAtraso>0) {
+        if (state.step.input.flashCompleto == 2 && (*state.step.globals).simulationTime < 1e-15 && state.step.input.miniTabAtraso>0) {
             refreshFluidMiniTable(state.step);
         }
 
-        if ((*state.step.globals).lixo5 < 1e-15) {
+        if ((*state.step.globals).simulationTime < 1e-15) {
             for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++)state.unitCellTimeCounters[iCelU]=1;
             for (int i = 0; i < state.step.input.ntendp; i++) {
-                state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).lixo5, i, state.productionTrendCounts[i]);
+                state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).simulationTime, i, state.productionTrendCounts[i]);
             }
             thermal::updateDistributedMassTransfer(dependencies.thermal, dependencies.thermalDependencies);
         }
 
         int vExpli = 0;
         state.step.fullModel = state.step.input.correcaoMassaEspLiq;
-        state.step.input.atualizaSonico((*state.step.globals).lixo5, vExpli);
+        state.step.input.atualizaSonico((*state.step.globals).simulationTime, vExpli);
         computeTimeStep(state.step, vExpli);
         state.step.auxiliaryCflTimeStep = state.step.timeStep;
         state.step.finalAuxiliaryTimeStep = state.step.timeStep;
@@ -2312,7 +2312,7 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
         state.initialGasSurfacePressure = state.step.gasSurfacePressure;
         state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,
                      state.defaultInletTemperature, state.initialGasPressure, state.initialGasTemperature,
-                     state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletComplementaryFraction, (*state.step.globals).lixo5, state.step.timeStep);
+                     state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletComplementaryFraction, (*state.step.globals).simulationTime, state.step.timeStep);
         refreshInletCondition(state.step);
 
         for (int i = 0; i <= state.step.input.nvalv; i++)
@@ -2353,19 +2353,19 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
 
     int MaxKontaImpres = 1000;
     int ordemImpT = 0;
-    if ((fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).lixo5) < state.step.timeStep) ||
+    if ((fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).simulationTime) < state.step.timeStep) ||
         progressReportIsDue(state, MaxKontaImpres) ||
-        (*state.step.globals).lixo5 < 1e-15) {
+        (*state.step.globals).simulationTime < 1e-15) {
         state.printPassCount++;
         ordemImpT = 1;
     }
 
-    if ((*state.step.globals).chaverede != 0)
-        (*state.step.globals).lixo5 = (*state.step.globals).lixo5R;
+    if ((*state.step.globals).networkMode != 0)
+        (*state.step.globals).simulationTime = (*state.step.globals).networkSimulationTime;
     writeProfiles(state, nrede);
     writeTrends(state, dependencies, ordemImpT, velmaxdesc, nrede);
     end = chrono::steady_clock::now();
-    (*state.step.globals).contador = state.step.stepIndex;
+    (*state.step.globals).timeStepIndex = state.step.stepIndex;
     writeScreenOutput(state, begin, end);
 
     int maxEvento = state.step.input.logevento.size();
@@ -2375,8 +2375,8 @@ void solveTransientStep(const TransientSolveState &state, const TransientDepende
     reportAcceptedArtificialGas(state.step);
     state.step.stepIndex++;
     state.printCounter++;
-    if ((*state.step.globals).chaverede == 0)
-        (*state.step.globals).lixo5 += state.step.timeStep;
+    if ((*state.step.globals).networkMode == 0)
+        (*state.step.globals).simulationTime += state.step.timeStep;
 }
 
 void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
@@ -2399,8 +2399,8 @@ void fillFluidMiniTable(const TransientStepState &state, ProFlu &flui) {
 }
 
 void generateFluidMiniTables(const TransientStepState &state) {
-    (*state.globals).modoTransiente = 0;
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+    (*state.globals).transientPropertyMode = 0;
+#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = 0; i <= state.lastCell; i++) {
         double delp;
         double delt;
@@ -2436,7 +2436,7 @@ void generateFluidMiniTables(const TransientStepState &state) {
             refreshAccessoryFluidMiniTable(state, i, state.cells[i].acsr.injm.FluidoPro);
         }
     }
-    (*state.globals).modoTransiente = 1;
+    (*state.globals).transientPropertyMode = 1;
 }
 
 void storePreviousSources(const TransientStepState &state) {
@@ -2546,7 +2546,7 @@ void cacheCellAndFaceDensities(const TransientStepState &state) {
     state.cells[0].migC = state.cells[0].flui.ViscGas(state.cells[0].pres, state.cells[0].temp);
     state.cells[0].micC = state.cells[0].fluicol.VisFlu(state.cells[0].pres, state.cells[0].temp);
 
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = 1; i <= state.lastCell; i++) {
         double pressure;
         double temperature;

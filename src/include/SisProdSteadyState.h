@@ -10,7 +10,7 @@ class ChokeGas;
 class Ler;
 class ProFlu;
 class choke;
-struct varGlob1D;
+struct SimulationContext;
 
 namespace driftflux::coefficient { struct ClosureState; }
 namespace sisprod::sources { struct SourceState; }
@@ -41,8 +41,8 @@ struct SteadyStateState {
     CelG *const &gasCells;
     /// Input deck -- SProd::arq. NOT const: the march writes back into it.
     Ler &input;
-    /// Shared 1D globals -- SProd::vg1dSP. Read only.
-    const varGlob1D *const &globals;
+    /// Shared simulation context -- SProd::simulationContext. Read only.
+    const SimulationContext *const &globals;
 
     /// Index of the last production cell -- SProd::ncel.
     const int &lastCell;

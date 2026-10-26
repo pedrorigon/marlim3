@@ -13,7 +13,7 @@
 #include "Vetor.h"
 #include "dados1Poisson.h"
 #include "solverPoisson.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 
 constexpr double CoefGopalHT[] = {1.6643, -2.2114, -0.3647, 1.4385, 0.5220, -0.8511,
@@ -104,8 +104,8 @@ class TransCal {
     // Buried-pipeline heat transfer model
     solverP poisson2D;
     int indCel;
-    varGlob1D *vg1dSP;
-    TransCal(varGlob1D *Vvg1dSP = 0, const DadosGeo vgeom = DadosGeo(), const int vpermanente = -1, const int *const vncamada = 0,
+    SimulationContext *simulationContext;
+    TransCal(SimulationContext *context = 0, const DadosGeo vgeom = DadosGeo(), const int vpermanente = -1, const int *const vncamada = 0,
              const double *const vdrcamada = 0, double **const vTcamada = 0, const double vTint = 0.,
              const double vTextern1 = 0., const double vTextern2 = 0., const double vVint = 0.,
              const double vVextern1 = 0.,

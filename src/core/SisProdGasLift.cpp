@@ -190,7 +190,7 @@ double searchUnloadingInjectionPressure(const GasLiftState &state) {
         relaxTowards(state.injectionPressure, state.input.presIniDesc);
         return 0.;
     }
-    const double simulationTime = state.globals->lixo5;
+    const double simulationTime = state.globals->simulationTime;
     if (simulationTime > state.input.tempoLatenciaDesc) {
         const UnloadingValve valve = selectUnloadingValve(state);
         recordUnloadingSample(state, valve.flowRate);
@@ -363,7 +363,7 @@ void solveUnloading(const GasLiftState &state, const thermal::ThermalState &depe
         const double liquidViscosity = cell.VisFlu(leftCellPressure, leftTemperature);
         double gasDensity = cell.flui.MasEspGas(leftCellPressure, leftTemperature);
         const double gasViscosity = cell.flui.ViscGas(leftCellPressure, leftTemperature);
-        const double carryingDensity = cell.razInter > state.globals->localtiny ? gasDensity : liquidDensity;
+        const double carryingDensity = cell.razInter > state.globals->smallValueTolerance ? gasDensity : liquidDensity;
         const double leftVelocity = cell.VGasL / (carryingDensity * left.duto.area);
         const double localVelocity = cell.VGasL / (carryingDensity * cell.duto.area);
         const double leftDiameter =
@@ -450,7 +450,7 @@ void advanceInterface(const GasLiftState &state) {
 
     // The ratio snaps to the face it reached; when it crossed the face during the step, the interface time step is
     // shortened to the crossing.
-    const double tiny = state.globals->localtiny;
+    const double tiny = state.globals->smallValueTolerance;
     if (cell.razInter < -tiny) {
         const double interfaceCrossingTimeStep = -cell.razInterIni * cell.dx0 / state.interfaceVelocity;
         if (interfaceCrossingTimeStep > tiny)
@@ -717,7 +717,7 @@ void assembleAndSolveGasSystem(const GasLiftState &state) {
     const double chokeOpeningFraction = withGasInletCondition(
         state.gasCells[0].tipoCC,
         [&](auto condition) { return injectionChokeOpening(state, condition); });
-#pragma omp parallel for num_threads(state.globals->ntrd)
+#pragma omp parallel for num_threads(state.globals->solverThreadCount)
     for (int gasCellIndex = 0; gasCellIndex <= state.lastGasCell; gasCellIndex++) {
         CelG &cell = state.gasCells[gasCellIndex];
         cell.GeraLocal(state.lastGasCell, state.injectionPressure, state.injectionTemperature, chokeOpeningFraction);
@@ -763,7 +763,7 @@ void updateGasTemperatures(const GasLiftState &state, const thermal::ThermalStat
     inletCell.dTdt = (inletCell.temp - inletCell.tempini) / state.timeStep;
     if (outletCell.VGasR < 0.)
         outletCell.temp = kReverseFlowOutletTemperatureCelsius;
-#pragma omp parallel for num_threads(state.globals->ntrd)
+#pragma omp parallel for num_threads(state.globals->solverThreadCount)
     for (int gasCellIndex = 1; gasCellIndex < gasLoopEnd; gasCellIndex++) {
         CelG &cell = state.gasCells[gasCellIndex];
         thermal::computeGasTemperature(dependencies, gasCellIndex, state.gasCells[gasCellIndex - 1].tempini, 0);
@@ -772,7 +772,7 @@ void updateGasTemperatures(const GasLiftState &state, const thermal::ThermalStat
 }
 
 void updateGasDensities(const GasLiftState &state, int gasLoopEnd) {
-#pragma omp parallel for num_threads(state.globals->ntrd)
+#pragma omp parallel for num_threads(state.globals->solverThreadCount)
     for (int gasCellIndex = 0; gasCellIndex < gasLoopEnd; gasCellIndex++) {
         CelG &cell = state.gasCells[gasCellIndex];
         cell.rg = cell.flui.MasEspGas(cell.pres, cell.temp);

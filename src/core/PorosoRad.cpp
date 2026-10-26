@@ -21,7 +21,7 @@ PorosRad::PorosRad(){
 		iniciaVariaveis();
 }
 
-PorosRad::PorosRad(const DadosGeoPoro vgeom,varGlob1D* Vvg1dSP,const int vpermanente, const int* const vncamada,
+PorosRad::PorosRad(const DadosGeoPoro vgeom,SimulationContext* context,const int vpermanente, const int* const vncamada,
 		                                const double* const vdrcamada,double** const vPcamada,const double vPint,
 		                                const double vpresRes,const double vtRes, const double vdt,
 		                                const double pres, const double vzD0, const double vzD1, const double vdh,
@@ -33,7 +33,7 @@ PorosRad::PorosRad(const DadosGeoPoro vgeom,varGlob1D* Vvg1dSP,const int vperman
 
 	iniciaVariaveis();
 
-	vg1dSP=Vvg1dSP;
+	simulationContext=context;
 	geom=vgeom;
 	permanente=vpermanente;
 	lenth=geom.ncamadas;
@@ -118,7 +118,7 @@ PorosRad::PorosRad(const DadosGeoPoro vgeom,varGlob1D* Vvg1dSP,const int vperman
 PorosRad::PorosRad(const PorosRad& vPorosRad){
 
 	iniciaVariaveis();
-	vg1dSP=vPorosRad.vg1dSP;
+	simulationContext=vPorosRad.simulationContext;
 	ncel=vPorosRad.ncel;
 	geom=vPorosRad.geom;
 	permanente=vPorosRad.permanente;
@@ -222,7 +222,7 @@ PorosRad& PorosRad::operator =(const PorosRad& vPorosRad){
 
 	if(lenth>0){
 	  if(this!=&vPorosRad){
-		 vg1dSP=vPorosRad.vg1dSP;
+		 simulationContext=vPorosRad.simulationContext;
 		 ncel=vPorosRad.ncel;
 	     geom=vPorosRad.geom;
 	     permanente=vPorosRad.permanente;
@@ -289,7 +289,7 @@ PorosRad& PorosRad::operator =(const PorosRad& vPorosRad){
 	}
 	else if(lenth==0){
 		if(this!=&vPorosRad){
-		  vg1dSP=vPorosRad.vg1dSP;
+		  simulationContext=vPorosRad.simulationContext;
 		  ncel=vPorosRad.ncel;
 		  geom=vPorosRad.geom;
 		  permanente=vPorosRad.permanente;
@@ -449,7 +449,7 @@ void PorosRad::iniciaVariaveis(){
 	compOleo=1e-5;
 	rhoRef=900;
 
-	vg1dSP=0;
+	simulationContext=0;
 
 }
 
@@ -544,7 +544,7 @@ void PorosRad::geraCel(double** const vPcamada,double** const vsL,double** const
 			presRes,ql, qr, tRes, dt,zdKm, zdK,zdK2,
 			dh,sL,sW,sLRes,sWRes,sWPoc,
 			satConata,ip,vkRelOA,vkRelOG,vpcOA,vpcGO,
-			fluc, flup,vcelL, vcelR,vg1dSP);
+			fluc, flup,vcelL, vcelR,simulationContext);
     konta++;
 	for(int icam=0;icam<geom.ncamadas;icam++){
 		 for(int idisc=1;idisc<=ncamada[icam];idisc++){
@@ -596,7 +596,7 @@ void PorosRad::geraCel(double** const vPcamada,double** const vsL,double** const
 						presRes,ql, qr, tRes, dt,zdKm, zdK,zdK2,
 						dh,sL,sW,sLRes,sWRes,sWPoc,
 						satConata,ip,vkRelOA,vkRelOG,vpcOA,vpcGO,
-						fluc, flup,vcelL, vcelR,vg1dSP);
+						fluc, flup,vcelL, vcelR,simulationContext);
 			    konta++;
 
 			  }

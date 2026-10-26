@@ -4,7 +4,7 @@
 #include "Leitura.h"
 #include "SisProdConstants.h"
 #include "celula3.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "UnitConversions.h"
 
 #include <math.h>
@@ -38,18 +38,18 @@ void transportBlackOilBalances(const FluidTrackingState &state, const BlackOilFa
         balance.residuoA = (balance.volaguaFim - state.cells[i].VolAguaST) * flowArea / dt +
                            (balance.MultAd - balance.MultAe) / dx - source.water / dx;
     }
-    if (cell.liquidHoldup > (*state.globals).localtiny &&
-        cell.complementaryFraction < (1. - (*state.globals).localtiny) &&
-        cell.bsw < (1. - (*state.globals).localtiny)) {
+    if (cell.liquidHoldup > (*state.globals).smallValueTolerance &&
+        cell.complementaryFraction < (1. - (*state.globals).smallValueTolerance) &&
+        cell.bsw < (1. - (*state.globals).smallValueTolerance)) {
         rgo[i] = (balance.volleveFim - balance.residuo * dt / flowArea) * cell.oilVolumeFactor /
                  (cell.liquidHoldup * (1 - cell.complementaryFraction) * (1 - cell.bsw));
-        if (rgo[i] > (*state.globals).RGOMax)
-            rgo[i] = (*state.globals).RGOMax;
-    } else if (cell.complementaryFraction >= (1. - (*state.globals).localtiny) ||
-               cell.bsw >= (1. - (*state.globals).localtiny))
+        if (rgo[i] > (*state.globals).maximumGasOilRatio)
+            rgo[i] = (*state.globals).maximumGasOilRatio;
+    } else if (cell.complementaryFraction >= (1. - (*state.globals).smallValueTolerance) ||
+               cell.bsw >= (1. - (*state.globals).smallValueTolerance))
         rgo[i] = 0.;
     else
-        rgo[i] = (*state.globals).RGOMax;
+        rgo[i] = (*state.globals).maximumGasOilRatio;
 
     if (balance.volleveFim > 1e-5 && state.input.flashCompleto == 0 &&
         ((source.freeGas >= 0 || source.dissolvedGas > 0) ||
@@ -302,7 +302,7 @@ void blackOilSourceLeak(const FluidTrackingState &state, BlackOilSource &source,
     double sourceGasOilRatio = fluF.RGO;
     source.stockTankQuality = fluF.dStockTankVaporMassFraction;
 
-    if (fluF.BSW < 1 - (*state.globals).localtiny)
+    if (fluF.BSW < 1 - (*state.globals).smallValueTolerance)
         source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag +
                         fluF.Deng * kAirDensityAtStandardConditions * sourceGasOilRatio * (1. - fluF.BSW);
     else
@@ -322,15 +322,15 @@ void blackOilSourceLeak(const FluidTrackingState &state, BlackOilSource &source,
     if (hasMultipleFluidsOrNetwork(state)) {
         double bswaux = fluF.BSW;
         double contrabsw = 1. - bswaux;
-        if (contrabsw <= (*state.globals).localtiny)
-            contrabsw = 0.9 * (*state.globals).localtiny;
+        if (contrabsw <= (*state.globals).smallValueTolerance)
+            contrabsw = 0.9 * (*state.globals).smallValueTolerance;
         double rhoPSTF;
-        if (contrabsw > (*state.globals).localtiny)
+        if (contrabsw > (*state.globals).smallValueTolerance)
             rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag +
                       fluF.Deng * kAirDensityAtStandardConditions * solutionGasRatioSource;
         else
             rhoPSTF = 1000 * fluF.Denag;
-        if (contrabsw > (*state.globals).localtiny) {
+        if (contrabsw > (*state.globals).smallValueTolerance) {
             source.deadOil *= (1. / rhoPSTF);
             source.water *= ((bswaux / contrabsw) / rhoPSTF);
         } else {
@@ -419,7 +419,7 @@ void blackOilSourceLiquidInjection(const FluidTrackingState &state, BlackOilSour
                                     (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     double dissolvedGasDensityRatio = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
-    if (fluF.BSW < 1 - (*state.globals).localtiny)
+    if (fluF.BSW < 1 - (*state.globals).smallValueTolerance)
         source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag +
                         fluF.Deng * kAirDensityAtStandardConditions * sourceGasOilRatio * (1. - fluF.BSW);
     else
@@ -451,7 +451,7 @@ void blackOilSourceWetGasInjection(const FluidTrackingState &state, BlackOilSour
                                     (units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre);
     double dissolvedGasDensityRatio = 1 / fluF.rDgD;
     source.razdgl = 1 / fluF.rDgL;
-    if (state.cells[i].acsr.injg.FluidoPro.BSW < 1 - (*state.globals).localtiny)
+    if (state.cells[i].acsr.injg.FluidoPro.BSW < 1 - (*state.globals).smallValueTolerance)
         source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag +
                         fluF.Deng * kAirDensityAtStandardConditions * sourceGasOilRatio * (1. - fluF.BSW);
     else
@@ -464,15 +464,15 @@ void blackOilSourceWetGasInjection(const FluidTrackingState &state, BlackOilSour
     if (hasMultipleFluidsOrNetwork(state)) {
         double bswaux = fluF.BSW;
         double contrabsw = 1. - bswaux;
-        if (contrabsw < (*state.globals).localtiny)
-            contrabsw = 0.9 * (*state.globals).localtiny;
+        if (contrabsw < (*state.globals).smallValueTolerance)
+            contrabsw = 0.9 * (*state.globals).smallValueTolerance;
         double rhoPSTF;
-        if (contrabsw > (*state.globals).localtiny)
+        if (contrabsw > (*state.globals).smallValueTolerance)
             rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag +
                       fluF.Deng * kAirDensityAtStandardConditions * solutionGasRatioSource;
         else
             rhoPSTF = 1000 * fluF.Denag;
-        if (contrabsw > (*state.globals).localtiny) {
+        if (contrabsw > (*state.globals).smallValueTolerance) {
             source.deadOil *= (1. / rhoPSTF);
             source.water *= ((bswaux / contrabsw) / rhoPSTF);
         } else {
@@ -563,15 +563,15 @@ void convertBlackOilPorousRates(const FluidTrackingState &state, BlackOilSource 
                                 double temperatureHigh, double temperatureLow) {
     double bswaux = sourceWaterCut;
     double contrabsw = 1. - bswaux;
-    if (contrabsw <= (*state.globals).localtiny)
-        contrabsw = 0.9 * (*state.globals).localtiny;
+    if (contrabsw <= (*state.globals).smallValueTolerance)
+        contrabsw = 0.9 * (*state.globals).smallValueTolerance;
     double rhoPSTF;
     if (contrabsw > 0)
         rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag +
                   fluF.Deng * kAirDensityAtStandardConditions * solutionGasRatioSource;
     else
         rhoPSTF = 1000 * fluF.Denag;
-    if (contrabsw > (*state.globals).localtiny) {
+    if (contrabsw > (*state.globals).smallValueTolerance) {
         source.deadOil *= (1. / rhoPSTF);
         source.water *= ((bswaux / contrabsw) / rhoPSTF);
     } else {
@@ -590,15 +590,15 @@ void convertBlackOilInjectionRates(const FluidTrackingState &state, BlackOilSour
                                    double temperatureLow) {
     double bswaux = fluF.BSW;
     double contrabsw = 1. - bswaux;
-    if (contrabsw < (*state.globals).localtiny)
-        contrabsw = 0.9 * (*state.globals).localtiny;
+    if (contrabsw < (*state.globals).smallValueTolerance)
+        contrabsw = 0.9 * (*state.globals).smallValueTolerance;
     double rhoPSTF;
-    if (contrabsw > (*state.globals).localtiny)
+    if (contrabsw > (*state.globals).smallValueTolerance)
         rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag +
                   fluF.Deng * kAirDensityAtStandardConditions * solutionGasRatioSource;
     else
         rhoPSTF = 1000 * fluF.Denag;
-    if (contrabsw > (*state.globals).localtiny) {
+    if (contrabsw > (*state.globals).smallValueTolerance) {
         source.deadOil *= (1. / rhoPSTF);
         source.water *= ((bswaux / contrabsw) / rhoPSTF);
     } else {
@@ -650,15 +650,15 @@ void convertPhaseInjectionRates(const FluidTrackingState &state, PhaseSource &so
                                 double temperatureLow) {
     double bswaux = fluid.BSW;
     double contrabsw = 1. - bswaux;
-    if (contrabsw < (*state.globals).localtiny)
-        contrabsw = 0.9 * (*state.globals).localtiny;
+    if (contrabsw < (*state.globals).smallValueTolerance)
+        contrabsw = 0.9 * (*state.globals).smallValueTolerance;
     double rhoPSTF;
-    if (contrabsw > (*state.globals).localtiny)
+    if (contrabsw > (*state.globals).smallValueTolerance)
         rhoPSTF = (1000 * 141.5 / (131.5 + fluid.API)) + (bswaux / contrabsw) * 1000 * fluid.Denag +
                   fluid.Deng * kAirDensityAtStandardConditions * solutionGasRatioSource;
     else
         rhoPSTF = 1000 * fluid.Denag;
-    if (contrabsw > (*state.globals).localtiny) {
+    if (contrabsw > (*state.globals).smallValueTolerance) {
         source.deadOil *= (1. / rhoPSTF);
         source.water *= ((bswaux / contrabsw) / rhoPSTF);
     } else {
@@ -676,15 +676,15 @@ void convertPhasePorousRates(const FluidTrackingState &state, PhaseSource &sourc
                              double temperatureHigh, double temperatureLow) {
     double bswaux = sourceWaterCut;
     double contrabsw = 1. - bswaux;
-    if (contrabsw <= (*state.globals).localtiny)
-        contrabsw = 0.9 * (*state.globals).localtiny;
+    if (contrabsw <= (*state.globals).smallValueTolerance)
+        contrabsw = 0.9 * (*state.globals).smallValueTolerance;
     double rhoPSTF;
     if (contrabsw > 0)
         rhoPSTF = (1000 * 141.5 / (131.5 + fluid.API)) + (bswaux / contrabsw) * 1000 * fluid.Denag +
                   fluid.Deng * kAirDensityAtStandardConditions * solutionGasRatioSource;
     else
         rhoPSTF = 1000 * fluid.Denag;
-    if (contrabsw > (*state.globals).localtiny) {
+    if (contrabsw > (*state.globals).smallValueTolerance) {
         source.deadOil *= (1. / rhoPSTF);
         source.water *= ((bswaux / contrabsw) / rhoPSTF);
     } else {
@@ -698,21 +698,21 @@ void convertPhasePorousRates(const FluidTrackingState &state, PhaseSource &sourc
 }
 
 bool hasMultipleFluidsOrNetwork(const FluidTrackingState &state) {
-    return state.input.nfluP > 1 || (*state.globals).chaverede != 0;
+    return state.input.nfluP > 1 || (*state.globals).networkMode != 0;
 }
 
 bool hasProductionFluidOrNetwork(const FluidTrackingState &state) {
-    return state.input.nfluP > 0 || (*state.globals).chaverede != 0;
+    return state.input.nfluP > 0 || (*state.globals).networkMode != 0;
 }
 
 bool tracksBlackOilOilProperties(const FluidTrackingState &state) {
-    return (state.input.nfluP > 1 && state.input.flashCompleto == 0) || (*state.globals).chaverede != 0;
+    return (state.input.nfluP > 1 && state.input.flashCompleto == 0) || (*state.globals).networkMode != 0;
 }
 
 void computePhaseLiquidVolumeBalances(const FluidTrackingState &state, const PhaseFace &left,
                                       const PhaseFace &right, const PhaseSource &source,
                                       PhaseBalance &balance, double dx, double flowArea, int i, double dt) {
-    if ((*state.globals).lixo5 < 1e-15 && state.input.snaps != 1) {
+    if ((*state.globals).simulationTime < 1e-15 && state.input.snaps != 1) {
         state.cells[i].VolPesaST = balance.volpesFim;
         state.cells[i].VolAguaST = balance.volaguaFim;
     }
@@ -850,13 +850,13 @@ void prepareBlackOilAccessorySource(const FluidTrackingState &state, BlackOilSou
         blackOilSourceRadialPorous(state, source, fluF, i, temperatureHigh, temperatureLow);
     } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
         blackOilSourcePorous2D(state, source, fluF, i, temperatureHigh, temperatureLow);
-    } else if ((fabs(source.dissolvedGas) > (*state.globals).localtiny &&
+    } else if ((fabs(source.dissolvedGas) > (*state.globals).smallValueTolerance &&
                 state.cells[i].acsr.tipo != kAccessoryLiquidInjection &&
                 state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
                 state.cells[i].acsr.tipo != kAccessoryLeak &&
                 state.cells[i].acsr.tipo != kAccessoryRadialPorous &&
                 state.cells[i].acsr.tipo != kAccessoryPorous2D) ||
-               (fabs(source.freeGas) > (*state.globals).localtiny &&
+               (fabs(source.freeGas) > (*state.globals).smallValueTolerance &&
                 state.cells[i].acsr.tipo != kAccessoryGasInjection &&
                 state.cells[i].acsr.tipo != kAccessoryLiquidInjection &&
                 state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
@@ -938,8 +938,8 @@ void updateBlackOilOutletProperties(const FluidTrackingState &state, const ProFl
                                     Vcr<double> &dg, Vcr<double> &yco2, Vcr<double> &API, Vcr<double> &BSW,
                                     Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH,
                                     double temperatureHigh, double temperatureLow) {
-    if ((*state.globals).chaverede == 0 || state.endNode == 1 ||
-        state.cells[state.lastCell].Mliqini > -(*state.globals).localtiny) {
+    if ((*state.globals).networkMode == 0 || state.endNode == 1 ||
+        state.cells[state.lastCell].Mliqini > -(*state.globals).smallValueTolerance) {
         if (state.trackGasOilRatio > 0 && state.cells[state.lastCell].flui.corrSat != 4)
             state.cells[state.lastCell].flui.RGO = rgo[state.lastCell - 1];
         if (state.trackGasGravity > 0 && state.input.flashCompleto == 0) {
@@ -1004,8 +1004,8 @@ void publishPhaseCellProperties(const FluidTrackingState &state, ProFlu *fluC, i
 void updatePhaseOutletProperties(const FluidTrackingState &state, const ProFlu &fluiRev, Vcr<double> &BSW,
                                  Vcr<double> &denag, Vcr<double> &VISCL, Vcr<double> &VISCH,
                                  double temperatureHigh, double temperatureLow) {
-    if ((*state.globals).chaverede == 0 || state.endNode == 1 ||
-        state.cells[state.lastCell].Mliqini > -(*state.globals).localtiny) {
+    if ((*state.globals).networkMode == 0 || state.endNode == 1 ||
+        state.cells[state.lastCell].Mliqini > -(*state.globals).smallValueTolerance) {
         if (hasProductionFluidOrNetwork(state)) {
             state.cells[state.lastCell].flui = state.cells[state.lastCell - 1].flui;
             if (hasMultipleFluidsOrNetwork(state)) {
@@ -1224,17 +1224,17 @@ void transportBlackOilProperties(const FluidTrackingState &state, ProFlu fluiRev
     Vcr<double> VISCH(state.lastCell);
     double dt = state.cells[1].dt;
     double temperatureLow;
-    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (state.input.tabent.tmin - 0) > (*state.globals).smallValueTolerance)
         temperatureLow = state.input.tabent.tmin + 0.1;
     else
         temperatureLow = 0.;
     double temperatureHigh;
-    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) > (*state.globals).localtiny)
+    if (state.input.flashCompleto == 1 && (70 - state.input.tabent.tmax) > (*state.globals).smallValueTolerance)
         temperatureHigh = state.input.tabent.tmax - 0.1;
     else
         temperatureHigh = 70.;
     int imin = 1;
-    if ((*state.globals).chaverede != 0 &&
+    if ((*state.globals).networkMode != 0 &&
         (state.cells[0].acsr.tipo == kAccessoryMultipleSource || state.input.ConContEntrada > 0))
         imin = 0;
     if (state.cells[0].acsr.tipo == kAccessoryRadialPorous &&
@@ -1243,7 +1243,7 @@ void transportBlackOilProperties(const FluidTrackingState &state, ProFlu fluiRev
     else if (state.cells[0].acsr.tipo == kAccessoryPorous2D &&
              (state.cells[0].fontemassCR + state.cells[0].fontemassGR + state.cells[0].fontemassLR) > 0.)
         state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
-#pragma omp parallel for num_threads((*state.globals).ntrd)
+#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
     for (int i = imin; i < state.lastCell; i++) {
         transportCellBlackOilProperties(state, i, rgo, dg, yco2, API, BSW, denag, VISCL, VISCH,
                                         temperatureHigh, temperatureLow, dt);
@@ -1297,7 +1297,7 @@ void transportPhaseVolumesAndViscosities(const FluidTrackingState &state, const 
                                          double flowArea, int i, Vcr<double> &BSW, Vcr<double> &denag,
                                          Vcr<double> &VISCL, Vcr<double> &VISCH, double dt) {
     computePhaseLiquidVolumeBalances(state, left, right, source, balance, dx, flowArea, i, dt);
-    if ((state.input.nfluP > 1) || (*state.globals).chaverede != 0) {
+    if ((state.input.nfluP > 1) || (*state.globals).networkMode != 0) {
         if (((balance.volpesFim > 1e-3) &&
              (source.deadOil > 0 || (balance.MultPd < 0 || balance.MultPe > 0))) &&
             state.input.nfluP > 0) {
@@ -1380,15 +1380,15 @@ void phaseSourceStandardRatesByAccessory(const FluidTrackingState &state, PhaseS
         if (hasProductionFluidOrNetwork(state)) {
             double bswaux = fluF.BSW;
             double contrabsw = 1. - bswaux;
-            if (contrabsw <= (*state.globals).localtiny)
-                contrabsw = 0.9 * (*state.globals).localtiny;
+            if (contrabsw <= (*state.globals).smallValueTolerance)
+                contrabsw = 0.9 * (*state.globals).smallValueTolerance;
             double rhoPSTF;
-            if (contrabsw > (*state.globals).localtiny)
+            if (contrabsw > (*state.globals).smallValueTolerance)
                 rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag +
                           fluF.Deng * kAirDensityAtStandardConditions * solutionGasRatioSource;
             else
                 rhoPSTF = 1000 * fluF.Denag;
-            if (contrabsw > (*state.globals).localtiny) {
+            if (contrabsw > (*state.globals).smallValueTolerance) {
                 source.deadOil *= (1. / rhoPSTF);
                 source.water *= ((bswaux / contrabsw) / rhoPSTF);
             } else {
@@ -1418,13 +1418,13 @@ void phaseSourceStandardRatesByAccessory(const FluidTrackingState &state, PhaseS
                                     state.cells[i].acsr.poroso2D.dados.transfer.BSW, solutionGasRatioSource,
                                     temperatureHigh, temperatureLow);
         }
-    } else if ((fabs(source.dissolvedGas) > (*state.globals).localtiny &&
+    } else if ((fabs(source.dissolvedGas) > (*state.globals).smallValueTolerance &&
                 state.cells[i].acsr.tipo != kAccessoryLiquidInjection &&
                 state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
                 state.cells[i].acsr.tipo != kAccessoryLeak &&
                 state.cells[i].acsr.tipo != kAccessoryRadialPorous &&
                 state.cells[i].acsr.tipo != kAccessoryPorous2D) ||
-               (fabs(source.freeGas) > (*state.globals).localtiny &&
+               (fabs(source.freeGas) > (*state.globals).smallValueTolerance &&
                 state.cells[i].acsr.tipo != kAccessoryGasInjection &&
                 state.cells[i].acsr.tipo != kAccessoryLiquidInjection &&
                 state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
@@ -1772,9 +1772,9 @@ void transportPhaseMolarFractions(const FluidTrackingState &state, ProFlu fluiRe
     double temperatureLow = 0.;
     double temperatureHigh = 70.;
     if (state.compositionalRefreshCounter == state.input.miniTabAtraso && state.input.miniTabAtraso > 0)
-        (*state.globals).modoTransiente = 0;
+        (*state.globals).transientPropertyMode = 0;
     int imin = 1;
-    if ((*state.globals).chaverede != 0 &&
+    if ((*state.globals).networkMode != 0 &&
         (state.cells[0].acsr.tipo == kAccessoryMultipleSource || state.input.ConContEntrada > 0))
         imin = 0;
 
@@ -1790,7 +1790,7 @@ void transportPhaseMolarFractions(const FluidTrackingState &state, ProFlu fluiRe
     updatePhaseOutletProperties(state, fluiRev, BSW, denag, VISCL, VISCH, temperatureHigh, temperatureLow);
     delete[] fluC;
     if (state.input.miniTabAtraso > 0)
-        (*state.globals).modoTransiente = 1;
+        (*state.globals).transientPropertyMode = 1;
 }
 
 void correctGasSpecificGravity(Cel *const &cells, const Ler &input, const int &steadyIteration, int i) {

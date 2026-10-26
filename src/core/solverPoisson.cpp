@@ -6,12 +6,12 @@
  */
 #include "solverPoisson.h"
 
-solverP::solverP(varGlob1D *Vvg1dSP, string nomeArquivoEntrada, double vCondGlob, double vCondLoc, double vhE, double vhInt,
+solverP::solverP(SimulationContext *context, string nomeArquivoEntrada, double vCondGlob, double vCondLoc, double vhE, double vhInt,
                  double vTint, double vTamb, double vdiamI, double vdiamE, int vindcel) : dados(nomeArquivoEntrada, vCondGlob, vCondLoc, vhE, vhInt, vTint, vTamb, vdiamI, vdiamE),
                                                                                           termolivre(dados.nele), matglob(dados.nele, dados.noZero, dados.vecsra, dados.veclm, dados.vecfnz) {
-    vg1dSP = Vvg1dSP;
+    simulationContext = context;
     indCel = vindcel;
-    malha = malha2d(vg1dSP, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans);
+    malha = malha2d(simulationContext, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans);
     for (int i = 0; i < malha.nele; i++) {
         malha.mlh2d[i].CC = dados.CC;
         for (int j = 0; j < dados.prop.parserie; j++) {
@@ -118,7 +118,7 @@ solverP::solverP(varGlob1D *Vvg1dSP, string nomeArquivoEntrada, double vCondGlob
 }
 
 solverP::solverP() : dados(), termolivre(1), matglob(1, 1) {
-    vg1dSP = 0;
+    simulationContext = 0;
     indCel = 0;
     kontaTempo = 0;
     malha = malha2d();
@@ -128,8 +128,8 @@ solverP::solverP() : dados(), termolivre(1), matglob(1, 1) {
 solverP::solverP(const solverP &vPoisson) : dados(vPoisson.dados.entrada, vPoisson.dados.condGlob, vPoisson.dados.condLoc, vPoisson.dados.hE, vPoisson.dados.hI,
                                                   vPoisson.dados.tInt, vPoisson.dados.tAmb, vPoisson.dados.diamInt, vPoisson.dados.diamExt),
                                             termolivre(dados.nele), matglob(dados.nele, dados.noZero, dados.vecsra, dados.veclm, dados.vecfnz) {
-    vg1dSP = vPoisson.vg1dSP;
-    malha = malha2d(vg1dSP, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans);
+    simulationContext = vPoisson.simulationContext;
+    malha = malha2d(simulationContext, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans);
     indCel = vPoisson.indCel;
     for (int i = 0; i < malha.nele; i++) {
         malha.mlh2d[i].CC = dados.CC;
@@ -230,13 +230,13 @@ solverP::solverP(const solverP &vPoisson) : dados(vPoisson.dados.entrada, vPoiss
 
 solverP &solverP::operator=(const solverP &vPoisson) {
     if (this != &vPoisson) {
-        vg1dSP = vPoisson.vg1dSP;
+        simulationContext = vPoisson.simulationContext;
         indCel = vPoisson.indCel;
         dados = vPoisson.dados;
         termolivre = vPoisson.termolivre;
         matglob = vPoisson.matglob;
 
-        malha = malha2d(vg1dSP, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans);
+        malha = malha2d(simulationContext, dados.xcoor, dados.noEle, dados.tipo, dados.atributo, 3, dados.nele, dados.nno, dados.temp.perm, dados.temp.trans);
         for (int i = 0; i < malha.nele; i++) {
             malha.mlh2d[i].CC = dados.CC;
             for (int j = 0; j < dados.prop.parserie; j++) {
@@ -342,9 +342,9 @@ void solverP::indrazT(int &ind, double &raz) {
 
     for (int i = 0; i <= dados.temp.parserie - 1; i++) {
         if (i < dados.temp.parserie - 1) {
-            if ((*vg1dSP).lixo5 >= dados.temp.tempo[i] && (*vg1dSP).lixo5 < dados.temp.tempo[i + 1]) {
+            if ((*simulationContext).simulationTime >= dados.temp.tempo[i] && (*simulationContext).simulationTime < dados.temp.tempo[i + 1]) {
                 ind = i;
-                raz = 1 - ((*vg1dSP).lixo5 - dados.temp.tempo[i]) / (dados.temp.tempo[i + 1] - dados.temp.tempo[i]);
+                raz = 1 - ((*simulationContext).simulationTime - dados.temp.tempo[i]) / (dados.temp.tempo[i + 1] - dados.temp.tempo[i]);
                 break;
             }
         } else if (i == dados.temp.parserie - 1) {
@@ -656,8 +656,8 @@ void solverP::finalizaPassoTransiente(double vdelt, int indTramo) {
         malha.mlh2d[i].cel2D.tempC0 = malha.mlh2d[i].cel2D.tempC;
     }
 
-    if (((*vg1dSP).lixo5 <= dados.temp.tempoImp[kontaTempo] && (*vg1dSP).lixo5 + delt >= dados.temp.tempoImp[kontaTempo])) {
-        malha.imprime((*vg1dSP).lixo5, indCel, indTramo);
+    if (((*simulationContext).simulationTime <= dados.temp.tempoImp[kontaTempo] && (*simulationContext).simulationTime + delt >= dados.temp.tempoImp[kontaTempo])) {
+        malha.imprime((*simulationContext).simulationTime, indCel, indTramo);
         kontaTempo++;
         if (kontaTempo >= dados.temp.parserieImp)
             kontaTempo--;
