@@ -18,6 +18,7 @@ template <class T> class BandMtx;
 #include "RuntimeDiagnostics.h"
 
 #include <chrono>
+#include <deque>
 #include <string>
 #include <vector>
 
@@ -424,7 +425,7 @@ struct TransientSolveState {
     int &compositionalRefreshCounter;
 
     /// SProd::transient.fluxSamples -- written or read by the solve; not promised const.
-    std::vector<double> &fluxHistory;
+    std::deque<double> &fluxHistory;
 
     /// SProd::trends.gasWallProfileCells -- written or read by the solve; not promised const.
     std::vector<int> &gasCrossSectionCellCounts;
@@ -499,7 +500,7 @@ struct TransientSolveState {
     solverP3D &poissonSolver3D;
 
     /// SProd::transient.pressureSamples -- written or read by the solve; not promised const.
-    std::vector<double> &pressureHistory;
+    std::deque<double> &pressureHistory;
 
     /// SProd::transient.printCounter -- written or read by the solve; not promised const.
     int &printCounter;
@@ -541,7 +542,7 @@ struct TransientSolveState {
     int &startNode;
 
     /// SProd::transient.timeSamples -- written or read by the solve; not promised const.
-    std::vector<double> &timeStepHistory;
+    std::deque<double> &timeStepHistory;
 
     /// SProd::transient.accumulatedFlux -- written or read by the solve; not promised const.
     double &totalFlux;
@@ -562,16 +563,18 @@ struct TransientSolveState {
     std::vector<int> &unitCellTimeCounters;
 
     /// SProd::transient.voidFractionSamples -- written or read by the solve; not promised const.
-    std::vector<double> &voidFractionHistory;
+    std::deque<double> &voidFractionHistory;
 
 };
 
 /// Advances and reports one transient step, preserving the ordered coupling,
-/// property, history, and output phases. The caller drives the time loop;
-
-/// network time advancement is controlled by the network caller.
-void solveTransientStep(const TransientSolveState &state, const TransientDependencies &dependencies, double titRev, double alfRev, double betRev,
-                        int nrede, const ProFlu *fluiRev);
+/// property, history, and output phases. Standalone lines advance their physics
+/// here; network callers supply an advanced state for the common finalization.
+/// Trend flushing is selected before synchronizing the network clock. Only
+/// standalone lines advance simulationTime at the end of this call.
+void solveTransientStep(const TransientSolveState &state, const TransientDependencies &dependencies,
+                        double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction,
+                        int networkIndex, const ProFlu *reverseFluid);
 
 }  // namespace transient
 }  // namespace sisprod

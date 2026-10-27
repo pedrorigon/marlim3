@@ -5,6 +5,7 @@
  *      Author: Eduardo
  */
 #include "solverPoisson.h"
+#include <algorithm>
 
 solverP::solverP(SimulationContext *context, string nomeArquivoEntrada, double vCondGlob, double vCondLoc, double vhE, double vhInt,
                  double vTint, double vTamb, double vdiamI, double vdiamE, int vindcel) : dados(nomeArquivoEntrada, vCondGlob, vCondLoc, vhE, vhInt, vTint, vTamb, vdiamI, vdiamE),
@@ -581,19 +582,36 @@ void solverP::transientePoisson(double vdelt) {
         }
     }
     itera = 0;
+    const int threadCount = omp_in_parallel() ? 1 : std::max(1, std::min(dados.nthrdLocal, malha.nele));
+    const auto saveGradient = [this](int i) {
+        for (int j = 0; j < malha.mlh2d[i].cel2D.dim; j++)
+            malha.mlh2d[i].cel2D.gradGreenTI[j] = malha.mlh2d[i].cel2D.gradGreenT[j];
+    };
+    const auto updateGradient = [this](int i) { malha.mlh2d[i].calcGradGreen(); };
+    const auto assembleElement = [this](int i) { malha.mlh2d[i].GeraLocal(); };
+    const int elementCount = malha.nele;
     while (norma > 1.e-5) {
-#pragma omp parallel for num_threads(dados.nthrdLocal)
-        for (int i = 0; i < malha.nele; i++) {
-            for (int j = 0; j < malha.mlh2d[i].cel2D.dim; j++) {
-                malha.mlh2d[i].cel2D.gradGreenTI[j] = malha.mlh2d[i].cel2D.gradGreenT[j];
+        if (threadCount == 1) {
+            for (int i = 0; i < elementCount; ++i)
+                saveGradient(i);
+            for (int i = 0; i < elementCount; ++i)
+                updateGradient(i);
+            for (int i = 0; i < elementCount; ++i)
+                assembleElement(i);
+        } else {
+#pragma omp parallel num_threads(threadCount) default(none) shared(saveGradient, updateGradient, assembleElement) firstprivate(elementCount)
+            {
+#pragma omp for schedule(static)
+                for (int i = 0; i < elementCount; ++i)
+                    saveGradient(i);
+#pragma omp for schedule(static)
+                for (int i = 0; i < elementCount; ++i)
+                    updateGradient(i);
+#pragma omp for schedule(static) nowait
+                for (int i = 0; i < elementCount; ++i)
+                    assembleElement(i);
             }
         }
-#pragma omp parallel for num_threads(dados.nthrdLocal)
-        for (int i = 0; i < malha.nele; i++)
-            malha.mlh2d[i].calcGradGreen();
-#pragma omp parallel for num_threads(dados.nthrdLocal)
-        for (int i = 0; i < malha.nele; i++)
-            malha.mlh2d[i].GeraLocal();
         indsra = 0;
         for (int i = 0; i < malha.nele; i++) {
             int dimNoZero = malha.mlh2d[i].cel2D.indVizCres.size();

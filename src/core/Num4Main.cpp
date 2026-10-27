@@ -35,6 +35,7 @@
 #include "RuntimeDiagnostics.h"
 #include "SisProd.h"
 #include "SisProdConstants.h"
+#include "SisProdThermal.h"
 #include "TrocaCalor.h"
 #include "Vetor.h"
 #include "acessorios.h"
@@ -70,6 +71,7 @@
 #include <math.h>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <omp.h>
 #include <signal.h>
 #include <sstream>
@@ -13167,28 +13169,21 @@ int main(int argc, char **argv) {
                 branchContext.transientPropertyMode = 1;
                 (*sistem1.simulationContext).transientPropertyMode = 1;
                 if (sistem1.arq.modoDifus3D == 1) {
+                    if (sistem1.arq.nacop <= 0 ||
+                        static_cast<int>(sistem1.arq.celAcop.size()) != sistem1.arq.nacop ||
+                        sistem1.arq.celAcop[0].indCel < 0 || sistem1.arq.celAcop[0].indCel > sistem1.ncel)
+                        NumError("Configuracao invalida de celulas do acoplamento termico 3D");
                     int icel = sistem1.arq.celAcop[0].indCel;
                     double hiv = sistem1.celula[icel].calor.hi;
                     double hev = sistem1.celula[icel].calor.he; // sistem1.celula[icel].calor.he;
                     double tiv = sistem1.celula[icel].temp;
                     sistem1.coupling3D.poissonSolver3D = solverP3D(sistem1.arq.modoDifus3DJson, sistem1.simulationContext,
                                                   sistem1.arq.nacop, sistem1.arq.geoAcop, hiv, hev, tiv);
-                    if (sistem1.arq.nacop != sistem1.coupling3D.poissonSolver3D.dados.CC.nAcop)
-                        NumError(
-                            "O numero de acoplamentos indicados no json principal é diferente do numero de acoplamentos indicados no parse do solver 3D");
-                    else {
-                        for (int iacop0 = 0; iacop0 < sistem1.arq.nacop; iacop0++) {
-                            int inexistente = 1;
-                            for (int iacop1 = 0; iacop1 < sistem1.arq.nacop; iacop1++) {
-                                if (sistem1.arq.celAcop[iacop0].rotulo == sistem1.coupling3D.poissonSolver3D.dados.CC.rotuloAcop[iacop1]) {
-                                    inexistente = 0;
-                                    sistem1.coupling3D.coupledIndexCorrections.push_back(iacop1);
-                                    break;
-                                }
-                            }
-                            if (inexistente == 1)
-                                NumError("Rotulo de acoplamento indicado mas não encontrado");
-                        }
+                    try {
+                        sistem1.coupling3D.coupledIndexCorrections = sisprod::thermal::buildThermalCouplingIndices(
+                            sistem1.arq, sistem1.coupling3D.poissonSolver3D, sistem1.ncel);
+                    } catch (const std::invalid_argument &error) {
+                        NumError(error.what());
                     }
 
                     for (int iacop = 0; iacop < sistem1.arq.nacop; iacop++) {

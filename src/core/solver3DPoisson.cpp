@@ -538,7 +538,6 @@ void solverP3D::transientePoisson(double vdelt) {
             malha.vecSolv[i] = malha.mlh3d[i].cel3D.tempC;
         }
         norma = 0.;
-#pragma omp parallel for num_threads((*simulationContext).poisson3DThreadCount)
         for (int i = 0; i < malha.nele; i++) {
             malha.mlh3d[i].cel3D.tempCI = malha.mlh3d[i].cel3D.tempC;
             malha.mlh3d[i].cel3D.tempC = malha.vecSolv[i];

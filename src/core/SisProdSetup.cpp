@@ -742,7 +742,8 @@ void SProd::applyDensityCorrectionsAndInletFluid() {
 }
 
 void SProd::allocateEventProfileAndTrendArrays() {
-    for (int i = 0; i < ncel; i++) {
+    transient.poisson2DCells.clear();
+    for (int i = 0; i <= ncel; i++) {
         if (celula[i].calor.difus2D == 1) {
             transient.poisson2DCells.push_back(i);
         }

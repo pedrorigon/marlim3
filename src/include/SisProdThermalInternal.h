@@ -59,6 +59,19 @@ struct TransientInletTemperature {
     bool prescribed;
 };
 
+/// Frozen linearized energy equation over one hydrodynamic step. Source
+/// increments and decay are integrated over the full cell time step; the donor
+/// Courant number is divided among simultaneous thermal substeps.
+struct TransientTemperatureStep {
+    double initialTemperature = 0.;
+    double timeCoefficient = 1.;
+    double sourceIncrement = 0.;
+    double sourceDecay = 0.;
+    double courant = 0.;
+    int donor = -1;
+    bool evolves = false;
+};
+
 struct TemperatureBalance {
     double cellLength;
     double meanCellLength;
@@ -82,6 +95,8 @@ struct TemperatureBalance {
 struct TemperatureSourceTerms {
     double gas;
     double liquid;
+    /// Positive mass-inflow heat-capacity rate per unit length.
+    double heatCapacityRate = 0.;
 };
 
 /// Water cuts evaluated while copying the two liquid-flow donors.
@@ -175,8 +190,27 @@ template <typename Axis>
 /// Selects the inlet characteristic at the saved internal temperature. Incoming
 /// characteristics use the configured external or source temperature; outgoing
 /// and stationary characteristics retain the stored internal temperature.
-/// Reuses transport properties when the selected temperature is unchanged.
+/// An isolated closed endpoint evolves as a finite control volume. The selected
+/// transport coefficients remain fixed throughout the linearized energy step.
 [[nodiscard]] TransientInletTemperature prepareTransientInletTemperature(const ThermalState &state);
+
+/// Prepares one transient operator and advances its wall exactly once. The
+/// external inlet/outlet temperature is imposed only on incoming characteristics.
+[[nodiscard]] TransientTemperatureStep prepareTransientTemperatureStep(
+    const ThermalState &state, int cellIndex, const TransientInletTemperature *inlet);
+
+/// Integrates the affine local source over a fraction of the full cell step.
+/// Uses expm1 for a stable evaluation when the source relaxation is small.
+[[nodiscard]] double integrateTemperatureSource(const TransientTemperatureStep &step,
+                                               double temperature, double fraction);
+
+/// Integrates frozen energy operators with simultaneous upwind updates and
+/// donor Courant numbers at most 0.8. Source relaxation is integrated exactly
+/// between the advection updates. No temperature or rate clipping is applied.
+/// Distinct read/write buffers synchronize the source and donor passes. The
+/// final donor pass is synchronized by the end of the parallel region.
+void integrateTransientTemperatureField(const ThermalState &state,
+                                        const std::vector<TransientTemperatureStep> &steps);
 
 /// Prepares heat-transfer state and energy coefficients using previous pressure
 /// and current temperature, reusing transport properties at that temperature.
@@ -194,8 +228,9 @@ void computeCellTemperature(const ThermalState &state, int cellIndex, int steady
 
 /// Computes the transient kinetic-energy term where both cells have no accessory.
 /// Also replaces the balance velocities with downstream face velocities for the
-/// subsequent interfacial-work calculation. At cell zero, incoming gas uses the
-/// inlet face void fraction rather than a left control volume.
+/// subsequent interfacial-work calculation. Each phase uses its own flow sign
+/// to select its face fraction, including the saved liquid velocity. At cell
+/// zero, incoming phases use the inlet face rather than a left control volume.
 double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
                                      TemperatureBalance &balance);
 
@@ -204,8 +239,9 @@ void clearSourceSpecificHeats(double &sourceGasSpecificHeat,
                               double &sourceSpecificHeatRatio,
                               double &sourceLiquidSpecificHeat);
 
-/// Computes source heating for the temperature balance, using previous pressure
-/// and source-specific temperature and accessory rules.
+/// Computes incoming enthalpy differences, linearized with cp at previous
+/// pressure and the source-specific temperature and accessory rules. Withdrawals
+/// carry the local fluid enthalpy and do not add a temperature relaxation term.
 TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                                                      int cellIndex,
                                                      double cellLength);
@@ -326,13 +362,9 @@ void selectAndApplyBufferedInletFlowRegime(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double distributionCoefficient, double driftVelocity,
     double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
 
-/// Advances one cell temperature and stores its rate using the global time step.
-/// Indices beyond lastCell use the external boundary or gas surface temperature.
-void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex,
-                                    const TransientInletTemperature &inlet);
-
-/// Refreshes the Poisson-2D cells and then the production column in separate
-/// OpenMP loops with their completion barriers.
+/// Prepares Poisson-2D cells and the remaining column using one outer team.
+/// A single 2D wall runs on the caller so its solver can distribute its own mesh.
+/// Integrates the complete frozen field with synchronized thermal substeps.
 void refreshTemperatureField(const ThermalState &state, const TransientInletTemperature &inlet);
 
 /// Computes steady source heating from the left cell accessory.
@@ -435,6 +467,7 @@ void advanceReverseSteadyTemperatureSubsteps(const ThermalState &state, int cell
 
 /// Applies outlet backflow rules before advancing thermal state.
 /// The two boundary modes retain their distinct mixture mass-flow assignments.
+/// A prohibited phase has zero mass and volume flow before the energy balance.
 void prepareTransientOutletFlow(const ThermalState &state);
 
 /// Prepares coupled-cell interface data in parallel, advances the 3D Poisson

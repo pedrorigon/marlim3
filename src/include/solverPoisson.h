@@ -54,6 +54,8 @@ class solverP {
     void inicializaTransientePoisson();
     double defineDeltPoisson();
     void transientePoissonDummy(double delt);
+    /// Advances the wall mesh, distributing elements only outside an active team.
+    /// Cell-wise callers retain ownership of the outer parallel distribution.
     void transientePoisson(double delt);
     void imprimePermanente(int indTramo = -1);
     void finalizaPassoTransiente(double vdelt, int indTramo = -1);

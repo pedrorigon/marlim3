@@ -599,6 +599,19 @@ void updateInteriorVolumeFlows(const TransientStepState &state, int i, double ar
 void updateOutletAuxiliaryPressure(const TransientStepState &state, int i) {
     Cel &cell = state.cells[i];
     Cel &upstreamCell = state.cells[i - 1];
+    if (state.input.MedSimpPresFront != 0) {
+        cell.presauxini = cell.presaux;
+        cell.presaux = cell.pres - upstreamCell.dpB / units::kPascalPerKgfPerCm2;
+        cell.presaux = 0.5 * cell.presaux + 0.5 * upstreamCell.pres;
+        cell.dpresaux = -0.5 * upstreamCell.dpB / units::kPascalPerKgfPerCm2;
+        upstreamCell.presauxRini = upstreamCell.presauxR;
+        upstreamCell.presauxR = cell.presaux;
+        if (i < state.lastCell) {
+            state.cells[i + 1].presauxLini = state.cells[i + 1].presauxL;
+            state.cells[i + 1].presauxL = cell.presaux;
+        }
+        return;
+    }
     double dx = 0.5 * cell.dx;
     double diameter = cell.duto.a;
     double area = 0.25 * std::numbers::pi * diameter * diameter;
@@ -620,8 +633,8 @@ void updateOutletAuxiliaryPressure(const TransientStepState &state, int i) {
         double dhid = 4 * area / perimeter;
         reynolds = cell.Rey(dhid, j, rhomix, viscmix);
     }
-    double frictionFactor = cell.fric(reynolds, cell.duto.rug / diameter);
-    double medpres = 0;
+    double frictionFactor = j == 0. ? 0. : cell.fric(reynolds, cell.duto.rug / diameter);
+    double medpres = 0.;
     double gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
     double gradhidro = (1 - medpres) * kGravity * sin(cell.duto.teta) * rhomix * dx;
 
@@ -648,7 +661,7 @@ void updateOutletAuxiliaryPressure(const TransientStepState &state, int i) {
         double dhid = 4 * area / perimeter;
         reynolds = upstreamCell.Rey(dhid, j, rhomix, viscmix);
     }
-    frictionFactor = upstreamCell.fric(reynolds, upstreamCell.duto.rug / diameter);
+    frictionFactor = j == 0. ? 0. : upstreamCell.fric(reynolds, upstreamCell.duto.rug / diameter);
     gradfric = (1 - medpres) * 0.5 * frictionFactor * rhomix * (fabs(j) * j) * perimeter * dx / area;
     gradhidro = (1 - medpres) * kGravity * sin(upstreamCell.duto.teta) * rhomix * dx;
 
@@ -1118,6 +1131,85 @@ void restoreIntermediateCouplingState(const TransientSolveState &state, int kont
     }
 }
 
+int prepareCouplingMode(const TransientStepState &state, int explicitScheme) {
+    for (int i = 0; i <= state.input.nvalv; i++)
+        state.masterCriticalRatio[i] = 0.5;
+    captureValveAreaRatios(state, state.valveAreaRatiosAfterUpdate);
+    for (int i = 0; i <= state.input.nvalv; i++)
+        if (state.valveAreaRatiosAfterUpdate[i] != state.valveAreaRatiosBeforeUpdate[i])
+            state.fullModel = 0;
+    TimeStepPolicies::apply<TimeStepHook::AfterValveOpenings>(
+        {state, kOutsideCouplingLoop, explicitScheme});
+    if (state.fullModel == 0)
+        state.input.cicloAcopTerm = 0;
+    else
+        state.input.cicloAcopTerm = 1;
+    return state.input.cicloAcopTerm;
+}
+
+double advanceStandaloneTransientStep(const TransientSolveState &state,
+                                      const TransientDependencies &dependencies,
+                                      double reverseQuality, double reverseVoidFraction,
+                                      double reverseLiquidFraction) {
+    dependencies.hydrates();
+
+    if (state.step.input.flashCompleto == 2 && (*state.step.globals).simulationTime < 1e-15 && state.step.input.miniTabAtraso > 0) {
+        refreshFluidMiniTable(state.step);
+    }
+
+    if ((*state.step.globals).simulationTime < 1e-15) {
+        for (int i = 0; i < state.step.input.nCelUnit; i++)
+            state.unitCellTimeCounters[i] = 1;
+        for (int i = 0; i < state.step.input.ntendp; i++) {
+            state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).simulationTime, i, state.productionTrendCounts[i]);
+        }
+        thermal::updateDistributedMassTransfer(dependencies.thermal, dependencies.thermalDependencies);
+    }
+
+    int explicitScheme = 0;
+    state.step.fullModel = state.step.input.correcaoMassaEspLiq;
+    state.step.input.atualizaSonico((*state.step.globals).simulationTime, explicitScheme);
+    computeTimeStep(state.step, explicitScheme);
+    state.step.auxiliaryCflTimeStep = state.step.timeStep;
+    state.step.finalAuxiliaryTimeStep = state.step.timeStep;
+
+    state.step.restart = 0;
+    const int masterValveCell = state.step.input.master1.posic;
+    captureValveAreaRatios(state.step, state.step.valveAreaRatiosBeforeUpdate);
+
+    double maximumUnloadingFlowRate = 0.;
+    if (state.step.input.controDesc == 1)
+        maximumUnloadingFlowRate = gaslift::searchUnloadingInjectionPressure(dependencies.gasLift);
+    gaslift::solveGasLine(dependencies.gasLift, dependencies.thermal);
+    state.initialGasSurfacePressure = state.step.gasSurfacePressure;
+    state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,
+                 state.defaultInletTemperature, state.initialGasPressure, state.initialGasTemperature,
+                 state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletComplementaryFraction, (*state.step.globals).simulationTime, state.step.timeStep);
+    refreshInletCondition(state.step);
+
+    const int maximumThermalCouplingCycle = prepareCouplingMode(state.step, explicitScheme);
+    state.step.initiallyOpen = state.step.surfaceChokeOpen;
+    state.initialOpenTime = state.step.openTime;
+    for (int couplingIteration = 0; couplingIteration <= state.step.fullModel; couplingIteration++) {
+        advanceCouplingIteration(state, dependencies, couplingIteration, masterValveCell, explicitScheme,
+                                 maximumThermalCouplingCycle, reverseQuality, reverseVoidFraction,
+                                 reverseLiquidFraction);
+    }
+
+    if (state.step.fullModel == 0 || state.step.input.cicloAcopTerm == 0) {
+        for (int cycle = 0; cycle <= maximumThermalCouplingCycle; cycle++) {
+            thermal::advanceTransientEnergy(dependencies.thermal, state.step, cycle, maximumThermalCouplingCycle);
+        }
+    }
+    return maximumUnloadingFlowRate;
+}
+
+void finalizeBuriedPipeConduction(const TransientStepState &state,
+                                 const std::vector<int> &cellIndices) {
+    for (int cellIndex : cellIndices)
+        state.cells[cellIndex].calor.poisson2D.finalizaPassoTransiente(state.timeStep, state.branchIndex);
+}
+
 void finalizeTransientCellState(const TransientSolveState &state, const TransientDependencies &dependencies, const ProFlu *fluiRev) {
     if (state.poissonSolver3D.itera > 7) {
         state.poissonSolver3D.penalizaDt = 20;
@@ -1174,13 +1266,13 @@ void updateTransientMovingMeans(const TransientSolveState &state) {
     state.totalVoidFraction += state.step.cells[state.step.lastCell - 1].alf * state.step.timeStep;
     if ((*state.step.globals).simulationTime > state.step.movingMeanStartTime) {
         state.totalPressure -= state.pressureHistory.front();
-        state.pressureHistory.erase(state.pressureHistory.begin());
+        state.pressureHistory.pop_front();
         state.totalFlux -= state.fluxHistory.front();
-        state.fluxHistory.erase(state.fluxHistory.begin());
+        state.fluxHistory.pop_front();
         state.totalVoidFraction -= state.voidFractionHistory.front();
-        state.voidFractionHistory.erase(state.voidFractionHistory.begin());
+        state.voidFractionHistory.pop_front();
         state.movingMeanCounter -= state.timeStepHistory.front();
-        state.timeStepHistory.erase(state.timeStepHistory.begin());
+        state.timeStepHistory.pop_front();
         state.step.movingMeanPressure = state.totalPressure / state.movingMeanCounter;
         state.step.movingMeanFlux = state.totalFlux / state.movingMeanCounter;
         state.movingMeanVoidFraction = state.totalVoidFraction / state.movingMeanCounter;
@@ -1719,9 +1811,9 @@ void applyOutletPressureCondition(const TransientStepState &state, [[maybe_unuse
             masliq = sinal * maxSup * (1. - chokeGasMassFraction);
             masgas = sinal * maxSup * chokeGasMassFraction;
 
-            state.cells[state.lastCell].DmasschokeG = -1 * (1. - chokeGasMassFraction) * dmaxsup;
-            state.cells[state.lastCell].DmasschokeL = -1 * chokeGasMassFraction * ((1 - betSup) * rholp / rholmix) * dmaxsup;
-            state.cells[state.lastCell].DmasschokeC = -1 * chokeGasMassFraction * (betSup * rholc / rholmix) * dmaxsup;
+            state.cells[state.lastCell].DmasschokeG = -1 * chokeGasMassFraction * dmaxsup;
+            state.cells[state.lastCell].DmasschokeL = -1 * (1. - chokeGasMassFraction) * ((1 - betSup) * rholp / rholmix) * dmaxsup;
+            state.cells[state.lastCell].DmasschokeC = -1 * (1. - chokeGasMassFraction) * (betSup * rholc / rholmix) * dmaxsup;
 
             state.surfaceChokeMassFlag = 1;
             if (state.surfaceChokeMassFlag != masChkSup0)
@@ -2269,104 +2361,40 @@ void refreshInletCondition(const TransientStepState &state) {
     }
 }
 
-void solveTransientStep(const TransientSolveState &state, const TransientDependencies &dependencies, double titRev, double alfRev, double betRev, int nrede,
-                        const ProFlu *fluiRev) {
-    chrono::steady_clock::time_point begin, end;
-    begin = chrono::steady_clock::now();
-    double velmaxdesc = 0;
+void solveTransientStep(const TransientSolveState &state, const TransientDependencies &dependencies,
+                        double reverseQuality, double reverseVoidFraction, double reverseLiquidFraction,
+                        int networkIndex, const ProFlu *reverseFluid) {
+    const bool screenOutputEnabled = state.step.input.saidaTela == 1;
+    const auto begin = screenOutputEnabled ? chrono::steady_clock::now() : chrono::steady_clock::time_point{};
+    double maximumUnloadingFlowRate = 0.;
+    if ((*state.step.globals).networkMode == 0)
+        maximumUnloadingFlowRate = advanceStandaloneTransientStep(
+            state, dependencies, reverseQuality, reverseVoidFraction, reverseLiquidFraction);
 
-    if ((*state.step.globals).networkMode == 0) {
-
-        dependencies.hydrates();
-
-        if (state.step.input.flashCompleto == 2 && (*state.step.globals).simulationTime < 1e-15 && state.step.input.miniTabAtraso>0) {
-            refreshFluidMiniTable(state.step);
-        }
-
-        if ((*state.step.globals).simulationTime < 1e-15) {
-            for(int iCelU=0;iCelU<state.step.input.nCelUnit;iCelU++)state.unitCellTimeCounters[iCelU]=1;
-            for (int i = 0; i < state.step.input.ntendp; i++) {
-                state.step.input.imprimeTrend(state.step.cells, state.productionTrendMatrix[i], (*state.step.globals).simulationTime, i, state.productionTrendCounts[i]);
-            }
-            thermal::updateDistributedMassTransfer(dependencies.thermal, dependencies.thermalDependencies);
-        }
-
-        int vExpli = 0;
-        state.step.fullModel = state.step.input.correcaoMassaEspLiq;
-        state.step.input.atualizaSonico((*state.step.globals).simulationTime, vExpli);
-        computeTimeStep(state.step, vExpli);
-        state.step.auxiliaryCflTimeStep = state.step.timeStep;
-        state.step.finalAuxiliaryTimeStep = state.step.timeStep;
-
-        state.step.restart = 0;
-        int celpos = state.step.input.master1.posic;
-        captureValveAreaRatios(state.step, state.step.valveAreaRatiosBeforeUpdate);
-
-        if (state.step.input.controDesc == 1)
-            velmaxdesc = gaslift::searchUnloadingInjectionPressure(dependencies.gasLift);
-        gaslift::solveGasLine(dependencies.gasLift, dependencies.thermal);
-        state.initialGasSurfacePressure = state.step.gasSurfacePressure;
-        state.step.input.atualiza(state.startNode, state.step.endNode, state.annulusDrift, state.step.surfaceChoke, state.injectionChoke, state.step.cells, state.step.gasCells, state.step.gasSurfacePressure,
-                     state.defaultInletTemperature, state.initialGasPressure, state.initialGasTemperature,
-                     state.step.inletPressure, state.step.inletTemperature, state.step.inletQuality, state.step.inletComplementaryFraction, (*state.step.globals).simulationTime, state.step.timeStep);
-        refreshInletCondition(state.step);
-
-        for (int i = 0; i <= state.step.input.nvalv; i++)
-            state.step.masterCriticalRatio[i] = 0.5;
-        captureValveAreaRatios(state.step, state.step.valveAreaRatiosAfterUpdate);
-        for (int i = 0; i <= state.step.input.nvalv; i++)
-            if (state.step.valveAreaRatiosAfterUpdate[i] != state.step.valveAreaRatiosBeforeUpdate[i])
-                state.step.fullModel = 0;
-        TimeStepPolicies::apply<TimeStepHook::AfterValveOpenings>(
-            {state.step, kOutsideCouplingLoop, vExpli});
-        if (state.step.fullModel == 0)
-            state.step.input.cicloAcopTerm = 0;
-        else
-            state.step.input.cicloAcopTerm = 1;
-        int ciclomax = state.step.input.cicloAcopTerm;
-
-        state.step.initiallyOpen = state.step.surfaceChokeOpen;
-        state.initialOpenTime = state.step.openTime;
-        for (int kontaAcop = 0; kontaAcop <= 1 * state.step.fullModel; kontaAcop++) {
-            advanceCouplingIteration(state, dependencies, kontaAcop, celpos, vExpli, ciclomax, titRev, alfRev, betRev);
-        }
-
-        if (state.step.fullModel == 0 || state.step.input.cicloAcopTerm == 0) {
-            for (int ciclo = 0; ciclo <= ciclomax; ciclo++) {
-                thermal::advanceTransientEnergy(dependencies.thermal, state.step, ciclo, ciclomax);
-            }
-        }
-    }
-    finalizeTransientCellState(state, dependencies, fluiRev);
-
+    finalizeTransientCellState(state, dependencies, reverseFluid);
     updateTransientMovingMeans(state);
-    // Finalize transient conduction in buried pipes.
-    for (int j = 0; j <= state.step.lastCell; j++) {
-        if (state.step.cells[j].calor.difus2D == 1) {
-            state.step.cells[j].calor.poisson2D.finalizaPassoTransiente(state.step.timeStep, state.step.branchIndex);
-        }
-    }
+    finalizeBuriedPipeConduction(state.step, dependencies.thermal.poisson2DCellIndices);
 
-    int MaxKontaImpres = 1000;
-    int ordemImpT = 0;
+    constexpr int maximumProgressReportInterval = 1000;
+    int trendWriteOrder = 0;
     if ((fabs(state.step.input.logevento[state.logCounter].instante - (*state.step.globals).simulationTime) < state.step.timeStep) ||
-        progressReportIsDue(state, MaxKontaImpres) ||
+        progressReportIsDue(state, maximumProgressReportInterval) ||
         (*state.step.globals).simulationTime < 1e-15) {
         state.printPassCount++;
-        ordemImpT = 1;
+        trendWriteOrder = 1;
     }
 
     if ((*state.step.globals).networkMode != 0)
         (*state.step.globals).simulationTime = (*state.step.globals).networkSimulationTime;
-    writeProfiles(state, nrede);
-    writeTrends(state, dependencies, ordemImpT, velmaxdesc, nrede);
-    end = chrono::steady_clock::now();
+    writeProfiles(state, networkIndex);
+    writeTrends(state, dependencies, trendWriteOrder, maximumUnloadingFlowRate, networkIndex);
+    const auto end = screenOutputEnabled ? chrono::steady_clock::now() : chrono::steady_clock::time_point{};
     (*state.step.globals).timeStepIndex = state.step.stepIndex;
     writeScreenOutput(state, begin, end);
 
-    int maxEvento = state.step.input.logevento.size();
-    writeEventLog(state, maxEvento);
-    writeProgressReport(state, MaxKontaImpres);
+    const int eventCount = state.step.input.logevento.size();
+    writeEventLog(state, eventCount);
+    writeProgressReport(state, maximumProgressReportInterval);
 
     reportAcceptedArtificialGas(state.step);
     state.step.stepIndex++;

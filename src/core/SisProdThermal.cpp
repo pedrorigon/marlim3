@@ -12,6 +12,11 @@
 
 #include <math.h>
 #include <numbers>
+#include <algorithm>
+#include <limits>
+#include <stdexcept>
+#include <string>
+#include <omp.h>
 
 namespace sisprod::thermal {
 namespace {
@@ -147,14 +152,14 @@ template <typename Axis>
     if (!state.thermalSourceDisabled) {
         inlet.transport = temperatureTransportOf(state, 0);
         const double thermalVelocity = inlet.transport.spatialCoefficient / inlet.transport.timeCoefficient;
-        inlet.prescribed = !(thermalVelocity <= 0.);
+        const bool closedEndpoint = state.input.ConContEntrada == 0 &&
+                                    state.globals->networkMode == 0;
+        inlet.prescribed = !closedEndpoint && thermalVelocity > 0.;
     }
     if (inlet.prescribed) {
         cell.temp = state.input.ConContEntrada > 0
                         ? state.inletTemperature
                         : state.defaultInletTemperature;
-        if (!state.thermalSourceDisabled && cell.temp != cell.tempini)
-            inlet.transport = temperatureTransportOf(state, 0);
     }
     return inlet;
 }
@@ -276,20 +281,30 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
     else
         previousRightFaceVoidFraction = rightCell.alfini;
 
+    const double rightFaceLiquidFraction =
+        1. - (rightCell.QL > 0. ? cell.alf : rightCell.alf);
+    const double previousRightFaceLiquidFraction =
+        1. - (rightCell.QLini > 0. ? cell.alfini : rightCell.alfini);
+
     double leftFaceVoidFraction;
     if (cell.QG > 0)
         leftFaceVoidFraction = cellIndex > 0 ? state.cells[cellIndex - 1].alf : cell.alfL;
     else
         leftFaceVoidFraction = cell.alf;
 
+    const double leftFaceLiquidFraction =
+        1. - (cell.QL > 0.
+                  ? (cellIndex > 0 ? state.cells[cellIndex - 1].alf : cell.alfL)
+                  : cell.alf);
+
     if (leftFaceVoidFraction > 1e-3) {
         leftFaceMeanGasVelocity = cell.QG / (cellFlowArea);
         leftFaceMeanGasVelocity /= leftFaceVoidFraction;
     }
 
-    if (leftFaceVoidFraction < 1. - 1e-3) {
+    if (leftFaceLiquidFraction > 1e-3) {
         leftFaceMeanLiquidVelocity = cell.QL / (cellFlowArea);
-        leftFaceMeanLiquidVelocity /= (1. - leftFaceVoidFraction);
+        leftFaceMeanLiquidVelocity /= leftFaceLiquidFraction;
     }
 
     if (rightFaceVoidFraction > 1e-3) {
@@ -297,9 +312,9 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
         rightFaceMeanGasVelocity /= rightFaceVoidFraction;
     }
 
-    if (rightFaceVoidFraction < 1. - 1e-3) {
+    if (rightFaceLiquidFraction > 1e-3) {
         rightFaceMeanLiquidVelocity = balance.liquidSuperficialVelocity;
-        rightFaceMeanLiquidVelocity /= (1. - rightFaceVoidFraction);
+        rightFaceMeanLiquidVelocity /= rightFaceLiquidFraction;
     }
 
     if (previousRightFaceVoidFraction > 1e-3) {
@@ -308,13 +323,13 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
         previousRightFaceMeanGasVelocity /= previousRightFaceVoidFraction;
     }
 
-    if (previousRightFaceVoidFraction < 1. - 1e-3) {
+    if (previousRightFaceLiquidFraction > 1e-3) {
 
         previousRightFaceMeanLiquidVelocity = rightCell.QLini / (cellFlowArea);
-        previousRightFaceMeanLiquidVelocity /= (1. - previousRightFaceVoidFraction);
+        previousRightFaceMeanLiquidVelocity /= previousRightFaceLiquidFraction;
     }
 
-    kineticTerm = kineticLiquidDensity * (1 - rightFaceVoidFraction) * cellFlowArea * (0.5 * (rightFaceMeanLiquidVelocity * rightFaceMeanLiquidVelocity - previousRightFaceMeanLiquidVelocity * previousRightFaceMeanLiquidVelocity)) / cell.dt +
+    kineticTerm = kineticLiquidDensity * rightFaceLiquidFraction * cellFlowArea * (0.5 * (rightFaceMeanLiquidVelocity * rightFaceMeanLiquidVelocity - previousRightFaceMeanLiquidVelocity * previousRightFaceMeanLiquidVelocity)) / cell.dt +
                   kineticGasDensity * rightFaceVoidFraction * cellFlowArea * (0.5 * (rightFaceMeanGasVelocity * rightFaceMeanGasVelocity - previousRightFaceMeanGasVelocity * previousRightFaceMeanGasVelocity)) / cell.dt +
                   ((rightCell.MC - rightCell.Mliqini) * rightFaceMeanGasVelocity * (rightFaceMeanGasVelocity - leftFaceMeanGasVelocity) / kineticCellLength +
                    rightCell.Mliqini * rightFaceMeanLiquidVelocity * (rightFaceMeanLiquidVelocity - leftFaceMeanLiquidVelocity) / kineticCellLength);
@@ -336,22 +351,18 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
     Cel &cell = state.cells[cellIndex];
     double sourceTemperature = cell.temp;
     double sourceGasSpecificHeat;
-    double sourceSpecificHeatRatio;
     double sourceLiquidSpecificHeat;
     if (cell.acsr.tipo == kAccessoryGasInjection) {
         sourceTemperature = cell.acsr.injg.temp;
         sourceGasSpecificHeat = cell.acsr.injg.FluidoPro.CalorGas(cell.presini, cell.temp);
-        sourceSpecificHeatRatio = cell.acsr.injg.FluidoPro.ConstAdG(cell.presini, cell.temp);
         sourceLiquidSpecificHeat = 0.;
     } else if (cell.acsr.tipo == kAccessoryLiquidInjection) {
         sourceTemperature = cell.acsr.injl.temp;
         sourceGasSpecificHeat = cell.acsr.injl.FluidoPro.CalorGas(cell.presini, cell.temp);
-        sourceSpecificHeatRatio = cell.acsr.injl.FluidoPro.CalorGas(cell.presini, cell.temp);
         sourceLiquidSpecificHeat = (1. - cell.acsr.injl.bet) * cell.acsr.injl.FluidoPro.CalorLiq(cell.presini, cell.temp) + cell.acsr.injl.bet * cell.acsr.injl.fluidocol.CalorLiq(cell.presini, cell.temp); //(1. - cell.acsr.injl.bet) * cell.acsr.injl.FluidoPro.CalorLiq(cell.pres, cell.temp)
     } else if (cell.acsr.tipo == kAccessoryMultipleSource) {
         sourceTemperature = cell.acsr.injm.temp;
         sourceGasSpecificHeat = cell.acsr.injm.FluidoPro.CalorGas(cell.presini, cell.temp);
-        sourceSpecificHeatRatio = cell.acsr.injm.FluidoPro.ConstAdG(cell.presini, cell.temp);
         if ((cell.fontemassLR + cell.fontemassCR) > 0.) {
             double titbet = cell.fontemassCR / (cell.fontemassLR + cell.fontemassCR);
             sourceLiquidSpecificHeat = (1. - titbet) * cell.acsr.injl.FluidoPro.CalorLiq(cell.presini, cell.temp) +
@@ -361,12 +372,10 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
     } else if (cell.acsr.tipo == kAccessoryInflowPerformance) {
         sourceTemperature = cell.acsr.ipr.Tres;
         sourceGasSpecificHeat = cell.acsr.ipr.FluidoPro.CalorGas(cell.presini, cell.temp);
-        sourceSpecificHeatRatio = cell.acsr.ipr.FluidoPro.ConstAdG(cell.presini, cell.temp);
         sourceLiquidSpecificHeat = cell.acsr.ipr.FluidoPro.CalorLiq(cell.presini, cell.temp);
     } else if (cell.acsr.tipo == kAccessoryRadialPorous) {
         sourceTemperature = cell.acsr.radialPoro.tRes;
         sourceGasSpecificHeat = cell.acsr.radialPoro.flup.CalorGas(cell.presini, cell.temp);
-        sourceSpecificHeatRatio = cell.acsr.radialPoro.flup.ConstAdG(cell.presini, cell.temp);
         sourceLiquidSpecificHeat = cell.acsr.radialPoro.flup.CalorLiq(cell.presini, cell.temp);
     } else if (cell.acsr.tipo == kAccessoryLeak) {
         double betM = cell.acsr.fontechk.betISamb;
@@ -374,7 +383,6 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
         double ambientTemperature = cell.acsr.fontechk.tamb;
         sourceGasSpecificHeat = cell.acsr.fontechk.fluidoPamb.CalorGas(ambientPressure, ambientTemperature);
         sourceLiquidSpecificHeat = (1. - betM) * cell.acsr.fontechk.fluidoPamb.CalorLiq(ambientPressure, ambientTemperature) + betM * cell.acsr.fontechk.fluidocol.CalorLiq(ambientPressure, ambientTemperature);
-        sourceSpecificHeatRatio = cell.acsr.fontechk.fluidoPamb.ConstAdG(ambientPressure, ambientTemperature);
         sourceTemperature = cell.acsr.fontechk.tamb;
     } else if (cellIndex > 0 && cell.acsrL != 0 && cellIndex < state.lastCell) {
         Cel &leftCell = state.cells[cellIndex - 1];
@@ -404,25 +412,22 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
                 sourceTemperature = upstreamTemperature + ((1. - upstreamGasMassFraction) * upstreamLiquidJouleThomson / sourceLiquidSpecificHeat + upstreamGasMassFraction * upstreamGasJouleThomson / sourceGasSpecificHeat) *
                                                               (cell.pres + downstreamHydrostaticHead - leftCell.pres - upstreamHydrostaticHead) * units::kPascalPerKgfPerCm2;
 
-                sourceSpecificHeatRatio = leftCell.flui.ConstAdG(leftCell.presini, leftCell.tempini);
 
             } else {
                 sourceGasSpecificHeat = leftCell.flui.CalorGas(leftCell.presini, leftCell.tempini);
                 sourceLiquidSpecificHeat = (1 - leftCell.bet) * leftCell.flui.CalorLiq(leftCell.presini, leftCell.tempini) + leftCell.bet * leftCell.fluicol.CalorLiq(leftCell.presini, leftCell.tempini);
                 sourceTemperature = cell.temp;
-                sourceSpecificHeatRatio = leftCell.flui.ConstAdG(leftCell.presini, leftCell.tempini);
             }
         } else if ((*cell.acsrL).tipo == kAccessoryVolumetricPump) {
             double betM = leftCell.bet;
             sourceGasSpecificHeat = leftCell.flui.CalorGas(leftCell.presini, leftCell.tempini);
             sourceLiquidSpecificHeat = (1. - betM) * leftCell.flui.CalorLiq(leftCell.presini, leftCell.tempini) + betM * leftCell.fluicol.CalorLiq(leftCell.presini, leftCell.tempini);
-            sourceSpecificHeatRatio = leftCell.flui.ConstAdG(leftCell.presini, leftCell.tempini);
             double polytropicExponent = (*cell.acsrL).bvol.npoli;
             double pumpPressureRatio = (cell.pres) / (leftCell.pres);
             sourceTemperature = leftCell.tempini * pow(pumpPressureRatio, (polytropicExponent - 1) / polytropicExponent);
         } else {
-            clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
-                                     sourceLiquidSpecificHeat);
+            sourceGasSpecificHeat = 0.;
+            sourceLiquidSpecificHeat = 0.;
         }
     } else if (cellIndex == state.lastCell && (cell.fontemassLR + cell.fontemassCR + cell.fontemassGR) > 0.) {
         if ((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1)
@@ -435,28 +440,21 @@ TemperatureSourceTerms computeTemperatureSourceTerms(const ThermalState &state,
             betM = cell.fontemassCR /
                    (cell.fontemassCR + cell.fontemassLR);
         sourceLiquidSpecificHeat = (1. - betM) * cell.flui.CalorLiq(cell.presini, sourceTemperature) + betM * cell.fluicol.CalorLiq(cell.presini, sourceTemperature);
-        sourceSpecificHeatRatio = cell.flui.ConstAdG(cell.pres, sourceTemperature);
     } else {
-        clearSourceSpecificHeats(sourceGasSpecificHeat, sourceSpecificHeatRatio,
-                                 sourceLiquidSpecificHeat);
+        sourceGasSpecificHeat = 0.;
+        sourceLiquidSpecificHeat = 0.;
     }
 
-    double liquidMassSourceTerm = 0;
-    if (cell.fontemassLR > 0.)
-        liquidMassSourceTerm = cell.fontemassLR / cellLength;
-    if (cell.fontemassCR > 0.)
-        liquidMassSourceTerm += cell.fontemassCR / cellLength;
-    liquidMassSourceTerm *= (sourceLiquidSpecificHeat) * (sourceTemperature - cell.temp);
-
-    double gasMassSourceTerm = cell.fontemassGR / cellLength;
-    if (gasMassSourceTerm > 0.)
-        gasMassSourceTerm *= (sourceGasSpecificHeat / sourceSpecificHeatRatio) * (sourceTemperature - cell.temp);
-    else
-        gasMassSourceTerm = 0;
-
+    const double liquidHeatCapacityRate =
+        (std::max(0., cell.fontemassLR) + std::max(0., cell.fontemassCR)) *
+        sourceLiquidSpecificHeat / cellLength;
+    const double gasHeatCapacityRate =
+        std::max(0., cell.fontemassGR) * sourceGasSpecificHeat / cellLength;
+    const double temperatureDifference = sourceTemperature - cell.temp;
     return TemperatureSourceTerms{
-        .gas = gasMassSourceTerm,
-        .liquid = liquidMassSourceTerm,
+        .gas = gasHeatCapacityRate * temperatureDifference,
+        .liquid = liquidHeatCapacityRate * temperatureDifference,
+        .heatCapacityRate = gasHeatCapacityRate + liquidHeatCapacityRate,
     };
 }
 
@@ -1658,35 +1656,42 @@ void selectAndApplyBufferedInletFlowRegime(
         gasDensity, liquidDensity, flowArea);
 }
 
-void refreshCellTemperatureAndRate(const ThermalState &state, int cellIndex,
-                                    const TransientInletTemperature &inlet) {
-    Cel &cell = state.cells[cellIndex];
-    if (cellIndex <= state.lastCell) {
-        computeCellTemperature(state, cellIndex, 0, cellIndex == 0 ? &inlet : nullptr);
-    } else {
-        if ((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1)
-            cell.temp = cell.calor.Textern1;
-        else
-            cell.temp = state.gasSurfaceTemperature;
-    }
-    cell.dTdt = (cell.temp - cell.tempini) / state.timeStep;
-    cell.dTdtIni = cell.dTdt;
-}
-
 void refreshTemperatureField(const ThermalState &state, const TransientInletTemperature &inlet) {
-    if (state.poisson2DCellCount > 1) {
-#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
-        for (int poisson2DIndex = 0; poisson2DIndex < state.poisson2DCellCount; poisson2DIndex++) {
-            int cellIndex = state.poisson2DCellIndices[poisson2DIndex];
-            refreshCellTemperatureAndRate(state, cellIndex, inlet);
+    thread_local std::vector<TransientTemperatureStep> cachedSteps;
+    auto &steps = cachedSteps;
+    steps.resize(state.lastCell + 1);
+    const auto prepareCell = [&](int cellIndex) {
+        steps[cellIndex] = prepareTransientTemperatureStep(
+            state, cellIndex, cellIndex == 0 ? &inlet : nullptr);
+    };
+    if (state.poisson2DCellCount == 1)
+        prepareCell(state.poisson2DCellIndices[0]);
+
+    const int parallelPoissonCount = state.poisson2DCellCount == 1 ? 0 : state.poisson2DCellCount;
+    const int regularCellCount = state.lastCell + 1 - state.poisson2DCellCount;
+    const int threadCount = std::max(1, std::min(state.globals->solverThreadCount,
+                                              std::max(parallelPoissonCount, regularCellCount)));
+    if (threadCount == 1) {
+        for (int i = 0; i < parallelPoissonCount; ++i)
+            prepareCell(state.poisson2DCellIndices[i]);
+        for (int i = 0; i <= state.lastCell; ++i)
+            if (state.cells[i].calor.difus2D == 0)
+                prepareCell(i);
+    } else {
+#pragma omp parallel num_threads(threadCount) default(none) shared(state, prepareCell) firstprivate(parallelPoissonCount)
+        {
+            if (parallelPoissonCount > 0) {
+#pragma omp for schedule(static)
+                for (int i = 0; i < parallelPoissonCount; ++i)
+                    prepareCell(state.poisson2DCellIndices[i]);
+            }
+#pragma omp for schedule(static) nowait
+            for (int i = 0; i <= state.lastCell; ++i)
+                if (state.cells[i].calor.difus2D == 0)
+                    prepareCell(i);
         }
     }
-#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
-    for (int cellIndex = 0; cellIndex <= state.lastCell; cellIndex++) {
-        if (state.cells[cellIndex].calor.difus2D == 0) {
-            refreshCellTemperatureAndRate(state, cellIndex, inlet);
-        }
-    }
+    integrateTransientTemperatureField(state, steps);
 }
 
 TemperatureSourceTerms computeSteadySourceTerms(const ThermalState &state,
@@ -2493,6 +2498,8 @@ void prepareTransientOutletFlow(const ThermalState &state) {
             state.cells[state.lastCell].Mliqini = 0;
             state.cells[state.lastCell].term1 = 0;
             state.cells[state.lastCell].term2 = 0;
+            state.cells[state.lastCell - 1].QLR = 0.;
+            state.cells[state.lastCell].QL = 0.;
         }
         if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassFlag == 0 || state.surfaceChokeOpen == 1)) {
             state.cells[state.lastCell - 1].QLR = 0;
@@ -2508,6 +2515,9 @@ void prepareTransientOutletFlow(const ThermalState &state) {
             state.cells[state.lastCell].Mliqini = 0;
             state.cells[state.lastCell].term1 = 0;
             state.cells[state.lastCell].term2 = 0;
+            state.cells[state.lastCell - 1].QLR = 0.;
+            state.cells[state.lastCell].QL = 0.;
+            state.cells[state.lastCell].QG = 0.;
         }
         if (state.cells[state.lastCell - 1].QLR < 0 && (state.surfaceChokeMassFlag == 0 || state.surfaceChokeOpen == 1)) {
             state.cells[state.lastCell - 1].QLR = 0;
@@ -2518,16 +2528,22 @@ void prepareTransientOutletFlow(const ThermalState &state) {
 
 void advanceCoupledThermalField(const ThermalState &state, int cycle, int maximumCycle,
                                 const TransientInletTemperature &inlet) {
-#pragma omp parallel for num_threads((*state.globals).solverThreadCount)
-    for (int cellIndex = 0; cellIndex <= state.lastCell; cellIndex++) {
-        const int coupled = thermalCouplingIndexOf(state, cellIndex);
-        if (coupled != -1) {
-            prepareNonDimensionalHeatDiffusion(state, cellIndex);
-            int nextCouplingIndex = state.coupledCellIndices[coupled];
-            state.poissonSolver3D.dados.tInt[nextCouplingIndex] = state.cells[cellIndex].temp;
-            double cellInterfaceCoefficient = state.cells[cellIndex].calor.hInt();
-            state.poissonSolver3D.dados.hI[nextCouplingIndex] = cellInterfaceCoefficient;
-        }
+    const auto prepareInterface = [&](int coupled) {
+        const int cellIndex = state.input.celAcop[coupled].indCel;
+        prepareNonDimensionalHeatDiffusion(state, cellIndex);
+        const int nextCouplingIndex = state.coupledCellIndices[coupled];
+        state.poissonSolver3D.dados.tInt[nextCouplingIndex] = state.cells[cellIndex].temp;
+        const double cellInterfaceCoefficient = state.cells[cellIndex].calor.hInt();
+        state.poissonSolver3D.dados.hI[nextCouplingIndex] = cellInterfaceCoefficient;
+    };
+    const int threadCount = std::max(1, std::min(state.globals->solverThreadCount, state.input.nacop));
+    if (threadCount == 1) {
+        for (int coupled = 0; coupled < state.input.nacop; ++coupled)
+            prepareInterface(coupled);
+    } else {
+#pragma omp parallel for num_threads(threadCount) default(none) shared(state, prepareInterface) schedule(static)
+        for (int coupled = 0; coupled < state.input.nacop; ++coupled)
+            prepareInterface(coupled);
     }
     if (cycle < maximumCycle || maximumCycle == 0 || state.minimumCycleTimeStep != state.timeStep) {
         if (cycle == maximumCycle && maximumCycle > 0)
@@ -2885,10 +2901,188 @@ void finalizeFlowPartitionCell(
     }
 }
 
+TransientTemperatureStep prepareTransientTemperatureStep(
+    const ThermalState &state, int cellIndex, const TransientInletTemperature *inlet) {
+    Cel &cell = state.cells[cellIndex];
+    TransientTemperatureStep step;
+    step.initialTemperature = cell.temp;
+    if (state.thermalSourceDisabled) {
+        step.initialTemperature = cell.calor.Textern1;
+        return step;
+    }
+
+    const auto transport = inlet ? inlet->transport : temperatureTransportOf(state, cellIndex);
+    step.timeCoefficient = transport.timeCoefficient;
+    cell.VTemper = transport.spatialCoefficient / transport.timeCoefficient;
+    step.evolves = cellIndex == 0
+                       ? (inlet ? !inlet->prescribed : cell.VTemper <= 0.)
+                       : cellIndex < state.lastCell || cell.VTemper >= 0. ||
+                             state.surfaceChokeMassFlag == 1 || state.input.chkv == 1;
+    if (!step.evolves && cellIndex == state.lastCell) {
+        cell.temp = state.globals->networkMode == 0 || state.endNode == 1 ||
+                            state.globals->parallelNetworkMode == 1
+                        ? cell.calor.Textern1
+                        : state.gasSurfaceTemperature;
+        step.initialTemperature = cell.temp;
+    }
+
+    const auto wallProperties = step.evolves ? transport : temperatureTransportOf(state, cellIndex);
+    TemperatureBalance balance = prepareTemperatureBalance(state, cellIndex, 0, wallProperties);
+    if (!step.evolves)
+        return step;
+
+    double pressureGradient = temperaturePressureGradientOf(state, cellIndex, balance);
+    if (cellIndex > 0 && cell.acsr.tipo == kAccessoryVolumetricPump && cell.acsr.bvol.freq > 1.)
+        pressureGradient = (cell.pres - state.cells[cellIndex - 1].pres) *
+                           units::kPascalPerKgfPerCm2 / balance.meanCellLength;
+    const double kineticTerm = computeKineticTemperatureTerm(state, cellIndex, balance);
+    const auto source = computeTemperatureSourceTerms(state, cellIndex, cell.dx);
+    const double latentHeatTerm = computeTemperatureLatentHeatTerm(state, cellIndex);
+    const double leftThermalPower = cellIndex > 0 ? state.cells[cellIndex - 1].potTermo : 0.;
+    const double pressureIncrement = balance.pressureTimeCoefficient *
+                                     (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2;
+    const double compositionWork = (balance.rc - balance.rp) * (1. - balance.voidFraction) *
+                                   cell.pres * units::kPascalPerKgfPerCm2 * balance.flowArea *
+                                   (cell.bet - cell.betini) / balance.liquidDensity;
+    const double heatingRate = balance.pressureSpatialCoefficient * pressureGradient -
+                               kineticTerm - balance.hydrostaticPower +
+                               (leftThermalPower + cell.fonteCal) / balance.meanCellLength +
+                               source.liquid + source.gas + balance.heatFlux - latentHeatTerm;
+    step.sourceIncrement = (pressureIncrement - compositionWork +
+                            cell.dt * cell.dTdLCor * heatingRate) / transport.timeCoefficient;
+    step.sourceDecay = cell.dt * cell.dTdLCor * source.heatCapacityRate / transport.timeCoefficient;
+
+    const bool closedRightFace = cell.acsr.tipo == kAccessoryChoke &&
+        cell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * cell.duto.area;
+    const bool closedLeftFace = cellIndex > 0 &&
+        state.cells[cellIndex - 1].acsr.tipo == kAccessoryChoke &&
+        state.cells[cellIndex - 1].acsr.chk.AreaGarg <=
+            (1e-3 + state.input.master1.razareaativ) * state.cells[cellIndex - 1].duto.area;
+    if (cell.VTemper < 0. && cellIndex < state.lastCell && !closedRightFace)
+        step.donor = cellIndex + 1;
+    else if (cell.VTemper > 0. && cellIndex > 0 && !closedLeftFace)
+        step.donor = cellIndex - 1;
+    if (step.donor >= 0) {
+        const double donorDistance = 0.5 * (cell.dx + state.cells[step.donor].dx);
+        step.courant = cell.dTdLCor * fabs(cell.VTemper) * cell.dt / donorDistance;
+    }
+    return step;
+}
+
+double integrateTemperatureSource(const TransientTemperatureStep &step,
+                                   double temperature, double fraction) {
+    const double scale = step.sourceDecay == 0.
+                             ? fraction
+                             : -std::expm1(-step.sourceDecay * fraction) / step.sourceDecay;
+    return temperature +
+           (step.sourceIncrement - step.sourceDecay * (temperature - step.initialTemperature)) * scale;
+}
+
+void integrateTransientTemperatureField(const ThermalState &state,
+                                        const std::vector<TransientTemperatureStep> &steps) {
+    constexpr double maximumCourant = 0.8;
+    double largestCourant = 0.;
+    for (int i = 0; i <= state.lastCell; ++i) {
+        const auto &step = steps[i];
+        if (!std::isfinite(step.initialTemperature) || !std::isfinite(step.timeCoefficient) ||
+            step.timeCoefficient <= 0. || !std::isfinite(step.sourceIncrement) ||
+            !std::isfinite(step.sourceDecay) || !std::isfinite(step.courant) ||
+            step.sourceDecay < 0. || step.courant < 0. || state.cells[i].dt <= 0. ||
+            !std::isfinite(state.cells[i].dt) || !std::isfinite(state.cells[i].VTemper) ||
+            !std::isfinite(state.cells[i].dTdLCor) || state.cells[i].dTdLCor < 0.)
+            throw std::domain_error("Invalid transient energy coefficients in cell " + std::to_string(i));
+        largestCourant = std::max(largestCourant, step.courant);
+    }
+    const double requiredSteps = std::max(1., std::ceil(largestCourant / maximumCourant));
+    if (requiredSteps > std::numeric_limits<int>::max())
+        throw std::domain_error("Transient energy Courant number exceeds the supported substep count");
+    const int substepCount = static_cast<int>(requiredSteps);
+    const double fraction = 1. / substepCount;
+    thread_local std::vector<double> cachedTemperatures, cachedAdvected;
+    auto &temperatures = cachedTemperatures;
+    auto &advected = cachedAdvected;
+    temperatures.resize(steps.size());
+    advected.resize(steps.size());
+    for (int i = 0; i <= state.lastCell; ++i)
+        temperatures[i] = steps[i].initialTemperature;
+
+    const int cellCount = state.lastCell + 1;
+    const int threadCount = std::max(1, std::min(state.globals->solverThreadCount, cellCount));
+    const auto applyHalfSource = [&](int i, double *current) {
+        if (steps[i].evolves)
+            current[i] = integrateTemperatureSource(steps[i], current[i], 0.5 * fraction);
+    };
+    const auto advectAndRelax = [&](int i, const double *current, double *next) {
+        const auto &step = steps[i];
+        double temperature = current[i];
+        if (step.evolves && step.donor >= 0)
+            temperature += step.courant * fraction * (current[step.donor] - current[i]);
+        next[i] = step.evolves
+                      ? integrateTemperatureSource(step, temperature, 0.5 * fraction)
+                      : temperature;
+    };
+    double *current = temperatures.data();
+    double *next = advected.data();
+    if (threadCount == 1) {
+        for (int substep = 0; substep < substepCount; ++substep) {
+            for (int i = 0; i < cellCount; ++i)
+                applyHalfSource(i, current);
+            for (int i = 0; i < cellCount; ++i)
+                advectAndRelax(i, current, next);
+            std::swap(current, next);
+        }
+    } else {
+#pragma omp parallel num_threads(threadCount) default(none) shared(applyHalfSource, advectAndRelax) firstprivate(current, next, cellCount, substepCount)
+        {
+            for (int substep = 0; substep < substepCount; ++substep) {
+#pragma omp for schedule(static)
+                for (int i = 0; i < cellCount; ++i)
+                    applyHalfSource(i, current);
+#pragma omp for schedule(static) nowait
+                for (int i = 0; i < cellCount; ++i)
+                    advectAndRelax(i, current, next);
+                if (substep + 1 < substepCount) {
+#pragma omp barrier
+                }
+                std::swap(current, next);
+            }
+        }
+    }
+    const auto &finalTemperatures = substepCount % 2 ? advected : temperatures;
+    for (int i = 0; i <= state.lastCell; ++i) {
+        const double temperature = finalTemperatures[i];
+        if (!std::isfinite(temperature) || temperature <= -units::kZeroCelsiusInKelvin)
+            throw std::domain_error("Invalid absolute temperature in transient energy cell " + std::to_string(i));
+        Cel &cell = state.cells[i];
+        cell.temp = temperature;
+        cell.dTdt = (cell.temp - cell.tempini) / state.timeStep;
+        cell.dTdtIni = cell.dTdt;
+    }
+}
+
 void computeCellTemperature(const ThermalState &state, int cellIndex, int steadyMode,
                             const TransientInletTemperature *inlet) {
     SimulationContext &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
+    if (steadyMode == 0) {
+        TransientInletTemperature localInlet{};
+        if (cellIndex == 0 && !inlet) {
+            localInlet = prepareTransientInletTemperature(state);
+            inlet = &localInlet;
+        }
+        auto step = prepareTransientTemperatureStep(state, cellIndex, inlet);
+        if (step.evolves && step.donor >= 0) {
+            const double donorTemperature = state.cells[step.donor].tempini;
+            step.sourceIncrement += step.courant * (donorTemperature - step.initialTemperature);
+            step.sourceDecay += step.courant;
+        }
+        cell.temp = step.evolves
+                        ? integrateTemperatureSource(step, step.initialTemperature, 1.)
+                        : step.initialTemperature;
+        if (!std::isfinite(cell.temp) || cell.temp <= -units::kZeroCelsiusInKelvin)
+            throw std::domain_error("Invalid absolute temperature in transient energy cell " + std::to_string(cellIndex));
+        return;
+    }
     if (state.thermalSourceDisabled != 0) {
         cell.temp = cell.calor.Textern1;
         return;
@@ -2956,6 +3150,34 @@ void computeCellTemperature(const ThermalState &state, int cellIndex, int steady
 }
 
 } // namespace
+
+std::vector<int> buildThermalCouplingIndices(const Ler &input, const solverP3D &solver, int lastCell) {
+    const int count = input.nacop;
+    if (lastCell < 0 || count <= 0 || static_cast<int>(input.celAcop.size()) != count ||
+        solver.dados.CC.nAcop != count || !solver.dados.CC.rotuloAcop)
+        throw std::invalid_argument("Inconsistent 3D thermal coupling count");
+    std::vector<int> indices(count, -1);
+    std::vector<bool> usedCells(lastCell + 1, false), usedDestinations(count, false);
+    for (int i = 0; i < count; ++i) {
+        const auto &coupling = input.celAcop[i];
+        if (coupling.indCel < 0 || coupling.indCel > lastCell || usedCells[coupling.indCel])
+            throw std::invalid_argument("Invalid or repeated cell in 3D thermal coupling");
+        usedCells[coupling.indCel] = true;
+        for (int j = 0; j < count; ++j) {
+            if (coupling.rotulo == solver.dados.CC.rotuloAcop[j]) {
+                if (indices[i] != -1)
+                    throw std::invalid_argument("Repeated 3D thermal boundary label: " + coupling.rotulo);
+                indices[i] = j;
+            }
+        }
+        if (indices[i] == -1)
+            throw std::invalid_argument("3D thermal boundary label not found: " + coupling.rotulo);
+        if (usedDestinations[indices[i]])
+            throw std::invalid_argument("Repeated 3D thermal coupling destination: " + coupling.rotulo);
+        usedDestinations[indices[i]] = true;
+    }
+    return indices;
+}
 
 double interpolateLatentHeat(const ThermalState &state, double pressure, double temperature) {
     const int divisionCount = state.input.tabent.npont - 1;

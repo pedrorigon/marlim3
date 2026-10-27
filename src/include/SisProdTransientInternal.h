@@ -171,6 +171,8 @@ double updateInteriorAuxiliaryPressure(const TransientStepState &state, int i);
 void updateInteriorVolumeFlows(const TransientStepState &state, int i, double area);
 
 /// Updates the outlet auxiliary pressure using the outlet-specific velocity estimate.
+/// Honors the selected arithmetic-average or friction/hydrostatic reconstruction.
+/// Zero mixture velocity has zero friction pressure loss.
 void updateOutletAuxiliaryPressure(const TransientStepState &state, int i);
 
 /// Updates outlet volumetric flows using the outlet-specific donor fraction.
@@ -233,6 +235,22 @@ void restartCouplingFractions(const TransientSolveState &state, const TransientD
 void restoreIntermediateCouplingState(const TransientSolveState &state, int kontaAcop,
                                       double gasMassSource, double liquidMassSource,
                                       double complementaryMassSource);
+
+/// Resets critical ratios, captures updated valve areas, and applies model
+/// policies in order. Returns the thermal-cycle limit fixed for this step.
+int prepareCouplingMode(const TransientStepState &state, int explicitScheme);
+
+/// Advances standalone startup, boundaries, gas flow, and ordered coupling.
+/// Returns the maximum volumetric unloading flow used by trend output.
+double advanceStandaloneTransientStep(const TransientSolveState &state,
+                                      const TransientDependencies &dependencies,
+                                      double reverseQuality, double reverseVoidFraction,
+                                      double reverseLiquidFraction);
+
+/// Commits buried-wall time levels and scheduled mesh output in cell order.
+/// The supplied list contains every 2D wall exactly once, including endpoints.
+void finalizeBuriedPipeConduction(const TransientStepState &state,
+                                 const std::vector<int> &cellIndices);
 
 /// Finalizes derivatives, deposition, sources, thermal coupling, transported properties and densities in order.
 void finalizeTransientCellState(const TransientSolveState &state, const TransientDependencies &dependencies, const ProFlu *fluiRev);

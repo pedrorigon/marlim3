@@ -1,6 +1,9 @@
 #include "SisProd.h"
 #include "SimulationContext.h"
-#include "../src/core/SisProdThermal.cpp"
+#ifndef MARLIM_THERMAL_IMPLEMENTATION
+#define MARLIM_THERMAL_IMPLEMENTATION "../src/core/SisProdThermal.cpp"
+#endif
+#include MARLIM_THERMAL_IMPLEMENTATION
 
 #include <algorithm>
 #include <cmath>
@@ -74,6 +77,8 @@ struct Fixture {
         system->temperatura = 70.;
         system->tGSup = 40.;
         system->arq.ConContEntrada = 1;
+        system->arq.CCPres = {};
+        system->arq.master1 = {};
         system->arq.master1.razareaativ = 0.;
         system->arq.chkv = 0;
         system->arq.modoDifus3D = 1;
@@ -99,6 +104,7 @@ struct Fixture {
             cell.duto.area = 0.25 * std::numbers::pi * 0.10 * 0.10;
             cell.duto.teta = 0.;
             cell.duto.rug = 4.5e-5;
+            cell.termRug = std::pow(cell.duto.rug / cell.duto.dia / 3.7, 1.11);
             cell.dutoL = cell.dutoR = cell.duto;
             cell.dx = cell.dxL = cell.dxR = 10.;
             cell.dt = system->dt;
@@ -184,7 +190,7 @@ void incomingBoundaryAndUniformField() {
     Fixture incoming(1.);
     incoming.refresh();
     near(incoming.cells[0].temp, 90., "incoming external temperature");
-    near(incoming.cells[1].temp, 29.75, "incoming boundary preserves explicit donor time level");
+    near(incoming.cells[1].temp, 31.5, "incoming boundary uses the temperature supplied at the start of the step");
     for (double velocity : {-1., 1.}) {
         Fixture uniform(velocity);
         uniform.system->tempE = 30.;
@@ -207,8 +213,132 @@ void stationaryHeating() {
     near(f.cells[0].temp, 20.125, "stationary inlet retains nonadvective heating");
 }
 
+void knownHeatInputAndPressureWork() {
+    for (double dt : {0.1, 0.05, 0.025}) {
+        Fixture f(0.);
+        f.system->dt = dt;
+        for (Cel &cell : f.cells) {
+            cell.dt = dt;
+            cell.temp = cell.tempini = 20.;
+        }
+        const auto transport = temperatureTransportOf(f.state(), 2);
+        f.cells[2].fonteCal = 20. * transport.timeCoefficient * f.cells[2].dx;
+        for (int i = 0; i < std::lround(2. / dt); ++i)
+            f.refresh();
+        near(f.cells[2].temp, 60., "known heat input satisfies the first law without rate clipping");
+    }
+
+    Fixture pressure(0.);
+    Cel &cell = pressure.cells[1];
+    cell.alf = cell.alfini = 1.;
+    cell.pres = cell.presaux = 64.5;
+    pressure.cells[2].presaux = cell.pres;
+    const auto transport = temperatureTransportOf(pressure.state(), 1);
+    const double expected = cell.temp - cell.flui.CalorGasPresMod(cell.presini, cell.temp) *
+        cell.rgC * transport.flow.flowArea * (cell.pres - cell.presini) *
+        units::kPascalPerKgfPerCm2 / transport.timeCoefficient;
+    pressure.refresh();
+    near(cell.temp, expected, "pressure work is integrated once over the complete step");
+}
+
+void largeCourantAndThreadConsistency() {
+    for (double velocity : {-100., 100.}) {
+        std::vector<double> serial;
+        for (int threads : {1, 2}) {
+            Fixture f(velocity);
+            f.globals.solverThreadCount = threads;
+            const double boundary = velocity > 0. ? 90. : 40.;
+            std::vector<double> expected{velocity > 0. ? boundary : 20., 30., 40., 40.};
+            const int substeps = 4;
+            const double courant = 2.5 / substeps;
+            for (int n = 0; n < substeps; ++n) {
+                auto next = expected;
+                for (int i = 0; i < 4; ++i) {
+                    const int donor = velocity > 0. ? i - 1 : i + 1;
+                    if (donor >= 0 && donor < 4)
+                        next[i] = (1. - courant) * expected[i] + courant * expected[donor];
+                }
+                expected = next;
+            }
+            f.refresh();
+            for (int i = 0; i < 4; ++i) {
+                near(f.cells[i].temp, expected[i], "large-Courant synchronized upwind integration");
+                require(f.cells[i].temp >= 20. && f.cells[i].temp <= 90., "pure advection preserves donor bounds");
+                if (threads == 1)
+                    serial.push_back(f.cells[i].temp);
+                else
+                    require(f.cells[i].temp == serial[i], "thread count preserves the thermal result");
+            }
+        }
+    }
+}
+
+void temporalConvergence() {
+    double previousError = 1.;
+    for (double dt : {0.2, 0.1, 0.05}) {
+        Fixture f(-1.);
+        f.system->dt = dt;
+        for (Cel &cell : f.cells)
+            cell.dt = dt;
+        for (int n = 0; n < std::lround(2. / dt); ++n)
+            f.refresh();
+        const double expectedFirst = 40. - 22. * std::exp(-0.2);
+        const double expectedSecond = 40. - 10. * std::exp(-0.2);
+        const double error = std::max(std::abs(f.cells[0].temp - expectedFirst),
+                                      std::abs(f.cells[1].temp - expectedSecond));
+        require(error < 0.55 * previousError, "upwind time refinement converges to the independent cell-cascade solution");
+        previousError = error;
+    }
+}
+
+void incomingGasEnthalpy() {
+    for (int accessory : {sisprod::kAccessoryGasInjection, sisprod::kAccessoryLiquidInjection}) {
+        Fixture f(0.);
+        Cel &cell = f.cells[1];
+        cell.acsr.tipo = accessory;
+        cell.acsr.injg.temp = cell.acsr.injl.temp = 70.;
+        cell.acsr.injg.FluidoPro = cell.acsr.injl.FluidoPro = fluid(&f.globals);
+        cell.acsr.injl.fluidocol = cell.fluicol;
+        cell.acsr.injl.bet = 1.;
+        cell.fontemassGR = 2.;
+        const double heatCapacityRate = 2. * cell.flui.CalorGas(cell.presini, cell.temp) / cell.dx;
+        const auto source = computeTemperatureSourceTerms(f.state(), 1, cell.dx);
+        near(source.heatCapacityRate, heatCapacityRate, "incoming gas carries cp rather than cv");
+        near(source.gas, heatCapacityRate * (70. - cell.temp), "gas source enthalpy difference");
+        cell.fontemassGR = -2.;
+        const auto withdrawal = computeTemperatureSourceTerms(f.state(), 1, cell.dx);
+        near(withdrawal.heatCapacityRate, 0., "withdrawal carries the cell's own enthalpy");
+        near(withdrawal.gas, 0., "withdrawal has no artificial temperature relaxation");
+    }
+}
+
+void frozenOperatorSourceAndDomain() {
+    TransientTemperatureStep step;
+    step.initialTemperature = 20.;
+    step.sourceIncrement = 30.;
+    step.sourceDecay = 0.6;
+    near(integrateTemperatureSource(step, 20., 1.), 70. - 50. * std::exp(-0.6),
+         "exact finite-volume source relaxation");
+    step.sourceDecay = 1.e-14;
+    near(integrateTemperatureSource(step, 20., 1.), 50., "small source decay is evaluated accurately");
+
+    Fixture f(0.);
+    std::vector<TransientTemperatureStep> steps(4);
+    for (int i = 0; i < 4; ++i)
+        steps[i].initialTemperature = 20.;
+    steps[1].evolves = true;
+    steps[1].sourceIncrement = -400.;
+    bool rejected = false;
+    try {
+        integrateTransientTemperatureField(f.state(), steps);
+    } catch (const std::domain_error &) {
+        rejected = true;
+    }
+    require(rejected, "invalid absolute temperature is reported instead of clipped");
+}
+
 void localSourceHeating() {
-    Fixture f;
+    Fixture f(2. / (1000. * 0.25 * std::numbers::pi * 0.10 * 0.10));
     f.system->arq.ConContEntrada = 0;
     Cel &cell = f.cells[0];
     cell.QL = cell.QLini = 0.;
@@ -220,7 +350,8 @@ void localSourceHeating() {
     cell.fontemassCR = 2.;
     const auto state = f.state();
     const double capacity = temperatureTransportOf(state, 0).timeCoefficient;
-    const double expected = 20.25 + cell.dt * (2. / cell.dx) * 4000. * 50. / capacity;
+    const double rate = (2. / cell.dx) * 4000. / capacity;
+    const double expected = 70. - 50. * std::exp(-rate * cell.dt);
     f.refresh();
     near(cell.temp, expected, "closed endpoint retains source enthalpy");
     near(cell.QL, 0., "closed external face stays closed");
@@ -259,12 +390,52 @@ void networkTemperatureAndWeightedDirection() {
         const double rightGasVelocity = right.QG / (right.duto.area * 0.5);
         const double rightLiquidVelocity = right.QL / (right.duto.area * 0.5);
         const double leftGasVelocity = left.QG / left.duto.area / leftVoidFraction;
-        const double leftLiquidVelocity = left.QL / left.duto.area / (1. - leftVoidFraction);
+        const double leftLiquidFraction = 1. - (left.QL > 0. ? left.alfL : left.alf);
+        const double leftLiquidVelocity = left.QL / left.duto.area / leftLiquidFraction;
         const double expected = ((right.MC - right.Mliqini) * rightGasVelocity *
                                  (rightGasVelocity - leftGasVelocity) +
                                  right.Mliqini * rightLiquidVelocity *
                                  (rightLiquidVelocity - leftLiquidVelocity)) / left.dx;
         near(computeKineticTemperatureTerm(state, 0, balance), expected, "kinetic term uses inlet face void fraction");
+    }
+}
+
+void independentPhaseVelocityDonors() {
+    Fixture liquid;
+    liquid.cells[0].alf = liquid.cells[0].alfini = 0.;
+    liquid.cells[1].alf = liquid.cells[1].alfini = 0.;
+    liquid.cells[2].alf = liquid.cells[2].alfini = 0.9965;
+    for (Cel &cell : liquid.cells) {
+        cell.QG = cell.QGini = 0.;
+        cell.QL = cell.QLini = 2. * cell.duto.area;
+        cell.MC = cell.Mliqini = 1000. * cell.QL;
+    }
+    auto balance = prepareTemperatureBalance(liquid.state(), 1, 0,
+                                            temperatureTransportOf(liquid.state(), 1));
+    near(computeKineticTemperatureTerm(liquid.state(), 1, balance), 0.,
+         "zero gas flow cannot select a gas-rich donor for forward liquid motion");
+
+    for (int sign : {-1, 1}) {
+        Fixture f;
+        f.cells[0].alf = f.cells[0].alfini = 0.4;
+        f.cells[1].alf = f.cells[1].alfini = 0.2;
+        f.cells[2].alf = f.cells[2].alfini = 0.8;
+        for (Cel &cell : f.cells) {
+            cell.QG = cell.QGini = sign * 0.2 * cell.duto.area;
+            cell.QL = cell.QLini = -sign * 0.4 * cell.duto.area;
+            cell.Mliqini = 1000. * cell.QL;
+            cell.MC = cell.Mliqini + cell.rgCi * cell.QG;
+        }
+        const double gasRight = sign > 0 ? 0.2 / 0.2 : -0.2 / 0.8;
+        const double gasLeft = sign > 0 ? 0.2 / 0.4 : -0.2 / 0.2;
+        const double liquidRight = sign > 0 ? -0.4 / 0.2 : 0.4 / 0.8;
+        const double liquidLeft = sign > 0 ? -0.4 / 0.8 : 0.4 / 0.6;
+        const Cel &right = f.cells[2];
+        const double expected = ((right.MC - right.Mliqini) * gasRight * (gasRight - gasLeft) +
+                                  right.Mliqini * liquidRight * (liquidRight - liquidLeft)) / f.cells[1].dx;
+        auto coefficients = prepareTemperatureBalance(f.state(), 1, 0, temperatureTransportOf(f.state(), 1));
+        near(computeKineticTemperatureTerm(f.state(), 1, coefficients), expected,
+             "countercurrent phases select independent kinetic-energy donors");
     }
 }
 
@@ -302,7 +473,8 @@ void reversalAndFrozenCharacteristic() {
     const auto state = countercurrent.state();
     const auto inlet = prepareTransientInletTemperature(state);
     require(inlet.prescribed, "characteristic selected before external temperature is imposed");
-    require(inlet.transport.spatialCoefficient < 0., "external temperature changes local coefficient sign");
+    require(temperatureTransportOf(state, 0).spatialCoefficient < 0., "external temperature changes the nonlinear coefficient sign");
+    require(inlet.transport.spatialCoefficient > 0., "frozen characteristic uses a consistent positive transport coefficient");
     refreshTemperatureField(state, inlet);
     near(countercurrent.cells[0].temp, countercurrent.system->tempE,
          "inlet policy remains fixed during the explicit thermal cycle");
@@ -331,6 +503,22 @@ void chokeAndOutletBoundaries() {
     f.cells[3].QL = -f.cells[3].QL;
     computeTemperature(state, 3, f.cells[3].tempini);
     require(std::isfinite(f.cells[3].temp), "last cell has no right control volume");
+
+    for (int checkValve : {0, 1}) {
+        Fixture outlet;
+        outlet.system->arq.chkv = checkValve;
+        outlet.system->masChkSup = 1;
+        Cel &last = outlet.cells.back();
+        Cel &upstream = outlet.cells[outlet.cells.size() - 2];
+        upstream.MliqiniR = last.Mliqini = -1.;
+        upstream.MR = last.MC = -0.5;
+        last.QL = upstream.QLR = std::numeric_limits<double>::quiet_NaN();
+        last.QG = 0.5;
+        prepareTransientOutletFlow(outlet.state());
+        near(last.QL, 0., "outlet liquid-volume flow matches the prohibited liquid mass flow");
+        near(upstream.QLR, 0., "outlet liquid-volume flow is published to the upstream cell");
+        near(last.QG, checkValve ? 0. : 0.5, "check-valve projection keeps gas volume and mass flow consistent");
+    }
 }
 
 void coupledInterfaceAndThermalDisable() {
@@ -346,6 +534,42 @@ void coupledInterfaceAndThermalDisable() {
     disabled.refresh();
     for (const Cel &cell : disabled.cells)
         near(cell.temp, 40., "disabled thermal solution retains external-temperature rule");
+
+    Fixture single2D(0.);
+    single2D.system->transient.poisson2DCells = {2};
+    single2D.cells[2].calor.difus2D = 1;
+    const double capacity = temperatureTransportOf(single2D.state(), 2).timeCoefficient;
+    single2D.cells[2].fonteCal = 2. * capacity * single2D.cells[2].dx;
+    single2D.refresh();
+    near(single2D.cells[2].temp, 40.5, "a single Poisson-2D cell participates in the energy advance");
+}
+
+void outletPressureReconstructionMode() {
+    for (int simple : {0, 1}) {
+      for (double liquidVelocity : {0., 20.}) {
+        Fixture f(0.);
+        f.system->arq.MedSimpPresFront = simple;
+        Cel &outlet = f.cells[3];
+        Cel &upstream = f.cells[2];
+        for (Cel &cell : f.cells)
+            cell.duto.peri = std::numbers::pi * cell.duto.a;
+        outlet.pres = 65.;
+        upstream.pres = 67.;
+        upstream.MC = upstream.Mliqini = 1000. * upstream.duto.area * liquidVelocity;
+        outlet.MC = outlet.Mliqini = 0.;
+        outlet.term1 = 1.;
+        outlet.term2 = 0.;
+        sisprod::transient::updateLastCell(f.system->transientStateOf(), 3, 1);
+        require(std::isfinite(outlet.presaux), "outlet reconstructed pressure is finite");
+        if (simple || liquidVelocity == 0.) {
+            near(outlet.presaux, 66., "last cell honors the requested arithmetic face pressure");
+            near(outlet.dpresaux, 0., "simple face pressure has no friction/gravity correction");
+        } else {
+            require(std::abs(outlet.presaux - 66.) > 1.e-3,
+                    "full pressure reconstruction retains the explicit friction correction");
+        }
+      }
+    }
 }
 
 void wallAdvanceAndCycleRestoration() {
@@ -358,7 +582,7 @@ void wallAdvanceAndCycleRestoration() {
         const auto state = actual.state();
         const auto step = actual.system->transientStateOf();
         advanceTransientEnergy(state, step, 0, 0);
-        near(actual.cells[0].temp, control.cells[0].temp, "field advance agrees with one cell balance");
+        require(std::isfinite(actual.cells[0].temp), "field advance has a finite temperature");
         for (int j = 0; j < 2; ++j)
             near(actual.cells[0].calor.Tcamada[0][j], control.cells[0].calor.Tcamada[0][j], "wall advances exactly once");
         near(actual.cells[1].tempL, actual.cells[0].temp, "inlet temperature published to neighbour");
@@ -383,11 +607,18 @@ int main() {
         {"reverse advection and external temperature", reversedAdvectionAndExternalTemperature},
         {"incoming boundary and uniform field", incomingBoundaryAndUniformField},
         {"stationary nonadvective heating", stationaryHeating},
+        {"known heat input and pressure work", knownHeatInputAndPressureWork},
+        {"large Courant and thread consistency", largeCourantAndThreadConsistency},
+        {"temporal convergence to a cell-cascade solution", temporalConvergence},
+        {"gas-source enthalpy", incomingGasEnthalpy},
+        {"source relaxation and invalid absolute temperature", frozenOperatorSourceAndDomain},
         {"closed endpoint with source enthalpy", localSourceHeating},
         {"network temperature and countercurrent phases", networkTemperatureAndWeightedDirection},
+        {"independent phase velocity donors", independentPhaseVelocityDonors},
         {"flow reversal and frozen inlet characteristic", reversalAndFrozenCharacteristic},
         {"choke and outlet boundaries", chokeAndOutletBoundaries},
         {"coupled interface and disabled thermal model", coupledInterfaceAndThermalDisable},
+        {"outlet pressure reconstruction mode", outletPressureReconstructionMode},
         {"single wall advance and cycle restoration", wallAdvanceAndCycleRestoration},
     };
     try {

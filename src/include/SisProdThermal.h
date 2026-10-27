@@ -75,6 +75,10 @@ struct ThermalState {
     const int &tubingAnnulusEnd;
 };
 
+/// Builds an exclusive cell-to-boundary mapping for the 3D thermal interface.
+/// Throws invalid_argument for inconsistent counts, labels, or cell indices.
+std::vector<int> buildThermalCouplingIndices(const Ler &input, const solverP3D &solver, int lastCell);
+
 /// Interpolates latent heat in the pressure-temperature table.
 double interpolateLatentHeat(const ThermalState &state, double pressure,
                              double temperature);
@@ -96,8 +100,8 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex);
 /// Updates one control-volume temperature from the thermal energy balance.
 /// previousTemperature does not participate in the calculation.
 /// Uses previous pressure, current temperature, and prior face temperatures.
-/// Cell zero evolves for outgoing or stationary thermal characteristics;
-/// the transient field advance supplies its prescribed-inlet policy separately.
+/// Transient mode integrates the frozen local equation with a fixed donor;
+/// the field advance synchronizes donors over the complete production column.
 void computeTemperature(const ThermalState &state, int cellIndex,
                         double previousTemperature, int steadyStateMode = 0);
 
@@ -121,10 +125,11 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state,
 
 /// Advances the transient thermal-energy solution by one coupling cycle.
 /// The inlet characteristic uses the saved internal temperature and updated flow.
-/// Incoming characteristics use the configured boundary or source temperature;
-/// outgoing and stationary characteristics evolve the stored cell temperature.
-/// Source enthalpies, network-supplied temperatures, wall updates, and intermediate
-/// coupling-state restoration retain their respective roles.
+/// Incoming open or network characteristics use the configured temperature.
+/// An isolated closed endpoint evolves its stored energy and local sources.
+/// Thermal substeps use updated flow with donor Courant numbers at most 0.8;
+/// affine sources are integrated without rate or temperature clipping. Wall
+/// diffusion advances once per coupling cycle, not once per thermal substep.
 void advanceTransientEnergy(const ThermalState &state, const transient::TransientStepState &transientStep, int cycle,
                             int maximumCycle);
 

@@ -34,6 +34,7 @@
 #include "SimulationContext.h"
 #include <ctime>
 #include <cmath>
+#include <deque>
 #include <array>
 #include <string>
 #include <vector>
@@ -289,13 +290,13 @@ struct TransientRun {
     /// Accumulated void fraction used to compute movingMeanVoidFraction.
     double accumulatedVoidFraction = 0.;
     /// Pressure samples used by the moving-average calculation.
-    std::vector<double> pressureSamples;
+    std::deque<double> pressureSamples;
     /// Mixture-flux samples used by the moving-average calculation.
-    std::vector<double> fluxSamples;
+    std::deque<double> fluxSamples;
     /// Void-fraction samples used by the moving-average calculation.
-    std::vector<double> voidFractionSamples;
+    std::deque<double> voidFractionSamples;
     /// Time samples associated with the moving-average window.
-    std::vector<double> timeSamples;
+    std::deque<double> timeSamples;
     /// Current surface-choke open/closed state.
     int surfaceChokeOpen = 0;
     /// Previous-time-level surface-choke state.
