@@ -23,7 +23,7 @@
         "sentidoGeometriaSegueEscoamento": {
           "type": "boolean",
           "default": true,
-          "description": "Indica se o sentido de preenchimento da geometria segue o mesmo sentido do escoamento. Se true, o zero é o início da tubulação. Se false, a zero é o final da tubulação. É importante ressaltar que, no caso false, os ângulos ainda são definidos com relação ao sentido do escoamento, para manter a consistência com o Marlim 2."
+          "description": "Indica se o sentido de preenchimento da geometria segue o mesmo sentido do escoamento. Se true, o zero é o início da tubulação. Se false, o zero é o final da tubulação. É importante ressaltar que, no caso false, os ângulos ainda são definidos com relação ao sentido do escoamento, para manter a consistência com o Marlim 2."
         },
         "linhaGas": {
           "type": "boolean",
@@ -1045,7 +1045,8 @@
         "tensup": {
           "type": "number",
           "description": "Tensão superficial do líquido.",
-          "unit": "N/m"
+          "unit": "N/m",
+          "default": 0.072
         },
         "calorEspecifico": {
           "type": "number",
@@ -2876,6 +2877,7 @@
             2,
             3
           ],
+          "default": 0,
           "description": "0: fluido (líquido) dado pelo usuário (informado no campo fluidoComplementar); 1: água (é preciso informar a salinidade); 2: gás rico em CO2 via tabela flash (arquivo Pvtsim .tab requerido, cadastro de fluido de produção requerido; 3: gás rico em CO2 via composicional (arquivo Pvtsim .ctm requerido, cadastro de fluido de produção requerido)."
         },
         "salinidade": {

@@ -162,3 +162,6 @@ regression_output/
 versao.h
 versao.h.bak
 *.code-workspace
+
+# Self-hosted runners
+actions-runner

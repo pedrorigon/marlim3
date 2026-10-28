@@ -4693,6 +4693,11 @@ void Ler::parse_fluido_complementar(
 		double temph = 0.;
 		double lvish = 0.;
 		double sal = 0.;
+		if (tipoflui == 1) {
+			tensup = 0.072;
+			if (fluido_complementar_json.tensup().exists())
+				tensup = fluido_complementar_json.tensup();
+		}
 		if(tipoflui!=1){
 			masesp =
 				fluido_complementar_json.massaEspecifica();
@@ -21544,4 +21549,3 @@ void Ler::copia_tela(Ler& arqAntigo) {
 		}
 	}
 }
-

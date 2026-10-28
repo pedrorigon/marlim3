@@ -262,3 +262,51 @@ add_custom_command(TARGET Marlim3 POST_BUILD
 )
 
 install(TARGETS Marlim3 DESTINATION bin)
+
+# ------------------------------------------------------------------------------
+# Optional C++ unit tests
+#
+# Disabled by default so the engine build and the release workflow are
+# unaffected. Enable explicitly:
+#     cmake -S . -B build -DMARLIM_BUILD_TESTS=ON
+#     cmake --build build --target test_friction_factor
+#     ctest --test-dir build --output-on-failure
+# ------------------------------------------------------------------------------
+option(MARLIM_BUILD_TESTS "Build the C++ unit tests" OFF)
+
+if(MARLIM_BUILD_TESTS)
+    enable_testing()
+
+    add_executable(test_friction_factor
+        ${CMAKE_SOURCE_DIR}/tests/cpp/test_friction_factor.cpp
+        ${SRCDIR}/GradientCorrelations.cpp
+    )
+
+    target_include_directories(test_friction_factor PRIVATE
+        ${INCDIR}
+        ${LIBDIR}
+    )
+
+    # Keep the tested numerical routine and discard unrelated correlations.
+    if(MSVC)
+        target_compile_options(test_friction_factor PRIVATE /Gy /Gw)
+        target_link_options(test_friction_factor PRIVATE /OPT:REF)
+    else()
+        target_compile_options(test_friction_factor PRIVATE -ffunction-sections -fdata-sections
+            $<$<CONFIG:Release>:-ffp-contract=off>)
+        if(APPLE)
+            target_link_options(test_friction_factor PRIVATE -Wl,-dead_strip)
+        else()
+            target_link_options(test_friction_factor PRIVATE -Wl,--gc-sections)
+        endif()
+    endif()
+
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(test_friction_factor PRIVATE OpenMP::OpenMP_CXX)
+    endif()
+
+    set_target_properties(test_friction_factor PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+    add_test(NAME friction_factor COMMAND test_friction_factor)
+endif()
