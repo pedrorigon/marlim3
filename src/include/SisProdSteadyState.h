@@ -131,6 +131,10 @@ void advanceDownstreamSteadyPressure(const SteadyStateState &state, int cellInde
 [[nodiscard]] double steadyPressureAtLastCell(const SteadyStateState &state);
 
 /// Marches the production column from a bottom-hole pressure guess in kgf/cm2.
+/// Initializes a closed upstream face with a source in the first cell. Each
+/// admitted pass restores inlet pressure and fractions before marching the column
+/// and gas line. The current convergence test admits at most one accelerated
+/// pass or two unaccelerated passes; the pressure search controls final convergence.
 /// Returns surface gas pressure minus corrected outlet pressure, or a march failure sentinel.
 [[nodiscard]] double marchProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pressureGuess);
 

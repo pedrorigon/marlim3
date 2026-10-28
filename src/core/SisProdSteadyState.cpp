@@ -5,6 +5,7 @@
 #include "SisProdThermal.h"
 #include "SisProdFluidTracking.h"
 #include "SisProdSteadyState.h"
+#include "SisProdSteadyStateInternal.h"
 
 #include "GradientCorrelations.h"
 #include "Leitura.h"
@@ -2038,149 +2039,207 @@ void finalizeSteadyMassTwoPhase(const SteadyStateState &state, const SteadyDepen
     publishSteadyComplementaryFraction(state, i);
 }
 
-void seedFirstCellVoidFraction(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute, double &alfini, double &betini) {
-    // void fraction estimate in the first cell of the system
-    if (state.cells[0].acsr.tipo == kAccessoryNone) { // no source at all
+void refreshSeedCompositionalProperties(const SteadyStateState &state, double pressureGuess,
+                                        ProFlu &sourceFluid, int gasMode) {
+    if (state.input.flashCompleto != 2)
+        return;
+    if (state.input.tabelaDinamica == 0)
+        state.cells[0].flui.atualizaPropComp(pressureGuess, state.cells[0].temp);
+    sourceFluid.atualizaPropComp(pressureGuess, state.cells[0].temp, -1, nullptr, nullptr, gasMode);
+}
+
+InitialPhaseFractions wetGasSeedFractions(const SteadyStateState &state, double pressureGuess) {
+    auto &source = state.cells[0].acsr.injg;
+    InitialPhaseFractions fractions;
+    const double gasMassFlowRate = source.VMas(pressureGuess, state.cells[0].temp);
+    double quality;
+    if (state.input.flashCompleto != 2)
+        quality = source.FluidoPro.FracMassHidra(1., 20.);
+    else
+        quality = source.FluidoPro.dStockTankVaporMassFraction;
+    const double totalMassFlowRate = gasMassFlowRate / quality;
+    quality = source.FluidoPro.FracMassHidra(pressureGuess, state.cells[0].temp);
+    const double gasVolumeFlowRate = totalMassFlowRate * quality /
+                  source.FluidoPro.MasEspGas(pressureGuess, state.cells[0].temp);
+    const double liquidVolumeFlowRate = totalMassFlowRate * (1. - quality) /
+                  source.FluidoPro.MasEspLiq(pressureGuess, state.cells[0].temp);
+    double complementaryVolumeFlowRate = source.razCompGas *
+                   source.QGas * source.fluidocol.standardDensity() /
+                   source.fluidocol.MasEspFlu(pressureGuess, state.cells[0].temp);
+    complementaryVolumeFlowRate /= units::kSecondsPerDay;
+    fractions.voidFraction = gasVolumeFlowRate / (liquidVolumeFlowRate + complementaryVolumeFlowRate + gasVolumeFlowRate);
+    if ((fabs(complementaryVolumeFlowRate) + fabs(liquidVolumeFlowRate)) > 1e-15)
+        fractions.complementaryLiquidFraction = fabs(complementaryVolumeFlowRate) / (fabs(complementaryVolumeFlowRate) + fabs(liquidVolumeFlowRate));
+    else
+        fractions.complementaryLiquidFraction = 0.;
+    return fractions;
+}
+
+InitialPhaseFractions seedFirstCellVoidFraction(const SteadyStateState &state,
+                                                const SteadyDependencies &dependencies,
+                                                double pressureGuess) {
+    switch (state.cells[0].acsr.tipo) {
+    case kAccessoryNone: {
+        InitialPhaseFractions fractions;
         state.cells[0].temp = state.input.celp[0].textern;
-        alfini = 1.;
-        betini = 0.;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-        }
-    } else if (state.cells[0].acsr.tipo == kAccessoryGasInjection) { // gas source
-        state.cells[0].temp = state.cells[0].acsr.injg.temp;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-            state.cells[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp, -1, NULL, NULL, state.cells[0].acsr.injg.seco);
-        }
-        if (state.cells[0].acsr.injg.seco == 1) {
-            alfini = 1.;
-            betini = 0.;
-        } else {
-            double masgas = state.cells[0].acsr.injg.VMas(pchute, state.cells[0].temp);
-            double quality;
-            if (state.input.flashCompleto != 2)
-                quality = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
-            else
-                quality = state.cells[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
-            double masT = masgas / quality;
-            quality = state.cells[0].acsr.injg.FluidoPro.FracMassHidra(pchute, state.cells[0].temp);
-            double qgas = masT * quality /
-                          state.cells[0].acsr.injg.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
-            double qliq = masT * (1. - quality) /
-                          state.cells[0].acsr.injg.FluidoPro.MasEspLiq(pchute, state.cells[0].temp);
-            double qcomp = state.cells[0].acsr.injg.razCompGas *
-                           state.cells[0].acsr.injg.QGas * state.cells[0].acsr.injg.fluidocol.standardDensity() /
-                           state.cells[0].acsr.injg.fluidocol.MasEspFlu(pchute, state.cells[0].temp);
-            qcomp /= units::kSecondsPerDay;
-            alfini = qgas / (qliq + qcomp + qgas);
-            if ((fabs(qcomp) + fabs(qliq)) > 1e-15)
-                betini = fabs(qcomp) / (fabs(qcomp) + fabs(qliq));
-            else
-                betini = 0.;
-        }
-    } else if (state.cells[0].acsr.tipo == kAccessoryLiquidInjection) { // liquid source: estimated from
-        // the phase volumetric flow rates, void fraction = no-slip void fraction
-        state.cells[0].temp = state.cells[0].acsr.injl.temp;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-            state.cells[0].acsr.injl.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
-        }
-        double qgas = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
-                      (1. - state.cells[0].acsr.injl.FluidoPro.BSW) *
-                      (state.cells[0].acsr.injl.FluidoPro.RGO -
-                       state.cells[0].acsr.injl.FluidoPro.rDgD * state.cells[0].acsr.injl.FluidoPro.RS(pchute, state.cells[0].temp) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
-                      state.cells[0].acsr.injl.FluidoPro.Deng * kAirDensityAtStandardConditions / state.cells[0].acsr.injl.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
-        double qliq = state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
-                          (1. - state.cells[0].acsr.injl.FluidoPro.BSW) * state.cells[0].acsr.injl.FluidoPro.BOFunc(pchute, state.cells[0].temp) +
-                      state.cells[0].acsr.injl.QLiq * (1 - state.cells[0].acsr.injl.bet) *
-                          state.cells[0].acsr.injl.FluidoPro.BSW * state.cells[0].acsr.injl.FluidoPro.BAFunc(pchute, state.cells[0].temp) +
-                      state.cells[0].acsr.injl.QLiq * state.cells[0].acsr.injl.bet;
-        alfini = qgas / (qliq + qgas);
-        betini = state.cells[0].acsr.injl.bet;
-    } else if (state.cells[0].acsr.tipo == kAccessoryInflowPerformance) { // IPR at the start of the pipe
-        // as with a liquid source, void fraction = no slip
-        state.cells[0].temp = state.cells[0].acsr.ipr.Tres;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-            state.cells[0].acsr.ipr.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
-        }
-        double qgas = state.cells[0].acsr.ipr.MasG(pchute, state.cells[0].temp) /
-                      state.cells[0].acsr.ipr.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
-        double qliq = state.cells[0].acsr.ipr.MasL(pchute, state.cells[0].temp) /
-                      state.cells[0].acsr.ipr.FluidoPro.MasEspLiq(pchute, state.cells[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (state.cells[0].acsr.tipo == kAccessoryRadialPorous) { // IPR at the start of the pipe
-        // as with a liquid source, void fraction = no slip
-        state.cells[0].temp = state.cells[0].acsr.radialPoro.tRes;
-        state.cells[0].pres = pchute;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-            state.cells[0].acsr.radialPoro.flup.atualizaPropComp(pchute, state.cells[0].temp);
-        }
+        fractions.voidFraction = 1.;
+        fractions.complementaryLiquidFraction = 0.;
+        if (state.input.flashCompleto == 2 && state.input.tabelaDinamica == 0)
+            state.cells[0].flui.atualizaPropComp(pressureGuess, state.cells[0].temp);
+        return fractions;
+    }
+    case kAccessoryGasInjection: {
+        auto &source = state.cells[0].acsr.injg;
+        state.cells[0].temp = source.temp;
+        refreshSeedCompositionalProperties(state, pressureGuess, source.FluidoPro,
+                                            source.seco);
+        if (source.seco == 1)
+            return {1., 0.};
+        return wetGasSeedFractions(state, pressureGuess);
+    }
+    case kAccessoryLiquidInjection: {
+        auto &source = state.cells[0].acsr.injl;
+        InitialPhaseFractions fractions;
+        state.cells[0].temp = source.temp;
+        refreshSeedCompositionalProperties(state, pressureGuess, source.FluidoPro);
+        const double gasVolumeFlowRate = source.QLiq * (1 - source.bet) *
+                      (1. - source.FluidoPro.BSW) *
+                      (source.FluidoPro.RGO -
+                       source.FluidoPro.rDgD * source.FluidoPro.RS(pressureGuess, state.cells[0].temp) * units::kBarrelPerCubicMetre / units::kCubicFootPerCubicMetre) *
+                      source.FluidoPro.Deng * kAirDensityAtStandardConditions / source.FluidoPro.MasEspGas(pressureGuess, state.cells[0].temp);
+        const double liquidVolumeFlowRate = source.QLiq * (1 - source.bet) *
+                          (1. - source.FluidoPro.BSW) * source.FluidoPro.BOFunc(pressureGuess, state.cells[0].temp) +
+                      source.QLiq * (1 - source.bet) *
+                          source.FluidoPro.BSW * source.FluidoPro.BAFunc(pressureGuess, state.cells[0].temp) +
+                      source.QLiq * source.bet;
+        fractions.voidFraction = gasVolumeFlowRate / (liquidVolumeFlowRate + gasVolumeFlowRate);
+        fractions.complementaryLiquidFraction = source.bet;
+        return fractions;
+    }
+    case kAccessoryInflowPerformance: {
+        auto &source = state.cells[0].acsr.ipr;
+        InitialPhaseFractions fractions;
+        state.cells[0].temp = source.Tres;
+        refreshSeedCompositionalProperties(state, pressureGuess, source.FluidoPro);
+        const double gasVolumeFlowRate = source.MasG(pressureGuess, state.cells[0].temp) /
+                      source.FluidoPro.MasEspGas(pressureGuess, state.cells[0].temp);
+        const double liquidVolumeFlowRate = source.MasL(pressureGuess, state.cells[0].temp) /
+                      source.FluidoPro.MasEspLiq(pressureGuess, state.cells[0].temp);
+        fractions.voidFraction = gasVolumeFlowRate / (liquidVolumeFlowRate + gasVolumeFlowRate);
+        fractions.complementaryLiquidFraction = 0.;
+        return fractions;
+    }
+    case kAccessoryRadialPorous: {
+        auto &source = state.cells[0].acsr.radialPoro;
+        InitialPhaseFractions fractions;
+        state.cells[0].temp = source.tRes;
+        state.cells[0].pres = pressureGuess;
+        refreshSeedCompositionalProperties(state, pressureGuess, source.flup);
         sources::renewSourceTerms(dependencies.sources, 0);
-        double qgas = state.cells[0].acsr.radialPoro.fluxIniG /
-                      state.cells[0].acsr.radialPoro.flup.MasEspGas(pchute, state.cells[0].temp);
-        double qliq = (state.cells[0].acsr.radialPoro.fluxIni + state.cells[0].acsr.radialPoro.fluxIniA) /
-                      state.cells[0].acsr.radialPoro.flup.MasEspLiq(pchute, state.cells[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (state.cells[0].acsr.tipo == kAccessoryPorous2D) { // IPR at the start of the pipe
-        // as with a liquid source, void fraction = no slip
-        state.cells[0].temp = state.cells[0].acsr.poroso2D.dados.tRes;
-        state.cells[0].pres = pchute;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-            state.cells[0].acsr.poroso2D.dados.flup.atualizaPropComp(pchute, state.cells[0].temp);
-        }
+        const double gasVolumeFlowRate = source.fluxIniG /
+                      source.flup.MasEspGas(pressureGuess, state.cells[0].temp);
+        const double liquidVolumeFlowRate = (source.fluxIni + source.fluxIniA) /
+                      source.flup.MasEspLiq(pressureGuess, state.cells[0].temp);
+        fractions.voidFraction = gasVolumeFlowRate / (liquidVolumeFlowRate + gasVolumeFlowRate);
+        fractions.complementaryLiquidFraction = 0.;
+        state.cells[0].flui.BSW = source.BSW;
+        return fractions;
+    }
+    case kAccessoryPorous2D: {
+        auto &source = state.cells[0].acsr.poroso2D;
+        InitialPhaseFractions fractions;
+        state.cells[0].temp = source.dados.tRes;
+        state.cells[0].pres = pressureGuess;
+        refreshSeedCompositionalProperties(state, pressureGuess, source.dados.flup);
         sources::renewSourceTerms(dependencies.sources, 0);
-        double qgas = state.cells[0].acsr.poroso2D.dados.transfer.fluxIniG /
-                      state.cells[0].acsr.poroso2D.dados.flup.MasEspGas(pchute, state.cells[0].temp);
-        double qliq = (state.cells[0].acsr.poroso2D.dados.transfer.fluxIni + state.cells[0].acsr.poroso2D.dados.transfer.fluxIniA) /
-                      state.cells[0].acsr.poroso2D.dados.flup.MasEspLiq(pchute, state.cells[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else if (state.cells[0].acsr.tipo == kAccessoryMultipleSource) { // mass source at the start of the pipe
-        // as with a liquid source, void fraction = no slip
-        state.cells[0].temp = state.cells[0].acsr.injm.temp;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-            state.cells[0].acsr.injm.FluidoPro.atualizaPropComp(pchute, state.cells[0].temp);
-        }
-        if (state.cells[0].acsr.injm.condTermo == 0) {
-            state.cells[0].pres = pchute;
+        const double gasVolumeFlowRate = source.dados.transfer.fluxIniG /
+                      source.dados.flup.MasEspGas(pressureGuess, state.cells[0].temp);
+        const double liquidVolumeFlowRate = (source.dados.transfer.fluxIni + source.dados.transfer.fluxIniA) /
+                      source.dados.flup.MasEspLiq(pressureGuess, state.cells[0].temp);
+        fractions.voidFraction = gasVolumeFlowRate / (liquidVolumeFlowRate + gasVolumeFlowRate);
+        fractions.complementaryLiquidFraction = 0.;
+        state.cells[0].flui.BSW = source.dados.transfer.BSW;
+        return fractions;
+    }
+    case kAccessoryMultipleSource: {
+        auto &source = state.cells[0].acsr.injm;
+        InitialPhaseFractions fractions;
+        state.cells[0].temp = source.temp;
+        refreshSeedCompositionalProperties(state, pressureGuess, source.FluidoPro);
+        if (source.condTermo == 0) {
+            state.cells[0].pres = pressureGuess;
             sources::renewSourceTerms(dependencies.sources, 0);
         }
-        double qgas = state.cells[0].acsr.injm.MassG /
-                      state.cells[0].acsr.injm.FluidoPro.MasEspGas(pchute, state.cells[0].temp);
-        double qliq = state.cells[0].acsr.injm.MassP /
-                          state.cells[0].acsr.injm.FluidoPro.MasEspLiq(pchute, state.cells[0].temp) +
-                      state.cells[0].acsr.injm.MassC /
-                          state.cells[0].acsr.injm.fluidocol.MasEspFlu(pchute, state.cells[0].temp);
-        alfini = qgas / (qliq + qgas);
-        betini = 0.;
-    } else { // none of these: void fraction = 1
+        const double gasVolumeFlowRate = source.MassG /
+                      source.FluidoPro.MasEspGas(pressureGuess, state.cells[0].temp);
+        const double liquidVolumeFlowRate = source.MassP /
+                          source.FluidoPro.MasEspLiq(pressureGuess, state.cells[0].temp) +
+                      source.MassC /
+                          source.fluidocol.MasEspFlu(pressureGuess, state.cells[0].temp);
+        fractions.voidFraction = gasVolumeFlowRate / (liquidVolumeFlowRate + gasVolumeFlowRate);
+        fractions.complementaryLiquidFraction = 0.;
+        return fractions;
+    }
+    default: {
+        InitialPhaseFractions fractions;
         state.cells[0].temp = state.input.celp[0].textern;
-        if (state.input.flashCompleto == 2) {
-            if (state.input.tabelaDinamica == 0)
-                state.cells[0].flui.atualizaPropComp(pchute, state.cells[0].temp);
-        }
-        alfini = 1.;
-        betini = 0.;
+        if (state.input.flashCompleto == 2 && state.input.tabelaDinamica == 0)
+            state.cells[0].flui.atualizaPropComp(pressureGuess, state.cells[0].temp);
+        fractions.voidFraction = 1.;
+        fractions.complementaryLiquidFraction = 0.;
+        return fractions;
     }
-    if (state.cells[0].acsr.tipo == kAccessoryRadialPorous) {
-        state.cells[0].flui.BSW = state.cells[0].acsr.radialPoro.BSW;
-    } else if (state.cells[0].acsr.tipo == kAccessoryPorous2D) {
-        state.cells[0].flui.BSW = state.cells[0].acsr.poroso2D.dados.transfer.BSW;
     }
+}
+
+void initializeClosedSourceBoundary(const SteadyStateState &state) {
+    state.cells[0].tempL = state.cells[0].temp;
+    state.cells[1].tempL = state.cells[0].temp;
+    state.cells[0].tempini = state.cells[0].temp;
+
+    state.cells[0].ML = 0.;
+    state.cells[0].MC = 0.;
+    state.cells[1].ML = 0.;
+    state.cells[0].MliqiniL = 0.;
+    state.cells[0].Mliqini = 0.;
+    state.cells[1].MliqiniL = 0.;
+    state.cells[0].MComp = 0.;
+    state.cells[0].QLL = 0.;
+    state.cells[0].QL = 0;
+    state.cells[1].QLL = 0.;
+    state.cells[0].QG = 0.;
+}
+
+void resetProductionMarchInlet(const SteadyStateState &state, double pressureGuess,
+                               const InitialPhaseFractions &fractions) {
+    state.cells[0].presauxL = pressureGuess;
+    state.cells[0].presLini = pressureGuess;
+    state.cells[0].presL = pressureGuess;
+    state.cells[0].pres = pressureGuess;
+    state.cells[1].presL = pressureGuess;
+    state.cells[0].presini = pressureGuess;
+    state.cells[1].presLini = pressureGuess;
+    state.cells[0].presaux = pressureGuess;
+    state.cells[1].presauxL = pressureGuess;
+
+    state.cells[0].alf = fractions.voidFraction;
+    state.cells[0].alfini = fractions.voidFraction;
+    state.cells[0].bet = fractions.complementaryLiquidFraction;
+    state.cells[0].betini = fractions.complementaryLiquidFraction;
+    state.cells[1].alfL = state.cells[0].alf;
+    state.cells[1].alfLini = state.cells[0].alf;
+    state.cells[0].alfPigD = state.cells[0].alf;
+    state.cells[0].alfPigDini = state.cells[0].alf;
+    state.cells[0].alfPigE = state.cells[0].alf;
+    state.cells[0].alfPigEini = state.cells[0].alf;
+    state.cells[1].betL = state.cells[0].bet;
+    state.cells[1].betLini = state.cells[0].bet;
+    state.cells[0].betPigD = state.cells[0].bet;
+    state.cells[0].betPigDini = state.cells[0].bet;
+    state.cells[0].betPigE = state.cells[0].bet;
+    state.cells[0].betPigEini = state.cells[0].bet;
+    state.cells[0].betI = state.cells[0].bet;
+    state.cells[1].betLI = state.cells[0].bet;
 }
 
 /// Solves the gas line at steady state under its inlet condition. With the
@@ -2248,17 +2307,14 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
         advanceUpstreamSteadyPressure(state, i, 0); // march step to get the pressure at the left boundary
         // of cell i
         // checks whether something went wrong:
-        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).smallValueTolerance)
-            {
-                abortValue = kSteadyMarchLimit;
-                return true;
-            }
+        if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].presaux) < (*state.globals).smallValueTolerance) {
+            abortValue = kSteadyMarchLimit;
+            return true;
+        }
         if (marchPressureTooLow(state.cells[i].presaux) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].presaux) > (*state.globals).smallValueTolerance)) {
-            {
-                abortValue = -kSteadyMarchLimit;
-                return true;
-            }
+            abortValue = -kSteadyMarchLimit;
+            return true;
         }
         refreshUpstreamProductionPeriphery(state, i); // update of the left boundary pressure,
         // if there is an ESP or a pressure increment
@@ -2281,17 +2337,13 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
         // checks whether something went wrong in this pressure advance to the centre of the
         // cell
         if (state.input.usaTabela == 1 && (state.input.tabent.pmax - state.cells[i].pres) < (*state.globals).smallValueTolerance) {
-            {
-                abortValue = kSteadyMarchLimit;
-                return true;
-            }
+            abortValue = kSteadyMarchLimit;
+            return true;
         }
         if (marchPressureTooLow(state.cells[i].pres) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i].pres) > (*state.globals).smallValueTolerance)) {
-            {
-                abortValue = -kSteadyMarchLimit;
-                return true;
-            }
+            abortValue = -kSteadyMarchLimit;
+            return true;
         }
         refreshDownstreamProductionPeriphery(state, i); // just updates the fields that hold the pressures
         // of the cells to the left and right
@@ -2327,17 +2379,15 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
                     // only shows a warning
                     cout << "#################PERMANENTE FALHOU EM SUA CONVERGENCIA##############################" << endl;
                     // if in a network iteration, after the first iteration
-                    if ((*state.globals).networkIteration > 0)
-                        {
-                            abortValue = -kSteadyConvergenceFailure;
-                            return true;
-                        }
+                    if ((*state.globals).networkIteration > 0) {
+                        abortValue = -kSteadyConvergenceFailure;
+                        return true;
+                    }
                     // if a transient simulation follows, or this is the first network iteration
-                    else
-                        {
-                            abortValue = kSteadyConvergenceFailure;
-                            return true;
-                        }
+                    else {
+                        abortValue = kSteadyConvergenceFailure;
+                        return true;
+                    }
                 }
             }
             advanceDownstreamSteadyPressure(state, i, 1);
@@ -2362,26 +2412,20 @@ bool advanceProductionCells(const SteadyStateState &state, const SteadyDependenc
         i++;
 
         if (isnan(state.cells[i - 1].pres) || isnan(state.cells[i - 1].temp) || isnan(state.cells[i - 1].alf)) {
-            {
-                abortValue = kSteadyMarchLimit;
-                return true;
-            }
+            abortValue = kSteadyMarchLimit;
+            return true;
         }
 
         // checks whether the cell-centre pressure went above
         // the static pressure of an IPR, if any
         if (marchPressureTooLow(state.cells[i - 1].pres) ||
             (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[i - 1].pres) > (*state.globals).smallValueTolerance)) {
-            {
-                abortValue = -kSteadyMarchLimit;
-                return true;
-            }
+            abortValue = -kSteadyMarchLimit;
+            return true;
         } else if ((state.cells[i - 1].acsr.tipo == kAccessoryInflowPerformance &&
                     ((state.cells[i - 1].acsr.ipr.Pres - state.cells[i - 1].pres) < (*state.globals).smallValueTolerance) && i == 1)) {
-            {
-                abortValue = kSteadyMarchLimit;
-                return true;
-            }
+            abortValue = kSteadyMarchLimit;
+            return true;
         }
     }
     return false;
@@ -4125,152 +4169,67 @@ double marchGasSteady(const SteadyStateState &state, const SteadyDependencies &d
         return erro1;
 }
 
-double marchProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute) {
+double marchProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pressureGuess) {
+    auto initialFractions = seedFirstCellVoidFraction(state, dependencies, pressureGuess);
+    constexpr double initialPhaseFractionCutoff = 1e-6;
+    if (fabs(initialFractions.voidFraction) < initialPhaseFractionCutoff)
+        initialFractions.voidFraction = 0.;
+    if (fabs(initialFractions.complementaryLiquidFraction) < initialPhaseFractionCutoff)
+        initialFractions.complementaryLiquidFraction = 0.;
 
-    double alfini = 0.;
-    double betini = 0.;
-
-    seedFirstCellVoidFraction(state, dependencies, pchute, alfini, betini);
-    if (fabs(alfini) < 1e-6)
-        alfini = 0.;
-    if (fabs(betini) < 1e-6)
-        betini = 0.;
-
-    // this march is for a source at the start of the pipe,
-    // so the pipe is taken as closed and a source is placed at the centre of the
-    // first cell. The flow rates at the cell's left boundary are therefore 0
-    state.cells[0].tempL = state.cells[0].temp;
-    state.cells[1].tempL = state.cells[0].temp;
-    state.cells[0].tempini = state.cells[0].temp;
-
-    state.cells[0].ML = 0.;
-    state.cells[0].MC = 0.;
-    state.cells[1].ML = 0.;
-    state.cells[0].MliqiniL = 0.;
-    state.cells[0].Mliqini = 0.;
-    state.cells[1].MliqiniL = 0.;
-    state.cells[0].MComp = 0.;
-    state.cells[0].QLL = 0.;
-    state.cells[0].QL = 0;
-    state.cells[1].QLL = 0.;
-    state.cells[0].QG = 0.;
-    double masfim = 1.;
-    double masfim0 = -10;
-    double presteste = 1.;
-    double presteste0 = -10;
+    initializeClosedSourceBoundary(state);
+    double monitoredMassFlowRate = 1.;
+    double previousMonitoredMassFlowRate = -10;
+    double monitoredOutletPressure = 1.;
+    double previousMonitoredOutletPressure = -10;
     state.steadyIteration = 0;
+    const int maximumMarchPasses = state.input.AceleraConvergPerm == 1 ? 1 : 2;
 
-    int limIter = 2; // iteration limit when convergence acceleration is off. Turning this option off
-    // is not advisable: the gains are small and convergence becomes unstable, especially
-    // when the branch is part of a network
-    if (state.input.AceleraConvergPerm == 1) { // convergence acceleration on
-        limIter = 1;                   // usually only two march iterations are made for a given guess
+    while ((fabs(monitoredMassFlowRate - previousMonitoredMassFlowRate) / fabs(monitoredMassFlowRate) > state.input.CriterioConvergPerm ||
+            fabs(monitoredOutletPressure - previousMonitoredOutletPressure) / fabs(monitoredOutletPressure) > state.input.CriterioConvergPerm) &&
+           state.steadyIteration < maximumMarchPasses) {
+        previousMonitoredMassFlowRate = monitoredMassFlowRate;
+        previousMonitoredOutletPressure = monitoredOutletPressure;
+        if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1) {
+            if (state.steadyIteration == 0)
+                gaslift::initializeTubingConnectionSteady(dependencies.gasLift);
+            else
+                gaslift::connectTubingSteady(dependencies.gasLift);
+        }
 
-    }
-    // arq.CriterioConvergPerm is a march convergence criterion; it only makes sense
-    // when convergence acceleration is off. Note that this convergence is not
-    // the convergence of the problem itself, just a repetition of the march for a given
-    // pressure or flow rate guess at the start of the pipe. What convergence really seeks is
-    // the bottom-hole pressure or flow rate that satisfies the boundary conditions at the end
-    // of the pipe; that is done in the search methods.
-    while ((fabs(masfim - masfim0) / fabs(masfim) > state.input.CriterioConvergPerm ||
-            fabs(presteste - presteste0) / fabs(presteste) > state.input.CriterioConvergPerm) &&
-           state.steadyIteration < limIter) {
-
-        masfim0 = masfim;
-        presteste0 = presteste;
-        if (state.steadyIteration == 0 && state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            gaslift::initializeTubingConnectionSteady(dependencies.gasLift); // before the first march iteration,
-        // an initial estimate of the thermal coupling between the tubing and the annulus is made,
-        // when there is a gas line
-        else if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.networkCoupled == 1)
-            gaslift::connectTubingSteady(dependencies.gasLift); // thermal coupling with the pressure and temperature
-        // obtained in the first march iteration
-        int i;
-        int guessNeedsCorrection = 1;
-        while (guessNeedsCorrection == 1) {
-            // Complete the column march or return its failure sentinel.
-
-            // initialising the pressures and volume fractions of the first cells, cell centre
-            // and cell boundary
-            state.cells[0].presauxL = pchute;
-            state.cells[0].presLini = pchute;
-            state.cells[0].presL = pchute;
-            state.cells[0].pres = pchute;
-            state.cells[1].presL = pchute;
-            state.cells[0].presini = pchute;
-            state.cells[1].presLini = pchute;
-            state.cells[0].presaux = pchute;
-            state.cells[1].presauxL = pchute;
-
-            state.cells[0].alf = alfini;
-            state.cells[0].alfini = alfini;
-            state.cells[0].bet = betini;
-            state.cells[0].betini = betini;
-            state.cells[1].alfL = state.cells[0].alf;
-            state.cells[1].alfLini = state.cells[0].alf;
-            state.cells[0].alfPigD = state.cells[0].alf;
-            state.cells[0].alfPigDini = state.cells[0].alf;
-            state.cells[0].alfPigE = state.cells[0].alf;
-            state.cells[0].alfPigEini = state.cells[0].alf;
-            state.cells[1].betL = state.cells[0].bet;
-            state.cells[1].betLini = state.cells[0].bet;
-            state.cells[0].betPigD = state.cells[0].bet;
-            state.cells[0].betPigDini = state.cells[0].bet;
-            state.cells[0].betPigE = state.cells[0].bet;
-            state.cells[0].betPigEini = state.cells[0].bet;
-            state.cells[0].betI = state.cells[0].bet;
-            state.cells[1].betLI = state.cells[0].bet;
-            // checks whether something is already wrong at the start of the march
+        int nextCell;
+        do {
+            resetProductionMarchInlet(state, pressureGuess, initialFractions);
             if (marchPressureTooLow(state.cells[0].pres) ||
                 (state.input.usaTabela == 1 && (state.input.tabent.pmin - state.cells[0].pres) > (*state.globals).smallValueTolerance))
                 return -kSteadyMarchLimit;
             else if ((state.cells[0].acsr.tipo == kAccessoryInflowPerformance &&
                       (state.cells[0].acsr.ipr.Pres - state.cells[0].pres) < (*state.globals).smallValueTolerance))
                 return kSteadyMarchLimit;
-            // IniciaVazValvGasPerm estimates the flow rate through a gas-lift valve
-            // before the gas line has been marched. It receives the
-            // production cell index and checks whether that cell has a gas-lift valve; if it has,
-            // with an injected-flow-rate condition on the gas line, it divides the injected flow rate by the number of
-            // valves and gives that value to the valve of this production cell;
-            // with an injection-pressure condition, it estimates the gas-line pressure
-            // at the valve by hydrostatics and computes the valve's injection flow rate from it
+
             if (state.input.lingas > 0 && state.input.nvalvgas > 0 && state.steadyIteration == 0 && state.convergenceMonitor > 0.1) {
                 withGasInletCondition(state.gasCells[0].tipoCC,
                                       [&](auto condition) { estimateValveGasPressure(state, condition); });
                 gaslift::initializeSteadyValveGasFlowRate(dependencies.gasLift, 0);
             }
-            i = 1;
-            // start of the march proper
+            nextCell = 1;
             double abortValue;
-            if (advanceProductionCells(state, dependencies, pchute, i, abortValue))
+            if (advanceProductionCells(state, dependencies, pressureGuess, nextCell, abortValue))
                 return abortValue;
-            if (i == state.lastCell + 1)
-                guessNeedsCorrection = 0; // end of the march
-        }
-        // after the production line march, the gas line is marched,
-        // if there is one
-        marchGasLineAndCoupleAnnulus(state, dependencies, pchute);
+        } while (nextCell != state.lastCell + 1);
 
-        masfim = state.cells[state.lastCell - 1].MC; // stores the flow rate to compute the error when the
-        // convergence acceleration option is off
-        presteste = state.cells[state.lastCell].pres; // stores the pressure to compute the error when the
-        // convergence acceleration option is off
-        state.steadyIteration++; // updates the march iteration
-        if (state.steadyIteration > 200 && state.input.AP == 0)
-            NumError("ConvergÃƒÂªncia em marchaProdPerm1 atingiu maximo de iteracoes");
-        else if (state.steadyIteration > 200)
-            return kSteadyConvergenceFailure;
+        marchGasLineAndCoupleAnnulus(state, dependencies, pressureGuess);
+        monitoredMassFlowRate = state.cells[state.lastCell - 1].MC;
+        monitoredOutletPressure = state.cells[state.lastCell].pres;
+        state.steadyIteration++;
     }
 
-    double corrigePresF = 0.;
+    double outletPressureCorrection = 0.;
     if (((*state.globals).networkMode == 0 || state.endNode == 1 || (*state.globals).parallelNetworkMode == 1) && state.input.corrigeContSep == 1)
-        corrigePresF = steadyPressureAtLastCell(state);
+        outletPressureCorrection = steadyPressureAtLastCell(state);
 
     state.baseConvergenceMonitor = state.gasSurfacePressure;
-    return state.gasSurfacePressure - (state.cells[state.lastCell].pres + corrigePresF); // if the march reached the last cell,
-    // returns the difference between the upstream choke pressure and the pressure of the last cell
-    // computed by the march
+    return state.gasSurfacePressure - (state.cells[state.lastCell].pres + outletPressureCorrection);
 }
 
 double marchReverseProductionSteady(const SteadyStateState &state, const SteadyDependencies &dependencies, double pchute) {
@@ -4279,7 +4238,9 @@ double marchReverseProductionSteady(const SteadyStateState &state, const SteadyD
     double betini = 0.;
     state.slowHeatTransferThreshold = 0.1;
 
-    seedFirstCellVoidFraction(state, dependencies, pchute, alfini, betini);
+    const auto initialFractions = seedFirstCellVoidFraction(state, dependencies, pchute);
+    alfini = initialFractions.voidFraction;
+    betini = initialFractions.complementaryLiquidFraction;
     // this march is for a source at the start of the pipe,
     // so the pipe is taken as closed and a source is placed at the centre of the
     // first cell. The flow rates at the cell's left boundary are therefore 0
@@ -4459,7 +4420,9 @@ double marchProductionSteadySecondary(const SteadyStateState &state, const Stead
     double alfini = 0.;
     double betini = 0.;
 
-    seedFirstCellVoidFraction(state, dependencies, pchute, alfini, betini);
+    const auto initialFractions = seedFirstCellVoidFraction(state, dependencies, pchute);
+    alfini = initialFractions.voidFraction;
+    betini = initialFractions.complementaryLiquidFraction;
 
     // this march is for a source at the start of the pipe,
     // so the pipe is taken as closed and a source is placed at the centre of the

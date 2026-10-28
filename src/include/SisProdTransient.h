@@ -382,7 +382,8 @@ void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli = 0
 /// Generates fluid mini-tables and initializes the interior-cell mole inventories.
 void refreshFluidMiniTable(const TransientStepState &state);
 
-/// Updates inlet quality and complementary fraction for the active pressure boundary model.
+/// Updates active pressure-boundary quality and, for the gas-dominated model, the
+/// complementary fraction. Unhandled model combinations retain their current values.
 void refreshInletCondition(const TransientStepState &state);
 
 /// Recentres cell and accessory mini-tables and evaluates enabled tables in parallel.

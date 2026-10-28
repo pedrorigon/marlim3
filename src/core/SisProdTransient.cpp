@@ -1423,6 +1423,42 @@ void refreshAccessoryFluidMiniTable(const TransientStepState &state, int i, ProF
     if(state.input.miniTabAtraso > 0)fillFluidMiniTable(state, accessoryFluid);
 }
 
+void refreshCompositionalInletQuality(const TransientStepState &state) {
+    const Cel &inletCell = state.cells[0];
+    (void)inletCell.flui.MasEspGas(state.inletPressure, state.inletTemperature);
+    const double liquidDensity = inletCell.flui.MasEspLiq(state.inletPressure, state.inletTemperature);
+    const double baseFluidGasMassFraction = inletCell.flui.FracMassHidra(state.inletPressure, state.inletTemperature);
+    (void)inletCell.fluicol.standardDensity();
+    const double complementaryDensity = inletCell.fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+    const double mixtureLiquidDensity =
+        state.inletComplementaryFraction * complementaryDensity +
+        (1. - state.inletComplementaryFraction) * liquidDensity;
+    const double gasMassPerLiquidVolume =
+        ((1. - state.inletComplementaryFraction) * liquidDensity * baseFluidGasMassFraction /
+         (1. - baseFluidGasMassFraction));
+    state.inletQuality = gasMassPerLiquidVolume / (mixtureLiquidDensity + gasMassPerLiquidVolume);
+}
+
+void refreshGasInletFractions(const TransientStepState &state) {
+    const Cel &inletCell = state.cells[0];
+    const double standardGasDensity = inletCell.flui.Deng * kAirDensityAtStandardConditions;
+    const double gasDensity = inletCell.flui.MasEspGas(state.inletPressure, state.inletTemperature);
+    const double oilDensity = inletCell.flui.MasEspoleo(state.inletPressure, state.inletTemperature);
+    const double hydrocarbonGasMassFraction = inletCell.flui.FracMass(state.inletPressure, state.inletTemperature);
+    const double standardComplementaryDensity = inletCell.fluicol.standardDensity();
+    const double complementaryDensity = inletCell.fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
+    const double complementaryRatioTerm =
+        (standardComplementaryDensity / complementaryDensity) * (gasDensity / standardGasDensity) *
+        state.input.CCPres.bet[0] / hydrocarbonGasMassFraction;
+    const double liquidToGasVolumeRatio =
+        (gasDensity / oilDensity) * (1 - hydrocarbonGasMassFraction) / hydrocarbonGasMassFraction;
+    const double updatedInletQuality =
+        gasDensity / (((1. - hydrocarbonGasMassFraction) / hydrocarbonGasMassFraction) * (gasDensity / oilDensity) +
+                      gasDensity + complementaryRatioTerm);
+    state.inletQuality = updatedInletQuality;
+    state.inletComplementaryFraction = complementaryRatioTerm / (liquidToGasVolumeRatio + complementaryRatioTerm);
+}
+
 }  // namespace
 
 void updateInteriorCell(const TransientStepState &state, int i, int expli) {
@@ -2307,7 +2343,7 @@ void solvePressureVolumeCoupling(const TransientStepState &state, int vexpli, in
 }
 
 void refreshFluidMiniTable(const TransientStepState &state) {
-        generateFluidMiniTables(state);
+    generateFluidMiniTables(state);
     for (int i = 0; i < state.lastCell; i++) {
 
         double pres = state.cells[i].pres;
@@ -2338,26 +2374,9 @@ void refreshInletCondition(const TransientStepState &state) {
         return;
 
     if (state.input.tipoFluido == 0 && state.input.flashCompleto == 2) {
-        (void)state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
-        double liquidDensity = state.cells[0].flui.MasEspLiq(state.inletPressure, state.inletTemperature);
-        double titH = state.cells[0].flui.FracMassHidra(state.inletPressure, state.inletTemperature);
-        (void)state.cells[0].fluicol.standardDensity();
-        double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-        double rlMix = state.inletComplementaryFraction * complementaryDensity + (1. - state.inletComplementaryFraction) * liquidDensity;
-        double val1 = ((1. - state.inletComplementaryFraction) * liquidDensity * titH / (1. - titH));
-        state.inletQuality = val1 / (rlMix + val1);
+        refreshCompositionalInletQuality(state);
     } else if (state.input.tipoFluido == 1) {
-        double rgST = state.cells[0].flui.Deng * kAirDensityAtStandardConditions;
-        double gasDensity = state.cells[0].flui.MasEspGas(state.inletPressure, state.inletTemperature);
-        double liquidDensity = state.cells[0].flui.MasEspoleo(state.inletPressure, state.inletTemperature);
-        double quality = state.cells[0].flui.FracMass(state.inletPressure, state.inletTemperature);
-        double rcST = state.cells[0].fluicol.standardDensity();
-        double complementaryDensity = state.cells[0].fluicol.MasEspFlu(state.inletPressure, state.inletTemperature);
-        double val1 = (rcST / complementaryDensity) * (gasDensity / rgST) * state.input.CCPres.bet[0] / quality;
-        double val2 = (gasDensity / liquidDensity) * (1 - quality) / quality;
-        double titT = gasDensity / (((1. - quality) / quality) * (gasDensity / liquidDensity) + gasDensity + val1);
-        state.inletQuality = titT;
-        state.inletComplementaryFraction = val1 / (val2 + val1);
+        refreshGasInletFractions(state);
     }
 }
 

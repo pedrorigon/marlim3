@@ -274,6 +274,12 @@ void supplyAbsentLiquidProperties(ProFlu &flui, const std::pair<double, int> (&t
 /// Copies cell bounds, updates the accessory stock-tank and in-situ composition, and fills its enabled table.
 void refreshAccessoryFluidMiniTable(const TransientStepState &state, int i, ProFlu &accessoryFluid);
 
+/// Updates compositional pressure-boundary quality without changing the complementary fraction.
+void refreshCompositionalInletQuality(const TransientStepState &state);
+
+/// Updates gas-dominated pressure-boundary fractions using the first standard-ratio entry.
+void refreshGasInletFractions(const TransientStepState &state);
+
 }  // namespace
 }  // namespace sisprod::transient
 
