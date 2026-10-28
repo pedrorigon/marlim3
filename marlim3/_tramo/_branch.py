@@ -81,7 +81,13 @@ class Branch:
         are also translated PT→EN so the user can build models fully in PT.
         All dict/list values are wrapped in bilingual containers for
         transparent PT/EN nested access.
+        Tuples are coerced to list so that a trailing comma
+        (e.g. ``branch.perfilProducao = {...},``) does not silently bypass
+        translation.
         """
+        # Coerce tuples to list (guards against trailing-comma assignment)
+        if isinstance(value, tuple):
+            value = list(value)
         en_name = _PT_TO_EN.get(name)
         if en_name is not None and en_name != name:
             # Translate nested PT keys/values by wrapping in a dict
@@ -327,6 +333,29 @@ class Branch:
                 nome = nome[:-4]
             self.label = nome
 
+    def from_flowedit(self, source='file', path=None, json_template=None,
+                      fluid_model=None, fluid_model_path=None,
+                      keep_flowedit_xy=True, write_log=False):
+        from .._conversores._conversor_flowedit import converter_flowedit_para_json
+
+        data = converter_flowedit_para_json(
+            excel_path=path,
+            json_template_dict=json_template,
+            fluid_model=fluid_model,
+            fluid_model_path=fluid_model_path,
+            keep_flowedit_xy=keep_flowedit_xy,
+            write_log=write_log,
+        )
+        self.from_json(data, is_string=True)
+
+        if not hasattr(self, 'label') or not self.label:
+            nome = os.path.basename(path)
+            for ext in ('.xlsm', '.xlsx', '.xls'):
+                if nome.endswith(ext):
+                    nome = nome[:-len(ext)]
+                    break
+            self.label = nome
+
     def simulate(self, kind='PRODUTOR',
                  label='marlim3_model',
                  directory='marlim3_resultados',
@@ -334,7 +363,8 @@ class Branch:
                  simulation_id=None,
                  websocket_handler=None,
                  tracker=None,
-                 sanitized=False):
+                 sanitized=False,
+                 language='en'):
         if label != 'marlim3_model':
             self.label = label
 
@@ -370,7 +400,7 @@ class Branch:
                         self.time['snapshotFile'] = _sanitize_filename(
                             str(self.time['snapshotFile']))
 
-            self.to_json(label)
+            self.to_json(label, language=language)
 
             cmd = [str(executavel), "-d", directory, "-i", filename]
             if self.system == 'INJETOR':
