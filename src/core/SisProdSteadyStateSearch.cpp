@@ -3,6 +3,7 @@
 #include "SisProdGasLift.h"
 #include "SisProdThermal.h"
 #include "SisProdSteadyStateSearch.h"
+#include "SisProdPressureMarchInternal.h"
 
 #include "RootFindingSolvers.h"
 
@@ -14,7 +15,12 @@
 #include "SimulationContext.h"
 #include "UnitConversions.h"
 
+#include <cmath>
+#include <cstddef>
+#include <iomanip>
+#include <locale>
 #include <math.h>
+#include <sstream>
 
 namespace sisprod::steady {
 
@@ -3209,19 +3215,78 @@ double searchReverseProductionPressureToPressure(const SteadyStateSearchState &s
 }
 
 double searchProductionPressureToPressure(const SteadyStateSearchState &state, const SteadyDependencies &dependencies, double chute, double maximumFlowRate, int kontaiter) {
+    struct SearchDiagnostics {
+        std::size_t preliminaryEvaluations = 0;
+        std::size_t bracketingEvaluations = 0;
+        std::size_t completedEvaluations = 0;
+        std::size_t pressureLimitedEvaluations = 0;
+        std::size_t nonFiniteEvaluations = 0;
+        std::size_t positiveResiduals = 0;
+        std::size_t negativeResiduals = 0;
+        double lastGuess = 0.;
+        double lastCompletedGuess = 0.;
+        double lastCompletedResidual = 0.;
+        double lastAbortedGuess = 0.;
+        detail::PressureMarchStop lastStop;
+    } diagnostics;
+    const auto evaluateMarch = [&](double guess, bool preliminary) {
+        detail::PressureMarchStop stop;
+        const double residual = detail::marchProductionPressureToPressure(state.march, dependencies, guess, &stop);
+        if (preliminary)
+            ++diagnostics.preliminaryEvaluations;
+        else
+            ++diagnostics.bracketingEvaluations;
+        diagnostics.lastGuess = guess;
+        if (stop.cell >= 0) {
+            ++diagnostics.pressureLimitedEvaluations;
+            diagnostics.lastAbortedGuess = guess;
+            diagnostics.lastStop = stop;
+        } else if (std::isfinite(residual)) {
+            ++diagnostics.completedEvaluations;
+            diagnostics.lastCompletedGuess = guess;
+            diagnostics.lastCompletedResidual = residual;
+            diagnostics.positiveResiduals += residual > 0.;
+            diagnostics.negativeResiduals += residual < 0.;
+        } else {
+            ++diagnostics.nonFiniteEvaluations;
+        }
+        return residual;
+    };
+    const auto failureMessage = [&](const char *message) {
+        std::ostringstream output;
+        output.imbue(std::locale::classic());
+        output << std::setprecision(17) << message
+               << "; pressure march diagnostics: preliminary=" << diagnostics.preliminaryEvaluations
+               << ", bracketing=" << diagnostics.bracketingEvaluations
+               << ", completed=" << diagnostics.completedEvaluations
+               << ", pressure-limited=" << diagnostics.pressureLimitedEvaluations
+               << ", non-finite=" << diagnostics.nonFiniteEvaluations
+               << ", positive-residuals=" << diagnostics.positiveResiduals
+               << ", negative-residuals=" << diagnostics.negativeResiduals
+               << ", iteration-count=" << kontaiter
+               << ", last-flow[m3/day]=" << diagnostics.lastGuess;
+        if (diagnostics.completedEvaluations != 0)
+            output << ", last-completed-flow[m3/day]=" << diagnostics.lastCompletedGuess
+                   << ", last-completed-residual[kgf/cm2]=" << diagnostics.lastCompletedResidual;
+        if (diagnostics.pressureLimitedEvaluations != 0)
+            output << ", last-aborted-flow[m3/day]=" << diagnostics.lastAbortedGuess
+                   << ", stopping-cell=" << diagnostics.lastStop.cell
+                   << ", stopping-pressure[kgf/cm2]=" << diagnostics.lastStop.pressure;
+        return output.str();
+    };
+
     state.reverseSteady = 0;
     state.march.convergenceMonitor = 1000.;
     double mchute = chute;
-    double marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute);
+    double marchResidual = evaluateMarch(mchute, true);
     state.march.searchOrigin = 1;
     if (marchResidual < -kSteadyMarchSentinelThreshold) {
         while (marchResidual < -kSteadyMarchSentinelThreshold && kontaiter < 800) {
             mchute *= 0.9;
-            marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute);
+            marchResidual = evaluateMarch(mchute, true);
             if (mchute < 1e-5) {
                 if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
-                    NumError(
-                        "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
+                    NumError(failureMessage("Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes"));
                 else {
                     if ((*state.march.globals).networkIteration > 0)
                         return -kSteadyConvergenceFailure;
@@ -3230,7 +3295,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                 }
             }
         }
-        marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute);
+        marchResidual = evaluateMarch(mchute, true);
         kontaiter++;
     }
     double mchuteAux;
@@ -3252,7 +3317,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
             while (marchResidual * sentido < 0) {
                 mchuteAux = mchute2;
                 mchute2 *= (1. - state.march.input.buscaFC);
-                marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute2);
+                marchResidual = evaluateMarch(mchute2, false);
                 if (marchResidual > -kSteadyMarchSentinelThreshold) {
                     if (marchResidual < val0) {
                         kontaReverso++;
@@ -3272,8 +3337,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                 double velocityGuess = estimateInletMixtureVelocity(state, mchute2);
                 if (kontaiter > 200 && velocityGuess > 0.01) {
                     if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
-                        NumError(
-                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
+                        NumError(failureMessage("Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes"));
                     else {
                         if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
@@ -3287,14 +3351,13 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                 }
                 while (marchResidual < -kSteadyMarchSentinelThreshold) {
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
-                    marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute2);
+                    marchResidual = evaluateMarch(mchute2, false);
                     if (marchResidual * sentido < 0 && marchResidual > -kSteadyMarchSentinelThreshold)
                         negativeResidualGuess = mchute2;
                     kontaiter++;
                     if (kontaiter > 200) {
                         if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
-                            NumError(
-                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
+                            NumError(failureMessage("Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes"));
                         else {
                             if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;
@@ -3311,7 +3374,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
             while (marchResidual * sentido > 0) {
                 mchuteAux = mchute2;
                 mchute2 *= (1. + state.march.input.buscaFC);
-                marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute2);
+                marchResidual = evaluateMarch(mchute2, false);
                 if (marchResidual > -kSteadyMarchSentinelThreshold) {
                     if (marchResidual > val0) {
                         kontaReverso++;
@@ -3334,8 +3397,7 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                 kontaiter++;
                 if (kontaiter > 200) {
                     if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
-                        NumError(
-                            "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes");
+                        NumError(failureMessage("Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm  atingiu maximo de iteracoes"));
                     else {
                         if ((*state.march.globals).networkIteration > 0)
                             return -kSteadyConvergenceFailure;
@@ -3345,15 +3407,14 @@ double searchProductionPressureToPressure(const SteadyStateSearchState &state, c
                 }
                 while (marchResidual < -kSteadyMarchSentinelThreshold) {
                     mchute2 = 0.5 * (mchute2 + mchuteAux);
-                    marchResidual = marchProductionPressureToPressure(state.march, dependencies, mchute2);
+                    marchResidual = evaluateMarch(mchute2, false);
                     if (marchResidual * sentido > 0 && marchResidual > -kSteadyMarchSentinelThreshold)
                         positiveResidualGuess = mchute2;
                     kontaiter++;
 
                     if (kontaiter > 200) {
                         if ((*state.march.globals).networkMode == 0 && state.march.input.AP == 0)
-                            NumError(
-                                "Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes");
+                            NumError(failureMessage("Busca de valores iniciais para calculo de zero de funcao em buscaProdPresPresPerm atingiu maximo de iteracoes"));
                         else {
                             if ((*state.march.globals).networkIteration > 0)
                                 return -kSteadyConvergenceFailure;

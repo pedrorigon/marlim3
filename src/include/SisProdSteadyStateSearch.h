@@ -54,6 +54,7 @@ struct SteadyStateSearchState {
 
 /// Searches the standard source flow rate in m3/day between fixed production pressures.
 /// Uses maximumFlowRate when positive and carries the network iteration count.
+/// Standalone failures report completed residuals separately from pressure-limited marches.
 [[nodiscard]] double searchProductionPressureToPressure(const SteadyStateSearchState &state, const SteadyDependencies &dependencies, double massFlowRateGuess,
                                                         double maximumFlowRate = 0., int iterationCount = 0);
 

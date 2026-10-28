@@ -18987,11 +18987,13 @@ void Ler::imprimeTrend(Cel* const celula,
 				qowstd /= (1 - bswi);
 			else qowstd=celula[m].QL * (1. - beti) * 86400/ba;
 			double qlsC = 0.;
-			if (beti > 1e-15)
+			if (beti > 1e-15) {
+				const int densityCell = m > 0 ? m - 1 : 0;
 				qlsC = 86400 * celula[m].QL * beti
-						* celula[m - 1].fluicol.MasEspFlu(celula[m - 1].pres,
-								celula[m - 1].temp)
-						/ celula[m - 1].fluicol.standardDensity();
+						* celula[densityCell].fluicol.MasEspFlu(celula[densityCell].pres,
+								celula[densityCell].temp)
+						/ celula[densityCell].fluicol.standardDensity();
+			}
 			flut[linha][k] = qowstd + qlsC;
 			k++;
 		}

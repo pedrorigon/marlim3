@@ -6,6 +6,7 @@
 #include "SisProdFluidTracking.h"
 #include "SisProdSteadyState.h"
 #include "SisProdSteadyStateInternal.h"
+#include "SisProdPressureMarchInternal.h"
 
 #include "GradientCorrelations.h"
 #include "Leitura.h"
@@ -16,6 +17,7 @@
 #include "SimulationContext.h"
 #include "UnitConversions.h"
 
+#include <cmath>
 #include <math.h>
 #include <numbers>
 
@@ -1027,6 +1029,12 @@ void applySteadyMassLiquidInjection(const SteadyStateState &state, int i, double
             // new separator GOR, changed by the liquid source
             if (fabs(qostd1 + qostd2) > (*state.globals).smallValueTolerance)
                 state.cells[i].flui.RGO = qgstd / (qostd1 + qostd2);
+            else if (i == 1 && state.cells[0].MC == 0. && state.cells[0].Mliqini == 0. &&
+                     state.cells[0].MComp == 0. && state.cells[0].acsr.injl.QLiq > 0. &&
+                     qostd1 == 0. && qostd2 > 0. && std::isfinite(qostd2) &&
+                     state.cells[0].acsr.injl.FluidoPro.RGO >= 0. &&
+                     std::isfinite(state.cells[0].acsr.injl.FluidoPro.RGO))
+                state.cells[i].flui.RGO = state.cells[0].acsr.injl.FluidoPro.RGO;
             else
                 state.cells[i].flui.RGO = (*state.globals).maximumGasOilRatio;
         }
@@ -4575,6 +4583,13 @@ double marchProductionSteadySecondary(const SteadyStateState &state, const Stead
 }
 
 double marchProductionPressureToPressure(const SteadyStateState &state, const SteadyDependencies &dependencies, double mchute) {
+    return detail::marchProductionPressureToPressure(state, dependencies, mchute, nullptr);
+}
+
+double detail::marchProductionPressureToPressure(const SteadyStateState &state, const SteadyDependencies &dependencies,
+                                                double mchute, PressureMarchStop *stop) {
+    if (stop != nullptr)
+        *stop = {};
 
     double alfini = 0.;
     double betini = 0.;
@@ -4672,8 +4687,11 @@ double marchProductionPressureToPressure(const SteadyStateState &state, const St
                     advanceSteadyGasMassTransfer(state, i - 1);
             }
             i++;
-            if (state.cells[i - 1].pres <= 1)
+            if (state.cells[i - 1].pres <= 1) {
+                if (stop != nullptr)
+                    *stop = {i - 1, state.cells[i - 1].pres};
                 return -kSteadyMarchLimit;
+            }
         }
 
         state.steadyIteration++;
