@@ -336,7 +336,7 @@ void computeTimeStep(const TransientStepState &state, int vexpli = 0);
 void computeExplicitTimeStep(const TransientStepState &state);
 
 /// Applies ordered choke, transport, event, and valve controls to the time step.
-void computeImplicitTimeStep(const TransientStepState &state);
+void computeImplicitTimeStep(const TransientStepState &state, int explicitScheme = 0);
 
 /// Updates the accepted/CFL histories and their fixed-denominator restriction rule.
 void dampMaximumTimeStep(const TransientStepState &state);

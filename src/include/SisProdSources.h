@@ -48,9 +48,15 @@ struct SourceState {
 /// (arriving).
 void addMasterValveFlow(const SourceState &state, int cellIndex);
 
+/// Evaluates each recirculation connection once from the current endpoint states,
+/// before the cell source sweep. Both endpoints then use the same phase rates;
+/// local hydrate consumption is applied independently in renewSourceTerms.
+void prepareRecirculationSourceRates(const SourceState &state);
+
 /// Renews the source terms of cell cellIndex: what its accessory delivers in
 /// the step (gas or liquid injection, IPR, master valve, volumetric pump, leak,
 /// multiple source, porous medium), less what hydrate formation consumed.
+/// Recirculation rates are prepared once for the sweep before calling this method.
 void renewSourceTerms(const SourceState &state, int cellIndex);
 
 }  // namespace sisprod::sources

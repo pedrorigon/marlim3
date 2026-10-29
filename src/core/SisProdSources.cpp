@@ -216,6 +216,14 @@ void applyLiquidInjectionSource(const SourceState &state, int cellIndex, double 
 void applyInflowPerformanceSource(const SourceState &state, int cellIndex, double cellPressure, double cellTemperature) {
     Cel &cell = state.cells[cellIndex];
     auto &source = cell.acsr.ipr;
+    if (source.ICV != 0) {
+        double annulusPressure = -1.;
+        if (state.globals->simulationTime > 0.)
+            annulusPressure = source.presAnul;
+        source.VMasICV(cellPressure, cellTemperature, cell.alf, cell.bet,
+                       cell.flui, cell.fontemassGR, cell.fontemassLR, annulusPressure);
+        return;
+    }
     if (cellPressure < source.Pres) {
         cell.fontemassLR += source.MasL(cellPressure, cellTemperature);
         cell.fontemassCR = 0.;
@@ -233,6 +241,41 @@ void applyInflowPerformanceSource(const SourceState &state, int cellIndex, doubl
         source.deriC *= (1. - cell.alf) * cell.bet * cell.fluicol.MasEspFlu(cellPressure, cellTemperature);
         source.deriG *= 1 * cell.alf * cell.flui.MasEspGas(cellPressure, cellTemperature);
     }
+}
+
+void refreshRecirculationFlow(const SourceState &state, int cellIndex) {
+    Cel &cell = state.cells[cellIndex];
+    Cel &downstream = state.cells[cell.acsr.indJusRecic];
+    auto &source = downstream.acsr.fontechk;
+    source.fluidoP = downstream.flui;
+    source.presT = downstream.pres;
+    source.tempT = downstream.temp;
+    double pressure = downstream.pres;
+    double temperature = downstream.temp;
+    double voidFraction = downstream.alf;
+    double complementaryFraction = downstream.bet;
+    double gasDensity = downstream.flui.MasEspGas(pressure, temperature);
+    double producedDensity = downstream.flui.MasEspLiq(pressure, temperature);
+    double complementaryDensity = downstream.fluicol.MasEspFlu(pressure, temperature);
+    source.pamb = cell.pres;
+    source.tamb = cell.temp;
+    source.fluidoPamb = cell.flui;
+    source.titT = voidFraction * gasDensity /
+                  (voidFraction * gasDensity + (1 - voidFraction) *
+                   (complementaryFraction * complementaryDensity + (1 - complementaryFraction) * producedDensity));
+    source.betIST = complementaryFraction;
+    pressure = cell.pres;
+    temperature = cell.temp;
+    voidFraction = cell.alf;
+    complementaryFraction = cell.bet;
+    gasDensity = cell.flui.MasEspGas(pressure, temperature);
+    producedDensity = cell.flui.MasEspLiq(pressure, temperature);
+    complementaryDensity = cell.fluicol.MasEspFlu(pressure, temperature);
+    source.titamb = voidFraction * gasDensity /
+                    (voidFraction * gasDensity + (1 - voidFraction) *
+                     (complementaryFraction * complementaryDensity + (1 - complementaryFraction) * producedDensity));
+    source.betISamb = complementaryFraction;
+    source.VMas();
 }
 
 void applyVolumetricPumpSource(const SourceState &state, int cellIndex) {
@@ -333,6 +376,13 @@ void addMasterValveFlow(const SourceState &state, int cellIndex) {
     }
 }
 
+void prepareRecirculationSourceRates(const SourceState &state) {
+    for (int index = 0; index < state.input.nfuro; index++) {
+        if (state.input.furo[index].recircula == 1)
+            refreshRecirculationFlow(state, state.input.furo[index].indMon);
+    }
+}
+
 void renewSourceTerms(const SourceState &state, int cellIndex) {
 
     double cellPressure = state.cells[cellIndex].pres;
@@ -370,6 +420,21 @@ void renewSourceTerms(const SourceState &state, int cellIndex) {
         applyVolumetricPumpSource(state, cellIndex);
     }
     refreshChokeMultipleAndPorousSources(state, cellIndex);
+
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryRecirculationUpstream) {
+        Cel &cell = state.cells[cellIndex];
+        const auto &source = state.cells[cell.acsr.indJusRecic].acsr.fontechk;
+        cell.fontemassLR -= source.masP;
+        cell.fontemassCR -= source.masC;
+        cell.fontemassGR -= source.masG;
+    }
+    if (state.cells[cellIndex].acsr.tipo == kAccessoryRecirculationDownstream) {
+        Cel &cell = state.cells[cellIndex];
+        const auto &source = cell.acsr.fontechk;
+        cell.fontemassLR += source.masP;
+        cell.fontemassCR += source.masC;
+        cell.fontemassGR += source.masG;
+    }
 
     const bool hydrateModel = state.input.calculaEnvelope == 1 && (state.input.tipoHmodel == 2 || state.input.tipoHmodel == 3);
     if (hydrateModel && state.cells[cellIndex].flui.BSW > 1e-12 && (*state.globals).simulationTime > 0.01) {

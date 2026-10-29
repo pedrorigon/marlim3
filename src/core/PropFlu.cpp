@@ -186,6 +186,7 @@ ProFlu::ProFlu(SimulationContext* context ,double vapi,double vrgo,double vdeng,
   tabRSPB=0;
 
   flashCompleto=vflash;
+  lingas=0;
   tabelaDinamica=0;
   indiceFlash=0;
   rholF=0;
@@ -205,10 +206,13 @@ ProFlu::ProFlu(SimulationContext* context ,double vapi,double vrgo,double vdeng,
   sigWGF=0;
   viscO=0;
   viscG=0;
+  condO=0;
+  condG=0;
   itempAnt=0;
   ipresAnt=0;
 
   viscBlackOil=1;
+  condBlackOil=1;
   id = vid;
 
   rDgD=1.;
@@ -571,6 +575,7 @@ ProFlu::ProFlu(SimulationContext* context, const double* const fluido, int vtipo
   rsTableTemperatureCount=0;
  tabRSPB=0;
  flashCompleto=vflash;
+ lingas=0;
  tabelaDinamica=0;
  indiceFlash=0;
  rholF=0;
@@ -590,10 +595,13 @@ ProFlu::ProFlu(SimulationContext* context, const double* const fluido, int vtipo
  sigWGF=0;
  viscO=0;
  viscG=0;
+ condO=0;
+ condG=0;
  itempAnt=0;
  ipresAnt=0;
 
  viscBlackOil=1;
+ condBlackOil=1;
  id = vid;
 
  rDgD=1.;
@@ -955,6 +963,7 @@ ProFlu::ProFlu(SimulationContext* context, const double* const fluido, const dou
   rsTableTemperatureCount=0;
   tabRSPB=0;
   flashCompleto=vflash;
+  lingas=0;
   tabelaDinamica=0;
   indiceFlash=0;
   rholF=0;
@@ -974,10 +983,13 @@ ProFlu::ProFlu(SimulationContext* context, const double* const fluido, const dou
   sigWGF=0;
   viscO=0;
   viscG=0;
+  condO=0;
+  condG=0;
   itempAnt=0;
   ipresAnt=0;
 
   viscBlackOil=1;
+  condBlackOil=1;
   id = vid;
 
   rDgD=1.;
@@ -1287,6 +1299,7 @@ ProFlu::ProFlu(const ProFlu& fluido):
   tabRSPB=fluido.tabRSPB;
 
   flashCompleto=fluido.flashCompleto;
+  lingas=fluido.lingas;
   tabelaDinamica=fluido.tabelaDinamica;
   indiceFlash=fluido.indiceFlash;
   rholF=fluido.rholF;
@@ -1306,10 +1319,13 @@ ProFlu::ProFlu(const ProFlu& fluido):
   sigWGF=fluido.sigWGF;
   viscO=fluido.viscO;
   viscG=fluido.viscG;
+  condO=fluido.condO;
+  condG=fluido.condG;
   itempAnt=0;
   ipresAnt=0;
 
   viscBlackOil=fluido.viscBlackOil;
+  condBlackOil=fluido.condBlackOil;
   id = fluido.id;
 
   rDgD=fluido.rDgD;
@@ -1615,6 +1631,7 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){
  tabRSPB=fluido.tabRSPB;
 
  flashCompleto=fluido.flashCompleto;
+ lingas=fluido.lingas;
  tabelaDinamica=fluido.tabelaDinamica;
  indiceFlash=fluido.indiceFlash;
  rholF=fluido.rholF;
@@ -1634,9 +1651,12 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){
  sigWGF=fluido.sigWGF;
  viscO=fluido.viscO;
  viscG=fluido.viscG;
+ condO=fluido.condO;
+ condG=fluido.condG;
  itempAnt=0;
  ipresAnt=0;
  viscBlackOil=fluido.viscBlackOil;
+ condBlackOil=fluido.condBlackOil;
  id = fluido.id;
 
  rDgD=fluido.rDgD;
@@ -2928,7 +2948,7 @@ double ProFlu::ViscOleo(double pres, double temp,int semEmul) const{
 
 			 if(corrOS==0){
 				 //Vazquez_Beggs
-				 double xvisc = (-3.9*pow(10,-5))*ipres - 5;
+				 double xvisc = (-3.9*pow(10.,-5))*ipres - 5;
 				 double yvisc = 2.6*pow(ipres,1.187)*pow(10,xvisc);
 				 viso = visSat*pow(ipres/PBolha,yvisc);
 			 }
@@ -3115,6 +3135,8 @@ double ProFlu::emul(double pres,double temp) const{
   else if(tipoemul==7){
 	  multplic=1.;
   }
+  else if(tipoemul==8)multplic*=exp((2.5312*frac+2.9566)*frac);
+  else if(tipoemul==9)multplic=exp(-0.06671 - 0.000775 * temp + 3.484 * frac + 0.005 * temp * frac);
   
   
   if (tipoHmodel_local == 3) { //alteracao hidrato 3
@@ -3286,7 +3308,7 @@ double ProFlu::ZdranOriginal(double pres, double temp, int cordg, double a, doub
 double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{
   double zt=0.;
   const double tempKelvin=temp + units::kZeroCelsiusInKelvin;
-  if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
+  if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && (tab==1 || lingas==1))){
 	  if(masespG<0){
 		  double PCtemp;
 		  double TCtemp;
@@ -3498,7 +3520,7 @@ else{
 }
 double ProFlu::DZDT(double pres, double temp,double masespG)const{
   double zt=0.;
-  if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
+  if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && (tab==1 || lingas==1))){
     int interno=1;
     double presR=(units::kPsiPerKgfPerCm2*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
@@ -3717,7 +3739,7 @@ else{
 }
 double ProFlu::DZDP(double pres, double temp,double masespG)const{
   double zt=0.;
-  if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1)){
+  if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && (tab==1 || lingas==1))){
     int interno=1;
     double presR=(units::kPsiPerKgfPerCm2*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
@@ -4024,9 +4046,9 @@ if(flashCompleto==0 || flashCompleto==3){
 
     if(ipres >= PBolhavar){
        double BOB=1+0.000467*IRGO + Avazbeg*Dvazbeg*0.0001 +
-          Bvazbeg*IRGO*Dvazbeg*pow(10,-8);
+          Bvazbeg*IRGO*Dvazbeg*pow(10.,-8);
 
-       double CO=(-1433+5*IRGO+17.2*itemp-1180*SG100+12.61*API)/(ipres*pow(10,5));
+       double CO=(-1433+5*IRGO+17.2*itemp-1180*SG100+12.61*API)/(ipres*pow(10.,5));
 
        BO=BOB*exp(-(CO*(PBolhavar - ipres)));
     }
@@ -4034,7 +4056,7 @@ if(flashCompleto==0 || flashCompleto==3){
 	   double RSvar;
 	   if(varRS<0)RSvar= RS(pres, temp);
 	   else RSvar=varRS;
-	   BO=1+0.000467*RSvar+Avazbeg*Dvazbeg*0.0001+Bvazbeg*RSvar*Dvazbeg*pow(10,-8);
+	   BO=1+0.000467*RSvar+Avazbeg*Dvazbeg*0.0001+Bvazbeg*RSvar*Dvazbeg*pow(10.,-8);
     }
 	}
 	else{
@@ -4234,7 +4256,7 @@ double ProFlu::CalorLiqOriginal(double pres, double temp) const{
  double tempfar=Faren(temp);
  double tempK=temp+units::kZeroCelsiusInKelvin;
  double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
- double CPOI=4187.0*((2.6948*pow(10,-6)*API+3.88402/10000.)*tempfar+(0.0027665*API+0.366079)-Bcp);
+ double CPOI=4187.0*((2.6948*pow(10.,-6)*API+3.88402/10000.)*tempfar+(0.0027665*API+0.366079)-Bcp);
  if(tempK<410.0) CPWI=4185.5*(2.13974-9.68137*tempK/1000.+2.68536*tempK*tempK/100000.-
  2.42139*pow(10.,-8.)*tempK*tempK*tempK);
  else CPWI=4185.5*(-11.1558+7.96443*tempK/100.-1.74799*tempK*tempK/10000.+
@@ -4487,8 +4509,8 @@ double ProFlu::CalorGasOriginal(double pres, double temp) const{
 
 double ProFlu::CalorGas(double pres, double temp) const{
 	double vcp;
-	if(flashCompleto!=2 || (flashCompleto==2 && tab==1)){
-		if(flashCompleto==0 || flashCompleto==3){
+	if(flashCompleto!=2 || (flashCompleto==2 && (tab==1|| lingas==1))){
+		if(flashCompleto==0 || flashCompleto==3|| (flashCompleto==2 && (tab==1|| lingas==1))){
 			if(ModelCp>0)vcp=interpolaCpg(pres, temp);
 			else vcp=CalorGasOriginal(pres, temp);
 		}
@@ -4631,10 +4653,17 @@ double ProFlu::CalorGasPresMod(double pres, double temp,double rhogini) const{
 }
 
 double ProFlu::CondLiq(double pres,double temp)const{
-	   double tempfar=Faren(temp);
        double tempK=temp+units::kZeroCelsiusInKelvin;
        double XKWDI;
-       double XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
+       double tempfar;
+       double XKOI;
+       if(condBlackOil==1){
+    	   tempfar=Faren(temp);
+    	   XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
+       }
+       else{
+    	   XKOI=interpolaVarProd(pres, temp, condO);
+       }
        double xliq= MasAgua(pres,temp)/MasLiq(pres, temp);
        if(tempK<273.16)XKWDI=418.4*(273.778+3.9*tempK)/1000000.;
        else if(tempK<413.16)XKWDI=418.4*(-1390.53+15.1937*tempK-0.0190398*tempK*tempK)/1000000.;
@@ -4643,8 +4672,18 @@ double ProFlu::CondLiq(double pres,double temp)const{
 }
 
 double ProFlu::CondOleo(double pres,double temp)const{
-	   double tempfar=Faren(temp);
-       double XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
+	   //double tempfar=Faren(temp);
+       //double XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
+       //return XKOI;
+       double tempfar;
+       double XKOI;
+       if(condBlackOil==1){
+    	   tempfar=Faren(temp);
+    	   XKOI=116.8*(1.-3.*(tempfar-32.)/10000.)/1000.;
+       }
+       else{
+    	   XKOI=interpolaVarProd(pres, temp, condO);
+       }
        return XKOI;
 }
 
@@ -4659,17 +4698,24 @@ double ProFlu::ConstAdG(double pres, double temp,double rhogini) const{
   double dvdt=(1/rhog)*(1/(temp+units::kZeroCelsiusInKelvin)+dzdt/zg);
   double dvdp=(1/rhog)*(-1/(pres*units::kPascalPerKgfPerCm2)+dzdp/zg);
   double aux=cpg/(cpg+(temp+units::kZeroCelsiusInKelvin)*dvdt*dvdt/dvdp);
-  if(aux<0.)aux=1.;//atencao: observar esta acochambracao
+  if(aux<0.)aux=1.4;//atencao: observar esta acochambracao
   return 0*cpg/(cpg-pres*units::kPascalPerKgfPerCm2/((temp+units::kZeroCelsiusInKelvin)*rhog*zg))+aux;
 }
 
 double ProFlu::CondGas(double pres,double temp)const{
- double ppas=units::kPascalPerKgfPerCm2*pres;
- double fatT=(temp+units::kZeroCelsiusInKelvin)/191.1;
- double XK1=3.04314/100.+(1.3242/10000.+1.27534*temp/10000000.)*temp;
- double RXK=0.99783+(1.973/100000000.+7.8868*pow(10.,-16.)*ppas)*ppas;
- if(fatT<3.0)return XK1*(1.+(1.-RXK)*(fatT-3.)/1.354);
- else return XK1;
+	double XK1;
+	if(condBlackOil==1){
+		double ppas=units::kPascalPerKgfPerCm2*pres;
+		double fatT=(temp+units::kZeroCelsiusInKelvin)/191.1;
+		XK1=3.04314/100.+(1.3242/10000.+1.27534*temp/10000000.)*temp;
+		double RXK=0.99783+(1.973/100000000.+7.8868*pow(10.,-16.)*ppas)*ppas;
+		if(fatT<3.0)return XK1*(1.+(1.-RXK)*(fatT-3.)/1.354);
+		else return XK1;
+	}
+	else{
+		XK1=interpolaVarProd(pres, temp, condG);
+		return XK1;
+	}
 }
 
 double ProFlu::DrholDTOriginal(double pres,double temp) const{
@@ -5273,7 +5319,7 @@ double ProFlu::MasEspOleoComp(double pres, double temp) const{
 }
 
 double ProFlu::drhodt(double pres, double temp) const{
-	if(flashCompleto!=2){
+	if(flashCompleto!=2 || lingas==1){
 		double z=Zdran(pres,temp);
 		double masesp=((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*z*(temp + units::kZeroCelsiusInKelvin));
 		double dzdt=DZDT(pres,temp);
@@ -5404,7 +5450,7 @@ double ProFlu::drhodt(double pres, double temp) const{
 }
 
 double ProFlu::drhodp(double pres, double temp) const{
-	if(flashCompleto!=2){
+	if(flashCompleto!=2 || lingas==1){
 		double z=Zdran(pres,temp);
 		double masesp=((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*z*(temp + units::kZeroCelsiusInKelvin));
 		double dzdp=DZDP(pres,temp);
@@ -5569,7 +5615,7 @@ void ProFlu::rzDegL(double pres , double temp){
 
 double ProFlu::MasEspGas(double pres, double temp) const{
 //Massa especifica do gas kg/m^3, pressao em kgf/cm2 e temperatura em Celcius
-	if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && tab==1))
+	if(flashCompleto==0 || flashCompleto==3 || (flashCompleto==2 && (tab==1 || lingas==1)))
       return ((rDgL*Deng*28.9625)*pres*units::kPascalPerKgfPerCm2)/(8.0465*1000*Zdran(pres, temp)*(temp + units::kZeroCelsiusInKelvin));
 	else if(flashCompleto==1)
 		return interpolaVarProd(pres, temp, rhogF);
@@ -5980,7 +6026,7 @@ double ProFlu::MasGasLivreHidra(double pres, double temp,double varRS) const{
 
 double ProFlu::FracMass(double pres, double temp) const{
 //Titulo de gas livre (oleo +gas), pressao em kgf/cm2 e temperatura em Celcius
-	if(flashCompleto!=2 ){
+	if(flashCompleto!=2 || lingas==1 ){
 		double rs=RS(pres, temp);
 		return MasGasLivre(pres, temp,rs)/(MasGasLivre(pres, temp,rs)+MasOleo(pres, temp,rs));
 	}
@@ -6048,7 +6094,7 @@ double ProFlu::FracMass(double pres, double temp) const{
 
 double ProFlu::FracMassHidra(double pres, double temp) const{
 //Titulo de gas livre (oleo +gas+agua), pressao em kgf/cm2 e temperatura em Celcius
-	if(flashCompleto!=2 ){
+	if(flashCompleto!=2 || lingas==1){
 		double rs=RS(pres, temp);
 		return MasGasLivreHidra(pres, temp,rs)/(MasGasLivreHidra(pres, temp,rs)+
                                   MasOleoHidra(pres, temp,rs)+MasAgua(pres, temp));

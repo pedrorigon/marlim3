@@ -88,6 +88,8 @@ enum AccessoryKind : int {
     kAccessoryRadialPorous = 15,    ///< acsr.radialPoro
     kAccessoryPorous2D = 16,        ///< acsr.poroso2D
     kAccessoryMultiPump = 17,       ///< acsr.multibcs
+    kAccessoryRecirculationUpstream = 18,
+    kAccessoryRecirculationDownstream = 19,
 };
 
 // ------------------------------------------------------ gas-lift valves ----
@@ -214,6 +216,8 @@ static_assert(kAccessoryMultipleSource == 10);
 static_assert(kAccessoryRadialPorous == 15);
 static_assert(kAccessoryPorous2D == 16);
 static_assert(kAccessoryMultiPump == 17);
+static_assert(kAccessoryRecirculationUpstream == 18);
+static_assert(kAccessoryRecirculationDownstream == 19);
 static_assert(kGasInletInjectionPressure == 0);
 static_assert(kGasInletInjectionFlowRate == 1);
 static_assert(kGasLiftOrificeValve == 0);

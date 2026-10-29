@@ -925,11 +925,42 @@ void SProd::resetCouplingAndOutputState() {
     transient.accumulatedVoidFraction = 0.;
 }
 
+void SProd::buildAxisymmetricThermalCoupling() {
+    if (arq.pocoTermAxiSim != 1 || arq.nAxiSim <= 0)
+        return;
+
+    vector<double> cellLengths(arq.nAxiSim);
+    vector<double> geothermalTemperatures(arq.nAxiSim);
+    vector<double> innerDiameters(arq.nAxiSim);
+    vector<double> interfaceTemperatures(arq.nAxiSim);
+    for (int index = 0; index < arq.nAxiSim; index++) {
+        cellLengths[index] = arq.dxAxiSim[index];
+        geothermalTemperatures[index] = arq.geoTermAxiSim[index];
+        innerDiameters[index] = arq.diamAxiSim[index];
+        if (arq.anulAxiSim == 0) {
+            auto &cell = celula[arq.indAxiSim[index]];
+            cell.calor.calcResGlobAxiSim();
+            arq.resGlobAxiSim[index] = cell.calor.resGlobAxiSim;
+            interfaceTemperatures[index] = cell.temp;
+        } else {
+            auto &cell = gasLift.cells[arq.indAxiSim[index]];
+            cell.calor.calcResGlobAxiSim();
+            arq.resGlobAxiSim[index] = cell.calor.resGlobAxiSim;
+            interfaceTemperatures[index] = cell.temp;
+        }
+    }
+    axisymmetricThermalSolver = solverPAxiSim(
+        simulationContext, arq.pocoAxiSimJson, arq.resGlobAxiSim,
+        interfaceTemperatures.data(), innerDiameters.data(), cellLengths.data(),
+        arq.nAxiSim, geothermalTemperatures.data(), arq.formacPoc[0].tempo);
+}
+
 void SProd::montasistema(double *extraSourceLengths, int *extraSourceCells, int extraSourceCount) {
     try {
         buildProductionCells(extraSourceLengths, extraSourceCells, extraSourceCount);
         configureInletSourcesAndAccessories(extraSourceCount);
         buildGasLiftLine();
+        buildAxisymmetricThermalCoupling();
         validateSetupAndApplyInitialState();
         buildDynamicTablesAndInclinations();
         configureLatentHeat();

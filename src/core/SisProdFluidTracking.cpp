@@ -826,6 +826,54 @@ void prepareBlackOilCellSourceBasis(const FluidTrackingState &state, BlackOilCel
     source.stockTankQuality = 0.;
 }
 
+void blackOilSourceRecirculation(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF,
+                                 int i, double temperatureHigh, double temperatureLow) {
+    const auto &connection = state.cells[state.cells[i].acsr.indJusRecic].acsr.fontechk;
+    if (connection.presT > connection.pamb)
+        fluF = connection.fluidoP;
+    else
+        fluF = connection.fluidoPamb;
+
+            source.stockTankQuality = fluF.dStockTankVaporMassFraction;
+            source.dgO = fluF.Deng;
+            source.yco2O = fluF.yco2;
+            double sourceGasOilRatio = fluF.RGO;
+
+            double rsF = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+            double dissolvedGasDensityRatio = 1 / fluF.rDgD;
+            source.razdgl = 1 / fluF.rDgL;
+            if (fluF.BSW < 1 - (*state.globals).smallValueTolerance)
+                source.rholST = (1 - fluF.BSW) * (1000 * 141.5 / (131.5 + fluF.API)) + fluF.BSW * 1000 * fluF.Denag + fluF.Deng * 1.225 * sourceGasOilRatio * (1. - fluF.BSW);
+            else
+                source.rholST = fluF.BSW * 1000 * fluF.Denag;
+            source.dissolvedGas = (source.dissolvedGas + source.freeGas) * dissolvedGasDensityRatio * (fluF.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467) * (1. - fluF.BSW) / source.rholST);
+
+            if (state.input.nfluP > 1 || (*state.globals).networkMode != 0) {
+                double bswaux = fluF.BSW;
+                double contrabsw = 1. - bswaux;
+                if (contrabsw < (*state.globals).smallValueTolerance)
+                    contrabsw = 0.9 * (*state.globals).smallValueTolerance;
+                double rhoPSTF;
+                if (contrabsw > (*state.globals).smallValueTolerance)
+                    rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag + fluF.Deng * 1.225 * rsF;
+                else
+                    rhoPSTF = 1000 * fluF.Denag;
+                if (contrabsw > (*state.globals).smallValueTolerance) {
+                    source.deadOil *= (1. / rhoPSTF);
+                    source.water *= ((bswaux / contrabsw) / rhoPSTF);
+                } else {
+                    source.deadOil = 0.;
+                    source.water *= (1 / (fluF.BSW * 1000 * fluF.Denag));
+                }
+                source.API = fluF.API;
+                source.BSW = fluF.BSW;
+                source.denag = fluF.Denag;
+                source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
+                source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+            }
+        
+}
+
 void prepareBlackOilAccessorySource(const FluidTrackingState &state, BlackOilSource &source, ProFlu &fluF,
                                     int i, double temperatureHigh, double temperatureLow) {
     if (state.cells[i].acsr.tipo == kAccessoryGasInjection && state.cells[i].acsr.injg.seco == 1) {
@@ -850,6 +898,9 @@ void prepareBlackOilAccessorySource(const FluidTrackingState &state, BlackOilSou
         blackOilSourceRadialPorous(state, source, fluF, i, temperatureHigh, temperatureLow);
     } else if (state.cells[i].acsr.tipo == kAccessoryPorous2D) {
         blackOilSourcePorous2D(state, source, fluF, i, temperatureHigh, temperatureLow);
+    } else if (state.cells[i].acsr.tipo == kAccessoryRecirculationUpstream ||
+               state.cells[i].acsr.tipo == kAccessoryRecirculationDownstream) {
+        blackOilSourceRecirculation(state, source, fluF, i, temperatureHigh, temperatureLow);
     } else if ((fabs(source.dissolvedGas) > (*state.globals).smallValueTolerance &&
                 state.cells[i].acsr.tipo != kAccessoryLiquidInjection &&
                 state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
@@ -1418,6 +1469,33 @@ void phaseSourceStandardRatesByAccessory(const FluidTrackingState &state, PhaseS
                                     state.cells[i].acsr.poroso2D.dados.transfer.BSW, solutionGasRatioSource,
                                     temperatureHigh, temperatureLow);
         }
+    } else if (state.cells[i].acsr.tipo == kAccessoryRecirculationUpstream ||
+               state.cells[i].acsr.tipo == kAccessoryRecirculationDownstream) {
+
+            double rsF = fluF.RS(state.cells[i].pres, state.cells[i].temp) * (6.29 / 35.31467);
+            if (state.input.nfluP > 0 || (*state.globals).networkMode != 0) {
+                double bswaux = fluF.BSW;
+                double contrabsw = 1. - bswaux;
+                if (contrabsw <= (*state.globals).smallValueTolerance)
+                    contrabsw = 0.9 * (*state.globals).smallValueTolerance;
+                double rhoPSTF;
+                if (contrabsw > (*state.globals).smallValueTolerance)
+                    rhoPSTF = (1000 * 141.5 / (131.5 + fluF.API)) + (bswaux / contrabsw) * 1000 * fluF.Denag + fluF.Deng * 1.225 * rsF;
+                else
+                    rhoPSTF = 1000 * fluF.Denag;
+                if (contrabsw > (*state.globals).smallValueTolerance) {
+                    source.deadOil *= (1. / rhoPSTF);
+                    source.water *= ((bswaux / contrabsw) / rhoPSTF);
+                } else {
+                    source.deadOil = 0.;
+                    source.water *= (1 / (fluF.BSW * 1000 * fluF.Denag));
+                }
+                source.BSW = fluF.BSW;
+                source.denag = fluF.Denag;
+                source.viscL = 0 * 30 + 1 * fluF.VisOM(temperatureLow);
+                source.viscH = 0 * 20 + 1 * fluF.VisOM(temperatureHigh);
+            }
+        
     } else if ((fabs(source.dissolvedGas) > (*state.globals).smallValueTolerance &&
                 state.cells[i].acsr.tipo != kAccessoryLiquidInjection &&
                 state.cells[i].acsr.tipo != kAccessoryInflowPerformance &&
@@ -1610,6 +1688,15 @@ void readPhaseSourceFluid(const FluidTrackingState &state, PhaseSource &source, 
             fluF = state.cells[i].acsr.poroso2D.dados.flup;
         else
             fluF = state.cells[i].flui;
+        readPhaseSourceLiquidQuality(state, source, fluF, i);
+    } else if (state.cells[i].acsr.tipo == kAccessoryRecirculationUpstream ||
+               state.cells[i].acsr.tipo == kAccessoryRecirculationDownstream) {
+        const auto &connection = state.cells[state.cells[i].acsr.indJusRecic].acsr.fontechk;
+        if (connection.presT > connection.pamb)
+            fluF = connection.fluidoP;
+        else
+            fluF = connection.fluidoPamb;
+        refreshPhaseSourceComposition(state, fluF, state.cells[i].pres, state.cells[i].temp);
         readPhaseSourceLiquidQuality(state, source, fluF, i);
     } else {
         fluF = state.cells[i].flui;

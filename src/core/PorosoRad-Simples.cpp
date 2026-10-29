@@ -3994,6 +3994,7 @@ void PorosRadSimp::avancoSW(double Ndt) {
     double inf;
     double sup;
 
+    //if()
     indraz(ind, raz, tempoSatLRes, nsatLRes);
     inf = satLRes[ind];
     if (ind < nsatLRes - 1) {

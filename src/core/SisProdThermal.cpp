@@ -8,6 +8,8 @@
 #include "Leitura.h"
 #include "celula3.h"
 #include "solver3DPoisson.h"
+#include "solverPoissonAxiSim.h"
+#include "dados1PoissonAxiSim.h"
 #include "UnitConversions.h"
 
 #include <math.h>
@@ -1033,9 +1035,11 @@ void clearMassTransferDerivatives(const ThermalState &state, int cellIndex) {
 }
 
 void setFlowPartitionTerms(const ThermalState &state, int cellIndex, double term1,
-                           int &branchFlag, int flagValue) {
+                           int &branchFlag, int flagValue, bool recordInterfaceFraction) {
     state.cells[cellIndex].term1 = term1;
     state.cells[cellIndex].term2 = 0.;
+    if (recordInterfaceFraction)
+        state.cells[cellIndex].alfI = term1 == 1. ? 0. : 1.;
     branchFlag = flagValue;
 }
 
@@ -1049,7 +1053,7 @@ void clearDriftClosure(const ThermalState &state, int cellIndex) {
 void selectAndApplyInteriorFlowRegime(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
     double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity, double rightSuperficialLiquidVelocity,
-    double gasDensity, double liquidDensity, double flowArea) {
+    double gasDensity, double liquidDensity, double flowArea, int explicitMode) {
     SimulationContext &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
@@ -1061,33 +1065,33 @@ void selectAndApplyInteriorFlowRegime(
     bif[cellIndex] = 1;
 
     if (leftCell.alfPigD <= globals.smallValueTolerance && cell.alfPigE <= globals.smallValueTolerance && noGasSourceOnEitherFace) {
-        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
     } else if (leftCell.alfPigD >= (1. - globals.smallValueTolerance) && cell.alfPigE >= (1. - globals.smallValueTolerance) && (noLiquidSourceOnEitherFace)) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
     } else if (leftCell.acsr.tipo == kAccessoryChoke && leftCell.acsr.chk.AreaGarg <= (1e-3)) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
     }
 
     else if (superficialGasVelocity >= 0 && leftCell.alfPigD <= globals.smallValueTolerance && (noGasSourceOnEitherFace)) {
-        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.smallValueTolerance) && superficialLiquidVelocity < 0 && leftSuperficialLiquidVelocity < 0 && cell.duto.teta > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - 10 * globals.smallValueTolerance) && cell.duto.teta < 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 1);
+            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 1, true);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= rightCell.alf && rightSuperficialGasVelocity < 0) {
             bif[cellIndex] = 1;
         }
     } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.smallValueTolerance && (noGasSourceOnEitherFace)) {
-        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialGasVelocity) <= 1e-15 && leftCell.alfPigD > (1. - globals.smallValueTolerance) && superficialLiquidVelocity > 0 && rightSuperficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfL >= leftCell.alfL && leftSuperficialGasVelocity > 0) {
             bif[cellIndex] = 1;
@@ -1096,33 +1100,33 @@ void selectAndApplyInteriorFlowRegime(
             bif[cellIndex] = 1;
         }
     } else if (superficialLiquidVelocity >= 0 && leftCell.alfPigD >= 1. - 1 * globals.smallValueTolerance && (noLiquidSourceOnEitherFace)) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.smallValueTolerance && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         } else if (fabs(rightSuperficialLiquidVelocity) < globals.smallValueTolerance * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && cell.alfPigE < globals.smallValueTolerance && cell.fontemassGR >= globals.smallValueTolerance * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
             }
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && cell.alfPigE < globals.smallValueTolerance && cell.duto.teta >= 0) {
                 bif[cellIndex] = 1;
             }
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && cell.alfPigE < globals.smallValueTolerance && cell.duto.teta < 0) {
-                setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+                setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
             }
         } else if ((fabs(superficialLiquidVelocity) < 1e-15 && (rightSuperficialLiquidVelocity < 0 || cell.duto.teta > 0) && ((cell.alfPigE <= (1 - 10 * globals.smallValueTolerance + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.smallValueTolerance) || cell.alfPigE <= 0.7)))
             bif[cellIndex] = 1;
 
     } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.smallValueTolerance && (noLiquidSourceOnEitherFace)) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= globals.smallValueTolerance * 1e-5 && leftCell.alfPigD < globals.smallValueTolerance && leftSuperficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         }
 
         if (fabs(leftSuperficialLiquidVelocity) < globals.smallValueTolerance * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && leftCell.alfPigD < globals.smallValueTolerance && leftCell.fontemassGR >= globals.smallValueTolerance * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
             }
         } else if ((cellIndex > 1 && fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7)) && superficialGasVelocity >= 0.)
             bif[cellIndex] = 1;
@@ -1136,12 +1140,12 @@ void selectAndApplyInteriorFlowRegime(
 
     if (bif[cellIndex] == 1) {
         applyInteriorDriftPartition(
-            state, dependencies, cellIndex, superficialGasVelocity, superficialLiquidVelocity, gasDensity, liquidDensity, flowArea);
+            state, dependencies, cellIndex, superficialGasVelocity, superficialLiquidVelocity, gasDensity, liquidDensity, flowArea, explicitMode);
     }
 }
 
 void updateInteriorFlowPartitionCell(
-    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, Vcr<int> &valv) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, Vcr<int> &valv, int explicitMode) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     Cel &rightCell = state.cells[cellIndex + 1];
@@ -1165,6 +1169,7 @@ void updateInteriorFlowPartitionCell(
         cell.ud = 0.;
         cell.term1 = 0.;
         cell.term2 = 0.;
+        cell.alfI = 1.;
         cell.term1L = leftCell.term1;
         cell.term2L = leftCell.term2;
         leftCell.term1R = cell.term1;
@@ -1215,11 +1220,11 @@ void updateInteriorFlowPartitionCell(
 
     selectAndApplyInteriorFlowRegime(
         state, dependencies, cellIndex, bif, superficialGasVelocity, superficialLiquidVelocity, leftSuperficialGasVelocity, leftSuperficialLiquidVelocity, rightSuperficialGasVelocity, rightSuperficialLiquidVelocity,
-        gasDensity, liquidDensity, flowArea);
+        gasDensity, liquidDensity, flowArea, explicitMode);
 }
 
 void updateOutletBoundaryFlowPartition(
-    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, int explicitMode) {
     SimulationContext &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
@@ -1265,53 +1270,53 @@ void updateOutletBoundaryFlowPartition(
     bif[cellIndex] = 1;
 
     if (cell.alfL <= globals.smallValueTolerance && cell.alf <= globals.smallValueTolerance && cell.fontemassGL <= 0 && cell.fontemassGR <= 0) {
-        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         cell.c0 = 1. - globals.smallValueTolerance;
         cell.ud = 0.;
         cell.arranjo = 0;
     } else if (cell.alfL >= (1. - globals.smallValueTolerance) && cell.alf >= (1. - globals.smallValueTolerance) && cell.fontemassLL <= 0 && cell.fontemassLR <= 0) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         cell.c0 = 1. - globals.smallValueTolerance;
         cell.ud = 0.;
         cell.arranjo = 0;
     } else if (superficialGasVelocity > 0 && cell.alfL <= globals.smallValueTolerance && (cell.fontemassGL <= 0. && cell.fontemassGR <= 0.)) {
-        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         cell.c0 = 1. - globals.smallValueTolerance;
         cell.ud = 0.;
         cell.arranjo = 0;
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf > (1. - globals.smallValueTolerance) && superficialLiquidVelocity < 0 && leftSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         }
     } else if (superficialGasVelocity < 0 && cell.alf <= globals.smallValueTolerance && (cell.fontemassGL <= 0. && cell.fontemassGR <= 0.)) {
-        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         cell.c0 = 1. - globals.smallValueTolerance;
         cell.ud = 0.;
         cell.arranjo = 0;
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfL > (1. - globals.smallValueTolerance) && superficialLiquidVelocity > 0 && rightSuperficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         }
     } else if (superficialLiquidVelocity >= 0 && leftCell.alf >= 1. - globals.smallValueTolerance && (noLiquidSourceOnEitherFace)) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alf < globals.smallValueTolerance && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         } else if (fabs(rightSuperficialLiquidVelocity) < globals.smallValueTolerance * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && cell.alf < globals.smallValueTolerance && cell.fontemassGR >= globals.smallValueTolerance * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
             }
         } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && cell.alf <= (1 - 1 * globals.smallValueTolerance))
             bif[cellIndex] = 1;
     }
 
     else if (superficialLiquidVelocity <= 0 && cell.alf >= 1. - globals.smallValueTolerance && (noLiquidSourceOnEitherFace)) {
-        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0);
+        setFlowPartitionTerms(state, cellIndex, 0., bif[cellIndex], 0, true);
         clearDriftClosure(state, cellIndex);
         if (fabs(superficialLiquidVelocity) <= globals.smallValueTolerance * 1e-5 && leftCell.alf < globals.smallValueTolerance && leftSuperficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+            setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
         }
         if (fabs(leftSuperficialLiquidVelocity) < globals.smallValueTolerance * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && leftCell.alf < globals.smallValueTolerance && leftCell.fontemassGR >= globals.smallValueTolerance * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0);
+                setFlowPartitionTerms(state, cellIndex, 1., bif[cellIndex], 0, true);
             }
         } else if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && leftSuperficialLiquidVelocity > 0 && ((leftCell.alfPigD <= 1.0 * state.cells[cellIndex - 2].alfPigD && state.cells[cellIndex - 2].alfPigD < 0.99) || leftCell.alfPigD < 0.7))
             bif[cellIndex] = 1;
@@ -1321,9 +1326,15 @@ void updateOutletBoundaryFlowPartition(
 
     if (bif[cellIndex] == 1) {
         const double meanVoidFraction = cell.alfL;
+        cell.alfI = meanVoidFraction;
         double c0;
         double ud;
-        driftflux::coefficient::instantaneous(dependencies.closure, cellIndex, c0, ud);
+        if (explicitMode == 0)
+            driftflux::coefficient::instantaneous(dependencies.closure, cellIndex, c0, ud);
+        else {
+            c0 = 1.;
+            ud = 0.;
+        }
         if (state.input.escorregamentoCelulaContorno == 0) {
             c0 = 1.;
             ud = 0.;
@@ -1332,8 +1343,13 @@ void updateOutletBoundaryFlowPartition(
         cell.ud = ud;
         double numerator = (1. - meanVoidFraction * c0);
         double denominator = 1. + meanVoidFraction * (gasDensity / liquidDensity) * c0 - meanVoidFraction * c0;
-        cell.term1 = numerator / denominator;
-        cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        if (fabs(denominator) > 1e-15) {
+            cell.term1 = numerator / denominator;
+            cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        } else {
+            cell.term1 = meanVoidFraction < 0.5 ? 1. : 0.;
+            cell.term2 = 0.;
+        }
     }
 
     cell.term1L = leftCell.term1;
@@ -1411,15 +1427,24 @@ void finalizeFlowPartitionTerms(
         cell.term2L = leftCell.term2;
         leftCell.term1R = cell.term1;
         leftCell.term2R = cell.term2;
+        leftCell.alfRI = cell.alfI;
+        leftCell.c0R = cell.c0;
+        leftCell.udR = cell.ud;
     }
+
+    state.cells[state.lastCell].alfRI = state.cells[state.lastCell].alfI;
+    state.cells[state.lastCell].c0R = state.cells[state.lastCell].c0;
+    state.cells[state.lastCell].udR = state.cells[state.lastCell].ud;
 }
 
 void applyNoSlipClosure(const ThermalState &state, int cellIndex, double term1,
                         int &branchFlag, double distributionCoefficient,
-                        double driftVelocity) {
+                        double driftVelocity, bool recordInterfaceFraction) {
     Cel &cell = state.cells[cellIndex];
     cell.term1 = term1;
     cell.term2 = 0.;
+    if (recordInterfaceFraction)
+        cell.alfI = term1 == 1. ? 0. : 1.;
     branchFlag = 0;
     cell.c0 = 1 + 0 * distributionCoefficient;
     cell.ud = 0 * driftVelocity;
@@ -1431,10 +1456,10 @@ inline void InletBoundaryRegime::applyInletOverrides(const ThermalState &state, 
                                                      double superficialLiquidVelocity) {
     SimulationContext &globals = *state.globals;
     if (superficialLiquidVelocity >= 0 && state.inletVoidFraction > 1 - globals.smallValueTolerance) {
-        setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
+        setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0, true);
     }
     if (superficialGasVelocity >= 0 && state.inletVoidFraction < globals.smallValueTolerance) {
-        setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
+        setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0, true);
     }
 }
 
@@ -1455,7 +1480,7 @@ inline void BufferedInletRegime::updateClosure(const ThermalState &state, const 
 template <typename Regime>
 void selectAndApplyInletRegime(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, int &branchFlag, double distributionCoefficient,
-    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea) {
+    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea, int explicitMode) {
     SimulationContext &globals = *state.globals;
     Cel &cell = state.cells[cellIndex];
     const bool noGasSourceOnEitherFace =
@@ -1466,53 +1491,53 @@ void selectAndApplyInletRegime(
 
     if (state.inletVoidFraction < globals.smallValueTolerance && cell.alfPigE <= globals.smallValueTolerance && noGasSourceOnEitherFace) {
         applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
-                           driftVelocity);
+                           driftVelocity, Regime::recordsInterfaceFraction);
     } else if (state.inletVoidFraction >= (1. - globals.smallValueTolerance) && cell.alfPigE >= (1. - globals.smallValueTolerance) && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
-                           driftVelocity);
+                           driftVelocity, Regime::recordsInterfaceFraction);
     } else if (superficialGasVelocity >= 0 && state.inletVoidFraction <= globals.smallValueTolerance && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
-                           driftVelocity);
+                           driftVelocity, Regime::recordsInterfaceFraction);
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - globals.smallValueTolerance) && superficialLiquidVelocity < 0 && cell.duto.teta > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0, Regime::recordsInterfaceFraction);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alfPigE > (1. - 1 * globals.smallValueTolerance) && cell.duto.teta < 0 && superficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 1);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 1, Regime::recordsInterfaceFraction);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && cell.alf >= state.inletVoidFraction && superficialLiquidVelocity < 0) {
             branchFlag = 1;
         }
     } else if (superficialGasVelocity <= 0 && cell.alfPigE <= globals.smallValueTolerance && (noGasSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 1., branchFlag, distributionCoefficient,
-                           driftVelocity);
+                           driftVelocity, Regime::recordsInterfaceFraction);
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > (1. - globals.smallValueTolerance) && superficialLiquidVelocity > 0) {
-            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0);
+            setFlowPartitionTerms(state, cellIndex, 0., branchFlag, 0, Regime::recordsInterfaceFraction);
         }
         if (fabs(superficialGasVelocity) <= 1e-15 && state.inletVoidFraction > globals.smallValueTolerance && superficialLiquidVelocity > 0) {
             branchFlag = 1;
         }
     } else if (superficialLiquidVelocity >= 0 && state.inletVoidFraction >= 1. - globals.smallValueTolerance && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
-                           driftVelocity);
+                           driftVelocity, Regime::recordsInterfaceFraction);
         if (fabs(superficialLiquidVelocity) <= 1e-15 && cell.alfPigE < globals.smallValueTolerance && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
+            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0, Regime::recordsInterfaceFraction);
         } else if (fabs(rightSuperficialLiquidVelocity) < globals.smallValueTolerance * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && cell.alfPigE < globals.smallValueTolerance && cell.fontemassGR >= globals.smallValueTolerance * 1e-5) {
-                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
+                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0, Regime::recordsInterfaceFraction);
             }
         } else if (fabs(superficialLiquidVelocity) < 1e-15 && rightSuperficialLiquidVelocity < 0 && ((cell.alfPigE <= (1 - 1 * globals.smallValueTolerance + .0 * cell.alfPigER) && cell.alfPigER < 1 - 1 * globals.smallValueTolerance) || cell.alfPigE <= 0.7))
             branchFlag = 1;
 
     } else if (superficialLiquidVelocity <= 0 && cell.alfPigE >= 1. - globals.smallValueTolerance && (noLiquidSourceOnEitherFace)) {
         applyNoSlipClosure(state, cellIndex, 0., branchFlag, distributionCoefficient,
-                           driftVelocity);
+                           driftVelocity, Regime::recordsInterfaceFraction);
         if (fabs(superficialLiquidVelocity) <= globals.smallValueTolerance * 1e-5 && state.inletVoidFraction < globals.smallValueTolerance && rightSuperficialLiquidVelocity < 0) {
-            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
+            setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0, Regime::recordsInterfaceFraction);
         }
 
         if (fabs(rightSuperficialLiquidVelocity) < globals.smallValueTolerance * 1e-5) {
             if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && state.inletVoidFraction < globals.smallValueTolerance) {
-                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0);
+                setFlowPartitionTerms(state, cellIndex, 1., branchFlag, 0, Regime::recordsInterfaceFraction);
             }
         } else if (fabs(superficialLiquidVelocity) < globals.smallValueTolerance * 1e-5 && superficialGasVelocity < 0 && (state.inletVoidFraction < 0.7))
             branchFlag = 1;
@@ -1529,21 +1554,35 @@ void selectAndApplyInletRegime(
         double c0;
         double ud;
         const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : state.inletVoidFraction;
-        Regime::updateClosure(state, dependencies, cellIndex, c0, ud);
+        if constexpr (Regime::recordsInterfaceFraction)
+            cell.alfI = cell.alfPigE;
+        if (explicitMode == 0)
+            Regime::updateClosure(state, dependencies, cellIndex, c0, ud);
+        else {
+            c0 = 1.;
+            ud = 0.;
+            cell.c0 = c0;
+            cell.ud = ud;
+        }
         double numerator = (1. - meanVoidFraction * c0);
         double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
-        cell.term1 = numerator / denominator;
-        cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        if (fabs(denominator) > 1e-15) {
+            cell.term1 = numerator / denominator;
+            cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        } else {
+            cell.term1 = meanVoidFraction < 0.5 ? 1. : 0.;
+            cell.term2 = 0.;
+        }
     }
 }
 
 void selectAndApplyInletBoundaryFlowRegime(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
-    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea) {
+    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea, int explicitMode) {
     selectAndApplyInletRegime<InletBoundaryRegime>(
         state, dependencies, cellIndex, bif[cellIndex], distributionCoefficient, driftVelocity,
         superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
-        gasDensity, liquidDensity, flowArea);
+        gasDensity, liquidDensity, flowArea, explicitMode);
 }
 
 void selectAndApplyBufferedOutletFlowRegime(
@@ -1637,8 +1676,13 @@ void selectAndApplyBufferedOutletFlowRegime(
         }
         double numerator = (1. - meanVoidFraction * c0);
         double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
-        cell.term1 = numerator / denominator;
-        cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        if (fabs(denominator) > 1e-15) {
+            cell.term1 = numerator / denominator;
+            cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        } else {
+            cell.term1 = meanVoidFraction < 0.5 ? 1. : 0.;
+            cell.term2 = 0.;
+        }
         if (leftCell.acsr.tipo == kAccessoryChoke && leftCell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * leftCell.duto.area) {
             cell.term1 = 0.;
             cell.term2 = 0.;
@@ -2118,7 +2162,7 @@ int thermalCouplingIndexOf(const ThermalState &state, int cellIndex) {
 }
 
 void updateInletBoundaryFlowPartition(
-    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bifurcationFlags) {
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bifurcationFlags, int explicitMode) {
     Cel &cell = state.cells[cellIndex];
     if (state.input.ConContEntrada == 0) {
         state.cells[1].alfL = state.cells[0].alf;
@@ -2129,6 +2173,7 @@ void updateInletBoundaryFlowPartition(
         state.cells[0].term2 = 0.;
         state.cells[0].term1L = 0.;
         state.cells[0].term2L = 0.;
+        cell.alfI = 1.;
     } else {
 
         double meanPressure;
@@ -2146,6 +2191,7 @@ void updateInletBoundaryFlowPartition(
 
         double liquidMixtureDensity = state.inletComplementaryFraction * rcis + (1 - state.inletComplementaryFraction) * liquidDensity;
         state.inletVoidFraction = (-state.inletQuality * liquidMixtureDensity / (state.inletQuality * gasDensity - gasDensity - state.inletQuality * liquidMixtureDensity)) / (state.cells[0].c0);
+        cell.alfI = state.inletVoidFraction;
 
         double betI;
         double surfaceTension;
@@ -2191,7 +2237,7 @@ void updateInletBoundaryFlowPartition(
 
         selectAndApplyInletBoundaryFlowRegime(
             state, dependencies, cellIndex, bifurcationFlags, c0, ud, superficialGasVelocity, superficialLiquidVelocity, rightSuperficialLiquidVelocity,
-            gasDensity, liquidDensity, flowArea);
+            gasDensity, liquidDensity, flowArea, explicitMode);
         state.cells[1].term1L = cell.term1;
         state.cells[1].term2L = cell.term2;
 
@@ -2202,10 +2248,31 @@ void updateInletBoundaryFlowPartition(
     }
 }
 
+double axisymmetricHeatFluxOf(const ThermalState &state, int cellIndex,
+                             TransCal &heatTransfer, bool useDirichletBoundary) {
+    int coupled = -1;
+    for (int index = 0; index < state.input.nAxiSim; index++) {
+        if (cellIndex == state.input.indAxiSim[index]) {
+            coupled = index;
+            break;
+        }
+    }
+    if (coupled == -1)
+        return heatTransfer.transtrans();
+
+    const double heatFlux = -state.axisymmetricSolver.dados->qAcop[coupled];
+    if (useDirichletBoundary && state.axisymmetricSolver.dados->acopDirichlet != 0)
+        return heatTransfer.transtrans(1, heatFlux);
+    heatTransfer.transtransAxiSim(heatFlux);
+    return heatFlux;
+}
+
 double temperatureHeatFluxOf(const ThermalState &state, int cellIndex, int steadyStateMode) {
     Cel &cell = state.cells[cellIndex];
     double heatFlux = 0.;
-    if (state.input.modoDifus3D == 0 || steadyStateMode != 0) {
+    if ((state.input.modoDifus3D == 0 &&
+         (state.input.pocoTermAxiSim == 0 || state.input.nAxiSim == 0 || state.input.anulAxiSim == 1)) ||
+        steadyStateMode != 0) {
         if (steadyStateMode == 0)
             heatFlux = cell.calor.transtrans();
         else
@@ -2213,13 +2280,21 @@ double temperatureHeatFluxOf(const ThermalState &state, int cellIndex, int stead
         if (state.productionNetworkCoupled == 1 && cellIndex >= state.primarySectionStart && cellIndex <= state.primarySectionEnd) {
             heatFlux -= cell.fluxcalAcopRedeP;
         }
-    } else if (state.input.modoDifus3D == 1) {
-        const int coupled = thermalCouplingIndexOf(state, cellIndex);
-        if (coupled == -1)
-            heatFlux = cell.calor.transtrans();
-        else {
-            int iacop1 = state.coupledCellIndices[coupled];
-            heatFlux = -state.input.celAcop[coupled].FE * state.poissonSolver3D.dados.qTotal[iacop1] / cell.dx;
+    } else if (state.input.modoDifus3D == 1 ||
+               (state.input.pocoTermAxiSim == 1 && state.input.nAxiSim > 0 && state.input.anulAxiSim == 0)) {
+        if (state.input.modoDifus3D == 1) {
+            const int coupled = thermalCouplingIndexOf(state, cellIndex);
+            if (coupled == -1) {
+                if (state.input.pocoTermAxiSim == 0 || state.input.nAxiSim == 0 || state.input.anulAxiSim == 1)
+                    heatFlux = cell.calor.transtrans();
+                else
+                    heatFlux = axisymmetricHeatFluxOf(state, cellIndex, cell.calor, true);
+            } else {
+                int iacop1 = state.coupledCellIndices[coupled];
+                heatFlux = -state.input.celAcop[coupled].FE * state.poissonSolver3D.dados.qTotal[iacop1] / cell.dx;
+            }
+        } else {
+            heatFlux = axisymmetricHeatFluxOf(state, cellIndex, cell.calor, false);
         }
     }
     return heatFlux;
@@ -2804,15 +2879,16 @@ void finalizeDistributedMassTransferFace(
 
 void applyInteriorDriftPartition(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double superficialGasVelocity,
-    double superficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea) {
+    double superficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea, int explicitMode) {
     Cel &cell = state.cells[cellIndex];
     Cel &leftCell = state.cells[cellIndex - 1];
     double c0;
     double ud;
     const double meanVoidFraction = superficialGasVelocity < 0 ? cell.alfPigE : leftCell.alfPigD;
+    cell.alfI = meanVoidFraction;
     const double meanDiameter = cell.MC >= 0 ? cell.dutoL.a : cell.duto.a;
     if (fabs(cell.QG / (0.25 * std::numbers::pi * meanDiameter * meanDiameter * meanVoidFraction)) > 100. ||
-        fabs(cell.QL / (0.25 * std::numbers::pi * meanDiameter * meanDiameter * (1. - meanVoidFraction))) > 100.) {
+        fabs(cell.QL / (0.25 * std::numbers::pi * meanDiameter * meanDiameter * (1. - meanVoidFraction))) > 100. || explicitMode == 1) {
         c0 = 1.;
         ud = 0.;
     } else
@@ -2822,21 +2898,29 @@ void applyInteriorDriftPartition(
     if (cellIndex == state.lastCell) {
         double numerator = (1. - meanVoidFraction * c0);
         double denominator = 1 + c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
-        cell.term1 = numerator / denominator;
-        cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        if (fabs(denominator) > 1e-15) {
+            cell.term1 = numerator / denominator;
+            cell.term2 = (-flowArea * meanVoidFraction * gasDensity * ud) / denominator;
+        } else {
+            cell.term1 = meanVoidFraction < 0.5 ? 1. : 0.;
+            cell.term2 = 0.;
+        }
         double previousLiquidDriftFlux = (superficialGasVelocity - meanVoidFraction * ud) / (meanVoidFraction * c0) - superficialGasVelocity;
         double liquidDriftFlux = (superficialGasVelocity + superficialLiquidVelocity) * (1. - c0 * meanVoidFraction) - meanVoidFraction * ud;
         if ((liquidDriftFlux > 0. || previousLiquidDriftFlux > 0.) && leftCell.alfPigD > 1 - 1e-15) {
             cell.term1 = 0.;
             cell.term2 = 0.;
+            cell.alfI = 1.;
         }
         if ((liquidDriftFlux < 0. || previousLiquidDriftFlux < 0.) && cell.alfPigE > 1 - 1e-15) {
             cell.term1 = 0.;
             cell.term2 = 0.;
+            cell.alfI = 1.;
         }
         if (leftCell.acsr.tipo == kAccessoryChoke && leftCell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * leftCell.duto.area) {
             cell.term1 = 0.;
             cell.term2 = 0.;
+            cell.alfI = 1.;
         }
     }
 }
@@ -2870,23 +2954,35 @@ void finalizeFlowPartitionCell(
             meanVoidFraction = cell.alfPigE;
         double numerator = (1. - meanVoidFraction * cell.c0);
         double denominator = 1 + cell.c0 * meanVoidFraction * ((gasDensity / liquidDensity) - 1.);
-        cell.term1 = numerator / denominator;
-        cell.term2 = (-flowArea * meanVoidFraction * gasDensity * cell.ud) / denominator;
-        double previousLiquidDriftFlux = (superficialGasVelocity - meanVoidFraction * cell.ud) / (meanVoidFraction * cell.c0) - superficialGasVelocity;
+        if (fabs(denominator) > 1e-15) {
+            cell.term1 = numerator / denominator;
+            cell.term2 = (-flowArea * meanVoidFraction * gasDensity * cell.ud) / denominator;
+        } else {
+            cell.term1 = meanVoidFraction < 0.5 ? 1. : 0.;
+            cell.term2 = 0.;
+        }
+        double previousLiquidDriftFlux;
+        if (meanVoidFraction > 1e-15)
+            previousLiquidDriftFlux = (superficialGasVelocity - meanVoidFraction * cell.ud) / (meanVoidFraction * cell.c0) - superficialGasVelocity;
+        else
+            previousLiquidDriftFlux = superficialLiquidVelocity;
         double liquidDriftFlux = (superficialGasVelocity + superficialLiquidVelocity) * (1. - cell.c0 * meanVoidFraction) - meanVoidFraction * cell.ud;
         double candidateLiquidMass = cell.term1 * cell.MC + cell.term2;
         double candidateGasMass = (1 - cell.term1) * cell.MC - cell.term2;
         if ((liquidDriftFlux > 0. || previousLiquidDriftFlux > 0.) && leftCell.alfPigD > 1 - 1e-15) {
             cell.term1 = 0.;
             cell.term2 = 0.;
+            cell.alfI = 1.;
         }
         if ((liquidDriftFlux < 0. || previousLiquidDriftFlux < 0.) && cell.alfPigE > 1 - 1e-15) {
             cell.term1 = 0.;
             cell.term2 = 0.;
+            cell.alfI = 1.;
         }
         if (leftCell.acsr.tipo == kAccessoryChoke && leftCell.acsr.chk.AreaGarg <= (1e-3 + state.input.master1.razareaativ) * leftCell.duto.area) {
             cell.term1 = 0.;
             cell.term2 = 0.;
+            cell.alfI = 1.;
         }
         if ((liquidDriftFlux < 0. || previousLiquidDriftFlux < 0.) && ((fabs(leftCell.QG / (flowArea)) + fabs(leftCell.QL / (flowArea))) < 0.1) &&
             (isShutIn == 1 && state.input.modoSegrega == 1) && (cell.duto.teta > 0 && leftCell.duto.teta <= 0) &&
@@ -2897,6 +2993,7 @@ void finalizeFlowPartitionCell(
         if (cell.duto.teta > 0 && candidateGasMass < 0 && ((isShutIn == 1 && state.input.modoSegrega == 1)) && cell.alfPigE > 1 - 1e-15) {
             cell.term1 = 0.;
             cell.term2 = 0.;
+            cell.alfI = 1.;
         }
     }
 }
@@ -2938,7 +3035,7 @@ TransientTemperatureStep prepareTransientTemperatureStep(
     const double kineticTerm = computeKineticTemperatureTerm(state, cellIndex, balance);
     const auto source = computeTemperatureSourceTerms(state, cellIndex, cell.dx);
     const double latentHeatTerm = computeTemperatureLatentHeatTerm(state, cellIndex);
-    const double leftThermalPower = cellIndex > 0 ? state.cells[cellIndex - 1].potTermo : 0.;
+    const double leftThermalPower = cellIndex > 0 ? state.cells[cellIndex - 1].acsr.potTermo : 0.;
     const double pressureIncrement = balance.pressureTimeCoefficient *
                                      (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2;
     const double compositionWork = (balance.rc - balance.rp) * (1. - balance.voidFraction) *
@@ -3126,7 +3223,7 @@ void computeCellTemperature(const ThermalState &state, int cellIndex, int steady
 
         double leftCellThermalPower = 0.;
         if (cellIndex > 0)
-            leftCellThermalPower = state.cells[cellIndex - 1].potTermo;
+            leftCellThermalPower = state.cells[cellIndex - 1].acsr.potTermo;
         cell.temp = ((balance.timeCoefficient / cell.dt) * cell.temp - (-balance.pressureTimeCoefficient * (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2 / cell.dt) + cell.dTdLCor * (-balance.temperatureSpatialCoefficient * temperatureGradient + balance.pressureSpatialCoefficient * pressureGradient - kineticTerm - (balance.hydrostaticPower - 0. * interfacialWorkTerm) + (leftCellThermalPower + cell.fonteCal) / balance.meanCellLength + sourceTerms.liquid + sourceTerms.gas + balance.heatFlux - latentHeatTerm) - (balance.rc - balance.rp) * (1 - balance.voidFraction) * cell.pres * units::kPascalPerKgfPerCm2 * balance.flowArea * (cell.bet - cell.betini) / (balance.liquidDensity * cell.dt)) / (balance.timeCoefficient / cell.dt);
 
         if (fabs(cell.temp - cell.tempini) / cell.dt > 10.) {
@@ -3481,7 +3578,7 @@ void computeThermalMassTransfer(const ThermalState &state, int cellIndex) {
         slipVelocity = meanSuperficialLiquidVelocity;
     double interfacialWorkTerm = flowArea * cell.pres * units::kPascalPerKgfPerCm2 * slipVelocity * (interfaceVoidFraction - leftInterfaceVoidFraction) / cell.dx;
 
-    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (complementaryDensity - producedLiquidDensity) * (1 - meanVoidFraction) * cell.pres * units::kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt));
+    cell.FonteMudaFase = (-(timeCoefficient / cell.dt) * (cell.temp - cell.tempini) - (pressureTimeCoefficient * (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2 / cell.dt) - temperatureSpatialCoefficient * temperatureGradient + pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower - 0. * interfacialWorkTerm) + leftCell.acsr.potB / meanCellLength + sourceTerms.liquid + sourceTerms.gas + heatFlux - (complementaryDensity - producedLiquidDensity) * (1 - meanVoidFraction) * cell.pres * units::kPascalPerKgfPerCm2 * flowArea * (cell.bet - cell.betini) / (liquidDensity * cell.dt));
 
     cell.FonteMudaFase /= latentHeatTerm;
 }
@@ -3490,13 +3587,72 @@ void updateDistributedMassTransfer(const ThermalState &state, const ThermalDepen
     if (state.lastCell < 0)
         return;
 
+    sources::prepareRecirculationSourceRates(dependencies.sources);
     MassTransferFaceState previousFace = initializeDistributedMassTransferInlet(state, dependencies, 0);
     for (int cellIndex = 1; cellIndex <= state.lastCell; cellIndex++) {
         updateDistributedMassTransferCell(state, dependencies, cellIndex, previousFace);
     }
 }
 
-void updateFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies, int) {
+void advanceAxisymmetricThermalField(const ThermalState &state) {
+    if (state.input.pocoTermAxiSim != 1 || state.input.nAxiSim <= 0)
+        return;
+    auto &solver = state.axisymmetricSolver;
+    for (int index = 0; index < solver.dados->ncelPoco; index++) {
+        const int cellIndex = state.input.indAxiSim[index];
+        TransCal &heatTransfer = state.input.anulAxiSim == 0
+                                     ? state.cells[cellIndex].calor
+                                     : state.gasCells[cellIndex].calor;
+        if (solver.dados->acopDirichlet == 0)
+            solver.dados->tInt[index] = state.input.anulAxiSim == 0
+                                           ? state.cells[cellIndex].temp
+                                           : state.gasCells[cellIndex].temp;
+        else {
+            const int lastLayer = heatTransfer.geom.ncamadas - 1;
+            const int lastSubdivision = heatTransfer.ncamada[lastLayer];
+            solver.dados->tInt[index] = heatTransfer.Tcamada[lastLayer][lastSubdivision];
+        }
+        heatTransfer.calcResGlobAxiSim();
+        solver.dados->resGlob[index] = heatTransfer.resGlobAxiSim;
+    }
+    if (state.globals->simulationTime < 1e-15) {
+        std::vector<double> initialTemperatures;
+        for (int index = 0; index < solver.dados->ncelPoco; index++) {
+            const int cellIndex = state.input.indAxiSim[index];
+            if (state.input.anulAxiSim == 0)
+                initialTemperatures.push_back(state.cells[cellIndex].calor.Tcamada[0][0]);
+            else
+                initialTemperatures.push_back(state.gasCells[cellIndex].calor.Tcamada[0][0]);
+        }
+        solver.inicializaTransientePoisson(initialTemperatures);
+        for (int element = 0; element < solver.malha.nele; element++) {
+            solver.malha.mlh2d[element].perm = 0;
+            solver.malha.mlh2d[element].trans = 1;
+        }
+        for (int index = 0; index < solver.dados->ncelPoco; index++)
+            solver.dados->tInt0[index] = solver.dados->tInt[index];
+        solver.kontaTempo = 0;
+    }
+    if (state.globals->simulationTime < 1e-15) {
+        for (int element = 0; element < solver.malha.nele; element++)
+            solver.malha.mlh2d[element].calcGradGreen();
+    }
+    solver.transientePoisson(state.timeStep);
+}
+
+void restartAxisymmetricThermalField(const ThermalState &state) {
+    if (state.input.pocoTermAxiSim == 1 && state.input.nAxiSim > 0) {
+        state.axisymmetricSolver.FeiticoDoTempo();
+        state.axisymmetricSolver.transientePoisson(state.timeStep);
+    }
+}
+
+void finalizeAxisymmetricThermalField(const ThermalState &state, int branchIndex) {
+    if (state.input.pocoTermAxiSim == 1 && state.input.nAxiSim > 0)
+        state.axisymmetricSolver.finalizaPassoTransiente(state.timeStep, branchIndex);
+}
+
+void updateFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies, int, int explicitMode) {
 
     Vcr<int> bifurcationFlags(state.lastCell + 1, 0);
     Vcr<int> valveFlags(state.lastCell + 1, 1);
@@ -3505,12 +3661,12 @@ void updateFlowPartitionTerms(const ThermalState &state, const ThermalDependenci
         cell.c0ini = cell.c0;
         cell.udini = cell.ud;
         if (cellIndex != 0 && cellIndex != state.lastCell) {
-            updateInteriorFlowPartitionCell(state, dependencies, cellIndex, bifurcationFlags, valveFlags);
+            updateInteriorFlowPartitionCell(state, dependencies, cellIndex, bifurcationFlags, valveFlags, explicitMode);
         } else if (cellIndex == 0) {
-            updateInletBoundaryFlowPartition(state, dependencies, cellIndex, bifurcationFlags);
+            updateInletBoundaryFlowPartition(state, dependencies, cellIndex, bifurcationFlags, explicitMode);
 
         } else {
-            updateOutletBoundaryFlowPartition(state, dependencies, cellIndex, bifurcationFlags);
+            updateOutletBoundaryFlowPartition(state, dependencies, cellIndex, bifurcationFlags, explicitMode);
         }
     }
 
@@ -3794,7 +3950,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
     if (fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) > 0.05 && state.thermalSourceDisabled == 0) { // Solve heat transport above 0.05 m/s when thermal sources are enabled;
         // at lower velocities the fluid temperature is taken as the ambient temperature
         mixtureFluxSign = (meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) / fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity);
-        double interfaceMeanPressure = cell.presaux + 0 * leftCell.dpB / units::kPascalPerKgfPerCm2;
+        double interfaceMeanPressure = cell.presaux + 0 * leftCell.acsr.dpB / units::kPascalPerKgfPerCm2;
         double interfaceMeanTemperature;
         if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0) // temperature at the cell's left interface
             // case in which one iteration is considered to have been
@@ -3873,7 +4029,7 @@ void advanceSteadyTemperature(const ThermalState &state, int cellIndex, int rung
                 latentHeatTerm = 0.;
             else if (state.input.condlatente == 0 && latentHeatTerm < 0)
                 latentHeatTerm = 0.;
-            double sourceTemperatureGradient = meanTemperatureGradientCorrection * (pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower) + (liquidMassSourceTerm + gasMassSourceTerm) - latentHeatTerm + (leftCell.potTermo + leftCell.fonteCal) / meanCellLength) / temperatureSpatialCoefficient;
+            double sourceTemperatureGradient = meanTemperatureGradientCorrection * (pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower) + (liquidMassSourceTerm + gasMassSourceTerm) - latentHeatTerm + (leftCell.acsr.potTermo + leftCell.fonteCal) / meanCellLength) / temperatureSpatialCoefficient;
             // portion of energy related to heat exchange
             double heatFluxTemperatureGradient = meanTemperatureGradientCorrection * (heatFlux) / temperatureSpatialCoefficient;
 
@@ -3945,7 +4101,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         // Solve heat transport above the configured slow-transfer threshold.
         // Otherwise, assume the fluid temperature equals the ambient temperature.
         mixtureFluxSign = (meanSuperficialGasVelocity + meanSuperficialLiquidVelocity) / fabs(meanSuperficialGasVelocity + meanSuperficialLiquidVelocity);
-        double interfaceMeanPressure = rightCell.presaux - cell.dpB / units::kPascalPerKgfPerCm2;
+        double interfaceMeanPressure = rightCell.presaux - cell.acsr.dpB / units::kPascalPerKgfPerCm2;
         double interfaceMeanTemperature;
         if (state.steadyIteration != 0 && state.input.AceleraConvergPerm == 0)
             // Use the previous-iteration temperature at the right interface.
@@ -4017,7 +4173,7 @@ void advanceReverseSteadyTemperature(const ThermalState &state, int cellIndex, i
         if (fabs(temperatureSpatialCoefficient) > globals.smallValueTolerance) {
             // energy term from boundary work, potential energy,
             // kinetic energy, mass sources, latent heat and shaft work:
-            double sourceTemperatureGradient = meanTemperatureGradientCorrection * (pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower) + (liquidMassSourceTerm + gasMassSourceTerm) - latentHeatTerm - rightCell.potBT / meanCellLength) / temperatureSpatialCoefficient;
+            double sourceTemperatureGradient = meanTemperatureGradientCorrection * (pressureSpatialCoefficient * pressureGradient - kineticTerm - (hydrostaticPower) + (liquidMassSourceTerm + gasMassSourceTerm) - latentHeatTerm - rightCell.acsr.potBT / meanCellLength) / temperatureSpatialCoefficient;
             // energy term from the heat exchange
             double heatFluxTemperatureGradient = meanTemperatureGradientCorrection * (heatFlux) / temperatureSpatialCoefficient;
 
@@ -4090,10 +4246,15 @@ void computeGasTemperature(const ThermalState &state, int cellIndex, double, int
             temperaturePerturbation = 0.1;
         double gasDensityChange = state.gasCells[cellIndex].flui.MasEspGas(state.gasCells[cellIndex].presini, state.gasCells[cellIndex].tempini + temperaturePerturbation) - gasDensity;
         state.gasCells[cellIndex].calor.betint = -(1 / state.gasCells[cellIndex].calor.rhoint) * gasDensityChange / (temperaturePerturbation);
-        if (steadyMode == 0)
-            state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transtrans();
-        else
-            state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transperm();
+        if ((state.input.pocoTermAxiSim == 0 || state.input.nAxiSim == 0 || state.input.anulAxiSim == 0) || steadyMode != 0) {
+            if (steadyMode == 0)
+                state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transtrans();
+            else
+                state.gasCells[cellIndex].fluxcal = state.gasCells[cellIndex].calor.transperm();
+        } else if (state.input.pocoTermAxiSim == 1 && state.input.nAxiSim >= 1 && state.input.anulAxiSim == 1 && steadyMode == 0) {
+            state.gasCells[cellIndex].fluxcal = axisymmetricHeatFluxOf(
+                state, cellIndex, state.gasCells[cellIndex].calor, true);
+        }
         if (cellIndex >= state.tubingAnnulusStart && cellIndex <= state.tubingAnnulusEnd && state.networkCoupled == 1) {
             int kconecte = cellIndex - state.tubingAnnulusStart;
             int iconecte = state.annulusTubingStart - kconecte;

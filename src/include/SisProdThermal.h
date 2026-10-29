@@ -14,6 +14,7 @@ namespace sisprod::sources { struct SourceState; }
 namespace sisprod::transient { struct TransientStepState; }
 class choke;
 class solverP3D;
+class solverPAxiSim;
 struct SimulationContext;
 
 namespace sisprod::thermal {
@@ -38,6 +39,7 @@ struct ThermalState {
     const int &primarySectionEnd;
     const std::vector<int> &coupledCellIndices;
     solverP3D &poissonSolver3D;
+    solverPAxiSim &axisymmetricSolver;
     const int &lastCell;
     const choke &surfaceChoke;
     const int &surfaceChokeMassFlag;
@@ -79,6 +81,16 @@ struct ThermalState {
 /// Throws invalid_argument for inconsistent counts, labels, or cell indices.
 std::vector<int> buildThermalCouplingIndices(const Ler &input, const solverP3D &solver, int lastCell);
 
+/// Advances the axisymmetric well field from the production or annulus interface state.
+/// Initializes its transient history at the first simulation step.
+void advanceAxisymmetricThermalField(const ThermalState &state);
+
+/// Restores and advances the axisymmetric field after a reduced time step.
+void restartAxisymmetricThermalField(const ThermalState &state);
+
+/// Accepts the axisymmetric thermal step and writes its configured output.
+void finalizeAxisymmetricThermalField(const ThermalState &state, int branchIndex);
+
 /// Interpolates latent heat in the pressure-temperature table.
 double interpolateLatentHeat(const ThermalState &state, double pressure,
                              double temperature);
@@ -110,7 +122,7 @@ void updateDistributedMassTransfer(const ThermalState &state, const ThermalDepen
 
 /// Computes the mixture-flow partition terms along the production cells.
 /// inflowMode does not affect the sweep, which uses the outlet boundary.
-void updateFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies, int inflowMode);
+void updateFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies, int inflowMode, int explicitMode = 0);
 
 /// Computes mixture-flow partition terms at an internal-section outlet.
 void updateOutletFlowPartitionTerms(const ThermalState &state, const ThermalDependencies &dependencies);

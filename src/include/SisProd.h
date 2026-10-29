@@ -31,6 +31,7 @@
 #include "estruturaTabDin.h"
 #include "mapa.h"
 #include "solver3DPoisson.h"
+#include "solverPoissonAxiSim.h"
 #include "SimulationContext.h"
 #include <ctime>
 #include <cmath>
@@ -605,7 +606,7 @@ class SProd {
     /// Updates distributed mass-transfer terms used by void-fraction and mixture-mass equations.
     void renovaTemp();
     /// Computes T1 and T2 used to split mixture mass flow into liquid and gas flows.
-    void renovaterm(int inflowMode = 0);
+    void renovaterm(int inflowMode = 0, int explicitMode = 0);
     /// Computes T1 and T2 at the outlet of an internal network section.
     void renovatermAfluFim();
     /// Computes T1 and T2 at the inlet of an internal network section.
@@ -786,6 +787,7 @@ class SProd {
 
     /// The coupling with the three-dimensional thermal model.
     sisprod::Coupling3D coupling3D;
+    solverPAxiSim axisymmetricThermalSolver;
     /// Shared simulation settings and runtime state.
     SimulationContext *simulationContext = nullptr;
 
@@ -859,6 +861,9 @@ class SProd {
     /// position on both lines, and each gas cell's share of the annulus above the
     /// discharge cell. Without a gas line, sets the last gas-cell index to zero.
     void buildGasLiftLine();
+
+    /// Initializes the axisymmetric well solver after both pipe geometries are available.
+    void buildAxisymmetricThermalCoupling();
     /// Rejects or warns about source and boundary-condition combinations the run
     /// cannot honour (RN-300, RN-301, gas-lift discharge without an IPR, no outlet
     /// pressure, accessories in the last two cells), builds the gas-lift discharge

@@ -79,6 +79,15 @@ constexpr OptionalColumn<detTRENDP> kProductionColumns[] = {
     {&detTRENDP::diamInt, " Diametro Interno da tubulacao, m ;", " Tubing inner diameter, m ;"},
     {&detTRENDP::TempParede, " Temperatura Interna da Parede, C ;", " Internal wall temperature, C ;"},
     {&detTRENDP::subResfria, " Subresfriamento, C ;", " Subcooling, C ;"},
+    {&detTRENDP::presAnulICV, " Pressao a montante da ICV, kgf/cm2 ;", " downstream ICV pressure, kgf/cm2 ;"},
+    {&detTRENDP::caixaValvula, " Pressao caixa de valvula (kgf/cm2) C;", " Box valve pressure (kgf/cm2) C;"},
+    {&detTRENDP::caixaValvula, " Temperatura caixa de valvula (C) C;", " Box valve temperature (C) C;"},
+    {&detTRENDP::caixaValvula, " Fracao de vazio caixa de valvula (-) C;", " Box valve void fraction (-) C;"},
+    {&detTRENDP::caixaValvula, " Fracao de liquido complementar caixa de valvula (-) C;", " Box valve Complementary liquid fraction (-) C;"},
+    {&detTRENDP::caixaValvula, " Titulo caixa de valvula (-) C;", " Box valve gas mass fraction(-) C;"},
+    {&detTRENDP::caixaValvula, " Massa de fluidos caixa de valvula (kg) C;", " Box valve fluid mass(kg) C;"},
+    {&detTRENDP::caixaValvula, " Massa de liquido caixa de valvula (kg) C;", " Box valve liquid mass(kg) C;"},
+    {&detTRENDP::caixaValvula, " Massa de gas caixa de valvula (kg) C;", " Box valve gas mass(kg) C;"},
 };
 
 constexpr OptionalColumn<detTRENDG> kGasLineColumns[] = {

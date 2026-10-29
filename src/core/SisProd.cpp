@@ -105,12 +105,12 @@ void SProd::renovaTemp() {
     thermal::updateDistributedMassTransfer(state, dependencies);
 }
 
-void SProd::renovaterm(int inflowMode) {
+void SProd::renovaterm(int inflowMode, int explicitMode) {
     const auto state = thermalStateOf();
     const auto sources = sourceStateOf();
     const auto closure = closureStateOf();
     const thermal::ThermalDependencies dependencies{sources, closure};
-    thermal::updateFlowPartitionTerms(state, dependencies, inflowMode);
+    thermal::updateFlowPartitionTerms(state, dependencies, inflowMode, explicitMode);
 }
 
 void SProd::renovatermAfluFim() {
@@ -720,6 +720,7 @@ sisprod::thermal::ThermalState SProd::thermalStateOf() {
         .primarySectionEnd = networkCoupling.secondaryCouplingEnd,
         .coupledCellIndices = coupling3D.coupledIndexCorrections,
         .poissonSolver3D = coupling3D.poissonSolver3D,
+        .axisymmetricSolver = axisymmetricThermalSolver,
         .lastCell = ncel,
         .surfaceChoke = chokeSup,
         .surfaceChokeMassFlag = masChkSup,

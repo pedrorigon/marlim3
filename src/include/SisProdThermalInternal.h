@@ -143,6 +143,7 @@ struct UpstreamFaceBasis {
 
 /// Inlet closure policy for the instantaneous pass.
 struct InletBoundaryRegime {
+    static constexpr bool recordsInterfaceFraction = true;
     /// Applies the two ordered inlet boundary overrides.
     static void applyInletOverrides(const ThermalState &state, int cellIndex,
                                     int &branchFlag, double superficialGasVelocity,
@@ -155,6 +156,7 @@ struct InletBoundaryRegime {
 
 /// Inlet closure policy for the buffered pass.
 struct BufferedInletRegime {
+    static constexpr bool recordsInterfaceFraction = false;
     /// Leaves the buffered branch flag unchanged.
     static void applyInletOverrides(const ThermalState &, int, int &, double, double);
 
@@ -299,7 +301,7 @@ void clearMassTransferDerivatives(const ThermalState &state, int cellIndex);
 
 /// Sets the liquid partition, zeros its drift term, and assigns the branch flag.
 void setFlowPartitionTerms(const ThermalState &state, int cellIndex, double term1,
-                           int &branchFlag, int flagValue);
+                           int &branchFlag, int flagValue, bool recordInterfaceFraction = false);
 
 /// Sets unit distribution, zero drift velocity, and no flow-pattern label.
 void clearDriftClosure(const ThermalState &state, int cellIndex);
@@ -309,16 +311,16 @@ void clearDriftClosure(const ThermalState &state, int cellIndex);
 void selectAndApplyInteriorFlowRegime(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double superficialGasVelocity,
     double superficialLiquidVelocity, double leftSuperficialGasVelocity, double leftSuperficialLiquidVelocity, double rightSuperficialGasVelocity, double rightSuperficialLiquidVelocity,
-    double gasDensity, double liquidDensity, double flowArea);
+    double gasDensity, double liquidDensity, double flowArea, int explicitMode = 0);
 
 /// Prepares both face properties, propagates left-face state, and applies
 /// the interior regime unless the valve flag blocks it.
 void updateInteriorFlowPartitionCell(
-    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, Vcr<int> &valv);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, Vcr<int> &valv, int explicitMode = 0);
 
 /// Applies outlet-specific regime rules and propagates its closure to the left face.
 void updateOutletBoundaryFlowPartition(
-    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, int explicitMode = 0);
 
 /// Blends closure values into the supplied buffers according to inclination
 /// and flow-pattern differences; blendIndex identifies the destination entry.
@@ -336,19 +338,19 @@ void finalizeFlowPartitionTerms(
 /// closure values, including their non-finite floating-point behavior.
 void applyNoSlipClosure(const ThermalState &state, int cellIndex, double term1,
                         int &branchFlag, double distributionCoefficient,
-                        double driftVelocity);
+                        double driftVelocity, bool recordInterfaceFraction = false);
 
 /// Classifies the inlet, applies the selected inlet policy, and computes
 /// the partition after all branch-flag overrides.
 template <typename Regime>
 void selectAndApplyInletRegime(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, int &branchFlag, double distributionCoefficient,
-    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
+    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea, int explicitMode = 0);
 
 /// Applies the instantaneous inlet policy using the cell branch-flag entry.
 void selectAndApplyInletBoundaryFlowRegime(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bif, double distributionCoefficient,
-    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
+    double driftVelocity, double superficialGasVelocity, double superficialLiquidVelocity, double rightSuperficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea, int explicitMode = 0);
 
 /// Applies the buffered outlet rules, closure, and final choke override.
 void selectAndApplyBufferedOutletFlowRegime(
@@ -426,7 +428,7 @@ int thermalCouplingIndexOf(const ThermalState &state, int cellIndex);
 /// Prepares the inlet face and partition terms for cellIndex == 0.
 /// The inlet void fraction uses c0 on entry, before the closure callback updates it.
 void updateInletBoundaryFlowPartition(
-    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bifurcationFlags);
+    const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, Vcr<int> &bifurcationFlags, int explicitMode = 0);
 
 /// Evaluates transient, steady, or 3D-coupled heat flux after the cell heat-transfer
 /// state is prepared. Unsupported diffusion modes retain zero heat flux.
@@ -504,7 +506,7 @@ void finalizeDistributedMassTransferFace(
 /// its velocity cap and outlet-only partition corrections in their evaluation order.
 void applyInteriorDriftPartition(
     const ThermalState &state, const ThermalDependencies &dependencies, int cellIndex, double superficialGasVelocity,
-    double superficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea);
+    double superficialLiquidVelocity, double gasDensity, double liquidDensity, double flowArea, int explicitMode = 0);
 
 /// Corrects one interior partition using cell closure values. Candidate phase
 /// masses are evaluated before drift and shut-in corrections and retain that
