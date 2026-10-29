@@ -370,6 +370,7 @@ struct genericoVEC {
 class APara {
   public:
     int tipoAP;
+    bool combinacao = true;
     string entrada;
     int dim;
     int nVariaveis;
@@ -413,14 +414,14 @@ class APara {
     detBSWAP APBSW;
     detCHOKESUPAP APCHK;
     detCondConInjecAP APPInj;
-    casoVEC *sequenciaAP;
-    genericoVEC *genericoAP;
+    casoVEC *sequenciaAP = nullptr;
+    genericoVEC *genericoAP = nullptr;
 
     double resultadosVec[22 + 1];
-    double **saidaBHP;
-    double **saidaVazLiq;
+    double **saidaBHP = nullptr;
+    double **saidaVazLiq = nullptr;
     int nthrdAP;
-    int *vecParSerie;
+    int *vecParSerie = nullptr;
     int varSeq[23];
     int vfp;
     SimulationContext *simulationContext;
@@ -502,8 +503,7 @@ class APara {
         releaseSweepVectors();
     }
 
-    // Frees the sweep's sequence, generic indices and per-variable series, and the BHP and liquid-rate outputs,
-    // whatever lerArq allocated of them.
+    /// Releases sequence indices, per-variable lengths, and pressure/liquid-rate outputs.
     void releaseSweepVectors();
 
     Document parseEntrada();
@@ -594,6 +594,9 @@ class APara {
                         double &presiniG, double &tempiniG, double &vazgasG, double &presE, double &tempE,
                         double &titE, double &betaE, double &vazE, int seq, int &indCHK, double *vdPdLH,
                         double *vdPdLF, double *vdTdL, double BHP, double tempSaida);
+
+  private:
+    int tamanhoSerie(const Value &serie, const string &chaveJson);
 };
 
 #endif /* LERAP_H_ */

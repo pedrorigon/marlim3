@@ -104,7 +104,7 @@ string Rede::schemaRede() const {
     schemaRedeStream << "\"configuracaoInicial\": {\"$ref\": \"#/definitions/t_configuracaoInicial\"}," << endl;
     schemaRedeStream << "\"Arquivos\": {\"$ref\": \"#/definitions/p_arquivos\"}," << endl;
     schemaRedeStream << "\"Conexao\": {\"$ref\": \"#/definitions/t_conexao\"} }," << endl;
-    schemaRedeStream << "\"required\": [\"versao\", \"configuracaoInicial\", \"Arquivos\", \"Conexao\"]" << endl;
+    schemaRedeStream << "\"required\": [\"configuracaoInicial\", \"Arquivos\", \"Conexao\"]" << endl;
     schemaRedeStream << "}" << endl;
     return schemaRedeStream.str();
 }

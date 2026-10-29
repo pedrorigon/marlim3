@@ -60,6 +60,11 @@ simulations directly from a terminal without installing the Python package.
 For development, use [uv](https://docs.astral.sh/uv/) to manage the Python
 environment and dependencies.
 
+Use uv **0.13.1** and Python **3.12+**. For dependency additions/upgrades or
+development inside Petrobras, see [Dependency maintenance](dev-guide/dependencies.md).
+That guide explains public lock generation in Actions and installation through a
+locally configured JFrog mirror. The commands below use the public PyPI flow.
+
 **Step 1 — Install dependencies and the Python package:**
 
 ```bash
@@ -71,7 +76,7 @@ flake8, jupyter, etc.), and installs `marlim3` in editable mode. After this step
 you can already use `import marlim3` in your scripts:
 
 ```bash
-uv run python -c "import marlim3; print(marlim3.__version__)"
+uv run --locked python -c "import marlim3; print(marlim3.__version__)"
 ```
 
 **Step 2 — Build and register the C++/Fortran executable** (required to run

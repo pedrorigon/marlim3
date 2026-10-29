@@ -417,23 +417,23 @@ struct detGASINJ {
 
 // Defines the pressure boundary condition at the pipe inlet
 struct detPresEnt {
-    int parserie; // Number of elements in the time series
-    int indFluido;
-    double *temperatura; // Pipe-inlet temperature time series
-    double *pres;        // Pipe-inlet pressure time series
-    double *tit;         // Pipe-inlet quality time series
-    double *bet;         // Pipe-inlet beta time series
-    double *tempo;       // Time-series values
+    int parserie = 0; // Number of elements in the time series
+    int indFluido = -1;
+    double *temperatura = nullptr; // Pipe-inlet temperature time series
+    double *pres = nullptr;        // Pipe-inlet pressure time series
+    double *tit = nullptr;         // Pipe-inlet quality time series
+    double *bet = nullptr;         // Pipe-inlet beta time series
+    double *tempo = nullptr;       // Time-series values
 };
 
 // Defines the pressure and flow-rate boundary conditions at the pipe inlet
 struct detVazPresEnt {
-    int parserie;        // Number of elements in the time series
-    double *temperatura; // Pipe-inlet temperature time series
-    double *pres;        // Pipe-inlet pressure time series
-    double *mass;        // Pipe-inlet mass-flow-rate time series, in kg/s
-    double *bet;         // Pipe-inlet beta time series
-    double *tempo;       // Time-series values
+    int parserie = 0;              // Number of elements in the time series
+    double *temperatura = nullptr; // Pipe-inlet temperature time series
+    double *pres = nullptr;        // Pipe-inlet pressure time series
+    double *mass = nullptr;        // Pipe-inlet mass-flow-rate time series, in kg/s
+    double *bet = nullptr;         // Pipe-inlet beta time series
+    double *tempo = nullptr;       // Time-series values
 };
 
 // Defines the gas-lift valve

@@ -289,6 +289,16 @@ option(MARLIM_BUILD_TESTS "Build the C++ unit tests" OFF)
 if(MARLIM_BUILD_TESTS)
     enable_testing()
 
+    add_executable(test_inlet_boundary_initialization
+        ${CMAKE_SOURCE_DIR}/tests/cpp/test_inlet_boundary_initialization.cpp
+    )
+    target_include_directories(test_inlet_boundary_initialization PRIVATE
+        ${INCDIR}
+        ${LIBDIR}
+    )
+    add_test(NAME inlet_boundary_initialization
+        COMMAND test_inlet_boundary_initialization)
+
     add_executable(test_friction_factor
         ${CMAKE_SOURCE_DIR}/tests/cpp/test_friction_factor.cpp
         ${SRCDIR}/GradientCorrelations.cpp

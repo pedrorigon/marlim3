@@ -20706,8 +20706,8 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
         (*simulationContext).solverThreadCount=nthrd;
 		(*simulationContext).poisson3DThreadCount=threadP3D;
 		ConContEntrada = arqAntigo.ConContEntrada;
-		CCPres.parserie =arqAntigo.CCPres.parserie;
-		CCPres.indFluido=arqAntigo.CCPres.indFluido;
+		CCPres.parserie = ConContEntrada == 1 ? arqAntigo.CCPres.parserie : 0;
+		CCPres.indFluido = ConContEntrada == 1 ? arqAntigo.CCPres.indFluido : -1;
 		if(CCPres.parserie>0){
 			CCPres.temperatura = new double[CCPres.parserie];
 			CCPres.pres = new double[CCPres.parserie];
@@ -20733,8 +20733,8 @@ void Ler::copia_configuracao_inicial(Ler& arqAntigo) {
 			CCPres.bet = 0;
 			CCPres.tempo = 0;
 		}
+		CCVPres.parserie = ConContEntrada == 2 ? arqAntigo.CCVPres.parserie : 0;
 		if(CCVPres.parserie>0){
-			CCVPres.parserie =arqAntigo.CCVPres.parserie;
 			CCVPres.temperatura = new double[CCVPres.parserie];
 			CCVPres.pres = new double[CCVPres.parserie];
 			CCVPres.mass = new double[CCVPres.parserie];
