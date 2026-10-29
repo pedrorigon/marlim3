@@ -1,4 +1,5 @@
 #include "Bcsm2.h"
+#include "UnitConversions.h"
 
 BomCentSub::BomCentSub(int nC,const double* const Vvaz, const double* const Vhead,
                                 const double* const Vpower,const double* const Vefic, double Vfreq, int Vnestag, double VeficM,
@@ -78,6 +79,8 @@ BomCentSub::BomCentSub(int nC,const double* const Vvaz, const double* const Vhea
         while(maxef<efic[k]&&k<lenth-1){maxef=efic[k];k++;}
         BEP=FalsaCorda(1,vaz[k-2],vaz[k]);
         if(BEP<0)BEP=vaz[k-1];
+        // Fhead returns 0 beyond Qzero; while Qzero itself is searched for, nothing is beyond it.
+        Qzero=HUGE_VAL;
         Qzero=FalsaCorda(0,vaz[lenth-2],vaz[lenth-1]);
 
         Hvis=0.;
@@ -433,7 +436,7 @@ void BomCentSub::NovaVis(double vis, double MasEsp, double Qvis){
 	    		Ce=pow(Bhi,expoente);
 	    		Evis=Ce*Fefic(Qw);
 	    		if(Evis>1e-5){
-	    			Pvis=(Qw*(0.158987/86400.)*Hvis*(0.3048)*(MasEsp*9.8)/745.7)*(100./Evis);
+	    			Pvis=(Qw*(units::kCubicMetrePerBarrel/86400.)*Hvis*(0.3048)*(MasEsp*9.8)/745.7)*(100./Evis);
 	    		}
 	    		else Pvis=0.;
 	    	}

@@ -1,4 +1,5 @@
 #include "celulaGas.h"
+#include "UnitConversions.h"
 
 CelG::CelG(const DadosGeo vdutoL, const DadosGeo vduto,
            const DadosGeo vdutoR, const ProFlu vflui,
@@ -396,7 +397,7 @@ void CelG::GeraLocal(int ncelGas, double presiniG, double tempiniG, double abert
     double rhog = rg;
     double compres = flui.Zdran(pres, temp, rg);
     double dzdp = flui.DZDP(pres, temp);
-    drhodp = rhog * (1 / (pres * 98066.5) - (1 / compres) * dzdp);
+    drhodp = rhog * (1 / (pres * units::kPascalPerKgfPerCm2) - (1 / compres) * dzdp);
     if (posic != 0 && posic != ncelGas) {
 
         double varpresL = 0.;
@@ -406,14 +407,14 @@ void CelG::GeraLocal(int ncelGas, double presiniG, double tempiniG, double abert
             local[0][0] = 0.;
             local[0][1] = -1 / dx0;
             local[0][2] = 0.;
-            local[0][3] = drhodp * duto.area * 98066.5 / dt;
+            local[0][3] = drhodp * duto.area * units::kPascalPerKgfPerCm2 / dt;
             local[0][4] = 1 / dx0;
             local[0][5] = 0.;
             local[0][6] = 0.;
             local[0][7] = 0.;
             local[0][8] = 0.;
 
-            TL[0] = drhodp * duto.area * pres * 98066.5 / dt - massfonteCH / dx0 + fonteM2 / dx0 - drhodt * duto.area * dTdt;
+            TL[0] = drhodp * duto.area * pres * units::kPascalPerKgfPerCm2 / dt - massfonteCH / dx0 + fonteM2 / dx0 - drhodt * duto.area * dTdt;
 
         } else {
             local[0][0] = 0.;
@@ -475,10 +476,10 @@ void CelG::GeraLocal(int ncelGas, double presiniG, double tempiniG, double abert
             local[1][1] = -vel1 / (2. * dxmed) + 0.5 * multvelL;
             local[1][2] = 0.;
 
-            local[1][3] = -Amed * 98066.5 * (1 / dxmed);
+            local[1][3] = -Amed * units::kPascalPerKgfPerCm2 * (1 / dxmed);
 
             local[1][4] = 1 / dt + (vel2 - vel1) / (2. * dxmed) + 0.5 * (multvelL + multvelR);
-            local[1][6] = Amed * 98066.5 * (1 / dxmed);
+            local[1][6] = Amed * units::kPascalPerKgfPerCm2 * (1 / dxmed);
             local[1][7] = vel2 / (2. * dxmed) + 0.5 * multvelR;
             local[1][8] = 0.;
 
@@ -544,14 +545,14 @@ void CelG::GeraLocal(int ncelGas, double presiniG, double tempiniG, double abert
             local[0][0] = 0.;
             local[0][1] = 0;
             local[0][2] = 0.;
-            local[0][3] = drhodp * duto.area * 98066.5 / dt;
+            local[0][3] = drhodp * duto.area * units::kPascalPerKgfPerCm2 / dt;
             local[0][4] = 1 / dx0;
             local[0][5] = 0.;
             local[0][6] = 0.;
             local[0][7] = 0.;
             local[0][8] = 0.;
 
-            TL[0] = drhodp * duto.area * pres * 98066.5 / dt + massfonteCH / dx0 - drhodt * duto.area * dTdt;
+            TL[0] = drhodp * duto.area * pres * units::kPascalPerKgfPerCm2 / dt + massfonteCH / dx0 - drhodt * duto.area * dTdt;
         }
 
         double dxmed = 0.5 * dx1;
@@ -577,10 +578,10 @@ void CelG::GeraLocal(int ncelGas, double presiniG, double tempiniG, double abert
         local[1][0] = 0.;
         local[1][1] = 0.;
         local[1][2] = 0.;
-        local[1][3] = -(Amed * 98066.5 * (1 / dxmed));
+        local[1][3] = -(Amed * units::kPascalPerKgfPerCm2 * (1 / dxmed));
         local[1][4] = 1 / dt + (vel2 - 2. * vel1) / (2. * dxmed) + multvelL;
         local[1][5] = 0.;
-        local[1][6] = (Amed * 98066.5 * (1 / dxmed));
+        local[1][6] = (Amed * units::kPascalPerKgfPerCm2 * (1 / dxmed));
         local[1][7] = vel2 / (2. * dxmed);
         local[1][8] = 0.;
 
@@ -603,14 +604,14 @@ void CelG::GeraLocal(int ncelGas, double presiniG, double tempiniG, double abert
             local[0][0] = 0.;
             local[0][1] = -1 / dx0;
             local[0][2] = 0.;
-            local[0][3] = drhodp * duto.area * 98066.5 / dt;
+            local[0][3] = drhodp * duto.area * units::kPascalPerKgfPerCm2 / dt;
             local[0][4] = 1 / dx0;
             local[0][5] = 0.;
             local[0][6] = 0.;
             local[0][7] = 0.;
             local[0][8] = 0.;
 
-            TL[0] = drhodp * duto.area * pres * 98066.5 / dt - 1. * massfonteCH / dx0 - drhodt * duto.area * dTdt;
+            TL[0] = drhodp * duto.area * pres * units::kPascalPerKgfPerCm2 / dt - 1. * massfonteCH / dx0 - drhodt * duto.area * dTdt;
         } else {
             local[0][0] = 0.;
             local[0][1] = 0.;
