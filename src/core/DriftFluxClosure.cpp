@@ -6,6 +6,7 @@
 // static_assert fails the build if the overload ever stops being the
 // floating-point one.
 #include <math.h>
+#include <numbers>
 
 #include <type_traits>
 
@@ -38,7 +39,7 @@ inline double inclinationSignOf(double inclinationAngle) {
 
 /// Cross sectional area of a circular duct.
 inline double ductArea(double diameter) {
-    return M_PI * diameter * diameter / 4.;
+    return std::numbers::pi * diameter * diameter / 4.;
 }
 
 /// Forces the drift velocity to point along the inclination when the flow is
@@ -148,7 +149,7 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
     double ductShapeTerm = (ductShapeCoefficient - ductShapeCoefficient * sqrt(gasDensity / liquidDensity)) * (pow((2.6 - noSlipGasFraction), 0.15) - sqrt(frictionFactor)) * pow((1 - massQuality), 1.5);
     if (gasFlowRate * liquidFlowRate < 0.)
         ductShapeTerm = 0;
-    if (inclinationAngle >= -50 * M_PI / 180. && inclinationAngle <= 0 && froudeNumber <= 0.1)
+    if (inclinationAngle >= -50 * std::numbers::pi / 180. && inclinationAngle <= 0 && froudeNumber <= 0.1)
         ductShapeTerm = 0.0;
     c0 = distributionTerm1 + distributionTerm2 + ductShapeTerm; // Distribution parameter.
 
@@ -161,7 +162,7 @@ void bhagwatGhajarCore(double liquidDensity, double gasDensity, double surfaceTe
     const double laplaceCorrection =
         (laplaceNumber < 0.025) ? pow((laplaceNumber / 0.025), 0.90) : 1.0;
     const double downwardFlowSign =
-        (inclinationAngle >= -(50 * M_PI / 180.) && inclinationAngle < 0 && froudeNumber <= 0.1) ? -1.0 : 1.0;
+        (inclinationAngle >= -(50 * std::numbers::pi / 180.) && inclinationAngle < 0 && froudeNumber <= 0.1) ? -1.0 : 1.0;
     ud = horizontalDriftSign * inclinationFactor * buoyancyVelocityScale * viscosityCorrection * laplaceCorrection * downwardFlowSign; // Drift velocity.
     alignDriftWithInclination(gasFlowRate, liquidFlowRate, flowArea, inclinationAngle, ud);
 }
@@ -235,16 +236,16 @@ void blendAcrossInclination(double liquidDensity, double gasDensity, double surf
                             double gasFlowRate, double liquidFlowRate, double diameter,
                             double roughness, double inclinationAngle, double &c0, double &ud,
                             double horizontalDriftSign) {
-    if (fabs(inclinationAngle) < 5 * M_PI / 180.) {
+    if (fabs(inclinationAngle) < 5 * std::numbers::pi / 180.) {
         BhagwatGhajar(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                       liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
                       inclinationAngle, c0, ud, horizontalDriftSign);
-    } else if (fabs(inclinationAngle) > 20 * M_PI / 180.) {
+    } else if (fabs(inclinationAngle) > 20 * std::numbers::pi / 180.) {
         Choi(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
              liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness, inclinationAngle,
              c0, ud, horizontalDriftSign);
     } else {
-        const double blendRatio = (fabs(inclinationAngle) - 5 * M_PI / 180.) / (15 * M_PI / 180.);
+        const double blendRatio = (fabs(inclinationAngle) - 5 * std::numbers::pi / 180.) / (15 * std::numbers::pi / 180.);
         BhagwatGhajarMod(liquidDensity, gasDensity, surfaceTension, voidFraction, mixtureReynolds,
                          liquidReynolds, gasFlowRate, liquidFlowRate, diameter, roughness,
                          inclinationAngle, c0, ud, horizontalDriftSign);
@@ -675,7 +676,7 @@ FlowScales flowScalesOf(const ClosureState &state, int cellIndex, const PhasePro
     double diameter = state.cells[cellIndex].duto.a;
     if (cellIndex > 0 && gasVolumetricFlowRate >= 0)
         diameter = state.cells[cellIndex - 1].duto.a;
-    double flowArea = M_PI * diameter * diameter / 4.;
+    double flowArea = std::numbers::pi * diameter * diameter / 4.;
 
     double mixtureDensity = phases.liquidHoldup * phases.liquidDensity + (1 - phases.liquidHoldup) * phases.gasDensity;
     double mixtureViscosity = (phases.liquidHoldup * phases.liquidViscosity + (1 - phases.liquidHoldup) * phases.gasViscosity) / pow(10., 3.);
@@ -805,7 +806,7 @@ void instantaneous(const ClosureState &state, int cellIndex, double &c0, double 
             .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
-            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
+            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * std::numbers::pi / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 gasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].Mliqini / liquidDensity;
 
@@ -960,7 +961,7 @@ void buffered(const ClosureState &state, int cellIndex, double &c0, double &ud) 
             .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
-            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
+            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * std::numbers::pi / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 gasFlowRate = (state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) / gasDensity;
                 liquidFlowRate = (state.cells[cellIndex].MliqiniBuf) / liquidDensity;
 
@@ -1072,7 +1073,7 @@ void initialization(const ClosureState &state, int cellIndex, double &c0, double
             .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
-            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
+            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * std::numbers::pi / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 gasFlowRate = (state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].Mliqini / liquidDensity;
 
@@ -1211,7 +1212,7 @@ void bufferedInitialization(const ClosureState &state, int cellIndex, double &c0
             .horizontalDriftSign = horizontalDriftSign,
         };
         if (mixtureReynolds > 1e-30) {
-            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
+            if (fabs(0 * inclinationAngle + 1 * state.cells[cellIndex].duto.teta) < 45. * std::numbers::pi / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                 gasFlowRate = (state.cells[cellIndex].MCBuf - state.cells[cellIndex].MliqiniBuf) / gasDensity;
                 liquidFlowRate = state.cells[cellIndex].MliqiniBuf / liquidDensity;
 
@@ -1345,7 +1346,7 @@ void steadyState(const ClosureState &state, int cellIndex, double &c0, double &u
             .horizontalDriftSign = horizontalDriftSign,
         };
             if (mixtureReynolds > 1e-30) {
-                if (fabs(0 * inclinationAngle + inclinationSign * state.cells[cellIndex].duto.teta) < 45. * M_PI / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
+                if (fabs(0 * inclinationAngle + inclinationSign * state.cells[cellIndex].duto.teta) < 45. * std::numbers::pi / 180. && liquidHoldup < 0.99 && liquidHoldup > 0.01 && cellIndex < state.lastCell - 1) {
                     gasFlowRate = fabs(state.cells[cellIndex].MC - state.cells[cellIndex].Mliqini) / gasDensity;
                     liquidFlowRate = fabs(state.cells[cellIndex].Mliqini) / liquidDensity;
 
