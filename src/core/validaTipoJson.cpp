@@ -861,6 +861,33 @@ void validadorTipo::valida_configuracao_inicial(Value &configuracao_inicial_json
             }
         }
     }
+    if (configuracao_inicial_json.HasMember("pocoTermAxiSim"))
+        if (!configuracao_inicial_json["pocoTermAxiSim"].IsBool()) {
+            sucesso = false;
+            erros.push_back("pocoTermAxiSim deve ser do tipo Booleana");
+        }
+    if (configuracao_inicial_json.HasMember("anulAxiSim"))
+        if (!configuracao_inicial_json["anulAxiSim"].IsBool()) {
+            sucesso = false;
+            erros.push_back("anulAxiSim deve ser do tipo Booleana");
+        }
+    if (configuracao_inicial_json.HasMember("pocoAxiSimJson"))
+        if (!configuracao_inicial_json["pocoAxiSimJson"].IsString()) {
+            sucesso = false;
+            erros.push_back("pocoAxiSimJson deve ser do tipo String");
+        }
+
+    if (configuracao_inicial_json.HasMember("imprimeInventario"))
+        if (!configuracao_inicial_json["imprimeInventario"].IsBool()) {
+            sucesso = false;
+            erros.push_back("imprimeInventario deve ser do tipo Booleana");
+        }
+
+    if (configuracao_inicial_json.HasMember("fatorFric"))
+        if (!configuracao_inicial_json["fatorFric"].IsInt()) {
+            sucesso = false;
+            erros.push_back("fatorFric deve ser do tipo integer");
+        }
 }
 
 void validadorTipo::valida_tempo(Value &tempo_json, std::vector<std::string> &erros, bool &sucesso) {
@@ -3079,6 +3106,90 @@ void validadorTipo::valida_ipr(Value &ipr_json, std::vector<std::string> &erros,
                 erros.push_back(indiceIpr + "/indiFluidoPro: deve ser do tipo inteiro");
             }
         }
+
+        // Validar campo ICV (opcional)
+        if (ipr_json[i].HasMember("ICV")) {
+            if (!ipr_json[i]["ICV"].IsBool()) {
+                sucesso = false;
+                erros.push_back(indiceIpr + "/ICV: deve ser do tipo boolean");
+            }
+        }
+
+        // Validar campo curvaCV (opcional)
+        if (ipr_json[i].HasMember("curvaCV")) {
+            if (!ipr_json[i]["curvaCV"].IsInt()) {
+                sucesso = false;
+                erros.push_back(indiceIpr + "/curvaCV: deve ser do tipo inteiro");
+            }
+        }
+
+        // Validar campo curvaCV (opcional)
+        if (ipr_json[i].HasMember("cd")) {
+            if (!ipr_json[i]["cd"].IsNumber()) {
+                sucesso = false;
+                erros.push_back(indiceIpr + "/cd: deve ser do tipo number");
+            }
+        }
+
+        // Validar array tempoICV (opcional)
+        if (ipr_json[i].HasMember("tempoICV")) {
+            if (!ipr_json[i]["tempoICV"].IsArray()) {
+                sucesso = false;
+                erros.push_back(indiceIpr + "/tempoICV: deve ser do tipo array");
+            } else {
+                for (SizeType j = 0; j < ipr_json[i]["tempoICV"].Size(); j++) {
+                    if (!ipr_json[i]["tempoICV"][j].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back(indiceIpr + "/tempoICV[" + std::to_string(j) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array abertura (opcional)
+        if (ipr_json[i].HasMember("abertura")) {
+            if (!ipr_json[i]["abertura"].IsArray()) {
+                sucesso = false;
+                erros.push_back(indiceIpr + "/abertura: deve ser do tipo array");
+            } else {
+                for (SizeType j = 0; j < ipr_json[i]["abertura"].Size(); j++) {
+                    if (!ipr_json[i]["abertura"][j].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back(indiceIpr + "/abertura[" + std::to_string(j) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array x1 (opcional)
+        if (ipr_json[i].HasMember("x1")) {
+            if (!ipr_json[i]["x1"].IsArray()) {
+                sucesso = false;
+                erros.push_back(indiceIpr + "/x1: deve ser do tipo array");
+            } else {
+                for (SizeType j = 0; j < ipr_json[i]["x1"].Size(); j++) {
+                    if (!ipr_json[i]["x1"][j].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back(indiceIpr + "/x1[" + std::to_string(j) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array cv1 (opcional)
+        if (ipr_json[i].HasMember("cv1")) {
+            if (!ipr_json[i]["cv1"].IsArray()) {
+                sucesso = false;
+                erros.push_back(indiceIpr + "/cv1: deve ser do tipo array");
+            } else {
+                for (SizeType j = 0; j < ipr_json[i]["cv1"].Size(); j++) {
+                    if (!ipr_json[i]["cv1"][j].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back(indiceIpr + "/cv1[" + std::to_string(j) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -3878,6 +3989,22 @@ void validadorTipo::valida_furo(Value &fontePressao_json, std::vector<std::strin
                 erros.push_back(indiceFonte + "/ambienteGas: deve ser do tipo booleano");
             }
         }
+
+        // Validar campo recircula (opcional)
+        if (fontePressao_json[i].HasMember("recircula")) {
+            if (!fontePressao_json[i]["recircula"].IsBool()) {
+                sucesso = false;
+                erros.push_back(indiceFonte + "/recircula: deve ser do tipo booleano");
+            }
+        }
+
+        // Validar campo comprimentoMedidoRecircula (opcional)
+        if (fontePressao_json[i].HasMember("comprimentoMedidoRecircula")) {
+            if (!fontePressao_json[i]["comprimentoMedidoRecircula"].IsNumber()) {
+                sucesso = false;
+                erros.push_back(indiceFonte + "/comprimentoMedidoRecircula: deve ser do tipo number");
+            }
+        }
     }
 }
 
@@ -4335,6 +4462,190 @@ void validadorTipo::valida_valv(Value &valvula_json, std::vector<std::string> &e
             }
         }
 
+        // Validar campo caixa de valvula (opcional)
+        if (valvula_json[i].HasMember("caixaValvula")) {
+            if (!valvula_json[i]["caixaValvula"].IsBool()) {
+                sucesso = false;
+                erros.push_back("valvula/caixaValvula: deve ser do tipo boolean");
+            }
+        }
+
+        // Validar campo comprimento em metros da regiao entre valvulas (opcional)
+        if (valvula_json[i].HasMember("compCaixa")) {
+            if (!valvula_json[i]["compCaixa"].IsNumber()) {
+                sucesso = false;
+                erros.push_back("valvula/compCaixa: deve ser do tipo number");
+            }
+        }
+
+        // Validar campo  indicativo de seção transversal da caixa (opcional)
+        if (valvula_json[i].HasMember("indSecTrans")) {
+            if (!valvula_json[i]["indSecTrans"].IsInt()) {
+                sucesso = false;
+                erros.push_back("valvula/indSecTrans: deve ser do tipo integer");
+            }
+        }
+
+        // Validar campo  indicativo de que ambiente externo sera utilizado na caixa (opcional)
+        if (valvula_json[i].HasMember("ambiente")) {
+            if (!valvula_json[i]["ambiente"].IsInt()) {
+                sucesso = false;
+                erros.push_back("valvula/ambiente: deve ser do tipo integer");
+            }
+        }
+
+        // Validar campo de temperatura ambiente para a troca termica no espaço entre valvulas (opcional)
+        if (valvula_json[i].HasMember("tempAmbiente")) {
+            if (!valvula_json[i]["tempAmbiente"].IsNumber()) {
+                sucesso = false;
+                erros.push_back("valvula/tempAmbiente: deve ser do tipo number");
+            }
+        }
+
+        // Validar campo de velocidade externa para definicao do coeficiente de pelicula externo (opcional)
+        if (valvula_json[i].HasMember("velAmbiente")) {
+            if (!valvula_json[i]["velAmbiente"].IsNumber()) {
+                sucesso = false;
+                erros.push_back("valvula/velAmbiente: deve ser do tipo number");
+            }
+        }
+
+        // Validar campo de formacao com troca termica com a caixa (opcional)
+        if (valvula_json[i].HasMember("formac")) {
+            if (!valvula_json[i]["formac"].IsInt()) {
+                sucesso = false;
+                erros.push_back("valvula/formac: deve ser do tipo integer");
+            }
+        }
+
+        // Validar array tempo abertura montante(opcional)
+        if (valvula_json[i].HasMember("tempoAberturaMon")) {
+            if (!valvula_json[i]["tempoAberturaMon"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/tempoAberturaMon: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["tempoAberturaMon"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["tempoAberturaMon"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/tempoAberturaMon[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array aberturaMon (opcional)
+        if (valvula_json[i].HasMember("aberturaMon")) {
+            if (!valvula_json[i]["aberturaMon"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/aberturaMon: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["aberturaMon"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["aberturaMon"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/aberturaMon[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array tempo abertura jusante(opcional)
+        if (valvula_json[i].HasMember("tempoAberturaJus")) {
+            if (!valvula_json[i]["tempoAberturaJus"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/tempoAberturaJus: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["tempoAberturaJus"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["tempoAberturaJus"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/tempoAberturaJus[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array aberturaJus (opcional)
+        if (valvula_json[i].HasMember("aberturaJus")) {
+            if (!valvula_json[i]["aberturaJus"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/aberturaJus: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["aberturaJus"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["aberturaJus"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/aberturaJus[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar campo de temperatura de injecao de fonte na caixa (opcional)
+        if (valvula_json[i].HasMember("temperaturaFonte")) {
+            if (!valvula_json[i]["temperaturaFonte"].IsNumber()) {
+                sucesso = false;
+                erros.push_back("valvula/temperaturaFonte: deve ser do tipo number");
+            }
+        }
+
+        // Validar array tempo da fonte de injeção na caixa(opcional)
+        if (valvula_json[i].HasMember("tempoFonte")) {
+            if (!valvula_json[i]["tempoFonte"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/tempoFonte: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["tempoFonte"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["tempoFonte"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/tempoFonte[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array massLiqP (opcional)
+        if (valvula_json[i].HasMember("massLiqP")) {
+            if (!valvula_json[i]["massLiqP"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/massLiqP: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["massLiqP"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["massLiqP"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/massLiqP[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array massLiqC (opcional)
+        if (valvula_json[i].HasMember("massLiqC")) {
+            if (!valvula_json[i]["massLiqC"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/massLiqC: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["massLiqC"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["massLiqC"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/massLiqC[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
+        // Validar array massGas (opcional)
+        if (valvula_json[i].HasMember("massGas")) {
+            if (!valvula_json[i]["massGas"].IsArray()) {
+                sucesso = false;
+                erros.push_back("valvula/massGas: deve ser do tipo array");
+            } else {
+                for (SizeType sampleIndex = 0; sampleIndex < valvula_json[i]["massGas"].Size(); sampleIndex++) {
+                    if (!valvula_json[i]["massGas"][sampleIndex].IsNumber()) {
+                        sucesso = false;
+                        erros.push_back("valvula/massGas[" + std::to_string(sampleIndex) + "]: deve ser do tipo number");
+                    }
+                }
+            }
+        }
+
         // Validar array tempo (opcional)
         if (valvula_json[i].HasMember("tempo")) {
             if (!valvula_json[i]["tempo"].IsArray()) {
@@ -4557,6 +4868,190 @@ void validadorTipo::valida_master1(Value &master1_json, std::vector<std::string>
         if (!master1_json["comprimentoMedido"].IsNumber()) {
             sucesso = false;
             erros.push_back("master1/comprimentoMedido: deve ser do tipo number");
+        }
+    }
+
+    // Validar campo caixa de valvula (opcional)
+    if (master1_json.HasMember("caixaValvula")) {
+        if (!master1_json["caixaValvula"].IsBool()) {
+            sucesso = false;
+            erros.push_back("master1/caixaValvula: deve ser do tipo boolean");
+        }
+    }
+
+    // Validar campo comprimento em metros da regiao entre valvulas (opcional)
+    if (master1_json.HasMember("compCaixa")) {
+        if (!master1_json["compCaixa"].IsNumber()) {
+            sucesso = false;
+            erros.push_back("master1/compCaixa: deve ser do tipo number");
+        }
+    }
+
+    // Validar campo  indicativo de seção transversal da caixa (opcional)
+    if (master1_json.HasMember("indSecTrans")) {
+        if (!master1_json["indSecTrans"].IsInt()) {
+            sucesso = false;
+            erros.push_back("master1/indSecTrans: deve ser do tipo integer");
+        }
+    }
+
+    // Validar campo  indicativo de que ambiente externo sera utilizado na caixa (opcional)
+    if (master1_json.HasMember("ambiente")) {
+        if (!master1_json["ambiente"].IsInt()) {
+            sucesso = false;
+            erros.push_back("master1/ambiente: deve ser do tipo integer");
+        }
+    }
+
+    // Validar campo de temperatura ambiente para a troca termica no espaço entre valvulas (opcional)
+    if (master1_json.HasMember("tempAmbiente")) {
+        if (!master1_json["tempAmbiente"].IsNumber()) {
+            sucesso = false;
+            erros.push_back("master1/tempAmbiente: deve ser do tipo number");
+        }
+    }
+
+    // Validar campo de velocidade externa para definicao do coeficiente de pelicula externo (opcional)
+    if (master1_json.HasMember("velAmbiente")) {
+        if (!master1_json["velAmbiente"].IsNumber()) {
+            sucesso = false;
+            erros.push_back("master1/velAmbiente: deve ser do tipo number");
+        }
+    }
+
+    // Validar campo de formacao com troca termica com a caixa (opcional)
+    if (master1_json.HasMember("formac")) {
+        if (!master1_json["formac"].IsInt()) {
+            sucesso = false;
+            erros.push_back("master1/formac: deve ser do tipo integer");
+        }
+    }
+
+    // Validar array tempo abertura montante(opcional)
+    if (master1_json.HasMember("tempoAberturaMon")) {
+        if (!master1_json["tempoAberturaMon"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/tempoAberturaMon: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["tempoAberturaMon"].Size(); i++) {
+                if (!master1_json["tempoAberturaMon"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/tempoAberturaMon[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
+        }
+    }
+
+    // Validar array aberturaMon (opcional)
+    if (master1_json.HasMember("aberturaMon")) {
+        if (!master1_json["aberturaMon"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/aberturaMon: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["aberturaMon"].Size(); i++) {
+                if (!master1_json["aberturaMon"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/aberturaMon[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
+        }
+    }
+
+    // Validar array tempo abertura jusante(opcional)
+    if (master1_json.HasMember("tempoAberturaJus")) {
+        if (!master1_json["tempoAberturaJus"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/tempoAberturaJus: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["tempoAberturaJus"].Size(); i++) {
+                if (!master1_json["tempoAberturaJus"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/tempoAberturaJus[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
+        }
+    }
+
+    // Validar array aberturaJus (opcional)
+    if (master1_json.HasMember("aberturaJus")) {
+        if (!master1_json["aberturaJus"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/aberturaJus: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["aberturaJus"].Size(); i++) {
+                if (!master1_json["aberturaJus"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/aberturaJus[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
+        }
+    }
+
+    // Validar campo de temperatura de injecao de fonte na caixa (opcional)
+    if (master1_json.HasMember("temperaturaFonte")) {
+        if (!master1_json["temperaturaFonte"].IsNumber()) {
+            sucesso = false;
+            erros.push_back("master1/temperaturaFonte: deve ser do tipo number");
+        }
+    }
+
+    // Validar array tempo da fonte de injeção na caixa(opcional)
+    if (master1_json.HasMember("tempoFonte")) {
+        if (!master1_json["tempoFonte"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/tempoFonte: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["tempoFonte"].Size(); i++) {
+                if (!master1_json["tempoFonte"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/tempoFonte[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
+        }
+    }
+
+    // Validar array massLiqP (opcional)
+    if (master1_json.HasMember("massLiqP")) {
+        if (!master1_json["massLiqP"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/massLiqP: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["massLiqP"].Size(); i++) {
+                if (!master1_json["massLiqP"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/massLiqP[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
+        }
+    }
+
+    // Validar array massLiqC (opcional)
+    if (master1_json.HasMember("massLiqC")) {
+        if (!master1_json["massLiqC"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/massLiqC: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["massLiqC"].Size(); i++) {
+                if (!master1_json["massLiqC"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/massLiqC[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
+        }
+    }
+
+    // Validar array massGas (opcional)
+    if (master1_json.HasMember("massGas")) {
+        if (!master1_json["massGas"].IsArray()) {
+            sucesso = false;
+            erros.push_back("master1/massGas: deve ser do tipo array");
+        } else {
+            for (SizeType i = 0; i < master1_json["massGas"].Size(); i++) {
+                if (!master1_json["massGas"][i].IsNumber()) {
+                    sucesso = false;
+                    erros.push_back("master1/massGas[" + std::to_string(i) + "]: deve ser do tipo number");
+                }
+            }
         }
     }
 
@@ -5516,7 +6011,7 @@ void validadorTipo::valida_perfil_producao(Value &perfilProducao_json, std::vect
     // Lista de todos os campos booleanos do perfilProducao
     std::vector<std::string> camposBooleanos = {
         "pressao", "temperatura", "holdup", "FVH", "bet", "ugs", "uls", "ug", "ul", "arra",
-        "viscosidadeLiquido", "viscosidadeGas", "rhog", "rhol", "rhoo", "rhoa", "rhoMix", "RS",
+        "viscosidadeLiquido","viscosidadeOleoMorto", "viscosidadeGas", "rhog", "rhol", "rhoo", "rhoa", "rhoMix", "RS",
         "vazaoMassicaGas", "vazaoMassicaLiquido", "c0", "ud", "RGO", "deng", "yco2",
         "calor", "masstrans", "cpgas", "cpliq", "condgas", "condliq", "QLstd", "QLWstd", "QLstdTotal", "QGstd",
         "api", "bsw", "hidro", "fric", "Term1", "Term2", "dengD", "dengL",
@@ -5525,7 +6020,7 @@ void validadorTipo::valida_perfil_producao(Value &perfilProducao_json, std::vect
         "Froud", "Rs", "Bo", "Hint", "Hext", "temperaturaAmbiente",
         "PrandtlGas", "PrandtlLiquido", "pseudoLiquido", "pseudoGas", "pseudoMist",
         "TResi", "RedutorAtrito", "angulo", "diametroInterno", "tempParede",
-        "subResfria", "dadosParafina", "correlacaoBB"};
+        "subResfria", "dadosParafina", "correlacaoBB","titulo"};
 
     // Validar cada campo booleano
     for (const auto &campo : camposBooleanos) {
@@ -5659,7 +6154,7 @@ void validadorTipo::valida_tendencia_producao(Value &tendP_json, std::vector<std
             "mlFonte", "mgFonte", "mcFonte", "tempChokeJus", "deltaPBomba", "potenciaBomba",
             "volMonM1PT", "volJusM1PT", "volMonM1ST", "volJusM1ST",
             "autoVal", "autoVel", "flutuacao", "diametroInterno", "tempParede",
-            "dadosParafina", "inventarioGas", "inventarioLiq", "subResfria"};
+            "dadosParafina", "inventarioGas", "inventarioLiq", "subResfria","presAnulICV","caixaValvula"};
 
         // Validar cada campo booleano
         for (const auto &campo : camposBooleanos) {

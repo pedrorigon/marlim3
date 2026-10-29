@@ -7,6 +7,7 @@
 
 
 #include "caixaValvula.h"
+#include "UnitConversions.h"
 
 caixaValv::caixaValv(int vpos,double vlCaixa, int vnMon,int vnJus, int vnfonte, double vtempF, int vformac, int vlito,
 		DadosGeo vsecaoTrans,TransCal vtransfer, SimulationContext *context){
@@ -325,11 +326,12 @@ caixaValv& caixaValv::operator=(caixaValv&& vcxV) noexcept {
 void caixaValv::propDeri(double p, double t, double& FW, double& bo, double& rs, double& termoRS, double& rhop,double& rhoc){
 
     double ba;
+	double solutionGasRatioInFieldUnits=0.;
 	if (FluidoPro.RGO < 1e7) {
-        rs = FluidoPro.RS(p, t);
-        bo = FluidoPro.BOFunc(p, t, rs);
+        solutionGasRatioInFieldUnits = FluidoPro.RS(p, t);
+        bo = FluidoPro.BOFunc(p, t, solutionGasRatioInFieldUnits);
         ba = FluidoPro.BAFunc(p, t);
-        rs = rs * 6.29 / 35.31467;
+        rs = solutionGasRatioInFieldUnits * 6.29 / 35.31467;
     } else {
         bo = 1;
         rs = 0;
@@ -338,7 +340,7 @@ void caixaValv::propDeri(double p, double t, double& FW, double& bo, double& rs,
     // BSW in-situ da celula anterior, na marcha, a i-esima celula
     FW = FluidoPro.BSW * ba / (bo + ba * FluidoPro.BSW - FluidoPro.BSW * bo);
     termoRS=(1-FW)*rs*FluidoPro.Deng*1.225/bo;
-    rhop=FluidoPro.MasEspLiq(p, t, rs);
+    rhop=FluidoPro.MasEspLiq(p, t, solutionGasRatioInFieldUnits);
     rhoc=fluidocol.MasEspFlu(p, t);
 }
 
@@ -411,12 +413,30 @@ double caixaValv::calcAbertura(){
 	}
 }
 
-void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betmon, double massmon, double massLmon, ProFlu fluimon, ProFluCol fluiCmon,
-			double pjus, double tjus, double alfjus, double betjus, double massjus, double massLjus, ProFlu fluijus, ProFluCol fluiCjus, double dt){
+
+
+void caixaValv::estadotermo(Cel& celulaM,Cel& celulaJ){
 
 	double vazMass;
 	double vazMassL;
 	atualizaAberturaCaixa();
+	double dt=celulaM.dt;
+	double massmon=celulaM.MC;
+	double massLmon=celulaM.Mliqini;
+	double massjus=celulaJ.MC;
+	double massLjus=celulaJ.Mliqini;
+	ProFlu fluimon=celulaM.flui;
+	ProFluCol fluiCmon=celulaM.fluicol;
+	ProFlu fluijus=celulaJ.flui;
+	ProFluCol fluiCjus=celulaJ.fluicol;
+	double alfmon=celulaM.alf;
+	double alfjus=celulaJ.alf;
+	double betmon=celulaM.bet;
+	double betjus=celulaJ.bet;
+	double pmon=celulaM.pres;
+	double pjus=celulaJ.pres;
+	double tmon=celulaM.temp;
+	double tjus=celulaJ.temp;
 	if(abreMon>1e-15 && abreJus>1e-15){
 		tempoResIni=-1.;
 		if(massmon>0. && massjus>0.){
@@ -472,10 +492,10 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		double cpg=FluidoPro.CalorGas(pres, temp);
 		double cpmix=alf*cpg+(1.-alf)*cplmix;
 
-		double kpp=FluidoPro.CalorLiq(pres, temp);
-		double kpc=fluidocol.CalorLiq(pres, temp);
+		double kpp=FluidoPro.CondLiq(pres, temp);
+		double kpc=fluidocol.CondLiq(pres, temp);
 		double kplmix=bet*kpc+(1.-bet)*kpp;
-		double kpg=FluidoPro.CalorGas(pres, temp);
+		double kpg=FluidoPro.CondGas(pres, temp);
 		double kpmix=alf*kpg+(1.-alf)*kplmix;
 
 		double usl=vazMassL/(rholmix*secaoTrans.area);
@@ -486,6 +506,20 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		transfer.kint=kpmix;
 		transfer.rhoint=rhomix;
 		transfer.dt=dt;
+		transfer.Vextern1=celulaM.calor.Vextern1;
+		if(transfer.ambext!=1 && transfer.ambext!=2){
+			transfer.Textern1=celulaM.calor.Textern1;
+			transfer.Textern2=celulaM.calor.Textern2;
+			transfer.cpextern1=celulaM.calor.cpextern1;
+			transfer.cpextern2=celulaM.calor.cpextern2;
+			transfer.viscextern1=celulaM.calor.viscextern1;
+			transfer.viscextern2=celulaM.calor.viscextern2;
+			transfer.kextern1=celulaM.calor.kextern1;
+			transfer.kextern2=celulaM.calor.kextern2;
+			transfer.rhoextern1=celulaM.calor.rhoextern1;
+			transfer.rhoextern2=celulaM.calor.rhoextern2;
+			transfer.dirconvExt=celulaM.calor.dirconvExt;
+		}
 		if((*simulationContext).simulationTime<1e-15)transfer.transperm();
 		else transfer.transtrans();
 
@@ -518,10 +552,10 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		double cpg=FluidoPro.CalorGas(pres, temp);
 		double cpmix=alf*cpg+(1.-alf)*cplmix;
 
-		double kpp=FluidoPro.CalorLiq(pres, temp);
-		double kpc=fluidocol.CalorLiq(pres, temp);
+		double kpp=FluidoPro.CondLiq(pres, temp);
+		double kpc=fluidocol.CondLiq(pres, temp);
 		double kplmix=bet*kpc+(1.-bet)*kpp;
-		double kpg=FluidoPro.CalorGas(pres, temp);
+		double kpg=FluidoPro.CondGas(pres, temp);
 		double kpmix=alf*kpg+(1.-alf)*kplmix;
 
 		double usl=vazMassL/(rholmix*secaoTrans.area);
@@ -532,6 +566,20 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		transfer.kint=kpmix;
 		transfer.rhoint=rhomix;
 		transfer.dt=dt;
+		transfer.Vextern1=celulaM.calor.Vextern1;
+		if(transfer.ambext!=1 && transfer.ambext!=2){
+			transfer.Textern1=celulaM.calor.Textern1;
+			transfer.Textern2=celulaM.calor.Textern2;
+			transfer.cpextern1=celulaM.calor.cpextern1;
+			transfer.cpextern2=celulaM.calor.cpextern2;
+			transfer.viscextern1=celulaM.calor.viscextern1;
+			transfer.viscextern2=celulaM.calor.viscextern2;
+			transfer.kextern1=celulaM.calor.kextern1;
+			transfer.kextern2=celulaM.calor.kextern2;
+			transfer.rhoextern1=celulaM.calor.rhoextern1;
+			transfer.rhoextern2=celulaM.calor.rhoextern2;
+			transfer.dirconvExt=celulaM.calor.dirconvExt;
+		}
 		transfer.transtrans();
 
 		massLiqP=rhop*(1.-alf)*(1.-bet)*lCaixa*secaoTrans.area;
@@ -562,10 +610,10 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		double cpg=FluidoPro.CalorGas(pres, temp);
 		double cpmix=alf*cpg+(1.-alf)*cplmix;
 
-		double kpp=FluidoPro.CalorLiq(pres, temp);
-		double kpc=fluidocol.CalorLiq(pres, temp);
+		double kpp=FluidoPro.CondLiq(pres, temp);
+		double kpc=fluidocol.CondLiq(pres, temp);
 		double kplmix=bet*kpc+(1.-bet)*kpp;
-		double kpg=FluidoPro.CalorGas(pres, temp);
+		double kpg=FluidoPro.CondGas(pres, temp);
 		double kpmix=alf*kpg+(1.-alf)*kplmix;
 
 		double usl=vazMassL/(rholmix*secaoTrans.area);
@@ -576,6 +624,20 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		transfer.kint=kpmix;
 		transfer.rhoint=rhomix;
 		transfer.dt=dt;
+		transfer.Vextern1=celulaM.calor.Vextern1;
+		if(transfer.ambext!=1 && transfer.ambext!=2){
+			transfer.Textern1=celulaM.calor.Textern1;
+			transfer.Textern2=celulaM.calor.Textern2;
+			transfer.cpextern1=celulaM.calor.cpextern1;
+			transfer.cpextern2=celulaM.calor.cpextern2;
+			transfer.viscextern1=celulaM.calor.viscextern1;
+			transfer.viscextern2=celulaM.calor.viscextern2;
+			transfer.kextern1=celulaM.calor.kextern1;
+			transfer.kextern2=celulaM.calor.kextern2;
+			transfer.rhoextern1=celulaM.calor.rhoextern1;
+			transfer.rhoextern2=celulaM.calor.rhoextern2;
+			transfer.dirconvExt=celulaM.calor.dirconvExt;
+		}
 		transfer.transtrans();
 
 
@@ -600,10 +662,10 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		double cpg=FluidoPro.CalorGas(pres, temp);
 		double cpmix=alf*cpg+(1.-alf)*cplmix;
 
-		double kpp=FluidoPro.CalorLiq(pres, temp);
-		double kpc=fluidocol.CalorLiq(pres, temp);
+		double kpp=FluidoPro.CondLiq(pres, temp);
+		double kpc=fluidocol.CondLiq(pres, temp);
 		double kplmix=bet*kpc+(1.-bet)*kpp;
-		double kpg=FluidoPro.CalorGas(pres, temp);
+		double kpg=FluidoPro.CondGas(pres, temp);
 		double kpmix=alf*kpg+(1.-alf)*kplmix;
 
 		double usl=vazMassL/(rholmix*secaoTrans.area);
@@ -613,6 +675,20 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		transfer.cpint=cpmix;
 		transfer.kint=kpmix;
 		transfer.rhoint=rhomix;
+		transfer.Vextern1=celulaM.calor.Vextern1;
+		if(transfer.ambext!=1 && transfer.ambext!=2){
+			transfer.Textern1=celulaM.calor.Textern1;
+			transfer.Textern2=celulaM.calor.Textern2;
+			transfer.cpextern1=celulaM.calor.cpextern1;
+			transfer.cpextern2=celulaM.calor.cpextern2;
+			transfer.viscextern1=celulaM.calor.viscextern1;
+			transfer.viscextern2=celulaM.calor.viscextern2;
+			transfer.kextern1=celulaM.calor.kextern1;
+			transfer.kextern2=celulaM.calor.kextern2;
+			transfer.rhoextern1=celulaM.calor.rhoextern1;
+			transfer.rhoextern2=celulaM.calor.rhoextern2;
+			transfer.dirconvExt=celulaM.calor.dirconvExt;
+		}
 		transfer.dt=dt;
 		double qw;
 		qw=transfer.transtrans();
@@ -640,7 +716,7 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 
 		double coefalf=-1.+termoRS0*(1-bet)/rhop0;
 
-		double pres1;
+		double pres1=pres;
 		double alf1=alf;
 		double bet1=bet;
 		double area=secaoTrans.area;
@@ -680,10 +756,11 @@ void caixaValv::estadotermo(double pmon, double tmon, double alfmon, double betm
 		double temp0;
 		pres1=pres;
 		temp1=temp;
-		double DrhocVP=(fluidocol.MasEspFlu(pres*1.001, temp)-rhoc)/(pres*0.001);
+		const double pressureIncrementInPascal=pres*0.001*units::kPascalPerKgfPerCm2;
+		double DrhocVP=(fluidocol.MasEspFlu(pres*1.001, temp)-rhoc)/pressureIncrementInPascal;
 		double DrhocVT=(fluidocol.MasEspFlu(pres, temp*1.001)-rhoc)/(temp*0.001);
-		double DrhopVP=(FluidoPro.MasEspLiq(pres*1.001, temp)-rhoc)/(pres*0.001);
-		double DrhopVT=(FluidoPro.MasEspLiq(pres, temp*1.001)-rhoc)/(temp*0.001);
+		double DrhopVP=(FluidoPro.MasEspLiq(pres*1.001, temp)-rhop)/pressureIncrementInPascal;
+		double DrhopVT=(FluidoPro.MasEspLiq(pres, temp*1.001)-rhop)/(temp*0.001);
 
 		double fonteP=0.;
 		double fonteC=0.;

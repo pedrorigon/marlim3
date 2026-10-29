@@ -707,6 +707,10 @@ class SProd {
     /// Calculates temperature downstream from the surface choke for network coupling.
     void calcTempFim();
 
+    /// Returns the outlet temperature after an open surface choke with forward pressure drop.
+    /// Returns the last cell temperature when the choke is closed or its mass flow is zero.
+    double surfaceChokeOutletTemperature();
+
     /// Enables latent-heat calculations for black-oil simulations.
     int CalcLat = 0;
 

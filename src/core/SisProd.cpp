@@ -369,6 +369,10 @@ double SProd::hidroTramoSecundario(double quality) {
     return steady::secondaryBranchHydrostatic(steady, quality);
 }
 
+double SProd::surfaceChokeOutletTemperature() {
+    return thermal::surfaceChokeOutletTemperature(thermalStateOf());
+}
+
 void SProd::calcTempFim() {
     const auto thermal = thermalStateOf();
     thermal::computeOutletTemperature(thermal);

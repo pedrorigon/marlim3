@@ -2667,7 +2667,7 @@ bool advanceProductionCellsSecondary(const SteadyStateState &state, const Steady
     return false;
 }
 
-double surfaceChokeMassFlowRate(const SteadyStateState &state) {
+double surfaceChokeMassFlowRate(const SteadyStateState &state, const thermal::ThermalState &thermalState) {
     double maxSup;
     if (state.annulusDrift != 0 && state.cells[state.lastCell].pres > state.gasSurfacePressure) { // for the gas-lift ring, the flow rate at the end must be zero
         double tESup = state.cells[state.lastCell].temp;
@@ -2680,7 +2680,6 @@ double surfaceChokeMassFlowRate(const SteadyStateState &state) {
         double quality;
         state.outletPressure = state.cells[state.lastCell].pres;
         state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
-        double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         quality = fabs(massgas / masentrada);
 
         double masChk;
@@ -2694,12 +2693,7 @@ double surfaceChokeMassFlowRate(const SteadyStateState &state) {
         // maxSup is the total flow rate through the choke
 
         if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
-            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) +
-                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
-            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
-            double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
-            double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
-            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * units::kPascalPerKgfPerCm2;
+            state.input.valTempChokeJus = thermal::surfaceChokeOutletTemperature(thermalState);
         }
 
     } else {
@@ -4569,7 +4563,7 @@ double marchProductionSteadySecondary(const SteadyStateState &state, const Stead
     // in the last cell and the downstream choke pressure. So first
     // the flow rate through the choke is computed and compared with the total mass flow rate
     // in the last cell
-    double maxSup = surfaceChokeMassFlowRate(state);
+    double maxSup = surfaceChokeMassFlowRate(state, dependencies.thermal);
     if (fabs(masfim) > 1e-15)
         state.baseConvergenceMonitor = fabs(masfim);
     else if (fabs(maxSup) > 1e-15)
@@ -5009,7 +5003,6 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
         double quality;
         state.outletPressure = state.cells[state.lastCell].pres;
         state.cells[state.lastCell].flui.MasEspLiq(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
-        double rholc = state.cells[state.lastCell].fluicol.MasEspFlu(state.cells[state.lastCell].pres, state.cells[state.lastCell].temp);
         quality = fabs(massgas / masentrada);
 
         double masChk;
@@ -5022,12 +5015,7 @@ double marchProductionPressureToPressureSecondary(const SteadyStateState &state,
             maxSup = masChk;
 
         if (state.surfaceChoke.AreaGarg > (1e-3) * state.cells[state.lastCell - 1].duto.area && ypres < 1.) {
-            double cplM = (1. - betSup) * state.cells[state.lastCell].flui.CalorLiq(state.outletPressure, tESup) +
-                          betSup * state.cells[state.lastCell].fluicol.CalorLiq(state.outletPressure, tESup);
-            double jtlM = (1. - betSup) * state.cells[state.lastCell].flui.JTL(state.outletPressure, tESup) - betSup / rholc;
-            double gasSpecificHeat = state.cells[state.lastCell].flui.CalorGas(state.outletPressure, tESup);
-            double jtgM = state.cells[state.lastCell].flui.JTG(state.outletPressure, tESup);
-            state.input.valTempChokeJus = tESup + ((1. - quality) * jtlM / cplM + quality * jtgM / gasSpecificHeat) * (state.gasSurfacePressure - state.outletPressure) * units::kPascalPerKgfPerCm2;
+            state.input.valTempChokeJus = thermal::surfaceChokeOutletTemperature(dependencies.thermal);
         }
     } else {
         maxSup = 0.;

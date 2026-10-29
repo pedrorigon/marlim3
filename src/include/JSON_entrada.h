@@ -20,7 +20,7 @@
 
 #define JSON_entrada_sistema JSONString
 #define JSON_entrada_versaoJson JSONString
-#define JSON_entrada_configuracaoInicial_origemGeometria JSONString
+//#define JSON_entrada_configuracaoInicial_origemGeometria JSONString
 #define JSON_entrada_configuracaoInicial_saidaClassica JSONBoolean
 #define JSON_entrada_configuracaoInicial_sentidoGeometriaSegueEscoamento JSONBoolean
 #define JSON_entrada_configuracaoInicial_linhaGas JSONBoolean
@@ -242,7 +242,7 @@ class JSON_entrada_configuracaoInicial_condicaoVazPres : public JSONObject {
     JSON_entrada_configuracaoInicial_condicaoVazPres_tempo &tempo();
 };
 
-#define JSON_entrada_configuracaoInicial_correlacoesEscorregamento JSONBoolean
+//#define JSON_entrada_configuracaoInicial_correlacoesEscorregamento JSONBoolean
 #define JSON_entrada_configuracaoInicial_correlacoesPorArranjo_estratificado JSONInteger
 #define JSON_entrada_configuracaoInicial_correlacoesPorArranjo_bolhaGolfada JSONInteger
 #define JSON_entrada_configuracaoInicial_correlacoesPorArranjo_anularChurn JSONInteger
@@ -306,7 +306,7 @@ class JSON_entrada_configuracaoInicial_Formacao : public JSONObject {
 class JSON_entrada_configuracaoInicial : public JSONObject {
   public:
     JSON_entrada_configuracaoInicial();
-    JSON_entrada_configuracaoInicial_origemGeometria &origemGeometria();
+    //JSON_entrada_configuracaoInicial_origemGeometria &origemGeometria();
     JSON_entrada_configuracaoInicial_sentidoGeometriaSegueEscoamento &sentidoGeometriaSegueEscoamento();
     JSON_entrada_configuracaoInicial_saidaClassica &saidaClassica();
     JSON_entrada_configuracaoInicial_linhaGas &linhaGas();
@@ -349,7 +349,7 @@ class JSON_entrada_configuracaoInicial : public JSONObject {
     JSON_entrada_configuracaoInicial_Avancado &Avancado();
     JSON_entrada_configuracaoInicial_condicaoPressao &condicaoPressao();
     JSON_entrada_configuracaoInicial_condicaoVazPres &condicaoVazPres();
-    JSON_entrada_configuracaoInicial_correlacoesEscorregamento &correlacoesEscorregamento();
+    //SON_entrada_configuracaoInicial_correlacoesEscorregamento &correlacoesEscorregamento();
     JSON_entrada_configuracaoInicial_correlacoesPorArranjo &correlacoesPorArranjo();
     JSON_entrada_configuracaoInicial_Formacao &Formacao();
     JSON_entrada_configuracaoInicial_tipoFluido &tipoFluido();
@@ -841,9 +841,9 @@ class JSON_entrada_fontePoro2D_Item : public JSONObject {
 #define JSON_entrada_fonteGasLift_Item_tipoValvula JSONInteger
 #define JSON_entrada_fonteGasLift_Item_diametroOrificio JSONNumber
 #define JSON_entrada_fonteGasLift_Item_cdvgl JSONNumber
-#define JSON_entrada_fonteGasLift_Item_frecupera JSONNumber
+//#define JSON_entrada_fonteGasLift_Item_frecupera JSONNumber
 #define JSON_entrada_fonteGasLift_Item_cdvLiq JSONNumber
-#define JSON_entrada_fonteGasLift_Item_frecuperaLiq JSONNumber
+//#define JSON_entrada_fonteGasLift_Item_frecuperaLiq JSONNumber
 #define JSON_entrada_fonteGasLift_Item_razaoArea JSONNumber
 #define JSON_entrada_fonteGasLift_Item_pressaoCalibracao JSONNumber
 #define JSON_entrada_fonteGasLift_Item_temperaturaCalibracao JSONNumber
@@ -866,9 +866,9 @@ class JSON_entrada_fonteGasLift_Item : public JSONObject {
     JSON_entrada_fonteGasLift_Item_tipoValvula &tipoValvula();
     JSON_entrada_fonteGasLift_Item_diametroOrificio &diametroOrificio();
     JSON_entrada_fonteGasLift_Item_cdvgl &cdvgl();
-    JSON_entrada_fonteGasLift_Item_frecupera &frecupera();
+    //JSON_entrada_fonteGasLift_Item_frecupera &frecupera();
     JSON_entrada_fonteGasLift_Item_cdvLiq &cdvLiq();
-    JSON_entrada_fonteGasLift_Item_frecuperaLiq &frecuperaLiq();
+    //JSON_entrada_fonteGasLift_Item_frecuperaLiq &frecuperaLiq();
     JSON_entrada_fonteGasLift_Item_razaoArea &razaoArea();
     JSON_entrada_fonteGasLift_Item_pressaoCalibracao &pressaoCalibracao();
     JSON_entrada_fonteGasLift_Item_temperaturaCalibracao &temperaturaCalibracao();
@@ -1511,13 +1511,13 @@ class JSON_entrada_ipr_Item : public JSONObject {
 };
 
 #define JSON_entrada_ipr JSONArray<JSON_entrada_ipr_Item>
-#define JSON_entrada_fonteChoke_ativo JSONBoolean
-#define JSON_entrada_fonteChoke_tempo_Item JSONNumber
-#define JSON_entrada_fonteChoke_tempo JSONArray<JSON_entrada_fonteChoke_tempo_Item>
-#define JSON_entrada_fonteChoke_abertura_Item JSONNumber
-#define JSON_entrada_fonteChoke_abertura JSONArray<JSON_entrada_fonteChoke_abertura_Item>
-#define JSON_entrada_fonteChoke_coeficienteDescarga JSONNumber
-#define JSON_entrada_fonteChoke_modelo JSONInteger
+//#define JSON_entrada_fonteChoke_ativo JSONBoolean
+//#define JSON_entrada_fonteChoke_tempo_Item JSONNumber
+//#define JSON_entrada_fonteChoke_tempo JSONArray<JSON_entrada_fonteChoke_tempo_Item>
+//#define JSON_entrada_fonteChoke_abertura_Item JSONNumber
+//#define JSON_entrada_fonteChoke_abertura JSONArray<JSON_entrada_fonteChoke_abertura_Item>
+//#define JSON_entrada_fonteChoke_coeficienteDescarga JSONNumber
+//#define JSON_entrada_fonteChoke_modelo JSONInteger
 
 /*!
  * Store the source-choke opening curve and discharge coefficient.
@@ -1525,15 +1525,15 @@ class JSON_entrada_ipr_Item : public JSONObject {
  * Accessor methods return typed JSONDataModel wrappers for the
  * corresponding properties without changing the stored JSON names.
  */
-class JSON_entrada_fonteChoke : public JSONObject {
-  public:
-    JSON_entrada_fonteChoke();
-    JSON_entrada_fonteChoke_ativo &ativo();
-    JSON_entrada_fonteChoke_tempo &tempo();
-    JSON_entrada_fonteChoke_abertura &abertura();
-    JSON_entrada_fonteChoke_coeficienteDescarga &coeficienteDescarga();
-    JSON_entrada_fonteChoke_modelo &modelo();
-};
+//class JSON_entrada_fonteChoke : public JSONObject {
+  //public:
+    //JSON_entrada_fonteChoke();
+    //JSON_entrada_fonteChoke_ativo &ativo();
+    //JSON_entrada_fonteChoke_tempo &tempo();
+    //JSON_entrada_fonteChoke_abertura &abertura();
+    //JSON_entrada_fonteChoke_coeficienteDescarga &coeficienteDescarga();
+    //JSON_entrada_fonteChoke_modelo &modelo();
+//};
 
 #define JSON_entrada_bcs_Item_ativo JSONBoolean
 #define JSON_entrada_bcs_Item_correcHI JSONBoolean
@@ -2696,7 +2696,7 @@ class JSON_entrada_chokeInj : public JSONObject {
 };
 
 #define JSON_entrada_CondicaoContPocInjec_ativo JSONBoolean
-#define JSON_entrada_CondicaoContPocInjec_usuario JSONString
+//#define JSON_entrada_CondicaoContPocInjec_usuario JSONString
 #define JSON_entrada_CondicaoContPocInjec_tipoFluido JSONInteger
 #define JSON_entrada_CondicaoContPocInjec_salinidade JSONNumber
 #define JSON_entrada_CondicaoContPocInjec_arquivoPvtsim JSONString
@@ -2716,7 +2716,7 @@ class JSON_entrada_CondicaoContPocInjec : public JSONObject {
   public:
     JSON_entrada_CondicaoContPocInjec();
     JSON_entrada_CondicaoContPocInjec_ativo &ativo();
-    JSON_entrada_CondicaoContPocInjec_usuario &usuario();
+    //JSON_entrada_CondicaoContPocInjec_usuario &usuario();
     JSON_entrada_CondicaoContPocInjec_tipoFluido &tipoFluido();
     JSON_entrada_CondicaoContPocInjec_salinidade &salinidade();
     JSON_entrada_CondicaoContPocInjec_arquivoPvtsim &arquivoPvtsim();
@@ -2804,7 +2804,7 @@ class JSON_entrada : public JSONRootObject {
     JSON_entrada_dutosServico &dutosServico();
     JSON_entrada_hidrato &hidrato();
     JSON_entrada_ipr &ipr();
-    JSON_entrada_fonteChoke &fonteChoke();
+    //JSON_entrada_fonteChoke &fonteChoke();
     JSON_entrada_bcs &bcs();
     JSON_entrada_multibcs &multibcs();
     JSON_entrada_bombaVolumetrica &bombaVolumetrica();

@@ -4389,6 +4389,29 @@ void updateProductionTemperaturePeriphery(const ThermalState &state, int cellInd
     cell.tempini = cell.temp;
 }
 
+double surfaceChokeOutletTemperature(const ThermalState &state) {
+    const Cel &outlet = state.cells[state.lastCell];
+    const double mixtureMassFlow = state.cells[state.lastCell - 1].MR;
+    if (state.surfaceChoke.AreaGarg <= 1e-3 * state.cells[state.lastCell - 1].duto.area ||
+        outlet.pres <= state.gasSurfacePressure || fabs(mixtureMassFlow) <= 1e-15)
+        return outlet.temp;
+
+    const double quality = fabs((mixtureMassFlow - state.cells[state.lastCell - 1].MliqiniR) / mixtureMassFlow);
+    const double complementaryFraction = outlet.bet;
+    const double complementaryDensity = outlet.fluicol.MasEspFlu(outlet.pres, outlet.temp);
+    const double liquidSpecificHeat =
+        (1. - complementaryFraction) * outlet.flui.CalorLiq(outlet.pres, outlet.temp) +
+        complementaryFraction * outlet.fluicol.CalorLiq(outlet.pres, outlet.temp);
+    const double liquidJouleThomson =
+        (1. - complementaryFraction) * outlet.flui.JTL(outlet.pres, outlet.temp) -
+        complementaryFraction / complementaryDensity;
+    const double gasSpecificHeat = outlet.flui.CalorGas(outlet.pres, outlet.temp);
+    const double gasJouleThomson = outlet.flui.JTG(outlet.pres, outlet.temp);
+    return outlet.temp + ((1. - quality) * liquidJouleThomson / liquidSpecificHeat +
+                          quality * gasJouleThomson / gasSpecificHeat) *
+                             (state.gasSurfacePressure - outlet.pres) * units::kPascalPerKgfPerCm2;
+}
+
 void computeOutletTemperature(const ThermalState &state) {
 
     if (state.input.chokep.abertura[0] <= 0.6 && state.input.chokep.abertura[0] > (*state.globals).smallValueTolerance && state.outletPressure < state.gasSurfacePressure) {

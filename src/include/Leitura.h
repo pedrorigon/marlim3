@@ -2258,7 +2258,7 @@ class Ler {
     void parse_fonte_Poro2D(JSON_entrada_fontePoro2D &fonte_poro2D_json);
     void parse_fonte_massa(JSON_entrada_fonteMassa &fonte_massa_json);
     void parse_furo(JSON_entrada_fontePressao &fontePressao_json);
-    void parse_fontechk(JSON_entrada_fonteChoke &fontechk_json);
+    //void parse_fontechk(JSON_entrada_fonteChoke &fontechk_json);
     void parse_pig(JSON_entrada_pig &pig_json);
     void parse_bcs(JSON_entrada_bcs &bcs_json);
     void parse_multibcs(JSON_entrada_multibcs &multibcs_json);

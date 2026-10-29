@@ -39,14 +39,8 @@ double inSituGasMassFraction(const Cel &cell, double voidFraction, double pressu
 
 void updateValveBoxStates(const TransientStepState &state) {
     for (int boxIndex = 0; boxIndex < state.input.vecCaixa.size(); boxIndex++) {
-        int cellIndex = state.input.vecCaixa[boxIndex].posic;
-        state.input.vecCaixa[boxIndex].estadotermo(
-            state.cells[cellIndex].pres, state.cells[cellIndex].temp, state.cells[cellIndex].alf,
-            state.cells[cellIndex].bet, state.cells[cellIndex].MC, state.cells[cellIndex].Mliqini,
-            state.cells[cellIndex].flui, state.cells[cellIndex].fluicol, state.cells[cellIndex + 1].pres,
-            state.cells[cellIndex + 1].temp, state.cells[cellIndex + 1].alf, state.cells[cellIndex + 1].bet,
-            state.cells[cellIndex + 1].MC, state.cells[cellIndex + 1].Mliqini, state.cells[cellIndex + 1].flui,
-            state.cells[cellIndex].fluicol, state.timeStep);
+        const int cellIndex = state.input.vecCaixa[boxIndex].posic;
+        state.input.vecCaixa[boxIndex].estadotermo(state.cells[cellIndex], state.cells[cellIndex + 1]);
     }
 }
 

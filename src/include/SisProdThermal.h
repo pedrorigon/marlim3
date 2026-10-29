@@ -170,6 +170,10 @@ double computeGasLiftDischargeTemperature(const ThermalState &state,
 void updateProductionTemperaturePeriphery(const ThermalState &state,
                                           int cellIndex);
 
+/// Returns temperature downstream of the surface choke from its Joule-Thomson pressure drop.
+/// Returns the outlet cell temperature for a closed choke, nonpositive pressure drop, or zero flow.
+double surfaceChokeOutletTemperature(const ThermalState &state);
+
 /// Surface temperature at the end of the production line.
 void computeOutletTemperature(const ThermalState &state);
 

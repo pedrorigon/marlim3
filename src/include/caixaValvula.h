@@ -13,6 +13,7 @@
 #include "PropFluCol.h"
 #include "SimulationContext.h"
 #include "TrocaCalor.h"
+#include "celula3.h"
 
 class caixaValv {
   public:
@@ -76,13 +77,15 @@ class caixaValv {
 		}
 	}
 
+    /// Computes in-situ water cut, oil volume factor, dissolved-gas mass term and phase densities.
+    /// The returned solubility is in m3/m3; fluid-property calls use ft3/bbl.
     void propDeri(double p, double t, double& FW, double& bo, double& rs, double& termoRS, double& rhop,double& rhoc);
 	void indraz(int &ind, double &raz, double tempo, int parserie , double *serietemp);
     double calcAbertura();
     void atualizaAberturaCaixa();
     void atualizaFontesCaixa(double& Mass, double *serieM);
-	void estadotermo(double pmon, double tmon, double alfmon, double betmon, double massmon, double massLmon, ProFlu fluimon, ProFluCol fluiCmon,
-			double pjus, double tjus, double alfjus, double betjus, double massjus, double massLjus, ProFlu fluijus, ProFluCol fluiCjus, double dt=0.);
+    /// Updates the box state and heat transfer from the adjacent production cells.
+	void estadotermo(Cel& celulaM,Cel& celulaJ);
 };
 
 

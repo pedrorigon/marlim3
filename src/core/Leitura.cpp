@@ -3043,10 +3043,10 @@ void Ler::parse_condcont_pocinjec(JSON_entrada_CondicaoContPocInjec& condcont_js
 		// caso a propriedade "ativo" esteja habilitada
 		if (is_ativo(condcont_json)) {
 			// caso o elemento usuario exista
-			if (condcont_json.usuario().exists()) {
+			//if (condcont_json.usuario().exists()) {
 				// obter o valor da chave
-				usuario = string(condcont_json.usuario());
-			}
+				//usuario = string(condcont_json.usuario());
+			//}
 
 			condpocinj.tipoFlui = condcont_json.tipoFluido();
 			// caso o tipo do fluido seja 1 - agua salinizada
@@ -4896,8 +4896,11 @@ void Ler::parse_fluido_gas(JSON_entrada_fluidoGas& fluido_gas_json) {
 				for(int j=1;j<flug.npseudo;j++)flug.fracMol[j]=flup[0].fracMol[j];
 			}
 			int modeloBlackO=1;
-			if (fluido_gas_json.linhaServComposicional().exists())
-				modeloBlackO=fluido_gas_json.linhaServComposicional();
+			if (fluido_gas_json.linhaServComposicional().exists()){
+				int comp;
+				comp=fluido_gas_json.linhaServComposicional();
+				modeloBlackO=1-comp;
+			}
 			if(modeloBlackO==1){
 				//tabg=0;
 				flug.tab=tabg;
@@ -7796,30 +7799,68 @@ void Ler::parse_ipr(JSON_entrada_ipr& ipr_json) {
 						}
 					}
 				}
-				// parse do vetor de jp
-				IPRS[i].seriejp = (int) ipr_json[indAtivo].ii().size();
-				if(IPRS[i].seriejp>0){
-					IPRS[i].jp = new double[IPRS[i].seriejp];
-					IPRS[i].tjp = new double[IPRS[i].seriejp];
+				if (ipr_json[indAtivo].ii().exists()){
+					// parse do vetor de jp
+					IPRS[i].seriejp = (int) ipr_json[indAtivo].ii().size();
+					if(IPRS[i].seriejp>0){
+						IPRS[i].jp = new double[IPRS[i].seriejp];
+						IPRS[i].tjp = new double[IPRS[i].seriejp];
+						// caso os tamanhos dos vetores das chaves difiram entre si
+						if (ipr_json[indAtivo].ii().size()
+								!= ipr_json[indAtivo].tempoii().size()) {
+							// RN-073: chaves ii e tempoii com tamanhos diferentes
+							logger.log(LOGGER_FALHA,
+									LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
+									chaveJson,
+									"Chaves #/ipr/ii e #/ipr/tempoii com tamanhos diferentes");
+						} else {
+							// loop para parse do vetor de jp / ii
+							for (int j = 0; j < IPRS[i].seriejp; j++) {
+								IPRS[i].jp[j] = ipr_json[indAtivo].ii()[j];
+								IPRS[i].tjp[j] =
+										ipr_json[indAtivo].tempoii()[j];
+							}
+						}
+					}
+					else{
+						if(IPRS[i].tipoIPR!=2){
+							IPRS[i].seriejp =IPRS[i].serieip;
+							IPRS[i].jp = new double[IPRS[i].seriejp];
+							IPRS[i].tjp = new double[IPRS[i].seriejp];
+							for (int j = 0; j < IPRS[i].seriejp; j++) {
+								IPRS[i].jp[j] = IPRS[i].ip[j];
+								IPRS[i].tjp[j] = IPRS[i].tip[j];
+							}
+						}
+						else{
+							IPRS[i].seriejp =1;
+							IPRS[i].jp = new double[IPRS[i].seriejp];
+							IPRS[i].tjp = new double[IPRS[i].seriejp];
+							for (int j = 0; j < IPRS[i].seriejp; j++) {
+								IPRS[i].jp[j] = 1.8*IPRS[i].qMax[0]/IPRS[i].pres[0];
+								IPRS[i].tjp[j] = 0.;
+							}
+						}
+					}
 				}
 				else{
-					IPRS[i].jp = 0;
-					IPRS[i].tjp = 0;
-				}
-				// caso os tamanhos dos vetores das chaves difiram entre si
-				if (ipr_json[indAtivo].ii().size()
-						!= ipr_json[indAtivo].tempoii().size()) {
-					// RN-073: chaves ii e tempoii com tamanhos diferentes
-					logger.log(LOGGER_FALHA,
-					LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION, chaveJson,
-							chaveJson,
-							"Chaves #/ipr/ii e #/ipr/tempoii com tamanhos diferentes");
-				} else {
-					// loop para parse do vetor de jp / ii
-					for (int j = 0; j < IPRS[i].seriejp; j++) {
-						IPRS[i].jp[j] = ipr_json[indAtivo].ii()[j];
-						IPRS[i].tjp[j] =
-								ipr_json[indAtivo].tempoii()[j];
+					if(IPRS[i].tipoIPR!=2){
+						IPRS[i].seriejp =IPRS[i].serieip;
+						IPRS[i].jp = new double[IPRS[i].seriejp];
+						IPRS[i].tjp = new double[IPRS[i].seriejp];
+						for (int j = 0; j < IPRS[i].seriejp; j++) {
+							IPRS[i].jp[j] = IPRS[i].ip[j];
+							IPRS[i].tjp[j] = IPRS[i].tip[j];
+						}
+					}
+					else{
+						IPRS[i].seriejp =1;
+						IPRS[i].jp = new double[IPRS[i].seriejp];
+						IPRS[i].tjp = new double[IPRS[i].seriejp];
+						for (int j = 0; j < IPRS[i].seriejp; j++) {
+							IPRS[i].jp[j] = 1.8*IPRS[i].qMax[0]/IPRS[i].pres[0];
+							IPRS[i].tjp[j] = 0.;
+						}
 					}
 				}
 				// parse do valor
@@ -8162,10 +8203,10 @@ void Ler::parse_fonte_gaslift(JSON_entrada_fonteGasLift& fonte_gaslift_json) {
 				valvgl[i].cd =
 						fonte_gaslift_json[indAtivo].cdvgl();
 
-				if (fonte_gaslift_json[indAtivo].frecupera().exists())
-					valvgl[i].frec =
-							fonte_gaslift_json[indAtivo].frecupera();
-				else
+				//if (fonte_gaslift_json[indAtivo].frecupera().exists())
+					//valvgl[i].frec =
+							//fonte_gaslift_json[indAtivo].frecupera();
+				//else
 					valvgl[i].frec = 0.;
 
 				if (fonte_gaslift_json[indAtivo].cdvLiq().exists())
@@ -8174,10 +8215,10 @@ void Ler::parse_fonte_gaslift(JSON_entrada_fonteGasLift& fonte_gaslift_json) {
 				else
 					valvgl[i].cdLiq = 0.84;
 
-				if (fonte_gaslift_json[indAtivo].frecuperaLiq().exists())
-					valvgl[i].frecLiq =
-							fonte_gaslift_json[indAtivo].frecuperaLiq();
-				else
+				//if (fonte_gaslift_json[indAtivo].frecuperaLiq().exists())
+					//valvgl[i].frecLiq =
+							//fonte_gaslift_json[indAtivo].frecuperaLiq();
+				//else
 					valvgl[i].frecLiq = valvgl[i].frec;
 
 				if (valvgl[i].tipo != 1) {
@@ -8610,7 +8651,7 @@ void Ler::parse_valv(JSON_entrada_valvula& valvula_json) {
 						double aberinf = valv[i].cxv.serieAberturaMon[ind];
 						double abersup;
 						if (ind < valv[i].cxv.nMon - 1)
-							abersup = valv[i].cxv.serieAberturaMon[ind]+1;
+							abersup = valv[i].cxv.serieAberturaMon[ind+1];
 						else
 							abersup = valv[i].cxv.serieAberturaMon[ind];
 						abre0=aberinf * raz + (1 - raz) * abersup;
@@ -8618,7 +8659,7 @@ void Ler::parse_valv(JSON_entrada_valvula& valvula_json) {
 						indraz(ind, raz, tempo, valv[i].cxv.nJus, valv[i].cxv.tempJus);
 						aberinf = valv[i].cxv.serieAberturaJus[ind];
 						if (ind <valv[i].cxv.nJus - 1)
-							abersup = valv[i].cxv.serieAberturaJus[ind]+1;
+							abersup = valv[i].cxv.serieAberturaJus[ind+1];
 						else
 							abersup = valv[i].cxv.serieAberturaJus[ind];
 						abre1=aberinf * raz + (1 - raz) * abersup;
@@ -10095,7 +10136,7 @@ void Ler::parse_master1(JSON_entrada_master1& master1_json) {
 				double aberinf = master1.cxv.serieAberturaMon[ind];
 				double abersup;
 				if (ind < master1.cxv.nMon - 1)
-					abersup = master1.cxv.serieAberturaMon[ind]+1;
+					abersup = master1.cxv.serieAberturaMon[ind+1];
 				else
 					abersup = master1.cxv.serieAberturaMon[ind];
 				abre0=aberinf * raz + (1 - raz) * abersup;
@@ -10103,7 +10144,7 @@ void Ler::parse_master1(JSON_entrada_master1& master1_json) {
 				indraz(ind, raz, tempo, master1.cxv.nJus, master1.cxv.tempJus);
 				aberinf = master1.cxv.serieAberturaJus[ind];
 				if (ind < master1.cxv.nJus - 1)
-					abersup = master1.cxv.serieAberturaJus[ind]+1;
+					abersup = master1.cxv.serieAberturaJus[ind+1];
 				else
 					abersup = master1.cxv.serieAberturaJus[ind];
 				abre1=aberinf * raz + (1 - raz) * abersup;
@@ -10203,6 +10244,31 @@ void Ler::parse_master2(JSON_entrada_master2& master2_json) {
 			master2.tempo[0] = 0;
 		}
 		master2.cd=0.84;
+
+		master2.cxvVerifica=0;
+		master2.cxv.lCaixa=0;
+		master2.cxv.indFlu=0;
+		master2.cxv.secaoTrans=0;
+		master2.cxv.formac=0;
+		master2.cxv.lito=-1;
+		master2.cxv.ambiente=0;
+		master2.cxv.tamb=0;
+		master2.cxv.velAmb=0;
+		master2.cxv.nMon=0;
+		master2.cxv.serieAberturaMon=0;
+		master2.cxv.tempMon=0;
+		master2.cxv.nJus=0;
+		master2.cxv.serieAberturaJus=0;
+		master2.cxv.tempJus=0;
+		master2.cxv.posic=-1;
+		master2.cxv.temperaturaFonte=0.;
+		master2.cxv.massLiqP=0;
+		master2.cxv.massGas=0;
+		master2.cxv.massLiqC=0;
+		master2.cxv.tempoFonte=0;
+		master2.cxv.nfonte=0;
+
+
 	} catch (exception& e) {
 		// incluir falha
 		logger.log_write_logs_and_exit(LOGGER_FALHA,
@@ -10455,7 +10521,7 @@ void Ler::parse_chokeInj(JSON_entrada_chokeInj& chokeInj_json) {
  *
  * \tparam Objeto JSON correspondente a chokeSup
  */
-void Ler::parse_fontechk(JSON_entrada_fonteChoke& fontechk_json) {
+/*void Ler::parse_fontechk(JSON_entrada_fonteChoke& fontechk_json) {
 	// criar variavel para o nome da propriedade json em processo de parse
 	string chaveJson("#/fontechk");
 	try {
@@ -10504,7 +10570,7 @@ void Ler::parse_fontechk(JSON_entrada_fonteChoke& fontechk_json) {
 		logger.log_write_logs_and_exit(LOGGER_FALHA,
 		LOG_ERR_UNEXPECTED_EXCEPTION, "", chaveJson, e.what());
 	}
-}
+}*/
 
 /*!
  * Converter os elementos "pig" do arquivo Json do MRT em struct pig.
@@ -13456,7 +13522,7 @@ void Ler::lerArq() {
 				else{
 					celp[j].difusTerm3D=0;
 					celp[j].difusTerm3DFE=0;
-					celp[j].difusTerm3DAcop="vazio";
+					celp[j].difusTerm3DAcop="trocaTermica3D-vazio";
 				}
 				if (lingas > 0 && para == 0) {
 					if (j > 1) {
@@ -14202,7 +14268,7 @@ void Ler::copiaArq(Ler& arqAntigo) {
 			else{
 				celp[j].difusTerm3D=0;
 				celp[j].difusTerm3DFE=0;
-				celp[j].difusTerm3DAcop="vazio";
+				celp[j].difusTerm3DAcop="TrocaTermica3D-vazio";
 			}
 			if (lingas > 0 && para == 0) {
 				if (j > 1) {
@@ -21771,6 +21837,27 @@ void Ler::copia_master2(Ler& arqAntigo) {
 				master2.tempo[i] = arqAntigo.master2.tempo[i];
 			}
 		}
+		master2.cxvVerifica=0;
+		master2.cxv.lCaixa=0;
+		master2.cxv.indFlu=0;
+		master2.cxv.secaoTrans=0;
+		master2.cxv.formac=0;
+		master2.cxv.lito=-1;
+		master2.cxv.ambiente=0;
+		master2.cxv.tamb=0;
+		master2.cxv.velAmb=0;
+		master2.cxv.nMon=0;
+		master2.cxv.serieAberturaMon=0;
+		master2.cxv.tempMon=0;
+		master2.cxv.nJus=0;
+		master2.cxv.serieAberturaJus=0;
+		master2.cxv.tempJus=0;
+		master2.cxv.temperaturaFonte=0.;
+		master2.cxv.massLiqP=0;
+		master2.cxv.massGas=0;
+		master2.cxv.massLiqC=0;
+		master2.cxv.tempoFonte=0;
+		master2.cxv.nfonte=0;
 	}
 }
 
