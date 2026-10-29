@@ -3,11 +3,10 @@ name: Build, Test & Release
 on:
   pull_request:
     branches:
-      - develop
       - main
   push:
     branches:
-      - develop
+      - main
     tags:
       - "v*"
 
@@ -20,6 +19,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  UV_LOCKED: "1"
+  UV_DEFAULT_INDEX: "https://pypi.org/simple"
   MARLIM3_SKIP_BUILD: "1"
   MARLIM3_SKIP_EXECUTABLE_RESOLUTION: "1"
   ARTIFACT_RETENTION_DAYS: "7"
@@ -51,10 +52,35 @@ jobs:
             echo "should_skip=${SKIP_FROM_CHECK:-false}" >> "$GITHUB_OUTPUT"
           fi
 
+  public-lock-check:
+    name: Public dependency lock policy
+    needs: pre_check
+    if: needs.pre_check.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v7.0.0
+        with:
+          version: "0.13.1"
+          enable-cache: false
+      - name: Validate public sources, hashes and lock consistency
+        run: python scripts/dependencies.py check
+      - name: Test dependency workflow
+        run: |
+          uv sync --locked --group dev
+          uv run --locked python -m pytest tests/test_dependency_workflow.py
+
   # Python-only package sanity. Does not depend on the native executable.
   python-checks:
     name: Python checks / package sanity
-    needs: pre_check
+    needs: [pre_check, public-lock-check]
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
@@ -72,6 +98,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and dev dependencies
@@ -80,11 +107,46 @@ jobs:
       - name: Import package
         run: uv run python -c "import marlim3; print(marlim3.__version__)"
 
+      - name: Test schema Markdown batch discovery
+        run: uv run pytest tests/test_schema_to_markdown.py
+
       - name: Lint (syntax / undefined names)
         run: uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Lint (full report, non-blocking)
         run: uv run flake8 . --count --exit-zero --statistics
+
+  docs-check:
+    name: Documentation / schema references
+    needs: [pre_check, public-lock-check]
+    if: needs.pre_check.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7.0.0
+        with:
+          version: "0.13.1"
+          enable-cache: true
+
+      - name: Install documentation dependencies
+        run: uv sync --locked --group docs --no-install-project
+
+      - name: Generate schema references
+        run: uv run --no-sync python schema_to_markdown.py --batch
+
+      - name: Build documentation
+        run: uv run --no-sync mkdocs build
 
   # Build jobs: produce the native executable only. No tests here.
   build-linux:
@@ -92,6 +154,7 @@ jobs:
     needs:
       - pre_check
       - python-checks
+      - docs-check
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
 
@@ -114,8 +177,9 @@ jobs:
               export PATH="/opt/python/cp312-cp312/bin:${PATH}"
               cd /workspace
               rm -rf build
-              cmake --preset gcc-release
-              cmake --build --preset gcc-release -j$(nproc)
+              cmake --preset gcc-release -DMARLIM_BUILD_TESTS=ON
+              cmake --build --preset gcc-release --target Marlim3 test_inlet_boundary_initialization -j$(nproc)
+              ctest --test-dir build --output-on-failure -R "^inlet_boundary_initialization$"
             '
           sudo chown -R "$(id -u):$(id -g)" build src/include/versao.h
 
@@ -149,6 +213,7 @@ jobs:
     needs:
       - pre_check
       - python-checks
+      - docs-check
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: windows-2022
 
@@ -166,6 +231,7 @@ jobs:
           install: >-
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-gcc-fortran
+            mingw-w64-x86_64-libgomp
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-make
 
@@ -174,8 +240,9 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf build
-          cmake --preset mingw-release
-          cmake --build --preset mingw-release -j$(nproc)
+          cmake --preset mingw-release -DMARLIM_BUILD_TESTS=ON
+          cmake --build --preset mingw-release --target Marlim3 test_inlet_boundary_initialization -j$(nproc)
+          ctest --test-dir build --output-on-failure -R "^inlet_boundary_initialization$"
 
       - name: Inspect executable
         shell: msys2 {0}
@@ -209,6 +276,7 @@ jobs:
     needs:
       - pre_check
       - python-checks
+      - docs-check
     if: needs.pre_check.outputs.should_skip != 'true'
     runs-on: macos-15
 
@@ -226,8 +294,9 @@ jobs:
           set -euo pipefail
           test "$(uname -m)" = "arm64"
           rm -rf build
-          cmake --preset gcc-release
-          cmake --build --preset gcc-release -j"$(sysctl -n hw.ncpu)"
+          cmake --preset gcc-release -DMARLIM_BUILD_TESTS=ON
+          cmake --build --preset gcc-release --target Marlim3 test_inlet_boundary_initialization -j"$(sysctl -n hw.ncpu)"
+          ctest --test-dir build --output-on-failure -R "^inlet_boundary_initialization$"
 
       - name: Inspect executable
         run: |
@@ -283,6 +352,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and test dependencies
@@ -325,7 +395,26 @@ jobs:
           [ "$EXPECTED" = "$ACTUAL" ]
 
       - name: Run tests
-        run: uv run pytest tests/ -v --tb=short
+        env:
+          MARLIM_TEST_ARTIFACTS: ${{ runner.temp }}/pytest
+        run: uv run pytest tests/ -v --tb=short --basetemp "$MARLIM_TEST_ARTIFACTS"
+
+      - name: Upload simulation failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: simulation-diagnostics-linux
+          path: |
+            ${{ runner.temp }}/pytest/**/*.log
+            ${{ runner.temp }}/pytest/**/*.imx
+            ${{ runner.temp }}/pytest/**/*.ecp
+            ${{ runner.temp }}/pytest/**/*.dat
+            ${{ runner.temp }}/pytest/**/model.mr3
+            ${{ runner.temp }}/pytest/**/leituraAP.json
+            ${{ runner.temp }}/pytest/**/stdout.txt
+            ${{ runner.temp }}/pytest/**/stderr.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
   test-windows:
     name: Test – Windows x64
@@ -346,6 +435,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and test dependencies
@@ -395,7 +485,26 @@ jobs:
 
       - name: Run tests
         shell: pwsh
-        run: uv run pytest tests/ -v --tb=short
+        env:
+          MARLIM_TEST_ARTIFACTS: ${{ runner.temp }}/pytest
+        run: uv run pytest tests/ -v --tb=short --basetemp "$env:MARLIM_TEST_ARTIFACTS"
+
+      - name: Upload simulation failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: simulation-diagnostics-windows
+          path: |
+            ${{ runner.temp }}/pytest/**/*.log
+            ${{ runner.temp }}/pytest/**/*.imx
+            ${{ runner.temp }}/pytest/**/*.ecp
+            ${{ runner.temp }}/pytest/**/*.dat
+            ${{ runner.temp }}/pytest/**/model.mr3
+            ${{ runner.temp }}/pytest/**/leituraAP.json
+            ${{ runner.temp }}/pytest/**/stdout.txt
+            ${{ runner.temp }}/pytest/**/stderr.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
   test-macos:
     name: Test – macOS ARM64
@@ -416,6 +525,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install package and test dependencies
@@ -459,7 +569,26 @@ jobs:
           [ "$EXPECTED" = "$ACTUAL" ]
 
       - name: Run tests
-        run: uv run pytest tests/ -v --tb=short
+        env:
+          MARLIM_TEST_ARTIFACTS: ${{ runner.temp }}/pytest
+        run: uv run pytest tests/ -v --tb=short --basetemp "$MARLIM_TEST_ARTIFACTS"
+
+      - name: Upload simulation failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: simulation-diagnostics-macos
+          path: |
+            ${{ runner.temp }}/pytest/**/*.log
+            ${{ runner.temp }}/pytest/**/*.imx
+            ${{ runner.temp }}/pytest/**/*.ecp
+            ${{ runner.temp }}/pytest/**/*.dat
+            ${{ runner.temp }}/pytest/**/model.mr3
+            ${{ runner.temp }}/pytest/**/leituraAP.json
+            ${{ runner.temp }}/pytest/**/stdout.txt
+            ${{ runner.temp }}/pytest/**/stderr.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
   desktop-linux:
     name: Desktop App – Linux x64
@@ -509,7 +638,7 @@ jobs:
               export MARLIM3_SKIP_BUILD=1
               export MARLIM3_SKIP_EXECUTABLE_RESOLUTION=1
               export MARLIM3_GLIBC_BASELINE=2.34
-              python -m pip install "uv==0.11.23"
+              python -m pip install "uv==0.13.1"
               uv python install 3.12
               managed_python="$(uv python find --managed-python 3.12)"
               uv sync --python "${managed_python}" \
@@ -561,6 +690,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install GUI and desktop build dependencies
@@ -623,6 +753,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install GUI and desktop build dependencies
@@ -871,6 +1002,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7.0.0
         with:
+          version: "0.13.1"
           enable-cache: true
 
       - name: Build package

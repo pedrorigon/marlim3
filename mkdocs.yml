@@ -38,6 +38,9 @@ theme:
 
 nav:
   - Home: index.md
+  - Getting Started:
+    - Installation: getting-started.md
+    - Dependency Maintenance: dev-guide/dependencies.md
   - Tutorials:
     - Overview: tutorials/index.md
     - Horizontal vs Vertical: tutorials/1-horizontal_vertical_comparison.ipynb
@@ -58,6 +61,7 @@ nav:
     - General: single-branch-model-reference/general.md
     - Results: single-branch-model-reference/results.md
     - JSON Schema: single-branch-model-reference/json-schema.md
+    - Input Migration: single-branch-model-reference/migration.md
   - Theory:
     - Overview: theoretical-reference/index.md
     - Drift-Flux vs. Two-Fluid: theoretical-reference/two-fluids_vs_drift-flux.md
@@ -65,30 +69,15 @@ nav:
     - Energy Balance: theoretical-reference/energy-balance.md
     - Discretization: theoretical-reference/discretization.md
     - Service Line: theoretical-reference/service-line.md
-  - Developer Guide:
-    - Overview: dev-guide/index.md
-    - Model Overview: dev-guide/model-overview.md
-    - Num4Main — Main Entry Point: dev-guide/num4main.md
-    - Core Domain Classes: dev-guide/core-domain-classes.md
-    - Input Parsing: dev-guide/input-parsing.md
-    - Steady-State Solvers: dev-guide/steady-state-branch.md
-    - Transient Solver: dev-guide/transient-solver.md
-    - Network Simulation: dev-guide/network-simulation.md
-    - Fluid Thermodynamics: dev-guide/fluid-thermodynamics.md
-    - Heat Transfer: dev-guide/heat-transfer.md
-    - Embedded Solvers: dev-guide/embedded-solvers.md
-    - Parametric Analysis: dev-guide/parametric-analysis.md
-    - Injection Well: dev-guide/injection-well.md
-    - Natural Convection: dev-guide/natural-convection.md
-    - Translations: dev-guide/translations.md
   - Schemas:
     - Overview: schemas/index.md
-    - Branch EN: schemas/branch.en.json
-    - Branch PT: schemas/branch.pt.json
-    - Network EN: schemas/network.en.json
-    - Network PT: schemas/network.pt.json
-    - Buried Line 2D PT: schemas/buried-line-2d.pt.json
-    - Porous Radial PT: schemas/porous-radial.pt.json
+    - Branch EN: schemas/generated/branch.en.md
+    - Branch PT: schemas/generated/branch.pt.md
+    - Network EN: schemas/generated/network.en.md
+    - Network PT: schemas/generated/network.pt.md
+    - Buried Line 2D PT: schemas/generated/buried-line-2d.pt.md
+    - Porous Radial PT: schemas/generated/porous-radial.pt.md
+    - Parametric Analysis PT: schemas/generated/leituraAP.pt.md
 
 extra:
   social:

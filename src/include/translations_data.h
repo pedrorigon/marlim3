@@ -50,7 +50,6 @@ static const char TRANSLATIONS_JSON_RAW[] = R"TJSON(
     "productionPipe": "dutosProducao",
     "servicePipe": "dutosServico",
     "hydrate": "hidrato",
-    "chokeSource": "fonteChoke",
     "esp": "bcs",
     "multiESP": "multibcs",
     "volumetricPump": "bombaVolumetrica",
@@ -307,9 +306,7 @@ static const char TRANSLATIONS_JSON_RAW[] = R"TJSON(
     "valveType": "tipoValvula",
     "orificeDiameter": "diametroOrificio",
     "vglDischCoef": "cdvgl",
-    "recoveryFactor": "frecupera",
     "liquidDischCoef": "cdvLiq",
-    "liquidRecoveryFactor": "frecuperaLiq",
     "areaRatio": "razaoArea",
     "calibrationPressure": "pressaoCalibracao",
     "calibrationTemperature": "temperaturaCalibracao",
@@ -492,7 +489,8 @@ static const char TRANSLATIONS_JSON_RAW[] = R"TJSON(
     "liquidInventory": "inventarioLiq",
     "printTime": "tempoImpres",
     "unitCellDetail": "detalheCelulaUnitaria",
-    "user": "usuario"
+    "user": "usuario",
+    "icvTime": "tempoICV"
   },
   "values": {
     "layerMeasurementType": {
@@ -503,37 +501,7 @@ static const char TRANSLATIONS_JSON_RAW[] = R"TJSON(
       "PROD": "MULTIFASICO",
       "INJ": "INJETOR"
     }
-  },
-  "razCompGasReves": "reserveGasCompressibility",
-  "origemGeometria": "geometryOrigin",
-  "correlacoesEscorregamento": "slipCorrelations",
-  "indFluido": "fluidIndicator",
-  "ponderaCond": "conductivityWeighting",
-  "alteraViscFlu": "alterFluidVisc",
-  "DmultipWax": "waxMultipD",
-  "EmultipWax": "waxMultipE",
-  "FmultipWax": "waxMultipF",
-  "curvaDinamic": "dynamicCurve",
-  "frecupera": "recoveryFactor",
-  "frecuperaLiq": "liquidRecoveryFactor",
-  "fracTermMotorEfic": "motorThermalFrac",
-  "folgaArea": "gapArea",
-  "deltaPressao": "deltaPressure",
-  "cdPig": "pigCD",
-  "rhoo": "waterPhaseOutputDensity",
-  "rhoa": "waterPhaseOutputDensity",
-  "QOstd": "oilFlowStd",
-  "QOWstd": "stdOilWaterFlowRate",
-  "correlacaoBB": "beggsBrill",
-  "inventarioGas": "gasInventory",
-  "inventarioLiq": "liquidInventory",
-  "tempParede": "wallTemperature",
-  "subResfria": "subcooling",
-  "dadosParafina": "waxData",
-  "multibcs": "multiESP",
-  "fonteCalor": "heatSource",
-  "fonteChoke": "chokeSource",
-  "detalheCelulaUnitaria": "unitCellDetail"
+  }
 }
 )TJSON";
 
