@@ -2,6 +2,9 @@ using namespace std;
 #include "PropFlu.h"
 #include "UnitConversions.h"
 #include <algorithm>
+#include <array>
+#include <bit>
+#include <cstdint>
 #include <cmath>
 #include <cstring>
 
@@ -3195,6 +3198,27 @@ double ProFlu::FNdran(double PR, double TR, double denr) const{
 
 
 double ProFlu::FalsaCorda(double a,double b,double PR,double TR,double delta ,double epsn,int maxit)const{
+    struct CachedRoot {
+        std::array<std::uint64_t, 6> arguments{};
+        int iterationLimit = 0;
+        double value = 0.;
+        bool valid = false;
+    };
+    thread_local std::array<CachedRoot, 4> cachedRoots;
+    thread_local std::size_t nextCachedRoot = 0;
+    const std::array<double, 6> arguments{a, b, PR, TR, delta, epsn};
+    std::array<std::uint64_t, 6> key;
+    bool cacheable = TR > 0. && PR >= 0. && delta > 0. && epsn > 0. && maxit > 0;
+    for (std::size_t i = 0; i < arguments.size(); ++i) {
+        key[i] = std::bit_cast<std::uint64_t>(arguments[i]);
+        cacheable = cacheable && std::isfinite(arguments[i]);
+    }
+    if (cacheable) {
+        for (const auto &entry : cachedRoots)
+            if (entry.valid && entry.iterationLimit == maxit && entry.arguments == key)
+                return entry.value;
+    }
+
         //a e b-> chutes iniciais para a falsa corda
         //epsn -> limite em que se admite F(double) aproximadamente zero
         //delta-> limite a partir do qual admite-se que ja nao existe variacao no calculo da raiz
@@ -3238,7 +3262,13 @@ double ProFlu::FalsaCorda(double a,double b,double PR,double TR,double delta ,do
             e*=0.5;
             c=a+e;
             double w=FNdran(PR,TR,c);
-            if(fabs(e)<delta||fabs(w)<epsn) return c;
+            if(fabs(e)<delta||fabs(w)<epsn) {
+                if (cacheable && std::isfinite(c) && std::isfinite(w)) {
+                    cachedRoots[nextCachedRoot] = {key, maxit, c, true};
+                    nextCachedRoot = (nextCachedRoot + 1) % cachedRoots.size();
+                }
+                return c;
+            }
             ((u>0&&w<0)||(u<0&&w>0))?(b=c):(a=c,u=w);
             controla++;
           }

@@ -614,11 +614,7 @@ void updateInteriorVolumeFlows(const TransientStepState &state, int i, double ar
     if (cell.VTemper < 0.)
         tmed = cell.temp;
 
-    ProFlu flud;
-    if (cell.Mliqini < 0.)
-        flud = cell.flui;
-    else
-        flud = upstreamCell.flui;
+    const ProFlu &flud = cell.Mliqini < 0. ? cell.flui : upstreamCell.flui;
 
     double betI;
     if (((cell.MC - cell.Mliqini) * 0 + 1 * cell.Mliqini) < 0)
@@ -745,11 +741,7 @@ void updateOutletVolumeFlows(const TransientStepState &state, int i) {
     if (cell.VTemper < 0.)
         tmed = cell.temp;
 
-    ProFlu flud;
-    if (cell.Mliqini < 0.)
-        flud = cell.flui;
-    else
-        flud = upstreamCell.flui;
+    const ProFlu &flud = cell.Mliqini < 0. ? cell.flui : upstreamCell.flui;
 
     double betI;
     if (((cell.MC - cell.Mliqini) * 0.99 + 0.01 * cell.Mliqini) < 0)
@@ -1686,11 +1678,8 @@ void updateFlowRates(const TransientStepState &state) {
             double tmed = state.cells[i - 1].temp;
             if (state.cells[i].VTemper < 0.)
                 tmed = state.cells[i].temp;
-            ProFlu flud;
-            if (state.cells[i].Mliqini < 0.)
-                flud = state.cells[i].flui;
-            else
-                flud = state.cells[i - 1].flui;
+            const ProFlu &flud = state.cells[i].Mliqini < 0.
+                                     ? state.cells[i].flui : state.cells[i - 1].flui;
 
             double betI;
             if (((state.cells[i].MC - state.cells[i].Mliqini) * 0 + 1 * state.cells[i].Mliqini) < 0)
@@ -1732,11 +1721,8 @@ void updateFlowRates(const TransientStepState &state) {
             if (state.cells[i].VTemper < 0.)
                 tmed = state.cells[i].temp;
 
-            ProFlu flud;
-            if (state.cells[i].Mliqini < 0.)
-                flud = state.cells[i].flui;
-            else
-                flud = state.cells[i - 1].flui;
+            const ProFlu &flud = state.cells[i].Mliqini < 0.
+                                     ? state.cells[i].flui : state.cells[i - 1].flui;
 
             double betI;
             if (((state.cells[i].MC - state.cells[i].Mliqini) * 0.99 + 0.01 * state.cells[i].Mliqini) < 0)
@@ -2705,11 +2691,8 @@ void cacheCellAndFaceDensities(const TransientStepState &state) {
         double tmed = state.cells[i - 1].temp;
         if (state.cells[i].VTemper < 0.)
             tmed = state.cells[i].temp;
-        ProFlu upwindFluid;
-        if (state.cells[i].QL < 0.)
-            upwindFluid = state.cells[i].flui;
-        else
-            upwindFluid = state.cells[i - 1].flui;
+        const ProFlu &upwindFluid = state.cells[i].QL < 0.
+                                       ? state.cells[i].flui : state.cells[i - 1].flui;
         state.cells[i].rpCi = upwindFluid.MasEspLiq(state.cells[i].presaux, tmed);
         state.cells[i].rgCi = upwindFluid.MasEspGas(state.cells[i].presaux, tmed);
         state.cells[i].rcCi = state.cells[i].fluicol.MasEspFlu(state.cells[i].presaux, tmed);

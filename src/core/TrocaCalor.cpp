@@ -11,6 +11,8 @@
 #include "Vetor.h"
 #include "UnitConversions.h"
 #include <algorithm>
+#include <array>
+#include <memory>
 #include <fstream>
 #include <math.h>
 #include <stdlib.h>
@@ -1945,8 +1947,55 @@ double TransCal::transtrans(int newman, double qcal) {
             nglob += ncamada[i];
         }
         nglob = 2 * (nglob + 1);
-        Vcr<double> vetliv(nglob);
-        BandMtx<double> matglob(nglob, 3, 2);
+        struct Buffers {
+            Vcr<double> rhs;
+            BandMtx<double> matrix;
+            bool inUse = false;
+            explicit Buffers(int rows) : rhs(rows), matrix(rows, 3, 2) {}
+        };
+        constexpr std::size_t maximumRetainedBytesPerEntry = 1024 * 1024;
+        constexpr std::size_t bytesPerRow = 7 * sizeof(double) + sizeof(double *);
+        thread_local std::array<std::unique_ptr<Buffers>, 4> cachedBuffers;
+        thread_local std::size_t nextBuffer = 0;
+        Buffers *buffers = nullptr;
+        std::unique_ptr<Buffers> temporary;
+        if (static_cast<std::size_t>(nglob) <= maximumRetainedBytesPerEntry / bytesPerRow) {
+            for (const auto &entry : cachedBuffers) {
+                if (entry && !entry->inUse && entry->rhs.size() == nglob) {
+                    buffers = entry.get();
+                    break;
+                }
+            }
+            if (!buffers) {
+                for (std::size_t offset = 0; offset < cachedBuffers.size(); ++offset) {
+                    const std::size_t index = (nextBuffer + offset) % cachedBuffers.size();
+                    auto &entry = cachedBuffers[index];
+                    if (!entry || !entry->inUse) {
+                        auto replacement = std::make_unique<Buffers>(nglob);
+                        entry = std::move(replacement);
+                        buffers = entry.get();
+                        nextBuffer = (index + 1) % cachedBuffers.size();
+                        break;
+                    }
+                }
+            }
+        }
+        if (!buffers) {
+            temporary = std::make_unique<Buffers>(nglob);
+            buffers = temporary.get();
+        }
+        struct Lease {
+            Buffers &buffers;
+            ~Lease() { buffers.inUse = false; }
+        } lease{*buffers};
+        buffers->inUse = true;
+        Vcr<double> &vetliv = buffers->rhs;
+        BandMtx<double> &matglob = buffers->matrix;
+        for (int row = 0; row < nglob; ++row) {
+            vetliv[row] = 0.;
+            for (int column = -3; column <= 2; ++column)
+                matglob[row][column] = 0.;
+        }
         transcel(0, 0,newman,qcal);
         vetliv[0] = localvet[0];
         vetliv[1] = localvet[1];
