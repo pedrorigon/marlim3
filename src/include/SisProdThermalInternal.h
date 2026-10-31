@@ -68,6 +68,7 @@ struct TransientTemperatureStep {
     double sourceIncrement = 0.;
     double sourceDecay = 0.;
     double courant = 0.;
+    double referenceMixtureVelocity = 0.;
     int donor = -1;
     bool evolves = false;
 };
@@ -206,9 +207,18 @@ template <typename Axis>
 [[nodiscard]] double integrateTemperatureSource(const TransientTemperatureStep &step,
                                                double temperature, double fraction);
 
+/// Limits a cell temperature update as the explicit 3.10.1 update does: a
+/// change faster than 10 C/s is cut to that rate, a change faster than 1 C/s
+/// is discarded when the thermal velocity exceeds ten reference mixture
+/// velocities, and the result is clamped to the table or default range.
+[[nodiscard]] double limitTemperatureUpdate(const ThermalState &state, const Cel &cell,
+                                            double temperature, double referenceMixtureVelocity);
+
 /// Integrates frozen energy operators with simultaneous upwind updates and
 /// donor Courant numbers at most 0.8. Source relaxation is integrated exactly
-/// between the advection updates. No temperature or rate clipping is applied.
+/// between the advection updates. Each evolving cell result is then limited by
+/// limitTemperatureUpdate, so stiff kinetic or latent sources in nearly single
+/// phase cells cannot leave the property tables in one step.
 /// Distinct read/write buffers synchronize the source and donor passes. The
 /// final donor pass is synchronized by the end of the parallel region.
 void integrateTransientTemperatureField(const ThermalState &state,
@@ -230,9 +240,11 @@ void computeCellTemperature(const ThermalState &state, int cellIndex, int steady
 
 /// Computes the transient kinetic-energy term where both cells have no accessory.
 /// Also replaces the balance velocities with downstream face velocities for the
-/// subsequent interfacial-work calculation. Each phase uses its own flow sign
-/// to select its face fraction, including the saved liquid velocity. At cell
-/// zero, incoming phases use the inlet face rather than a left control volume.
+/// subsequent interfacial-work calculation. As in 3.10.1, each time level
+/// selects one face void fraction by its gas flow sign and both phases use it;
+/// a liquid-sign donor would divide the saved liquid flow by the liquid
+/// fraction of a nearly dry neighbour. At cell zero, incoming phases use the
+/// inlet face rather than a left control volume.
 double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
                                      TemperatureBalance &balance);
 

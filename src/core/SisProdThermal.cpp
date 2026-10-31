@@ -283,10 +283,8 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
     else
         previousRightFaceVoidFraction = rightCell.alfini;
 
-    const double rightFaceLiquidFraction =
-        1. - (rightCell.QL > 0. ? cell.alf : rightCell.alf);
-    const double previousRightFaceLiquidFraction =
-        1. - (rightCell.QLini > 0. ? cell.alfini : rightCell.alfini);
+    const double rightFaceLiquidFraction = 1. - rightFaceVoidFraction;
+    const double previousRightFaceLiquidFraction = 1. - previousRightFaceVoidFraction;
 
     double leftFaceVoidFraction;
     if (cell.QG > 0)
@@ -294,10 +292,7 @@ double computeKineticTemperatureTerm(const ThermalState &state, int cellIndex,
     else
         leftFaceVoidFraction = cell.alf;
 
-    const double leftFaceLiquidFraction =
-        1. - (cell.QL > 0.
-                  ? (cellIndex > 0 ? state.cells[cellIndex - 1].alf : cell.alfL)
-                  : cell.alf);
+    const double leftFaceLiquidFraction = 1. - leftFaceVoidFraction;
 
     if (leftFaceVoidFraction > 1e-3) {
         leftFaceMeanGasVelocity = cell.QG / (cellFlowArea);
@@ -3027,6 +3022,7 @@ TransientTemperatureStep prepareTransientTemperatureStep(
     TemperatureBalance balance = prepareTemperatureBalance(state, cellIndex, 0, wallProperties);
     if (!step.evolves)
         return step;
+    step.referenceMixtureVelocity = balance.referenceMixtureVelocity;
 
     double pressureGradient = temperaturePressureGradientOf(state, cellIndex, balance);
     if (cellIndex > 0 && cell.acsr.tipo == kAccessoryVolumetricPump && cell.acsr.bvol.freq > 1.)
@@ -3073,6 +3069,23 @@ double integrateTemperatureSource(const TransientTemperatureStep &step,
                              : -std::expm1(-step.sourceDecay * fraction) / step.sourceDecay;
     return temperature +
            (step.sourceIncrement - step.sourceDecay * (temperature - step.initialTemperature)) * scale;
+}
+
+double limitTemperatureUpdate(const ThermalState &state, const Cel &cell, double temperature,
+                              double referenceMixtureVelocity) {
+    const double change = temperature - cell.tempini;
+    if (fabs(change) / cell.dt > 10.) {
+        temperature = cell.tempini + (fabs(change) / change) * 10 * cell.dt;
+    } else if (fabs(change) / cell.dt > 1. && fabs(cell.VTemper) > 10 * referenceMixtureVelocity)
+        temperature = cell.tempini;
+    double minimumTemperature = kMinimumTemperatureCelsius;
+    if (state.input.usaTabela == 1)
+        minimumTemperature = state.input.tabent.tmin + 1.;
+    if (temperature < minimumTemperature)
+        temperature = minimumTemperature;
+    if (temperature > kMaximumTemperatureCelsius)
+        temperature = kMaximumTemperatureCelsius;
+    return temperature;
 }
 
 void integrateTransientTemperatureField(const ThermalState &state,
@@ -3147,10 +3160,12 @@ void integrateTransientTemperatureField(const ThermalState &state,
     }
     const auto &finalTemperatures = substepCount % 2 ? advected : temperatures;
     for (int i = 0; i <= state.lastCell; ++i) {
-        const double temperature = finalTemperatures[i];
+        Cel &cell = state.cells[i];
+        double temperature = finalTemperatures[i];
+        if (steps[i].evolves)
+            temperature = limitTemperatureUpdate(state, cell, temperature, steps[i].referenceMixtureVelocity);
         if (!std::isfinite(temperature) || temperature <= -units::kZeroCelsiusInKelvin)
             throw std::domain_error("Invalid absolute temperature in transient energy cell " + std::to_string(i));
-        Cel &cell = state.cells[i];
         cell.temp = temperature;
         cell.dTdt = (cell.temp - cell.tempini) / state.timeStep;
         cell.dTdtIni = cell.dTdt;
@@ -3226,18 +3241,7 @@ void computeCellTemperature(const ThermalState &state, int cellIndex, int steady
             leftCellThermalPower = state.cells[cellIndex - 1].acsr.potTermo;
         cell.temp = ((balance.timeCoefficient / cell.dt) * cell.temp - (-balance.pressureTimeCoefficient * (cell.pres - cell.presini) * units::kPascalPerKgfPerCm2 / cell.dt) + cell.dTdLCor * (-balance.temperatureSpatialCoefficient * temperatureGradient + balance.pressureSpatialCoefficient * pressureGradient - kineticTerm - (balance.hydrostaticPower - 0. * interfacialWorkTerm) + (leftCellThermalPower + cell.fonteCal) / balance.meanCellLength + sourceTerms.liquid + sourceTerms.gas + balance.heatFlux - latentHeatTerm) - (balance.rc - balance.rp) * (1 - balance.voidFraction) * cell.pres * units::kPascalPerKgfPerCm2 * balance.flowArea * (cell.bet - cell.betini) / (balance.liquidDensity * cell.dt)) / (balance.timeCoefficient / cell.dt);
 
-        if (fabs(cell.temp - cell.tempini) / cell.dt > 10.) {
-            cell.temp = cell.tempini +
-                        (fabs(cell.temp - cell.tempini) / (cell.temp - cell.tempini)) * 10 * cell.dt;
-        } else if (fabs(cell.temp - cell.tempini) / cell.dt > 1. && fabs(cell.VTemper) > 10 * balance.referenceMixtureVelocity)
-            cell.temp = cell.tempini;
-        double minimumTemperature = kMinimumTemperatureCelsius;
-        if (state.input.usaTabela == 1)
-            minimumTemperature = state.input.tabent.tmin + 1.;
-        if (cell.temp < minimumTemperature)
-            cell.temp = minimumTemperature;
-        if (cell.temp > kMaximumTemperatureCelsius)
-            cell.temp = kMaximumTemperatureCelsius;
+        cell.temp = limitTemperatureUpdate(state, cell, cell.temp, balance.referenceMixtureVelocity);
     } else if (cellIndex == state.lastCell) {
         if (globals.networkMode == 0 || state.endNode == 1 || globals.parallelNetworkMode == 1)
             cell.temp = cell.calor.Textern1;
