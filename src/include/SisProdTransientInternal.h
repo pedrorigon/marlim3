@@ -200,6 +200,8 @@ void applyScheduledTimeStepEvents(const TransientStepState &state);
 
 /// Limits phase transport during pressure-temperature coupling with a mass-flow outlet.
 /// Uses stored face flows, individual upwind fractions, and the kinetic phase threshold.
+/// Only acts within kOutletCouplingHoldTime of the last production-face flow reversal
+/// faster than kFlowReversalSpeed; steady production keeps the transport step.
 void restrictOutletCouplingTimeStep(const TransientStepState &state);
 
 /// Limits the step to kMaximumTimeStepGrowth times the previous accepted step,

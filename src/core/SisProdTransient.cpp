@@ -882,6 +882,18 @@ void restrictTimeStepByTransport(const TransientStepState &state) {
 }
 
 void restrictOutletCouplingTimeStep(const TransientStepState &state) {
+    const double time = (*state.globals).simulationTime;
+    for (int i = 1; i <= state.lastCell; i++) {
+        const Cel &cell = state.cells[i];
+        const double area = cell.duto.area;
+        if ((cell.QL * cell.QLini < 0. && std::max(fabs(cell.QL), fabs(cell.QLini)) / area > kFlowReversalSpeed) ||
+            (cell.QG * cell.QGini < 0. && std::max(fabs(cell.QG), fabs(cell.QGini)) / area > kFlowReversalSpeed)) {
+            state.lastFlowReversalTime = time;
+            break;
+        }
+    }
+    if (time - state.lastFlowReversalTime > kOutletCouplingHoldTime)
+        return;
     if (state.surfaceChokeMassFlag != 1 || state.fullModel != 1)
         return;
     constexpr double maximumCourant = 0.25;

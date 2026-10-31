@@ -141,6 +141,9 @@ struct TransientStepState {
     /// SProd::transient.cflSafetyFactor -- written.
     double &multiplier;
 
+    /// SProd::transient.lastFlowReversalTime -- written.
+    double &lastFlowReversalTime;
+
     /// SProd::presfim -- written.
     double &outletPressure;
 

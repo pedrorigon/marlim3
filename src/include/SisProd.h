@@ -36,6 +36,7 @@
 #include <ctime>
 #include <cmath>
 #include <deque>
+#include <limits>
 #include <array>
 #include <string>
 #include <vector>
@@ -271,6 +272,9 @@ struct TransientRun {
     double restartSourceMass = 0.;
     /// CFL safety factor, typically set to 0.8.
     double cflSafetyFactor = 0;
+    /// Simulation time of the last flow reversal at a production face; arms the
+    /// outlet coupling time-step limit for kOutletCouplingHoldTime.
+    double lastFlowReversalTime = -std::numeric_limits<double>::infinity();
     /// Time-averaged pressure in the final production-line control volume. Used to decide whether the surface choke
     /// behaves as a localized pressure loss or as a discharge-flow model.
     double movingMeanPressure = 0;

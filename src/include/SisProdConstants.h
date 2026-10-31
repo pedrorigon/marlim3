@@ -75,6 +75,14 @@ inline constexpr double kKineticTermMaximumLengthRatio = 1e6;
 /// limit within a few steps.
 inline constexpr double kMaximumTimeStepGrowth = 1.5;
 
+/// A production face whose liquid or gas flow changes sign above this
+/// superficial velocity, in m/s, arms the outlet coupling time-step limit.
+inline constexpr double kFlowReversalSpeed = 0.01;
+
+/// How long, in seconds, the outlet coupling time-step limit stays armed after
+/// the last flow reversal, so steady production keeps the transport step.
+inline constexpr double kOutletCouplingHoldTime = 600.;
+
 // ------------------------------------------------------ accessory kinds ----
 
 /// The value of `celula[i].acsr.tipo`, selecting the accessory attached to a
@@ -249,6 +257,8 @@ static_assert(kSteadyConvergenceFailure == 1.1e10);
 static_assert(marchPressureTooLow(0.1) && !marchPressureTooLow(0.2));
 static_assert(kKineticTermMaximumLengthRatio == 1e6);
 static_assert(kMaximumTimeStepGrowth == 1.5);
+static_assert(kFlowReversalSpeed == 0.01);
+static_assert(kOutletCouplingHoldTime == 600.);
 
 }  // namespace sisprod
 

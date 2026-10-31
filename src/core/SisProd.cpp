@@ -552,6 +552,7 @@ sisprod::transient::TransientStepState SProd::transientStateOf() {
         .desperationMoment = transient.artificialGasMultiplier,
         .chokeModeChanged = transient.chokeModeChanged,
         .multiplier = transient.cflSafetyFactor,
+        .lastFlowReversalTime = transient.lastFlowReversalTime,
         .outletPressure = presfim,
         .restart = transient.rollbackRequested,
         .timeStepRestricted = transient.timeStepRestricted,
