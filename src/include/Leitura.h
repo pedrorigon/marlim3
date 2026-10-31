@@ -44,7 +44,7 @@
 #include "solverPoisson.h"
 #include "solverPoroso.h"
 #include "validaTipoJson.h"
-#include "variaveisGlobais1D.h"
+#include "SimulationContext.h"
 #include "SlugFlow_TaitelBarnea.h"
 #include "caixaValvula.h"
 #include <algorithm>
@@ -407,7 +407,7 @@ struct detIPR {
 struct detGASINJ {
     int tipoCC;   // Boundary-condition type: 0 = injection pressure, 1 = injection flow rate
     int parserie; // Number of elements in the injection flow-rate or pressure time series
-    int chuteVaz; // Optional steady-state injection-flow initial guess for pressure-controlled injection
+    int chuteVaz = 0; // Optional steady-state injection-flow initial guess for pressure-controlled injection
     // Used to improve convergence
     double *temperatura; // Injection-temperature time-series values
     double *presinj;     // Injection-pressure time-series values, when applicable
@@ -1093,7 +1093,7 @@ struct tabelaFlash {
 
 struct composicional {
     string arquivo;
-    int npseudo;
+    int npseudo = 0;
     int liqModel;
     int vapModel;
     double *fracMol;
@@ -1476,7 +1476,7 @@ class Ler {
 
     int estabCol;
 
-    varGlob1D *vg1dSP;
+    SimulationContext *simulationContext;
 
     int modoXY;
     double xProd0;
@@ -1562,7 +1562,7 @@ class Ler {
      * Fields Constructor
      */
     Ler(const string IMPFILE, const string ARQUIVO_LOG, const tipoValidacaoJson_t VALIDACAO_MRT,
-        const tipoSimulacao_t SIMULACAO_MRT, int vreverso = 0, varGlob1D *Vvg1dSP = 0, int vredeperm = 1);
+        const tipoSimulacao_t SIMULACAO_MRT, int vreverso = 0, SimulationContext *context = 0, int vredeperm = 1);
     /*
      * Copy Constructor
      */
