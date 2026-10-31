@@ -202,6 +202,10 @@ void applyScheduledTimeStepEvents(const TransientStepState &state);
 /// Uses stored face flows, individual upwind fractions, and the kinetic phase threshold.
 void restrictOutletCouplingTimeStep(const TransientStepState &state);
 
+/// Limits the step to kMaximumTimeStepGrowth times the previous accepted step,
+/// kept in every cell's dt, so a released restriction cannot raise it at once.
+void limitTimeStepGrowth(const TransientStepState &state);
+
 /// Detects the current three-cell oscillation pattern behind closed chokes and penalizes the step.
 void penalizeOscillatingFractions(const TransientStepState &state);
 

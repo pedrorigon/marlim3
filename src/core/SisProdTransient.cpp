@@ -903,6 +903,13 @@ void restrictOutletCouplingTimeStep(const TransientStepState &state) {
     }
 }
 
+void limitTimeStepGrowth(const TransientStepState &state) {
+    const double previousTimeStep = state.cells[0].dt;
+    if ((*state.globals).simulationTime > 0. && previousTimeStep > 0. &&
+        state.timeStep > kMaximumTimeStepGrowth * previousTimeStep)
+        state.timeStep = kMaximumTimeStepGrowth * previousTimeStep;
+}
+
 void applyScheduledTimeStepEvents(const TransientStepState &state) {
     if (state.input.evento.size() > state.eventIndex) {
         if ((*state.globals).simulationTime < state.input.evento[state.eventIndex] && ((*state.globals).simulationTime + state.timeStep) > (state.input.evento[state.eventIndex] + 0.1)) {
@@ -2126,6 +2133,7 @@ void computeImplicitTimeStep(const TransientStepState &state, int explicitScheme
         state.timeStep = state.input.dtmax;
 
     restrictOutletCouplingTimeStep(state);
+    limitTimeStepGrowth(state);
     applyScheduledTimeStepEvents(state);
 
     if (explicitScheme != 0)

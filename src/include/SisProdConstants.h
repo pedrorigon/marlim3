@@ -69,6 +69,12 @@ inline constexpr double kSteadyConvergenceFailure = 1.1e10;
 /// cell's length.
 inline constexpr double kKineticTermMaximumLengthRatio = 1e6;
 
+/// The largest ratio between a transient time step and the step accepted just
+/// before it. Releasing a restricted step at once, as when outlet backflow
+/// ends, can drive the coupled pressure-velocity update past its stability
+/// limit within a few steps.
+inline constexpr double kMaximumTimeStepGrowth = 1.5;
+
 // ------------------------------------------------------ accessory kinds ----
 
 /// The value of `celula[i].acsr.tipo`, selecting the accessory attached to a
@@ -242,6 +248,7 @@ static_assert(kSteadyConvergenceFailureThreshold == 1.01e10);
 static_assert(kSteadyConvergenceFailure == 1.1e10);
 static_assert(marchPressureTooLow(0.1) && !marchPressureTooLow(0.2));
 static_assert(kKineticTermMaximumLengthRatio == 1e6);
+static_assert(kMaximumTimeStepGrowth == 1.5);
 
 }  // namespace sisprod
 
