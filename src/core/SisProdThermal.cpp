@@ -2,6 +2,7 @@
 #include "DriftFluxClosure.h"
 #include "SisProdSources.h"
 #include "SisProdThermalInternal.h"
+#include "TransientKineticResponse.h"
 
 #include "SisProdConstants.h"
 
@@ -3033,6 +3034,7 @@ TransientTemperatureStep prepareTransientTemperatureStep(
         pressureGradient = (cell.pres - state.cells[cellIndex - 1].pres) *
                            units::kPascalPerKgfPerCm2 / balance.meanCellLength;
     const double kineticTerm = computeKineticTemperatureTerm(state, cellIndex, balance);
+    step.kineticIncrement = -cell.dt * cell.dTdLCor * kineticTerm / transport.timeCoefficient;
     const auto source = computeTemperatureSourceTerms(state, cellIndex, cell.dx);
     const double latentHeatTerm = computeTemperatureLatentHeatTerm(state, cellIndex);
     const double leftThermalPower = cellIndex > 0 ? state.cells[cellIndex - 1].acsr.potTermo : 0.;
@@ -3075,10 +3077,19 @@ double integrateTemperatureSource(const TransientTemperatureStep &step,
            (step.sourceIncrement - step.sourceDecay * (temperature - step.initialTemperature)) * scale;
 }
 
+double integrateKineticTemperatureResponse(const TransientTemperatureStep &step,
+                                           double response, double fraction) {
+    const double scale = step.sourceDecay == 0.
+                             ? fraction
+                             : -std::expm1(-step.sourceDecay * fraction) / step.sourceDecay;
+    return response + (step.kineticIncrement - step.sourceDecay * response) * scale;
+}
+
 void integrateTransientTemperatureField(const ThermalState &state,
                                         const std::vector<TransientTemperatureStep> &steps) {
     constexpr double maximumCourant = 0.8;
     double largestCourant = 0.;
+    bool trackKineticResponse = false;
     for (int i = 0; i <= state.lastCell; ++i) {
         const auto &step = steps[i];
         if (!std::isfinite(step.initialTemperature) || !std::isfinite(step.timeCoefficient) ||
@@ -3089,6 +3100,8 @@ void integrateTransientTemperatureField(const ThermalState &state,
             !std::isfinite(state.cells[i].dTdLCor) || state.cells[i].dTdLCor < 0.)
             throw std::domain_error("Invalid transient energy coefficients in cell " + std::to_string(i));
         largestCourant = std::max(largestCourant, step.courant);
+        trackKineticResponse = trackKineticResponse ||
+            std::abs(step.kineticIncrement) > 10. * state.cells[i].dt;
     }
     const double requiredSteps = std::max(1., std::ceil(largestCourant / maximumCourant));
     if (requiredSteps > std::numeric_limits<int>::max())
@@ -3103,13 +3116,21 @@ void integrateTransientTemperatureField(const ThermalState &state,
     for (int i = 0; i <= state.lastCell; ++i)
         temperatures[i] = steps[i].initialTemperature;
 
+    thread_local std::vector<double> cachedKineticCurrent, cachedKineticNext;
+    if (trackKineticResponse) {
+        cachedKineticCurrent.assign(steps.size(), 0.);
+        cachedKineticNext.resize(steps.size());
+    }
     const int cellCount = state.lastCell + 1;
     const int threadCount = std::max(1, std::min(state.globals->solverThreadCount, cellCount));
-    const auto applyHalfSource = [&](int i, double *current) {
+    const auto applyHalfSource = [&](int i, double *current, double *kineticCurrent) {
         if (steps[i].evolves)
             current[i] = integrateTemperatureSource(steps[i], current[i], 0.5 * fraction);
+        if (trackKineticResponse && steps[i].evolves)
+            kineticCurrent[i] = integrateKineticTemperatureResponse(steps[i], kineticCurrent[i], 0.5 * fraction);
     };
-    const auto advectAndRelax = [&](int i, const double *current, double *next) {
+    const auto advectAndRelax = [&](int i, const double *current, double *next,
+                                     const double *kineticCurrent, double *kineticNext) {
         const auto &step = steps[i];
         double temperature = current[i];
         if (step.evolves && step.donor >= 0)
@@ -3117,37 +3138,54 @@ void integrateTransientTemperatureField(const ThermalState &state,
         next[i] = step.evolves
                       ? integrateTemperatureSource(step, temperature, 0.5 * fraction)
                       : temperature;
+        if (trackKineticResponse) {
+            double response = kineticCurrent[i];
+            if (step.evolves && step.donor >= 0)
+                response += step.courant * fraction * (kineticCurrent[step.donor] - kineticCurrent[i]);
+            kineticNext[i] = step.evolves
+                ? integrateKineticTemperatureResponse(step, response, 0.5 * fraction)
+                : response;
+        }
     };
     double *current = temperatures.data();
     double *next = advected.data();
+    double *kineticCurrent = cachedKineticCurrent.data();
+    double *kineticNext = cachedKineticNext.data();
     if (threadCount == 1) {
         for (int substep = 0; substep < substepCount; ++substep) {
             for (int i = 0; i < cellCount; ++i)
-                applyHalfSource(i, current);
+                applyHalfSource(i, current, kineticCurrent);
             for (int i = 0; i < cellCount; ++i)
-                advectAndRelax(i, current, next);
+                advectAndRelax(i, current, next, kineticCurrent, kineticNext);
             std::swap(current, next);
+            std::swap(kineticCurrent, kineticNext);
         }
     } else {
-#pragma omp parallel num_threads(threadCount) default(none) shared(applyHalfSource, advectAndRelax) firstprivate(current, next, cellCount, substepCount)
+#pragma omp parallel num_threads(threadCount) default(none) shared(applyHalfSource, advectAndRelax) firstprivate(current, next, kineticCurrent, kineticNext, cellCount, substepCount)
         {
             for (int substep = 0; substep < substepCount; ++substep) {
 #pragma omp for schedule(static)
                 for (int i = 0; i < cellCount; ++i)
-                    applyHalfSource(i, current);
+                    applyHalfSource(i, current, kineticCurrent);
 #pragma omp for schedule(static) nowait
                 for (int i = 0; i < cellCount; ++i)
-                    advectAndRelax(i, current, next);
+                    advectAndRelax(i, current, next, kineticCurrent, kineticNext);
                 if (substep + 1 < substepCount) {
 #pragma omp barrier
                 }
                 std::swap(current, next);
+                std::swap(kineticCurrent, kineticNext);
             }
         }
     }
     const auto &finalTemperatures = substepCount % 2 ? advected : temperatures;
     for (int i = 0; i <= state.lastCell; ++i) {
-        const double temperature = finalTemperatures[i];
+        double temperature = finalTemperatures[i];
+        if (trackKineticResponse) {
+            const auto &responses = substepCount % 2 ? cachedKineticNext : cachedKineticCurrent;
+            temperature = detail::stabilizeKineticTemperatureResponse(
+                steps[i].initialTemperature, temperature, responses[i], state.cells[i].dt);
+        }
         if (!std::isfinite(temperature) || temperature <= -units::kZeroCelsiusInKelvin)
             throw std::domain_error("Invalid absolute temperature in transient energy cell " + std::to_string(i));
         Cel &cell = state.cells[i];
@@ -3176,6 +3214,9 @@ void computeCellTemperature(const ThermalState &state, int cellIndex, int steady
         cell.temp = step.evolves
                         ? integrateTemperatureSource(step, step.initialTemperature, 1.)
                         : step.initialTemperature;
+        if (step.evolves)
+            cell.temp = detail::stabilizeKineticTemperatureResponse(step.initialTemperature, cell.temp,
+                integrateKineticTemperatureResponse(step, 0., 1.), cell.dt);
         if (!std::isfinite(cell.temp) || cell.temp <= -units::kZeroCelsiusInKelvin)
             throw std::domain_error("Invalid absolute temperature in transient energy cell " + std::to_string(cellIndex));
         return;

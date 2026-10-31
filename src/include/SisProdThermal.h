@@ -140,8 +140,10 @@ void prepareNonDimensionalHeatDiffusion(const ThermalState &state,
 /// Incoming open or network characteristics use the configured temperature.
 /// An isolated closed endpoint evolves its stored energy and local sources.
 /// Thermal substeps use updated flow with donor Courant numbers at most 0.8;
-/// affine sources are integrated without rate or temperature clipping. Wall
-/// diffusion advances once per coupling cycle, not once per thermal substep.
+/// affine sources are integrated exactly. Excessive kinetic-driven temperature
+/// changes are safeguarded without truncating compensated changes or unrelated
+/// heat sources. Wall diffusion advances once per coupling cycle, not once per
+/// thermal substep.
 void advanceTransientEnergy(const ThermalState &state, const transient::TransientStepState &transientStep, int cycle,
                             int maximumCycle);
 

@@ -66,6 +66,8 @@ struct TransientTemperatureStep {
     double initialTemperature = 0.;
     double timeCoefficient = 1.;
     double sourceIncrement = 0.;
+    /// Temperature increment from kinetic work before affine source decay.
+    double kineticIncrement = 0.;
     double sourceDecay = 0.;
     double courant = 0.;
     int donor = -1;
@@ -206,9 +208,15 @@ template <typename Axis>
 [[nodiscard]] double integrateTemperatureSource(const TransientTemperatureStep &step,
                                                double temperature, double fraction);
 
+/// Integrates the kinetic-only response with the same frozen source decay.
+double integrateKineticTemperatureResponse(const TransientTemperatureStep &step,
+                                           double response, double fraction);
+
+
 /// Integrates frozen energy operators with simultaneous upwind updates and
 /// donor Courant numbers at most 0.8. Source relaxation is integrated exactly
-/// between the advection updates. No temperature or rate clipping is applied.
+/// between the advection updates. A transported kinetic-only response safeguards
+/// excessive changes while preserving compensating work and unrelated heat.
 /// Distinct read/write buffers synchronize the source and donor passes. The
 /// final donor pass is synchronized by the end of the parallel region.
 void integrateTransientTemperatureField(const ThermalState &state,

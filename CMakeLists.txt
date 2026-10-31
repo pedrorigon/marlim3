@@ -289,6 +289,12 @@ option(MARLIM_BUILD_TESTS "Build the C++ unit tests" OFF)
 if(MARLIM_BUILD_TESTS)
     enable_testing()
 
+    add_executable(test_transient_kinetic_response
+        ${CMAKE_SOURCE_DIR}/tests/cpp/test_transient_kinetic_response.cpp
+    )
+    target_include_directories(test_transient_kinetic_response PRIVATE ${INCDIR})
+    add_test(NAME transient_kinetic_response COMMAND test_transient_kinetic_response)
+
     add_executable(test_inlet_boundary_initialization
         ${CMAKE_SOURCE_DIR}/tests/cpp/test_inlet_boundary_initialization.cpp
     )
