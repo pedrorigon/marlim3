@@ -17,9 +17,9 @@ using namespace std;
 
 arranjo::arranjo(double vdia, double vuls, double vugs,
                  double vrl, double vrg,   double vmil,
-				 double vmig,double vhol,double vang, double vdina, int vmap,varGlob1D* Vvg1dSP){
+				 double vmig,double vhol,double vang, double vdina, int vmap,SimulationContext* context){
 
-	vg1dSP=Vvg1dSP;
+	simulationContext=context;
 	dia=vdia;
 	uls=vuls;
 	ugs=vugs;
@@ -33,7 +33,7 @@ arranjo::arranjo(double vdia, double vuls, double vugs,
 	dina=vdina;
 
 	double localtinyTemp;
-	if(vg1dSP!=0)localtinyTemp=(*vg1dSP).localtiny;
+	if(simulationContext!=0)localtinyTemp=(*simulationContext).smallValueTolerance;
 	else localtinyTemp=1e-9;
 
 	if(hol>localtinyTemp) reyL=dia*rl*uls/mil;
@@ -75,7 +75,7 @@ arranjo::arranjo(const arranjo& varr){
 	dpl=varr.dpl;
 	hidro=varr.hidro;
 	map=varr.map;
-	vg1dSP=varr.vg1dSP;
+	simulationContext=varr.simulationContext;
 }
 
 arranjo& arranjo::operator =(const arranjo& varr){
@@ -100,7 +100,7 @@ arranjo& arranjo::operator =(const arranjo& varr){
 	dpl=varr.dpl;
 	hidro=varr.hidro;
 	map=varr.map;
-	vg1dSP=varr.vg1dSP;
+	simulationContext=varr.simulationContext;
 
 	return *this;
 
@@ -238,7 +238,7 @@ double arranjo::zbrent(double x1,double x2,
 double arranjo::funcarranjo(double alfl){
 
 	double alfl3=alfl*alfl*alfl;
-	double den1=pow(1-alfl,1.5)*alfl;
+	double den1=pow(1-alfl,2.5)*alfl;
 	return den1*alfl3*hidro-(1+75.*alfl)*alfl3*dpg+den1*dpl;
 }
 
