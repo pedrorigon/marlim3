@@ -20702,6 +20702,13 @@ void SProd::RenovaMassPerm(int i) {
                 // calculo do novo RGO do separador modeificado pela fonte de liquido
                 if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1)
                     celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+                else if (mudaRGO == 1 && i == 1 && celula[0].MC == 0. && celula[0].Mliqini == 0. &&
+                         celula[0].MComp == 0. && celula[0].acsr.injl.QLiq > 0. &&
+                         qostd1 == 0. && qostd2 > 0. && std::isfinite(qostd2) &&
+                         celula[0].acsr.injl.FluidoPro.RGO >= 0. &&
+                         std::isfinite(celula[0].acsr.injl.FluidoPro.RGO))
+                    // the only stream is a liquid source below the oil cutoff: the cell keeps its GOR
+                    celula[i].flui.RGO = celula[0].acsr.injl.FluidoPro.RGO;
                 else if (mudaRGO == 1)
                     celula[i].flui.RGO = (*vg1dSP).RGOMax;
             }
