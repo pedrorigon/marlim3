@@ -12,6 +12,19 @@
 #include <chrono>
 #include <math.h>
 
+namespace {
+
+/// Pressure at or below which a production steady march stops as a pressure too low.
+constexpr double kMarchMinimumPressure = 0.1;
+
+/// True when a cell pressure stops a production steady march: at or below
+/// kMarchMinimumPressure, or NaN, which fails every comparison.
+constexpr bool marchPressureTooLow(double pressure) {
+    return !(pressure > kMarchMinimumPressure);
+}
+
+} // namespace
+
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
              tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
              int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
@@ -14815,7 +14828,7 @@ double SProd::marchaProdPerm1(double pchute) {
             celula[0].betI = celula[0].bet;
             celula[1].betLI = celula[0].bet;
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny))
                 return -1e10;
             else if ((celula[0].acsr.tipo == 3 &&
@@ -14842,7 +14855,7 @@ double SProd::marchaProdPerm1(double pchute) {
                 // teste para ver se ocorreu algum problema:
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
                     return 1e10;
-                if (celula[i].presaux <= 0.1 ||
+                if (marchPressureTooLow(celula[i].presaux) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -14873,7 +14886,7 @@ double SProd::marchaProdPerm1(double pchute) {
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
                     return 1e10;
                 }
-                if (celula[i].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -14946,7 +14959,7 @@ double SProd::marchaProdPerm1(double pchute) {
 
                 // teste para verificar se a pressao do centro de celula ficou acima
                 // da pressao estatica de uma eventual IPR
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 } else if ((celula[i - 1].acsr.tipo == 3 &&
@@ -15264,7 +15277,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
             celula[0].betI = celula[0].bet;
             celula[1].betLI = celula[0].bet;
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny))
                 return -1e10;
 
@@ -15279,7 +15292,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
                 // teste para ver se ocorreu algum problema:
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
                     return 1e10;
-                if (celula[i].presaux <= 0.1 ||
+                if (marchPressureTooLow(celula[i].presaux) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -15306,7 +15319,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
                     return 1e10;
                 }
-                if (celula[i].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -15341,7 +15354,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
 
                 i++;
 
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -15667,7 +15680,7 @@ double SProd::marchaProdPerm2(double pchute) {
             celula[1].betLI = celula[0].bet;
 
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].presaux) > (*vg1dSP).localtiny))
                 return -1e10;
             else if ((celula[0].acsr.tipo == 3 && (celula[0].acsr.ipr.Pres - celula[0].pres) < 1e-15)) {
@@ -15787,7 +15800,7 @@ double SProd::marchaProdPerm2(double pchute) {
                 i++;
                 // teste para verificar se a pressao do centro de celula ficou acima
                 // da pressao estatica de uma eventual IPR ou ficou baixa demais
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny))
                     return -1e10;
                 else if (celula[i - 1].acsr.tipo == 3 && ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < 1e-15 && i == 1))
@@ -17885,7 +17898,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
             celula[1].betLI = celula[0].bet;
 
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny))
                 return -1e10;
             else if ((celula[0].acsr.tipo == 3 &&
@@ -17915,7 +17928,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
                 // teste para ver se ocorreu algum problema:
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
                     return 1e10;
-                if (celula[i].presaux <= 0.1 ||
+                if (marchPressureTooLow(celula[i].presaux) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -17942,7 +17955,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
                     return 1e10;
                 }
-                if (celula[i].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -17994,7 +18007,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
 
                 // teste para verificar se a pressao do centro de celula ficou acima
                 // da pressao estatica de uma eventual IPR
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 } else if ((celula[i - 1].acsr.tipo == 3 &&
