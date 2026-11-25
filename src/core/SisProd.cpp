@@ -2009,13 +2009,18 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     RSTemp[i][0] = RSLivia[i][0];
                     for (int j = 1; j <= bubbleCount; j++) {
                         if (i > 0 || j > 0)
-                            RSTemp[i][j] = RSLivia[i][j] * 6.29 / 35.31467;
+                            RSTemp[i][j] = RSLivia[i][j];
                     }
                 }
                 ostringstream saidaRS;
                 saidaRS << pathPrefixoArqSaida << "perfilRSLivia";
                 tmp = saidaRS.str();
                 ofstream escreveRS(tmp.c_str(), ios_base::out);
+                escreveRS << "# "
+                          << output_i18n::tr(arq.idiomaSaida,
+                                             "Razao de solubilidade reduzida Rs/Rsb (-); primeira coluna: pressao (kgf/cm2); primeira linha: temperatura (C)",
+                                             "Reduced solution gas-oil ratio Rs/Rsb (-); first column: pressure (kgf/cm2); first row: temperature (C)")
+                          << "\n";
                 escreveRS << RSTemp;
                 escreveRS.close();
 
@@ -2125,6 +2130,11 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             saidaRS << pathPrefixoArqSaida << "perfilRSLivia";
             tmp = saidaRS.str();
             ofstream escreveRS(tmp.c_str(), ios_base::out);
+            escreveRS << "# "
+                      << output_i18n::tr(arq.idiomaSaida,
+                                         "Razao de solubilidade Rs (m3/m3); primeira coluna: pressao (kgf/cm2); primeira linha: temperatura (C)",
+                                         "Solution gas-oil ratio Rs (m3/m3); first column: pressure (kgf/cm2); first row: temperature (C)")
+                      << "\n";
             escreveRS << RSTemp;
             escreveRS.close();
 
