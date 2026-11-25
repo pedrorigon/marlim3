@@ -15374,8 +15374,8 @@ double SProd::marchaProdPerm2(double pchute) {
         celula[0].temp = celula[0].acsr.injg.temp;
         if (arq.flashCompleto == 2) {
             if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
-            celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
+                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
+            celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
         }
         if (celula[0].acsr.injg.seco == 1) {
             alfini = 1.;
