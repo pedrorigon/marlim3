@@ -26577,6 +26577,7 @@ double SProd::zriddr(double x1, double x2, int prod, int tipoCC) {
             if (s == 0.0) {
                 fmin = multMarcha(xmin, prod, tipoCC);
                 if(j>minit)return xmin;
+                continue;
             }
             double xnew = xm + (xm - xl) * ((fl >= fh ? 1.0 : -1.0) * fm / s);
             if (fabs(xnew - ans) <= xacc) {
