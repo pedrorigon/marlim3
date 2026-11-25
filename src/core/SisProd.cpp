@@ -25383,6 +25383,10 @@ double SProd::marchaInjPerm1(double chute) {
         }
         if (i == ncel + 1)
             corrigechute = 0;
+        else if (!(celula[i - 1].pres >= 1.))
+            return -1e10; // stopped on the pressure, as the march's own pressure test
+        else
+            return 1e10; // stopped on the mass flow, as the march's own flow test
     }
     renovaFonte(ncel);
     masfim += (celula[ncel].fontemassCR + celula[ncel].fontemassLR + celula[ncel].fontemassGR);
@@ -26120,6 +26124,25 @@ double SProd::buscaInjPfundoPerm4() {
         }
         if (i == ncel + 1)
             corrigechute = 0;
+        else if (!(celula[i - 1].pres >= 1.)) { // stopped on the pressure
+            if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
+                NumError("pressao menor que 1");
+            else {
+                if ((*vg1dSP).iterRede > 0)
+                    return -1.1e10;
+                else
+                    return 1.1e10;
+            }
+        } else { // stopped on the mass flow
+            if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
+                NumError("Vazao massica de injeÃ§Ã£o menor que 0");
+            else {
+                if ((*vg1dSP).iterRede > 0)
+                    return -1.1e10;
+                else
+                    return 1.1e10;
+            }
+        }
     }
     renovaFonte(ncel);
     masfim += (celula[ncel].fontemassCR + celula[ncel].fontemassLR + celula[ncel].fontemassGR);
