@@ -75,6 +75,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     PBPVTSim = 0;
     TBPVTSim = 0;
     RSLivia = 0;
+    RSLiviaRowCount = 0;
     lerRS = 0;
     noextremo = 1;
     noinicial = 1;
@@ -314,6 +315,7 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
     PBPVTSim = 0;
     TBPVTSim = 0;
     RSLivia = 0;
+    RSLiviaRowCount = 0;
     lerRS = 0;
 
     noextremo = 1;
@@ -522,7 +524,7 @@ SProd &SProd::operator=(const SProd &sp) {
         delete[] PBPVTSim;
         delete[] TBPVTSim;
         if (lerRS > 0) {
-            for (int i = 0; i < ndiv + 2; i++)
+            for (int i = 0; i < RSLiviaRowCount; i++)
                 delete[] RSLivia[i];
             delete[] RSLivia;
         }
@@ -825,7 +827,7 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
         delete[] PBPVTSim;
         delete[] TBPVTSim;
         if (lerRS > 0) {
-            for (int i = 0; i < ndiv + 2; i++)
+            for (int i = 0; i < RSLiviaRowCount; i++)
                 delete[] RSLivia[i];
             delete[] RSLivia;
         }
@@ -1265,6 +1267,49 @@ void SProd::HidroDescargaP() {
     }
 }
 
+namespace {
+
+// Separators of the values in a PVTSim table row: blank, comma, parentheses, equals sign and line continuation.
+constexpr const char *kPvtSimRowSeparators = " ,()=\\";
+// Fewest values a PVTSim row may have: an axis or a curve is interpolated between two points at least.
+constexpr size_t kMinimumPvtSimRowValues = 2;
+
+// Reads the named row of a PVTSim table file: skips the words up to `name`, then converts every number on the
+// rest of that line. A missing row, or one with fewer than two values, ends the run with a file error.
+template <typename Convert>
+vector<double> readPvtSimRow(ifstream &file, string &word, const char *name, const string &fileName,
+                             Convert convert) {
+    while (word != name && file >> word) {
+    }
+    if (word != name)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       string("PVTSim file without the row ") + name, "pvtsimArq", fileName);
+    string line;
+    getline(file, line);
+    vector<double> values;
+    for (char *token = strtok(line.data(), kPvtSimRowSeparators); token != nullptr;
+         token = strtok(nullptr, kPvtSimRowSeparators)) {
+        char *end = nullptr;
+        double value = strtod(token, &end);
+        if (end != token)
+            values.push_back(convert(value));
+    }
+    if (values.size() < kMinimumPvtSimRowValues)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       string("PVTSim row with fewer than two values: ") + name, "pvtsimArq", fileName);
+    return values;
+}
+
+// Tests strict axis growth; unordered comparisons, including NaN, fail.
+bool strictlyIncreasing(const vector<double> &axis) {
+    for (size_t k = 1; k < axis.size(); k++)
+        if (!(axis[k] > axis[k - 1]))
+            return false;
+    return true;
+}
+
+}  // namespace
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
@@ -1701,8 +1746,6 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 tenta = new char[400];
                 double testatok;
                 int ndiv = arq.tabent.npont - 1;
-                Vcr<double> presPVTSim(ndiv + 1, 0.);
-                Vcr<double> tempPVTSim(ndiv + 1, 0.);
 
                 FullMtx<double> HLatTemp(ndiv + 2, ndiv + 2);
                 char line[4000];
@@ -1716,24 +1759,14 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 if (strcmp(tenta, "THREE") == 0)
                     lacoleitura = 18;
 
-                while (chave != "PRESSURE")
-                    lendoPVTSim >> chave;
-                lendoPVTSim.get(line, 4000);
-                tenta = strtok(line, " ,()=");
-                presPVTSim[0] = atof(tenta) * 1.01971621e-5;
-                for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                    tenta = strtok(NULL, " ,");
-                    presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
-                }
-                while (chave != "TEMPERATURE")
-                    lendoPVTSim >> chave;
-                lendoPVTSim.get(line, 4000);
-                tenta = strtok(line, " ,()=");
-                tempPVTSim[0] = atof(tenta);
-                for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                    tenta = strtok(NULL, " ,");
-                    tempPVTSim[kontaPVT] = atof(tenta);
-                }
+                vector<double> presPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
+                                                          [](double value) { return value * 1.01971621e-5; });
+                vector<double> tempPVTSim =
+                    readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", dadosMR, [](double value) { return value; });
+                if (static_cast<int>(presPVTSim.size()) <= ndiv || static_cast<int>(tempPVTSim.size()) <= ndiv)
+                    logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                                   "PVTSim file with fewer table points than the input table",
+                                                   "pvtsimArq", dadosMR);
 
                 for (int i = 1; i <= ndiv + 1; i++) {
                     HLatTemp[i][0] = presPVTSim[i - 1];
@@ -1782,116 +1815,96 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
         if (celula[0].flui.corrSat == -4) {
             LerPB = 1;
-            int ndiv = arq.tabent.npont - 1;
-            PBPVTSim = new double[ndiv + 1];
-            TBPVTSim = new double[ndiv + 1];
-            double *PresPVTSim;
-            PresPVTSim = new double[ndiv + 1];
 
             string impfile;
             impfile = arq.pvtsimarq;
             string dadosMR = impfile;
             ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
             string chave;
-            char *tenta;
-            tenta = new char[400];
-            double testatok;
             char line[4000];
             lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
             lendoPVTSim >> chave;
-            while (chave != "PRESSURE") {
-                lendoPVTSim >> chave;
-            }
-            int lacoleitura = ndiv;
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            PresPVTSim[0] = atof(tenta) / 98068.059233;
-            double valor;
-            for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                testatok = atof(tenta);
-                PresPVTSim[kontaPVT] = testatok / 98068.059233;
-            }
-            while (chave != "BUBBLEPRESSURES") {
-                lendoPVTSim >> chave;
-            }
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            PBPVTSim[0] = atof(tenta) * 0.00014503773800722;
-            for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                testatok = atof(tenta);
-                PBPVTSim[kontaPVT] = testatok * 0.00014503773800722;
-            }
-            while (chave != "BUBBLETEMPERATURES") {
-                lendoPVTSim >> chave;
-            }
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            TBPVTSim[0] = atof(tenta);
-            for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                testatok = atof(tenta);
-                TBPVTSim[kontaPVT] = testatok;
+            // The file's own grid: its rows set the table sizes, apart from the input table's resolution.
+            vector<double> PresPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
+                                                      [](double value) { return value / 98068.059233; });
+            vector<double> bubblePressures = readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", dadosMR,
+                                                           [](double value) { return value * 0.00014503773800722; });
+            vector<double> bubbleTemperatures = readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", dadosMR,
+                                                              [](double value) { return value; });
+            if (bubblePressures.size() != bubbleTemperatures.size())
+                logger.log_write_logs_and_exit(
+                    LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                    "PVTSim bubble-point curve with different numbers of pressures and temperatures", "pvtsimArq",
+                    dadosMR);
+            if (!strictlyIncreasing(PresPVTSim) || !strictlyIncreasing(bubbleTemperatures))
+                logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                               "PVTSim pressure or bubble-temperature axis not strictly increasing",
+                                               "pvtsimArq", dadosMR);
+            const int pressureCount = static_cast<int>(PresPVTSim.size());
+            const int bubbleCount = static_cast<int>(bubbleTemperatures.size());
+            PBPVTSim = new double[bubbleCount];
+            TBPVTSim = new double[bubbleCount];
+            for (int k = 0; k < bubbleCount; k++) {
+                PBPVTSim[k] = bubblePressures[k];
+                TBPVTSim[k] = bubbleTemperatures[k];
             }
             for (int i = 0; i <= ncel; i++) {
                 celula[i].flui.PBPVTSim = PBPVTSim;
                 celula[i].flui.TBPVTSim = TBPVTSim;
                 celula[i].flui.corrSat = 4;
-                celula[i].flui.npontosB = ndiv + 1;
+                celula[i].flui.npontosB = bubbleCount;
                 if (celula[i].acsr.tipo == 2) {
                     celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injl.FluidoPro.corrSat = 4;
-                    celula[i].acsr.injl.FluidoPro.npontosB = ndiv + 1;
+                    celula[i].acsr.injl.FluidoPro.npontosB = bubbleCount;
                 }
                 if (celula[i].acsr.tipo == 3) {
                     celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.corrSat = 4;
-                    celula[i].acsr.ipr.FluidoPro.npontosB = ndiv + 1;
+                    celula[i].acsr.ipr.FluidoPro.npontosB = bubbleCount;
                 }
                 if (celula[i].acsr.tipo == 10) {
                     celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injm.FluidoPro.corrSat = 4;
-                    celula[i].acsr.injm.FluidoPro.npontosB = ndiv + 1;
+                    celula[i].acsr.injm.FluidoPro.npontosB = bubbleCount;
                 }
                 if (celula[i].acsr.tipo == 15) {
                     celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.radialPoro.flup.corrSat = 4;
-                    celula[i].acsr.radialPoro.flup.npontosB = ndiv + 1;
+                    celula[i].acsr.radialPoro.flup.npontosB = bubbleCount;
                     for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                         celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.corrSat = 4;
-                        celula[i].acsr.radialPoro.celula[iRP].flup.npontosB = ndiv + 1;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.npontosB = bubbleCount;
                     }
                 }
                 if (celula[i].acsr.tipo == 16) {
                     celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.corrSat = 4;
-                    celula[i].acsr.poroso2D.dados.flup.npontosB = ndiv + 1;
+                    celula[i].acsr.poroso2D.dados.flup.npontosB = bubbleCount;
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.corrSat = 4;
-                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.npontosB = ndiv + 1;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.npontosB = bubbleCount;
                     }
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.corrSat = 4;
-                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.npontosB = ndiv + 1;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.npontosB = bubbleCount;
                     }
                 }
             }
 
-            FullMtx<double> BolhaTemp(ndiv + 2, 2);
-            for (int i = 0; i <= ndiv; i++) {
+            FullMtx<double> BolhaTemp(bubbleCount + 1, 2);
+            for (int i = 0; i < bubbleCount; i++) {
                 BolhaTemp[i][0] = TBPVTSim[i];
                 BolhaTemp[i][1] = PBPVTSim[i];
             }
@@ -1905,14 +1918,16 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             if (arq.tabRSPB == 1) {
                 arq.tabRSPB = 1;
                 lerRS = 1;
-                RSLivia = new double *[ndiv + 2];
-                for (int i = 0; i < ndiv + 2; i++) {
-                    RSLivia[i] = new double[ndiv + 2];
+                RSLiviaRowCount = pressureCount + 1;
+                RSLivia = new double *[RSLiviaRowCount];
+                for (int i = 0; i < RSLiviaRowCount; i++) {
+                    RSLivia[i] = new double[bubbleCount + 1];
                 }
-                for (int i = 1; i <= ndiv + 1; i++) {
+                for (int j = 1; j <= bubbleCount; j++)
+                    RSLivia[0][j] = TBPVTSim[j - 1];
+                for (int i = 1; i <= pressureCount; i++) {
                     RSLivia[i][0] = PresPVTSim[i - 1];
-                    RSLivia[0][i] = TBPVTSim[i - 1];
-                    for (int j = 1; j <= ndiv + 1; j++) {
+                    for (int j = 1; j <= bubbleCount; j++) {
                         if (TBPVTSim[j - 1] > -10) {
                             double a1, a2, a3;
                             double TFa = 1.8 * TBPVTSim[j - 1] + 32;
@@ -1971,11 +1986,12 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                             RSLivia[i][j] = 0;
                     }
                 }
-                FullMtx<double> RSTemp(ndiv + 2, ndiv + 2);
-                for (int i = 1; i <= ndiv + 1; i++) {
+                FullMtx<double> RSTemp(pressureCount + 1, bubbleCount + 1);
+                for (int j = 1; j <= bubbleCount; j++)
+                    RSTemp[0][j] = RSLivia[0][j];
+                for (int i = 1; i <= pressureCount; i++) {
                     RSTemp[i][0] = RSLivia[i][0];
-                    RSTemp[0][i] = RSLivia[0][i];
-                    for (int j = 1; j <= ndiv + 1; j++) {
+                    for (int j = 1; j <= bubbleCount; j++) {
                         if (i > 0 || j > 0)
                             RSTemp[i][j] = RSLivia[i][j] * 6.29 / 35.31467;
                     }
@@ -1989,42 +2005,59 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
                 for (int i = 0; i <= ncel; i++) {
                     celula[i].flui.TabRSLivia = RSLivia;
+                    celula[i].flui.rsTablePressureCount = pressureCount;
+                    celula[i].flui.rsTableTemperatureCount = bubbleCount;
                     celula[i].flui.tabRSPB = 1;
                     if (celula[i].acsr.tipo == 2) {
                         celula[i].acsr.injl.FluidoPro.TabRSLivia = RSLivia;
+                        celula[i].acsr.injl.FluidoPro.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.injl.FluidoPro.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.injl.FluidoPro.tabRSPB = 1;
                     }
                     if (celula[i].acsr.tipo == 3) {
                         celula[i].acsr.ipr.FluidoPro.TabRSLivia = RSLivia;
+                        celula[i].acsr.ipr.FluidoPro.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.ipr.FluidoPro.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.ipr.FluidoPro.tabRSPB = 1;
                     }
                     if (celula[i].acsr.tipo == 10) {
                         celula[i].acsr.injm.FluidoPro.TabRSLivia = RSLivia;
+                        celula[i].acsr.injm.FluidoPro.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.injm.FluidoPro.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.injm.FluidoPro.tabRSPB = 1;
                     }
                     if (celula[i].acsr.tipo == 15) {
                         celula[i].acsr.radialPoro.flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.radialPoro.flup.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.radialPoro.flup.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.radialPoro.flup.tabRSPB = 1;
                         for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                             celula[i].acsr.radialPoro.celula[iRP].flup.TabRSLivia = RSLivia;
+                            celula[i].acsr.radialPoro.celula[iRP].flup.rsTablePressureCount = pressureCount;
+                            celula[i].acsr.radialPoro.celula[iRP].flup.rsTableTemperatureCount = bubbleCount;
                             celula[i].acsr.radialPoro.celula[iRP].flup.tabRSPB = 1;
                         }
                     }
                     if (celula[i].acsr.tipo == 16) {
                         celula[i].acsr.poroso2D.dados.flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.poroso2D.dados.flup.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.poroso2D.dados.flup.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.poroso2D.dados.flup.tabRSPB = 1;
                         for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                             celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TabRSLivia = RSLivia;
+                            celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTablePressureCount = pressureCount;
+                            celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTableTemperatureCount = bubbleCount;
                             celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.tabRSPB = 1;
                         }
                         for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
                             celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TabRSLivia = RSLivia;
+                            celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTablePressureCount = pressureCount;
+                            celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTableTemperatureCount = bubbleCount;
                             celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.tabRSPB = 1;
                         }
                     }
                 }
             }
-            delete[] PresPVTSim;
 
         } else if (arq.tabRSPB == 1) {
 
@@ -2037,8 +2070,9 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             FullMtx<double> PBTemp(ndiv + 2, 2);
             TBPVTSim = new double[ndiv + 1];
             PBPVTSim = new double[ndiv + 1];
-            RSLivia = new double *[ndiv + 2];
-            for (int i = 0; i < ndiv + 2; i++) {
+            RSLiviaRowCount = ndiv + 2;
+            RSLivia = new double *[RSLiviaRowCount];
+            for (int i = 0; i < RSLiviaRowCount; i++) {
                 RSLivia[i] = new double[ndiv + 2];
             }
             double ttestepb = tteste;
@@ -2082,6 +2116,8 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 celula[i].flui.PBPVTSim = PBPVTSim;
                 celula[i].flui.TBPVTSim = TBPVTSim;
                 celula[i].flui.TabRSLivia = RSLivia;
+                celula[i].flui.rsTablePressureCount = ndiv + 1;
+                celula[i].flui.rsTableTemperatureCount = ndiv + 1;
                 celula[i].flui.tabRSPB = 1;
                 celula[i].flui.npontosB = ndiv + 1;
 
@@ -2089,6 +2125,8 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TabRSLivia = RSLivia;
+                    celula[i].acsr.injl.FluidoPro.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.injl.FluidoPro.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.injl.FluidoPro.tabRSPB = 1;
                     celula[i].acsr.injl.FluidoPro.npontosB = ndiv + 1;
                 }
@@ -2096,6 +2134,8 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TabRSLivia = RSLivia;
+                    celula[i].acsr.ipr.FluidoPro.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.ipr.FluidoPro.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.ipr.FluidoPro.tabRSPB = 1;
                     celula[i].acsr.ipr.FluidoPro.npontosB = ndiv + 1;
                 }
@@ -2103,6 +2143,8 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TabRSLivia = RSLivia;
+                    celula[i].acsr.injm.FluidoPro.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.injm.FluidoPro.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.injm.FluidoPro.tabRSPB = 1;
                     celula[i].acsr.injm.FluidoPro.npontosB = ndiv + 1;
                 }
@@ -2110,12 +2152,16 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.radialPoro.flup.TabRSLivia = RSLivia;
+                    celula[i].acsr.radialPoro.flup.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.radialPoro.flup.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.radialPoro.flup.tabRSPB = 1;
                     celula[i].acsr.radialPoro.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                         celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.rsTablePressureCount = ndiv + 1;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.rsTableTemperatureCount = ndiv + 1;
                         celula[i].acsr.radialPoro.celula[iRP].flup.tabRSPB = 1;
                         celula[i].acsr.radialPoro.celula[iRP].flup.npontosB = ndiv + 1;
                     }
@@ -2124,12 +2170,16 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TabRSLivia = RSLivia;
+                    celula[i].acsr.poroso2D.dados.flup.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.poroso2D.dados.flup.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.poroso2D.dados.flup.tabRSPB = 1;
                     celula[i].acsr.poroso2D.dados.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTablePressureCount = ndiv + 1;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTableTemperatureCount = ndiv + 1;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.tabRSPB = 1;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.npontosB = ndiv + 1;
                     }
@@ -2137,6 +2187,8 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTablePressureCount = ndiv + 1;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTableTemperatureCount = ndiv + 1;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.tabRSPB = 1;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.npontosB = ndiv + 1;
                     }
