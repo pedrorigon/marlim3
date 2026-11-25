@@ -2005,7 +2005,9 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 
     else{
       int e, m, d;
-      if(pres>=Var[indMinEquP][0] && erroP==0){
+      // The search ranges exist only for tables on a flash table's axes; any other table is
+      // bracketed by bisection over the whole axis.
+      if(erroP==0 && !pchange.empty() && pres>=Var[indMinEquP][0]){
           int busca=0;
           while(pres>pchange[busca])busca++;
           double pmax=Var[ipchange[busca]][0];
@@ -2014,7 +2016,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       }
       else{
         e = 1;
-        if(erroP==1)d = ndiv+1;
+        if(erroP==1 || pchange.empty())d = ndiv+1;
         else d = indMinEquP;
         ipres=d;
         while (e <= d) {
@@ -2035,7 +2037,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 	      else d = m - 1;
 	    }
       }
-      if(temp>=Var[0][indMinEquT] && erroT==0){
+      if(erroT==0 && !tchange.empty() && temp>=Var[0][indMinEquT]){
           int busca=0;
           while(temp>tchange[busca])busca++;
           double tmax=tempAxis[itchange[busca]];
@@ -2044,7 +2046,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       }
       else{
         e = 1;
-        if(erroT==1)d = ndiv+1;
+        if(erroT==1 || tchange.empty())d = ndiv+1;
         else d = indMinEquT;
         itemp=d;
         while (e <= d) {
@@ -2349,8 +2351,19 @@ double ProFlu::interpolaLas3( double var)const{
 
 
 
+// Ends the run on a bubble curve interpolaPB cannot use; kept out of line, off its hot path.
+[[noreturn]] [[gnu::cold]] [[gnu::noinline]] static void failBubbleCurveSize(int pointCount){
+    logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Curva de bolha do PVTSim com menos de dois pontos", "N/A",
+        string("npontosB = ") + to_string(pointCount));
+    logger.writeOutputLog();
+    exit(EXIT_SUCCESS);
+}
+
 double ProFlu::interpolaPB( double temp)const{
 
+    // The curve interpolates between two points at least; a fluid given its pointers without its size would
+    // read outside it.
+    if(npontosB<2)failBubbleCurveSize(npontosB);
     int itemp=0;
     double var;
     int ndiv=npontosB-1;

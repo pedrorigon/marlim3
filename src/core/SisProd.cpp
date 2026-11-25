@@ -1839,44 +1839,53 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 celula[i].flui.PBPVTSim = PBPVTSim;
                 celula[i].flui.TBPVTSim = TBPVTSim;
                 celula[i].flui.corrSat = 4;
+                celula[i].flui.npontosB = ndiv + 1;
                 if (celula[i].acsr.tipo == 2) {
                     celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injl.FluidoPro.corrSat = 4;
+                    celula[i].acsr.injl.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 3) {
                     celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.corrSat = 4;
+                    celula[i].acsr.ipr.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 10) {
                     celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injm.FluidoPro.corrSat = 4;
+                    celula[i].acsr.injm.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 15) {
                     celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.radialPoro.flup.corrSat = 4;
+                    celula[i].acsr.radialPoro.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                         celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.corrSat = 4;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.npontosB = ndiv + 1;
                     }
                 }
                 if (celula[i].acsr.tipo == 16) {
                     celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.corrSat = 4;
+                    celula[i].acsr.poroso2D.dados.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.corrSat = 4;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.npontosB = ndiv + 1;
                     }
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.corrSat = 4;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.npontosB = ndiv + 1;
                     }
                 }
             }
@@ -2074,35 +2083,41 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 celula[i].flui.TBPVTSim = TBPVTSim;
                 celula[i].flui.TabRSLivia = RSLivia;
                 celula[i].flui.tabRSPB = 1;
+                celula[i].flui.npontosB = ndiv + 1;
 
                 if (celula[i].acsr.tipo == 2) {
                     celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TabRSLivia = RSLivia;
                     celula[i].acsr.injl.FluidoPro.tabRSPB = 1;
+                    celula[i].acsr.injl.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 3) {
                     celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TabRSLivia = RSLivia;
                     celula[i].acsr.ipr.FluidoPro.tabRSPB = 1;
+                    celula[i].acsr.ipr.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 10) {
                     celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TabRSLivia = RSLivia;
                     celula[i].acsr.injm.FluidoPro.tabRSPB = 1;
+                    celula[i].acsr.injm.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 15) {
                     celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.radialPoro.flup.TabRSLivia = RSLivia;
                     celula[i].acsr.radialPoro.flup.tabRSPB = 1;
+                    celula[i].acsr.radialPoro.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                         celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TabRSLivia = RSLivia;
                         celula[i].acsr.radialPoro.celula[iRP].flup.tabRSPB = 1;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.npontosB = ndiv + 1;
                     }
                 }
                 if (celula[i].acsr.tipo == 16) {
@@ -2110,17 +2125,20 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TabRSLivia = RSLivia;
                     celula[i].acsr.poroso2D.dados.flup.tabRSPB = 1;
+                    celula[i].acsr.poroso2D.dados.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TabRSLivia = RSLivia;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.tabRSPB = 1;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.npontosB = ndiv + 1;
                     }
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TabRSLivia = RSLivia;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.tabRSPB = 1;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.npontosB = ndiv + 1;
                     }
                 }
             }
