@@ -10054,7 +10054,7 @@ void SProd::renovaFracMol2(ProFlu fluiRev) {
                     fonteA *= (1 / (celula[i].acsr.injm.FluidoPro.BSW * 1000 * celula[i].acsr.injm.FluidoPro.Denag));
                 }
                 BSWF = celula[i].acsr.injm.FluidoPro.BSW;
-                denagF = celula[i].acsr.injl.FluidoPro.Denag;
+                denagF = celula[i].acsr.injm.FluidoPro.Denag;
                 viscLF = 0 * 30 + 1 * celula[i].acsr.injm.FluidoPro.VisOM(tL);
                 viscHF = 0 * 20 + 1 * celula[i].acsr.injm.FluidoPro.VisOM(tH);
             }
