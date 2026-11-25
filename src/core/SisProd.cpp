@@ -16446,6 +16446,22 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                 }
                 if (val > 0. && limpres == 1) {
                     int iterpres = 0;
+                    while (val > 0 && iterpres < 10) {
+                        pchute2 *= 1.001;
+                        val = marchaProdPerm1(pchute2);
+                        if (fabs(val) > 1.01e10) {
+                            if (kontaTenta < 0)
+                                logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                           "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
+                                           "", "");
+                            cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
+                            if ((*vg1dSP).iterRede > 0)
+                                return -1.1e10;
+                            else
+                                return 1.1e10;
+                        }
+                        iterpres++;
+                    }
                     if (iterpres >= 10)
                         if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                             NumError(
