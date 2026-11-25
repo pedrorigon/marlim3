@@ -25192,7 +25192,7 @@ double SProd::marchaInjPerm1(double chute) {
                 } else {
                     double masgas = celula[0].acsr.injg.VMas(pGSup, celula[0].acsr.injg.temp);
                     double tit;
-                    if (arq.flashCompleto < 2)
+                    if (arq.flashCompleto != 2)
                         tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
                     else
                         tit = celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
