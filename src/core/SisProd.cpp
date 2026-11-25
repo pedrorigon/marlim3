@@ -1959,13 +1959,13 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                             a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
 
                             double Rsr = a1 * pow(pr, a2) + (1. - a1) * pow(pr, a3);
-                            double rstemp = 0.;
+                            double rstemp = Rsr;
                             if (rstemp < 0.)
                                 rstemp = 0.;
                             else if ((RSLivia[i][0] * 0.9678411) * 14.69595 > pbtemp)
                                 rstemp = 1.;
-                            else
-                                rstemp = Rsr;
+                            else if (rstemp > 1.)
+                                rstemp = 1.;
                             RSLivia[i][j] = rstemp;
                         } else
                             RSLivia[i][j] = 0;
