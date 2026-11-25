@@ -15546,7 +15546,7 @@ double SProd::marchaProdPerm2(double pchute) {
     // chute de pressao ou de vazao no inicio da tubulacao. O que a convergencia busca de fato e
     // determinar qual a pressao ou vazao de fundo que satisfaz as condicoes de contorno no fim
     // da tubulacao, esta busca e feita nos metodos de busca.
-    while ((fabs(masfim - masfim0) / masfim > arq.CriterioConvergPerm ||
+    while ((fabs(masfim - masfim0) / fabs(masfim) > arq.CriterioConvergPerm ||
             fabs(presteste - presteste0) / fabs(presteste) > arq.CriterioConvergPerm) &&
            (iterperm < limIter)) {
         masfim0 = masfim;
