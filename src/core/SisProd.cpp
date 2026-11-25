@@ -23,6 +23,9 @@ constexpr bool marchPressureTooLow(double pressure) {
     return !(pressure > kMarchMinimumPressure);
 }
 
+/// Upper bound on the Colebrook fixed-point iterations of the drift-flux friction factor.
+constexpr int kMaxColebrookIterations = 100;
+
 } // namespace
 
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
@@ -5168,7 +5171,7 @@ void SProd::BhagwatGhajar(double rhol, double rhog, double tensup, double alf, d
         fat = 1 / (den * den); // Colebrook.
         dif = abs(fat - valHalland);
         valHalland = fat;
-        if (dif >= 1e-3)
+        if (dif >= 1e-3 && III < kMaxColebrookIterations)
             goto repeat7;
     } else {                  // regime laminar
         fat = 64. / (reymix); // 16.
@@ -5252,7 +5255,7 @@ void SProd::BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf
         fat = 1 / (den * den); // Colebrook.
         dif = abs(fat - valHalland);
         valHalland = fat;
-        if (dif >= 1e-3)
+        if (dif >= 1e-3 && III < kMaxColebrookIterations)
             goto repeat7;
     } else {                   // regime laminar
         fat = 64. / (reymixL); // 16.
