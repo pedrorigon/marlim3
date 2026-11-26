@@ -2422,15 +2422,21 @@ double ProFlu::interpolaPB( double temp)const{
 
 double ProFlu::interpolaRS( double pres, double temp)const{
 
+  // Temperatures in row 0 and pressures in column 0, both from index 1.
+  const int temperaturePoints=rsTemperaturePoints();
   double tmin=TabRSLivia[0][1];
   double delt=TabRSLivia[0][2]-TabRSLivia[0][1];
-  int itemp=floor((temp-tmin)/delt)+2;
+  int itemp=floor((temp-tmin)/delt)+1;
+  if(itemp<1)itemp=1;
+  else if(itemp>temperaturePoints-1)itemp=temperaturePoints-1;
 
   const int pressurePoints=rsPressurePoints();
   double pmax=TabRSLivia[pressurePoints][0];
   double delp=TabRSLivia[pressurePoints][0]-TabRSLivia[pressurePoints-1][0];
   int ipres=floor((pmax-pres)/delp)+1;
   ipres=pressurePoints-ipres;
+  if(ipres<1)ipres=1;
+  else if(ipres>pressurePoints-1)ipres=pressurePoints-1;
 
   double razpres=(pres-TabRSLivia[ipres][0])/(TabRSLivia[ipres+1][0]-TabRSLivia[ipres][0]);
   double raztemp=(temp-TabRSLivia[0][itemp])/(TabRSLivia[0][itemp+1]-TabRSLivia[0][itemp]);
