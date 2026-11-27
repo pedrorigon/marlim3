@@ -1,12 +1,16 @@
 #include "Matriz.h"
 
-// funcao de erro:
+#include <cmath>
+
+// A matrix error has no valid result: log it and end the run as a failure.
 template <class T>
-void error(const T &t) { // aviso de erro em matriz
-    // gravar arquivo de log
-    logger.writeOutputLog();
-    // abandonar a aplicacao
-    exit(EXIT_SUCCESS);
+void error(const T &t) {
+#pragma omp critical(marlim_matrix_error) // reachable from parallel regions
+    {
+        logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Falha na solução de sistema linear", "N/A", string(t));
+        logger.writeOutputLog();
+        exit(EXIT_FAILURE);
+    }
 }
 
 template <class T>
@@ -1943,6 +1947,8 @@ int SparseMtx<T>::GMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn, 
     bool conv = false;
     if (m > this->nrows)
         error("n�mero de itera��es para restart � maior do que o n�mero de linhas");
+    if (!std::isfinite(beta) || !std::isfinite(stp))
+        error("GMRES: resíduo inicial não finito");
     if (fabs(beta) <= stp) { // finaliza o calculo se o chute inicial for a solu��o
         eps = fabs(beta);
         iter = 0;
@@ -1986,9 +1992,9 @@ int SparseMtx<T>::GMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn, 
                 }
                 h[k][k + 1] = w.twonorm();
             }
-            if (h[k][k + 1] == 0)
-                error("divis�o por zero no GMRES");
-            *v[k + 1] = w / h[k][k + 1];
+            // h[k][k+1] == 0 is an exact breakdown: the rotation below ends the cycle with the solution.
+            if (h[k][k + 1] != 0)
+                *v[k + 1] = w / h[k][k + 1];
 
             // aplicando a rota��o de Givens para a coluna k de h
             for (int i = 0; i < k; i++) {
@@ -2000,6 +2006,8 @@ int SparseMtx<T>::GMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn, 
 
             // gerando os termos para a rora��o de Givens, cs e sn
             if (h[k][k + 1] == 0) {
+                if (h[k][k] == 0) // zero pivot at the breakdown: no solution in the Krylov space
+                    error("GMRES: sistema singular");
                 cs[k] = 1;
                 sn[k] = 0;
             } else {
@@ -2035,6 +2043,8 @@ int SparseMtx<T>::GMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn, 
         // calcula o res�duo e checa a converg�ncia
         r = preconding(b - (*this) * x, pcn);
         beta = r.twonorm();
+        if (!std::isfinite(beta))
+            error("GMRES: resíduo não finito após atualizar a solução");
         if (fabs(beta) <= stp) {
             conv = true;
             break;
@@ -2074,6 +2084,8 @@ int SparseMtx<T>::FGMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn,
     bool conv = false;
     if (m > this->nrows)
         error("n�mero de itera��es para restart � maior do que o n�mero de linhas");
+    if (!std::isfinite(beta) || !std::isfinite(stp))
+        error("FGMRES: resíduo inicial não finito");
     if (fabs(beta) <= stp) { // finaliza o calculo se o chute inicial for a solu��o
         eps = fabs(beta);
         iter = 0;
@@ -2132,9 +2144,9 @@ int SparseMtx<T>::FGMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn,
                 }
                 h[k][k + 1] = w.twonorm();
             }
-            if (h[k][k + 1] == 0)
-                error("divis�o por zero no GMRES");
-            *v[k + 1] = w / h[k][k + 1];
+            // h[k][k+1] == 0 is an exact breakdown: the rotation below ends the cycle with the solution.
+            if (h[k][k + 1] != 0)
+                *v[k + 1] = w / h[k][k + 1];
 
             // aplicando a rota��o de Givens para a coluna k de h
             for (int i = 0; i < k; i++) {
@@ -2146,6 +2158,8 @@ int SparseMtx<T>::FGMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn,
 
             // gerando os termos para a rora��o de Givens, cs e sn
             if (h[k][k + 1] == 0) {
+                if (h[k][k] == 0) // zero pivot at the breakdown: no solution in the Krylov space
+                    error("FGMRES: sistema singular");
                 cs[k] = 1;
                 sn[k] = 0;
             } else {
@@ -2181,6 +2195,8 @@ int SparseMtx<T>::FGMRES(Vcr<T> &x, const Vcr<T> &b, T &eps, int &iter, int pcn,
         // calcula o res�duo e checa a converg�ncia
         r = b - (*this) * x;
         beta = r.twonorm();
+        if (!std::isfinite(beta))
+            error("FGMRES: resíduo não finito após atualizar a solução");
         // Dentro do loop, após calcular beta = r.twonorm()
         razReducao = fabs(beta / beta0);
         beta0 = beta;
