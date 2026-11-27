@@ -85,7 +85,7 @@ multiBomCentSub::multiBomCentSub(const multiBomCentSub& bombaantiga){
 
     	dpB=bombaantiga.dpB;
     	potB=bombaantiga.potB;
-    	potBT=bombaantiga.dpB;
+    	potBT=bombaantiga.potBT;
     	potTermo=bombaantiga.potTermo;
        }
        else{
@@ -137,7 +137,7 @@ multiBomCentSub& multiBomCentSub::operator =(const multiBomCentSub& bombaantiga)
 
 			    	dpB=bombaantiga.dpB;
 			    	potB=bombaantiga.potB;
-			    	potBT=bombaantiga.dpB;
+			    	potBT=bombaantiga.potBT;
 			    	potTermo=bombaantiga.potTermo;
 			  }
 			  else{
@@ -173,6 +173,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     double vismis;
     dpB=0.;
     double vpotB=0.;
+    potB=0.;
     potBT=0.;
     double coefdxT;
     double vazLIni=vazL;

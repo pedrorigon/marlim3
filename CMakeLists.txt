@@ -342,6 +342,47 @@ if(MARLIM_BUILD_TESTS)
 
     add_test(NAME friction_factor COMMAND test_friction_factor)
 
+    # Multi-stage ESP regressions on the public MultiESP demo. The engine's C++ sources, without the entry point,
+    # go into a static library, so the linker takes only what the test uses. The Fortran sources are compiled here
+    # with a module directory of their own, so a parallel build never renames the module files of another target.
+    set(MARLIM_ESP_TEST_SOURCES ${CXX_SOURCES})
+    list(REMOVE_ITEM MARLIM_ESP_TEST_SOURCES ${SRCDIR}/Num4Main.cpp)
+    add_library(marlim_engine_test_library STATIC ${MARLIM_ESP_TEST_SOURCES})
+    target_include_directories(marlim_engine_test_library PUBLIC
+        ${INCDIR}
+        ${LIBDIR}
+    )
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(marlim_engine_test_library PUBLIC OpenMP::OpenMP_CXX)
+    endif()
+    add_executable(test_multi_esp_power
+        ${CMAKE_SOURCE_DIR}/tools/tests/cpp/test_multi_esp_power.cpp
+        ${F90_SOURCES}
+    )
+    target_compile_options(test_multi_esp_power PRIVATE
+        $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>)
+    target_link_libraries(test_multi_esp_power PRIVATE marlim_engine_test_library)
+    if(UNIX AND NOT APPLE AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+        target_link_libraries(test_multi_esp_power PRIVATE ${MARLIM_GNU_FORTRAN_RUNTIME_LIBS})
+    endif()
+    if(MARLIM_FORTRAN_LIBS)
+        target_link_libraries(test_multi_esp_power PRIVATE ${MARLIM_FORTRAN_LIBS})
+    endif()
+    if(CMAKE_DL_LIBS)
+        target_link_libraries(test_multi_esp_power PRIVATE ${CMAKE_DL_LIBS})
+    endif()
+    file(MAKE_DIRECTORY ${MODDIR}/test_multi_esp_power)
+    set_target_properties(test_multi_esp_power PROPERTIES
+        Fortran_MODULE_DIRECTORY ${MODDIR}/test_multi_esp_power
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    foreach(scenario IN ITEMS repeated_marches_without_motor_heat repeated_marches_with_motor_heat
+            copy_constructor_keeps_power assignment_keeps_power)
+        add_test(NAME multi_esp_power_${scenario}
+            COMMAND test_multi_esp_power ${CMAKE_SOURCE_DIR}/demos/MultiESP
+                ${CMAKE_BINARY_DIR}/test_runs/multi_esp_power ${scenario})
+        set_tests_properties(multi_esp_power_${scenario} PROPERTIES TIMEOUT 300)
+    endforeach()
+
     # TUFFP adapter test: skipped (exit code 77) when the external TUFFP library
     # is not available (see MARLIM3_TUFFP_LIB).
     add_executable(test_tuffp_runtime_binding
