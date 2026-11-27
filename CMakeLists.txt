@@ -381,4 +381,41 @@ if(MARLIM_BUILD_TESTS)
     add_test(NAME sparse_gmres
         COMMAND test_sparse_gmres
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+    # Steady-state regressions of the production system. They link the engine library above; the Fortran sources are
+    # compiled here because the system's fluid properties need them. Each scenario is a separate test that writes its
+    # deck from the smoothPipeFriction demo into its own directory under test_runs/steady_state in the build tree.
+    add_executable(test_steady_state_regressions
+        ${CMAKE_SOURCE_DIR}/tools/tests/cpp/test_steady_state_regressions.cpp
+        ${F90_SOURCES}
+    )
+    target_compile_options(test_steady_state_regressions PRIVATE
+        $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>)
+    target_link_libraries(test_steady_state_regressions PRIVATE marlim_solver_test_sources)
+    if(UNIX AND NOT APPLE AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+        target_link_libraries(test_steady_state_regressions PRIVATE ${MARLIM_GNU_FORTRAN_RUNTIME_LIBS})
+    endif()
+    if(MARLIM_FORTRAN_LIBS)
+        target_link_libraries(test_steady_state_regressions PRIVATE ${MARLIM_FORTRAN_LIBS})
+    endif()
+    if(CMAKE_DL_LIBS)
+        target_link_libraries(test_steady_state_regressions PRIVATE ${CMAKE_DL_LIBS})
+    endif()
+    # Marlim3 compiles the same Fortran modules: a module directory of its own keeps parallel builds from renaming
+    # the same module files at once.
+    file(MAKE_DIRECTORY ${MODDIR}/test_steady_state_regressions)
+    set_target_properties(test_steady_state_regressions PROPERTIES
+        Fortran_MODULE_DIRECTORY ${MODDIR}/test_steady_state_regressions
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    foreach(scenario IN ITEMS
+            march2_positive_flow_control march2_high_outlet_control march2_negative_flow march2_negative_flow_hot_oil
+            injection_choked_quality_control injection_choked_zero_vapour_fraction
+            low_guess_root_below_limit_control low_guess_root_near_reservoir_pressure low_guess_no_root)
+        add_test(NAME steady_state_${scenario}
+            COMMAND test_steady_state_regressions
+                ${CMAKE_SOURCE_DIR}/demos/smoothPipeFriction/smoothPipeFriction.mr3
+                ${CMAKE_BINARY_DIR}/test_runs/steady_state
+                ${scenario})
+        set_tests_properties(steady_state_${scenario} PROPERTIES TIMEOUT 300)
+    endforeach()
 endif()
