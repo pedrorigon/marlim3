@@ -360,4 +360,25 @@ if(MARLIM_BUILD_TESTS)
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
     add_test(NAME tuffp_runtime_binding COMMAND test_tuffp_runtime_binding)
     set_tests_properties(tuffp_runtime_binding PROPERTIES SKIP_RETURN_CODE 77)
+
+    # GMRES/FGMRES breakdown and failure reporting. The engine's C++ sources go into a static library, so the
+    # linker takes from it only what the test uses: the solver, the logger and whatever the logger itself needs.
+    set(MARLIM_SOLVER_TEST_SOURCES ${CXX_SOURCES})
+    list(REMOVE_ITEM MARLIM_SOLVER_TEST_SOURCES ${SRCDIR}/Num4Main.cpp)
+    add_library(marlim_solver_test_sources STATIC ${MARLIM_SOLVER_TEST_SOURCES})
+    target_include_directories(marlim_solver_test_sources PUBLIC
+        ${INCDIR}
+        ${LIBDIR}
+        ${MODDIR}
+    )
+    target_link_libraries(marlim_solver_test_sources PUBLIC OpenMP::OpenMP_CXX)
+    add_executable(test_sparse_gmres
+        ${CMAKE_SOURCE_DIR}/tools/tests/cpp/test_sparse_gmres.cpp
+    )
+    target_link_libraries(test_sparse_gmres PRIVATE marlim_solver_test_sources)
+    set_target_properties(test_sparse_gmres PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    add_test(NAME sparse_gmres
+        COMMAND test_sparse_gmres
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
