@@ -15600,11 +15600,11 @@ double SProd::marchaProdPerm2(double pchute) {
             if (celula[0].pres <= 0.1 ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].presaux) > (*vg1dSP).localtiny))
                 return -1e10;
-            else if ((celula[0].acsr.tipo == 3 && (celula[0].acsr.ipr.Pres - celula[0].pres) < (*vg1dSP).localtiny)) {
+            else if ((celula[0].acsr.tipo == 3 && (celula[0].acsr.ipr.Pres - celula[0].pres) < 1e-15)) {
                 return 1e10;
-            } else if ((celula[0].acsr.tipo == 15 && (celula[0].acsr.radialPoro.pRes[0] - celula[0].pres) < (*vg1dSP).localtiny)) {
+            } else if ((celula[0].acsr.tipo == 15 && (celula[0].acsr.radialPoro.pRes[0] - celula[0].pres) < 1e-15)) {
                 return 1e10;
-            } else if ((celula[0].acsr.tipo == 16 && (celula[0].acsr.poroso2D.dados.pRes - celula[0].pres) < (*vg1dSP).localtiny)) {
+            } else if ((celula[0].acsr.tipo == 16 && (celula[0].acsr.poroso2D.dados.pRes - celula[0].pres) < 1e-15)) {
                 return 1e10;
             }
             // IniciaVazValvGasPerm e um metodo que faz uma estimativa da vazao na valvula de GL
@@ -15720,11 +15720,11 @@ double SProd::marchaProdPerm2(double pchute) {
                 if (celula[i - 1].pres <= 0.1 ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny))
                     return -1e10;
-                else if (celula[i - 1].acsr.tipo == 3 && ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < (*vg1dSP).localtiny && i == 1))
+                else if (celula[i - 1].acsr.tipo == 3 && ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < 1e-15 && i == 1))
                     return 1e10;
-                else if (celula[i - 1].acsr.tipo == 15 && ((celula[i - 1].acsr.radialPoro.pRes[0] - celula[i - 1].pres) < (*vg1dSP).localtiny && i == 1))
+                else if (celula[i - 1].acsr.tipo == 15 && ((celula[i - 1].acsr.radialPoro.pRes[0] - celula[i - 1].pres) < 1e-15 && i == 1))
                     return 1e10;
-                else if (celula[i - 1].acsr.tipo == 16 && ((celula[i - 1].acsr.poroso2D.dados.pRes - celula[i - 1].pres) < (*vg1dSP).localtiny && i == 1))
+                else if (celula[i - 1].acsr.tipo == 16 && ((celula[i - 1].acsr.poroso2D.dados.pRes - celula[i - 1].pres) < 1e-15 && i == 1))
                     return 1e10;
                 else if (arq.usaTabela == 1) {
                     if ((arq.tabent.pmax - celula[i - 1].pres) < (*vg1dSP).localtiny)
