@@ -3,6 +3,14 @@ using namespace std;
 #include <cmath>
 #include <cstring>
 
+// The cell of the dynamic property table that holds a value. The table has pointCount points from axisMin, step
+// apart; the cell is the interval floor((value - axisMin) / step), kept inside the table, so that a value on its
+// last point interpolates up to that point instead of reading past it.
+static inline int dynamicTableCell(double value, double axisMin, double step, int pointCount){
+    const int cell=static_cast<int>(std::floor((value-axisMin)/step));
+    return std::clamp(cell, 0, pointCount-2);
+}
+
 namespace {
 inline double interpolaTabela2D(double x, double y, double** tabela, int ix, int iy, double* const eixoY) {
 	double* const linhaX=tabela[ix];
@@ -171,6 +179,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP ,double vapi,double vrgo,double vdeng,double v
   PBPVTSim=0;
   TBPVTSim=0;
   TabRSLivia=0;
+  rsTablePressureCount=0;
+  rsTableTemperatureCount=0;
   tabRSPB=0;
 
   flashCompleto=vflash;
@@ -559,6 +569,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, int vtipoemul,
   PBPVTSim=0;
   TBPVTSim=0;
   TabRSLivia=0;
+  rsTablePressureCount=0;
+  rsTableTemperatureCount=0;
  tabRSPB=0;
  flashCompleto=vflash;
  lingas=0;
@@ -945,6 +957,8 @@ ProFlu::ProFlu(varGlob1D* Vvg1dSP, const double* const fluido, const double* con
   PBPVTSim=0;
   TBPVTSim=0;
   TabRSLivia=0;
+  rsTablePressureCount=0;
+  rsTableTemperatureCount=0;
   tabRSPB=0;
   flashCompleto=vflash;
   lingas=0;
@@ -1277,6 +1291,8 @@ ProFlu::ProFlu(const ProFlu& fluido):
   PBPVTSim=fluido.PBPVTSim;
   TBPVTSim=fluido.TBPVTSim;
   TabRSLivia=fluido.TabRSLivia;
+  rsTablePressureCount=fluido.rsTablePressureCount;
+  rsTableTemperatureCount=fluido.rsTableTemperatureCount;
   tabRSPB=fluido.tabRSPB;
 
   flashCompleto=fluido.flashCompleto;
@@ -1606,6 +1622,8 @@ ProFlu& ProFlu::operator =(const ProFlu& fluido){
   PBPVTSim=fluido.PBPVTSim;
   TBPVTSim=fluido.TBPVTSim;
   TabRSLivia=fluido.TabRSLivia;
+  rsTablePressureCount=fluido.rsTablePressureCount;
+  rsTableTemperatureCount=fluido.rsTableTemperatureCount;
  tabRSPB=fluido.tabRSPB;
 
  flashCompleto=fluido.flashCompleto;
@@ -1976,17 +1994,19 @@ ProFlu ProFlu::operator+(const ProFlu& fluido) const{
 
 }
 
-double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int renovaInd*/) const{
+double ProFlu::interpolaVarProd(double pres, double temp, double** Var, int pressureCount, int temperatureCount) const{
     int ipres=0;
     int itemp=0;
     double varprop;
-    const int ndiv=npontos-1;
-    const int upperIndex=ndiv+1;
+    // A table with sizes of its own is not on the flash axes, so the search ranges built for those do not apply.
+    const bool flashAxes=pressureCount==0 && temperatureCount==0;
+    const int pressureUpper=pressureCount>0 ? pressureCount : npontos;
+    const int temperatureUpper=temperatureCount>0 ? temperatureCount : npontos;
     double* const tempAxis=Var[0];
     const double presMin=Var[1][0];
-    const double presMax=Var[upperIndex][0];
+    const double presMax=Var[pressureUpper][0];
     const double tempMin=tempAxis[1];
-    const double tempMax=tempAxis[upperIndex];
+    const double tempMax=tempAxis[temperatureUpper];
     if(pres<presMin || pres>=presMax || temp<tempMin || temp>=tempMax){
     	varprop=1.225*Deng;
 		if(pres>=presMax|| temp<tempMin || temp>=tempMax){
@@ -2005,7 +2025,9 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 
     else{
       int e, m, d;
-      if(pres>=Var[indMinEquP][0] && erroP==0){
+      // The search ranges exist only for tables on a flash table's axes; any other table is
+      // bracketed by bisection over the whole axis.
+      if(flashAxes && erroP==0 && !pchange.empty() && pres>=Var[indMinEquP][0]){
           int busca=0;
           while(pres>pchange[busca])busca++;
           double pmax=Var[ipchange[busca]][0];
@@ -2014,7 +2036,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       }
       else{
         e = 1;
-        if(erroP==1)d = ndiv+1;
+        if(!flashAxes || erroP==1 || pchange.empty())d = pressureUpper;
         else d = indMinEquP;
         ipres=d;
         while (e <= d) {
@@ -2023,7 +2045,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
  	    	  ipres=m;
  	    	  break;
  	      }
- 	      else if (m==ndiv+1 && Var[m][0] == pres){
+ 	      else if (m==pressureUpper && Var[m][0] == pres){
  	    	ipres=m-1;
  	    	break;
  	      }
@@ -2035,7 +2057,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
 	      else d = m - 1;
 	    }
       }
-      if(temp>=Var[0][indMinEquT] && erroT==0){
+      if(flashAxes && erroT==0 && !tchange.empty() && temp>=Var[0][indMinEquT]){
           int busca=0;
           while(temp>tchange[busca])busca++;
           double tmax=tempAxis[itchange[busca]];
@@ -2044,7 +2066,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
       }
       else{
         e = 1;
-        if(erroT==1)d = ndiv+1;
+        if(!flashAxes || erroT==1 || tchange.empty())d = temperatureUpper;
         else d = indMinEquT;
         itemp=d;
         while (e <= d) {
@@ -2053,7 +2075,7 @@ double ProFlu::interpolaVarProd(double pres, double temp, double** Var/*,int ren
             itemp=m;
             break;
           }
-          else if (m==ndiv+1 && tempAxis[m] == temp){
+          else if (m==temperatureUpper && tempAxis[m] == temp){
             itemp=m-1;
             break;
           }
@@ -2349,8 +2371,19 @@ double ProFlu::interpolaLas3( double var)const{
 
 
 
+// Ends the run on a bubble curve interpolaPB cannot use; kept out of line, off its hot path.
+[[noreturn]] [[gnu::cold]] [[gnu::noinline]] static void failBubbleCurveSize(int pointCount){
+    logger.log(LOGGER_FALHA, LOG_ERR_UNEXPECTED_EXCEPTION, "Curva de bolha do PVTSim com menos de dois pontos", "N/A",
+        string("npontosB = ") + to_string(pointCount));
+    logger.writeOutputLog();
+    exit(EXIT_SUCCESS);
+}
+
 double ProFlu::interpolaPB( double temp)const{
 
+    // The curve interpolates between two points at least; a fluid given its pointers without its size would
+    // read outside it.
+    if(npontosB<2)failBubbleCurveSize(npontosB);
     int itemp=0;
     double var;
     int ndiv=npontosB-1;
@@ -2389,14 +2422,21 @@ double ProFlu::interpolaPB( double temp)const{
 
 double ProFlu::interpolaRS( double pres, double temp)const{
 
+  // Temperatures in row 0 and pressures in column 0, both from index 1.
+  const int temperaturePoints=rsTemperaturePoints();
   double tmin=TabRSLivia[0][1];
   double delt=TabRSLivia[0][2]-TabRSLivia[0][1];
-  int itemp=floor((temp-tmin)/delt)+2;
+  int itemp=floor((temp-tmin)/delt)+1;
+  if(itemp<1)itemp=1;
+  else if(itemp>temperaturePoints-1)itemp=temperaturePoints-1;
 
-  double pmax=TabRSLivia[npontos][0];
-  double delp=TabRSLivia[npontos][0]-TabRSLivia[npontos-1][0];
+  const int pressurePoints=rsPressurePoints();
+  double pmax=TabRSLivia[pressurePoints][0];
+  double delp=TabRSLivia[pressurePoints][0]-TabRSLivia[pressurePoints-1][0];
   int ipres=floor((pmax-pres)/delp)+1;
-  ipres=npontos-ipres;
+  ipres=pressurePoints-ipres;
+  if(ipres<1)ipres=1;
+  else if(ipres>pressurePoints-1)ipres=pressurePoints-1;
 
   double razpres=(pres-TabRSLivia[ipres][0])/(TabRSLivia[ipres+1][0]-TabRSLivia[ipres][0]);
   double raztemp=(temp-TabRSLivia[0][itemp])/(TabRSLivia[0][itemp+1]-TabRSLivia[0][itemp]);
@@ -2419,8 +2459,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
  double pbtemp;
  if(flashCompleto==0 || flashCompleto==3){
     if(corrSat==0 || corrSat==-4){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	    rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2436,8 +2476,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
     }
 
     else if(corrSat==1){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	     rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2477,8 +2517,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
     }
 
     else if(corrSat==2){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	    rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2497,8 +2537,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
 
 
     else if(corrSat==3){
-	   if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
+	   if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
 	    rstemp=interpolaRS(pres,temp);
 
 	   }
@@ -2531,9 +2571,9 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
     }
     else if(corrSat==4){
 
-       if(tabRSPB==1 && pres<TabRSLivia[npontos][0] && pres >TabRSLivia[1][0] &&
-			   temp<TabRSLivia[0][npontos] && temp>TabRSLivia[0][1]){
-         rstemp=interpolaVarProd(pres,temp, TabRSLivia);
+       if(tabRSPB==1 && pres<TabRSLivia[rsPressurePoints()][0] && pres >TabRSLivia[1][0] &&
+			   temp<TabRSLivia[0][rsTemperaturePoints()] && temp>TabRSLivia[0][1]){
+         rstemp=interpolaVarProd(pres,temp, TabRSLivia, rsPressurePoints(), rsTemperaturePoints());
          return rstemp*IRGO;
        }
        else{
@@ -2613,8 +2653,8 @@ double ProFlu::RS(double pres, double temp, double varPb) const{
     		 if(pres<tabDin.pmin) pres=tabDin.pmin;
     		 if(pres>tabDin.pmax)pres=tabDin.pmax;
     		 if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-    			 int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-    			 int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+    			 int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+    			 int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
     			 double raztemp;
     			 double razpres;
     			 double valT0;
@@ -2793,12 +2833,9 @@ double ProFlu::PB(double pres, double temp) const{
 			 if(pres<tabDin.pmin) pres=tabDin.pmin;
 			 if(pres>tabDin.pmax)pres=tabDin.pmax;
 			 if(temp>=tabDin.tmin && temp<=tabDin.tmax){
-				 int posic=floor(temp-tabDin.tmin)/(tabDin.delT);
-				 if(posic<tabDin.npontosT){
-					 double raztemp=(temp-tabDin.TBF[posic])/(tabDin.delT);
-					 pbtemp=raztemp*tabDin.PBF[posic+1]+(1.-raztemp)*tabDin.PBF[posic];
-				 }
-				 else pbtemp=tabDin.PBF[posic+1];
+				 int posic=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+				 double raztemp=(temp-tabDin.TBF[posic])/(tabDin.delT);
+				 pbtemp=raztemp*tabDin.PBF[posic+1]+(1.-raztemp)*tabDin.PBF[posic];
 			 }
 			 else{
 				 pbtemp=psia(dCalculatedBubbleP/98066.52);
@@ -3004,8 +3041,8 @@ double ProFlu::ViscOleo(double pres, double temp,int semEmul) const{
 			if(pres<tabDin.pmin) pres=tabDin.pmin;
 			if(pres>tabDin.pmax)pres=tabDin.pmax;
 		 if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-		 		 int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-		 		 int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+		 		 int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+		 		 int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 		 		 posicT++;
 		 		 posicP++;
  				 viso=ViscGas(pres,temp);
@@ -3366,8 +3403,8 @@ double ProFlu::Zdran(double pres, double temp, int cordg, double masespG)const{
 			  if(pres<tabDin.pmin) pres=tabDin.pmin;
 			  if(pres>tabDin.pmax)pres=tabDin.pmax;
 			  if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-				  int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-				  int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+				  int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+				  int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 				  double raztemp;
 				  double razpres;
 				  double valT0;
@@ -3483,7 +3520,7 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{
     int interno=1;
     double presR=(0.9678411*14.69595*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
-    if(tab>0){
+    if(tab>0 && std::isfinite(presR) && std::isfinite(tempR)){
       if(presR>dzdtP[1][0]-1e-5)interno=0;
       if(presR<dzdtP[npontos+1][0]+1e-5)interno=0;
       if(tempR>dzdtP[0][1]-1e-5)interno=0;
@@ -3547,8 +3584,8 @@ double ProFlu::DZDT(double pres, double temp,double masespG)const{
 			  if(pres<tabDin.pmin) pres=tabDin.pmin;
 			  if(pres>tabDin.pmax)pres=tabDin.pmax;
 			  if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-				  int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-				  int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+				  int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+				  int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 				  double raztemp;
 				  double razpres;
 				  double valT0;
@@ -3702,7 +3739,7 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{
     int interno=1;
     double presR=(0.9678411*14.69595*pres)/PCis;
     double tempR=(1.8*temp+32+460)/TCis;
-    if(tab>0){
+    if(tab>0 && std::isfinite(presR) && std::isfinite(tempR)){
       if(presR>dzdpP[1][0]-1e-5)interno=0;
       if(presR<dzdpP[npontos+1][0]+1e-5)interno=0;
       if(tempR>dzdpP[0][1]-1e-5)interno=0;
@@ -3765,8 +3802,8 @@ double ProFlu::DZDP(double pres, double temp,double masespG)const{
 			  if(pres<tabDin.pmin) pres=tabDin.pmin;
 			  if(pres>tabDin.pmax)pres=tabDin.pmax;
 			  if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-				  int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-				  int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+				  int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+				  int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 				  double raztemp;
 				  double razpres;
 				  double valT0;
@@ -4052,8 +4089,8 @@ if(flashCompleto==0 || flashCompleto==3){
 		 }
 		 else{
 			 if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-		 		 	 int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-		 		 	 int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+		 		 	 int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+		 		 	 int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 		 		 	 double raztemp;
 		 		 	 double razpres;
 		 		 	 double valT0;
@@ -4261,8 +4298,8 @@ double ProFlu::CalorLiq(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -4496,8 +4533,8 @@ double ProFlu::CalorGas(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -4718,8 +4755,8 @@ double ProFlu::DrholDT(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -4873,8 +4910,8 @@ double ProFlu::EntalpLiq(double pres,double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -4988,8 +5025,8 @@ double ProFlu::EntalpGas(double pres,double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -5171,8 +5208,8 @@ double ProFlu::MasEspoleo(double pres, double temp,double varRS) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -5308,8 +5345,8 @@ double ProFlu::drhodt(double pres, double temp) const{
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
 					double drhogdT=0.;
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -5439,8 +5476,8 @@ double ProFlu::drhodp(double pres, double temp) const{
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
 					double drhogdp=0.;
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -5591,8 +5628,8 @@ double ProFlu::MasEspGas(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -5742,8 +5779,8 @@ double ProFlu::MasEspLiq(double pres, double temp,double varRS) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -6003,8 +6040,8 @@ double ProFlu::FracMass(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;
@@ -6078,8 +6115,8 @@ double ProFlu::FracMassHidra(double pres, double temp) const{
 				if(pres<tabDin.pmin) pres=tabDin.pmin;
 				if(pres>tabDin.pmax)pres=tabDin.pmax;
 				if(temp>=tabDin.tmin && temp<=tabDin.tmax && pres>=tabDin.pmin && pres<=tabDin.pmax){
-					int posicT=floor(temp-tabDin.tmin)/(tabDin.delT);
-					int posicP=floor(pres-tabDin.pmin)/(tabDin.delP);
+					int posicT=dynamicTableCell(temp, tabDin.tmin, tabDin.delT, tabDin.npontosT);
+					int posicP=dynamicTableCell(pres, tabDin.pmin, tabDin.delP, tabDin.npontosP);
 					double raztemp;
 					double razpres;
 					double valT0;

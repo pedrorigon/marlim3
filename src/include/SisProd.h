@@ -774,6 +774,10 @@ class SProd {
      */
     double **RSLivia;
     /**
+     * @brief Number of rows allocated in RSLivia: its temperature row and one row per pressure point.
+     */
+    int RSLiviaRowCount;
+    /**
      * @brief Enables reading bubble-pressure and bubble-temperature tables in black-oil mode.
      */
     int LerPB;
@@ -1162,7 +1166,7 @@ class SProd {
             delete[] PBPVTSim;
             delete[] TBPVTSim;
             if (lerRS == 1) {
-                for (int i = 0; i < ndiv + 2; i++)
+                for (int i = 0; i < RSLiviaRowCount; i++)
                     delete[] RSLivia[i];
                 delete[] RSLivia;
             }

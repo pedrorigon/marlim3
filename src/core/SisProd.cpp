@@ -12,6 +12,22 @@
 #include <chrono>
 #include <math.h>
 
+namespace {
+
+/// Pressure at or below which a production steady march stops as a pressure too low.
+constexpr double kMarchMinimumPressure = 0.1;
+
+/// True when a cell pressure stops a production steady march: at or below
+/// kMarchMinimumPressure, or NaN, which fails every comparison.
+constexpr bool marchPressureTooLow(double pressure) {
+    return !(pressure > kMarchMinimumPressure);
+}
+
+/// Upper bound on the Colebrook fixed-point iterations of the drift-flux friction factor.
+constexpr int kMaxColebrookIterations = 100;
+
+} // namespace
+
 SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson_t validacaoJson,
              tipoSimulacao_t tipoSimulacao, varGlob1D *Vvg1dSP, int TD, int vbloq, int temporario, int reverso, double *compfonte,
              int *posicfonte, int nfontes, int redeperm) : arq(nomeArquivoEntrada, nomeArquivoLog, validacaoJson, tipoSimulacao, reverso, Vvg1dSP, redeperm), flut(arq.ncelp, arq.nvarprofp + 2 + 1 + 1 + 1 + 1),
@@ -75,6 +91,7 @@ SProd::SProd(string nomeArquivoEntrada, string nomeArquivoLog, tipoValidacaoJson
     PBPVTSim = 0;
     TBPVTSim = 0;
     RSLivia = 0;
+    RSLiviaRowCount = 0;
     lerRS = 0;
     noextremo = 1;
     noinicial = 1;
@@ -314,6 +331,7 @@ SProd::SProd() : arq(), flut(1, 1 + 2 + 1 + 1 + 1), flutG(1, 1 + 2 + 1 + 1 + 1 +
     PBPVTSim = 0;
     TBPVTSim = 0;
     RSLivia = 0;
+    RSLiviaRowCount = 0;
     lerRS = 0;
 
     noextremo = 1;
@@ -522,7 +540,7 @@ SProd &SProd::operator=(const SProd &sp) {
         delete[] PBPVTSim;
         delete[] TBPVTSim;
         if (lerRS > 0) {
-            for (int i = 0; i < ndiv + 2; i++)
+            for (int i = 0; i < RSLiviaRowCount; i++)
                 delete[] RSLivia[i];
             delete[] RSLivia;
         }
@@ -825,7 +843,7 @@ void SProd::copiaSemJson(Ler &sp, int vnoextremo, int vnoinicial, int vderivaAne
         delete[] PBPVTSim;
         delete[] TBPVTSim;
         if (lerRS > 0) {
-            for (int i = 0; i < ndiv + 2; i++)
+            for (int i = 0; i < RSLiviaRowCount; i++)
                 delete[] RSLivia[i];
             delete[] RSLivia;
         }
@@ -1265,6 +1283,49 @@ void SProd::HidroDescargaP() {
     }
 }
 
+namespace {
+
+// Separators of the values in a PVTSim table row: blank, comma, parentheses, equals sign and line continuation.
+constexpr const char *kPvtSimRowSeparators = " ,()=\\";
+// Fewest values a PVTSim row may have: an axis or a curve is interpolated between two points at least.
+constexpr size_t kMinimumPvtSimRowValues = 2;
+
+// Reads the named row of a PVTSim table file: skips the words up to `name`, then converts every number on the
+// rest of that line. A missing row, or one with fewer than two values, ends the run with a file error.
+template <typename Convert>
+vector<double> readPvtSimRow(ifstream &file, string &word, const char *name, const string &fileName,
+                             Convert convert) {
+    while (word != name && file >> word) {
+    }
+    if (word != name)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       string("PVTSim file without the row ") + name, "pvtsimArq", fileName);
+    string line;
+    getline(file, line);
+    vector<double> values;
+    for (char *token = strtok(line.data(), kPvtSimRowSeparators); token != nullptr;
+         token = strtok(nullptr, kPvtSimRowSeparators)) {
+        char *end = nullptr;
+        double value = strtod(token, &end);
+        if (end != token)
+            values.push_back(convert(value));
+    }
+    if (values.size() < kMinimumPvtSimRowValues)
+        logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                       string("PVTSim row with fewer than two values: ") + name, "pvtsimArq", fileName);
+    return values;
+}
+
+// Tests strict axis growth; unordered comparisons, including NaN, fail.
+bool strictlyIncreasing(const vector<double> &axis) {
+    for (size_t k = 1; k < axis.size(); k++)
+        if (!(axis[k] > axis[k - 1]))
+            return false;
+    return true;
+}
+
+}  // namespace
+
 void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
     try {
@@ -1701,8 +1762,6 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 tenta = new char[400];
                 double testatok;
                 int ndiv = arq.tabent.npont - 1;
-                Vcr<double> presPVTSim(ndiv + 1, 0.);
-                Vcr<double> tempPVTSim(ndiv + 1, 0.);
 
                 FullMtx<double> HLatTemp(ndiv + 2, ndiv + 2);
                 char line[4000];
@@ -1716,24 +1775,14 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 if (strcmp(tenta, "THREE") == 0)
                     lacoleitura = 18;
 
-                while (chave != "PRESSURE")
-                    lendoPVTSim >> chave;
-                lendoPVTSim.get(line, 4000);
-                tenta = strtok(line, " ,()=");
-                presPVTSim[0] = atof(tenta) * 1.01971621e-5;
-                for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                    tenta = strtok(NULL, " ,");
-                    presPVTSim[kontaPVT] = atof(tenta) * 1.01971621e-5;
-                }
-                while (chave != "TEMPERATURE")
-                    lendoPVTSim >> chave;
-                lendoPVTSim.get(line, 4000);
-                tenta = strtok(line, " ,()=");
-                tempPVTSim[0] = atof(tenta);
-                for (int kontaPVT = 1; kontaPVT <= ndiv; kontaPVT++) {
-                    tenta = strtok(NULL, " ,");
-                    tempPVTSim[kontaPVT] = atof(tenta);
-                }
+                vector<double> presPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
+                                                          [](double value) { return value / 98066.5; }); // Pa to kgf/cm2
+                vector<double> tempPVTSim =
+                    readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", dadosMR, [](double value) { return value; });
+                if (static_cast<int>(presPVTSim.size()) <= ndiv || static_cast<int>(tempPVTSim.size()) <= ndiv)
+                    logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                                   "PVTSim file with fewer table points than the input table",
+                                                   "pvtsimArq", dadosMR);
 
                 for (int i = 1; i <= ndiv + 1; i++) {
                     HLatTemp[i][0] = presPVTSim[i - 1];
@@ -1782,107 +1831,96 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
 
         if (celula[0].flui.corrSat == -4) {
             LerPB = 1;
-            int ndiv = arq.tabent.npont - 1;
-            PBPVTSim = new double[ndiv + 1];
-            TBPVTSim = new double[ndiv + 1];
-            double *PresPVTSim;
-            PresPVTSim = new double[ndiv + 1];
 
             string impfile;
             impfile = arq.pvtsimarq;
             string dadosMR = impfile;
             ifstream lendoPVTSim(dadosMR.c_str(), ios_base::in);
             string chave;
-            char *tenta;
-            tenta = new char[400];
-            double testatok;
             char line[4000];
             lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
             lendoPVTSim >> chave;
-            while (chave != "PRESSURE") {
-                lendoPVTSim >> chave;
-            }
-            int lacoleitura = ndiv;
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            PresPVTSim[0] = atof(tenta) / 98068.059233;
-            double valor;
-            for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                testatok = atof(tenta);
-                PresPVTSim[kontaPVT] = testatok / 98068.059233;
-            }
-            while (chave != "BUBBLEPRESSURES") {
-                lendoPVTSim >> chave;
-            }
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            PBPVTSim[0] = atof(tenta) * 0.00014503773800722;
-            for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                testatok = atof(tenta);
-                PBPVTSim[kontaPVT] = testatok * 0.00014503773800722;
-            }
-            while (chave != "BUBBLETEMPERATURES") {
-                lendoPVTSim >> chave;
-            }
-            lendoPVTSim.get(line, 4000);
-            tenta = strtok(line, " ,()=");
-            TBPVTSim[0] = atof(tenta);
-            for (int kontaPVT = 1; kontaPVT <= lacoleitura; kontaPVT++) {
-                tenta = strtok(NULL, " ,");
-                testatok = atof(tenta);
-                TBPVTSim[kontaPVT] = testatok;
+            // The file's own grid: its rows set the table sizes, apart from the input table's resolution.
+            vector<double> PresPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
+                                                      [](double value) { return value / 98066.5; }); // Pa to kgf/cm2
+            vector<double> bubblePressures = readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", dadosMR,
+                                                           [](double value) { return value / 6894.75729316836134; }); // Pa to psi
+            vector<double> bubbleTemperatures = readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", dadosMR,
+                                                              [](double value) { return value; });
+            if (bubblePressures.size() != bubbleTemperatures.size())
+                logger.log_write_logs_and_exit(
+                    LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                    "PVTSim bubble-point curve with different numbers of pressures and temperatures", "pvtsimArq",
+                    dadosMR);
+            if (!strictlyIncreasing(PresPVTSim) || !strictlyIncreasing(bubbleTemperatures))
+                logger.log_write_logs_and_exit(LOGGER_FALHA, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                               "PVTSim pressure or bubble-temperature axis not strictly increasing",
+                                               "pvtsimArq", dadosMR);
+            const int pressureCount = static_cast<int>(PresPVTSim.size());
+            const int bubbleCount = static_cast<int>(bubbleTemperatures.size());
+            PBPVTSim = new double[bubbleCount];
+            TBPVTSim = new double[bubbleCount];
+            for (int k = 0; k < bubbleCount; k++) {
+                PBPVTSim[k] = bubblePressures[k];
+                TBPVTSim[k] = bubbleTemperatures[k];
             }
             for (int i = 0; i <= ncel; i++) {
                 celula[i].flui.PBPVTSim = PBPVTSim;
                 celula[i].flui.TBPVTSim = TBPVTSim;
                 celula[i].flui.corrSat = 4;
+                celula[i].flui.npontosB = bubbleCount;
                 if (celula[i].acsr.tipo == 2) {
                     celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injl.FluidoPro.corrSat = 4;
+                    celula[i].acsr.injl.FluidoPro.npontosB = bubbleCount;
                 }
                 if (celula[i].acsr.tipo == 3) {
                     celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.corrSat = 4;
+                    celula[i].acsr.ipr.FluidoPro.npontosB = bubbleCount;
                 }
                 if (celula[i].acsr.tipo == 10) {
                     celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injm.FluidoPro.corrSat = 4;
+                    celula[i].acsr.injm.FluidoPro.npontosB = bubbleCount;
                 }
                 if (celula[i].acsr.tipo == 15) {
                     celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.radialPoro.flup.corrSat = 4;
+                    celula[i].acsr.radialPoro.flup.npontosB = bubbleCount;
                     for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                         celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.corrSat = 4;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.npontosB = bubbleCount;
                     }
                 }
                 if (celula[i].acsr.tipo == 16) {
                     celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.corrSat = 4;
+                    celula[i].acsr.poroso2D.dados.flup.npontosB = bubbleCount;
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.corrSat = 4;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.npontosB = bubbleCount;
                     }
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.corrSat = 4;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.npontosB = bubbleCount;
                     }
                 }
             }
 
-            FullMtx<double> BolhaTemp(ndiv + 2, 2);
-            for (int i = 0; i <= ndiv; i++) {
+            FullMtx<double> BolhaTemp(bubbleCount + 1, 2);
+            for (int i = 0; i < bubbleCount; i++) {
                 BolhaTemp[i][0] = TBPVTSim[i];
                 BolhaTemp[i][1] = PBPVTSim[i];
             }
@@ -1896,14 +1934,16 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             if (arq.tabRSPB == 1) {
                 arq.tabRSPB = 1;
                 lerRS = 1;
-                RSLivia = new double *[ndiv + 2];
-                for (int i = 0; i < ndiv + 2; i++) {
-                    RSLivia[i] = new double[ndiv + 2];
+                RSLiviaRowCount = pressureCount + 1;
+                RSLivia = new double *[RSLiviaRowCount];
+                for (int i = 0; i < RSLiviaRowCount; i++) {
+                    RSLivia[i] = new double[bubbleCount + 1];
                 }
-                for (int i = 1; i <= ndiv + 1; i++) {
+                for (int j = 1; j <= bubbleCount; j++)
+                    RSLivia[0][j] = TBPVTSim[j - 1];
+                for (int i = 1; i <= pressureCount; i++) {
                     RSLivia[i][0] = PresPVTSim[i - 1];
-                    RSLivia[0][i] = TBPVTSim[i - 1];
-                    for (int j = 1; j <= ndiv + 1; j++) {
+                    for (int j = 1; j <= bubbleCount; j++) {
                         if (TBPVTSim[j - 1] > -10) {
                             double a1, a2, a3;
                             double TFa = 1.8 * TBPVTSim[j - 1] + 32;
@@ -1942,7 +1982,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                             a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
                             a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
 
-                            double pcor = (RSLivia[i][0] * 0.9678411) * 14.69595 * multCor;
+                            double pcor = RSLivia[i][0] * (98066.5 / 6894.75729316836134) * multCor; // kgf/cm2 to psi
                             double pr = pcor / pbtemp;
 
                             a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
@@ -1950,72 +1990,95 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                             a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
 
                             double Rsr = a1 * pow(pr, a2) + (1. - a1) * pow(pr, a3);
-                            double rstemp = 0.;
+                            double rstemp = Rsr;
                             if (rstemp < 0.)
                                 rstemp = 0.;
-                            else if ((RSLivia[i][0] * 0.9678411) * 14.69595 > pbtemp)
+                            else if (RSLivia[i][0] * (98066.5 / 6894.75729316836134) > pbtemp)
                                 rstemp = 1.;
-                            else
-                                rstemp = Rsr;
+                            else if (rstemp > 1.)
+                                rstemp = 1.;
                             RSLivia[i][j] = rstemp;
                         } else
                             RSLivia[i][j] = 0;
                     }
                 }
-                FullMtx<double> RSTemp(ndiv + 2, ndiv + 2);
-                for (int i = 1; i <= ndiv + 1; i++) {
+                FullMtx<double> RSTemp(pressureCount + 1, bubbleCount + 1);
+                for (int j = 1; j <= bubbleCount; j++)
+                    RSTemp[0][j] = RSLivia[0][j];
+                for (int i = 1; i <= pressureCount; i++) {
                     RSTemp[i][0] = RSLivia[i][0];
-                    RSTemp[0][i] = RSLivia[0][i];
-                    for (int j = 1; j <= ndiv + 1; j++) {
+                    for (int j = 1; j <= bubbleCount; j++) {
                         if (i > 0 || j > 0)
-                            RSTemp[i][j] = RSLivia[i][j] * 6.29 / 35.31467;
+                            RSTemp[i][j] = RSLivia[i][j];
                     }
                 }
                 ostringstream saidaRS;
                 saidaRS << pathPrefixoArqSaida << "perfilRSLivia";
                 tmp = saidaRS.str();
                 ofstream escreveRS(tmp.c_str(), ios_base::out);
+                escreveRS << "# "
+                          << output_i18n::tr(arq.idiomaSaida,
+                                             "Razao de solubilidade reduzida Rs/Rsb (-); primeira coluna: pressao (kgf/cm2); primeira linha: temperatura (C)",
+                                             "Reduced solution gas-oil ratio Rs/Rsb (-); first column: pressure (kgf/cm2); first row: temperature (C)")
+                          << "\n";
                 escreveRS << RSTemp;
                 escreveRS.close();
 
                 for (int i = 0; i <= ncel; i++) {
                     celula[i].flui.TabRSLivia = RSLivia;
+                    celula[i].flui.rsTablePressureCount = pressureCount;
+                    celula[i].flui.rsTableTemperatureCount = bubbleCount;
                     celula[i].flui.tabRSPB = 1;
                     if (celula[i].acsr.tipo == 2) {
                         celula[i].acsr.injl.FluidoPro.TabRSLivia = RSLivia;
+                        celula[i].acsr.injl.FluidoPro.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.injl.FluidoPro.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.injl.FluidoPro.tabRSPB = 1;
                     }
                     if (celula[i].acsr.tipo == 3) {
                         celula[i].acsr.ipr.FluidoPro.TabRSLivia = RSLivia;
+                        celula[i].acsr.ipr.FluidoPro.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.ipr.FluidoPro.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.ipr.FluidoPro.tabRSPB = 1;
                     }
                     if (celula[i].acsr.tipo == 10) {
                         celula[i].acsr.injm.FluidoPro.TabRSLivia = RSLivia;
+                        celula[i].acsr.injm.FluidoPro.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.injm.FluidoPro.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.injm.FluidoPro.tabRSPB = 1;
                     }
                     if (celula[i].acsr.tipo == 15) {
                         celula[i].acsr.radialPoro.flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.radialPoro.flup.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.radialPoro.flup.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.radialPoro.flup.tabRSPB = 1;
                         for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                             celula[i].acsr.radialPoro.celula[iRP].flup.TabRSLivia = RSLivia;
+                            celula[i].acsr.radialPoro.celula[iRP].flup.rsTablePressureCount = pressureCount;
+                            celula[i].acsr.radialPoro.celula[iRP].flup.rsTableTemperatureCount = bubbleCount;
                             celula[i].acsr.radialPoro.celula[iRP].flup.tabRSPB = 1;
                         }
                     }
                     if (celula[i].acsr.tipo == 16) {
                         celula[i].acsr.poroso2D.dados.flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.poroso2D.dados.flup.rsTablePressureCount = pressureCount;
+                        celula[i].acsr.poroso2D.dados.flup.rsTableTemperatureCount = bubbleCount;
                         celula[i].acsr.poroso2D.dados.flup.tabRSPB = 1;
                         for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                             celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TabRSLivia = RSLivia;
+                            celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTablePressureCount = pressureCount;
+                            celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTableTemperatureCount = bubbleCount;
                             celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.tabRSPB = 1;
                         }
                         for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
                             celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TabRSLivia = RSLivia;
+                            celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTablePressureCount = pressureCount;
+                            celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTableTemperatureCount = bubbleCount;
                             celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.tabRSPB = 1;
                         }
                     }
                 }
             }
-            delete[] PresPVTSim;
 
         } else if (arq.tabRSPB == 1) {
 
@@ -2028,8 +2091,9 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             FullMtx<double> PBTemp(ndiv + 2, 2);
             TBPVTSim = new double[ndiv + 1];
             PBPVTSim = new double[ndiv + 1];
-            RSLivia = new double *[ndiv + 2];
-            for (int i = 0; i < ndiv + 2; i++) {
+            RSLiviaRowCount = ndiv + 2;
+            RSLivia = new double *[RSLiviaRowCount];
+            for (int i = 0; i < RSLiviaRowCount; i++) {
                 RSLivia[i] = new double[ndiv + 2];
             }
             double ttestepb = tteste;
@@ -2066,6 +2130,11 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             saidaRS << pathPrefixoArqSaida << "perfilRSLivia";
             tmp = saidaRS.str();
             ofstream escreveRS(tmp.c_str(), ios_base::out);
+            escreveRS << "# "
+                      << output_i18n::tr(arq.idiomaSaida,
+                                         "Razao de solubilidade Rs (m3/m3); primeira coluna: pressao (kgf/cm2); primeira linha: temperatura (C)",
+                                         "Solution gas-oil ratio Rs (m3/m3); first column: pressure (kgf/cm2); first row: temperature (C)")
+                      << "\n";
             escreveRS << RSTemp;
             escreveRS.close();
 
@@ -2073,54 +2142,81 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 celula[i].flui.PBPVTSim = PBPVTSim;
                 celula[i].flui.TBPVTSim = TBPVTSim;
                 celula[i].flui.TabRSLivia = RSLivia;
+                celula[i].flui.rsTablePressureCount = ndiv + 1;
+                celula[i].flui.rsTableTemperatureCount = ndiv + 1;
                 celula[i].flui.tabRSPB = 1;
+                celula[i].flui.npontosB = ndiv + 1;
 
                 if (celula[i].acsr.tipo == 2) {
                     celula[i].acsr.injl.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injl.FluidoPro.TabRSLivia = RSLivia;
+                    celula[i].acsr.injl.FluidoPro.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.injl.FluidoPro.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.injl.FluidoPro.tabRSPB = 1;
+                    celula[i].acsr.injl.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 3) {
                     celula[i].acsr.ipr.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.ipr.FluidoPro.TabRSLivia = RSLivia;
+                    celula[i].acsr.ipr.FluidoPro.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.ipr.FluidoPro.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.ipr.FluidoPro.tabRSPB = 1;
+                    celula[i].acsr.ipr.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 10) {
                     celula[i].acsr.injm.FluidoPro.PBPVTSim = PBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TBPVTSim = TBPVTSim;
                     celula[i].acsr.injm.FluidoPro.TabRSLivia = RSLivia;
+                    celula[i].acsr.injm.FluidoPro.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.injm.FluidoPro.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.injm.FluidoPro.tabRSPB = 1;
+                    celula[i].acsr.injm.FluidoPro.npontosB = ndiv + 1;
                 }
                 if (celula[i].acsr.tipo == 15) {
                     celula[i].acsr.radialPoro.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.radialPoro.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.radialPoro.flup.TabRSLivia = RSLivia;
+                    celula[i].acsr.radialPoro.flup.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.radialPoro.flup.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.radialPoro.flup.tabRSPB = 1;
+                    celula[i].acsr.radialPoro.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                         celula[i].acsr.radialPoro.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.radialPoro.celula[iRP].flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.rsTablePressureCount = ndiv + 1;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.rsTableTemperatureCount = ndiv + 1;
                         celula[i].acsr.radialPoro.celula[iRP].flup.tabRSPB = 1;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.npontosB = ndiv + 1;
                     }
                 }
                 if (celula[i].acsr.tipo == 16) {
                     celula[i].acsr.poroso2D.dados.flup.PBPVTSim = PBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TBPVTSim = TBPVTSim;
                     celula[i].acsr.poroso2D.dados.flup.TabRSLivia = RSLivia;
+                    celula[i].acsr.poroso2D.dados.flup.rsTablePressureCount = ndiv + 1;
+                    celula[i].acsr.poroso2D.dados.flup.rsTableTemperatureCount = ndiv + 1;
                     celula[i].acsr.poroso2D.dados.flup.tabRSPB = 1;
+                    celula[i].acsr.poroso2D.dados.flup.npontosB = ndiv + 1;
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTablePressureCount = ndiv + 1;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rsTableTemperatureCount = ndiv + 1;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.tabRSPB = 1;
+                        celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.npontosB = ndiv + 1;
                     }
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.malha.nele; iRP++) {
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.PBPVTSim = PBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TBPVTSim = TBPVTSim;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.TabRSLivia = RSLivia;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTablePressureCount = ndiv + 1;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.rsTableTemperatureCount = ndiv + 1;
                         celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.tabRSPB = 1;
+                        celula[i].acsr.poroso2D.malha.mlh2d[iRP].flup.npontosB = ndiv + 1;
                     }
                 }
             }
@@ -2146,15 +2242,15 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                 }
                 if (celula[i].acsr.tipo == 15) {
                     celula[i].acsr.radialPoro.flup.rDgD = 1.;
-                    celula[i].acsr.radialPoro.flup.rDgD = 1.;
+                    celula[i].acsr.radialPoro.flup.rDgL = 1.;
                     for (int iRP = 0; iRP < celula[i].acsr.radialPoro.ncel; iRP++) {
                         celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
-                        celula[i].acsr.radialPoro.celula[iRP].flup.rDgD = 1.;
+                        celula[i].acsr.radialPoro.celula[iRP].flup.rDgL = 1.;
                     }
                 }
                 if (celula[i].acsr.tipo == 16) {
                     celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
-                    celula[i].acsr.poroso2D.dados.flup.rDgD = 1.;
+                    celula[i].acsr.poroso2D.dados.flup.rDgL = 1.;
                     for (int iRP = 0; iRP < celula[i].acsr.poroso2D.dados.transfer.ncel; iRP++) {
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgD = 1.;
                         celula[i].acsr.poroso2D.dados.transfer.celula[iRP].flup.rDgL = 1.;
@@ -5085,7 +5181,7 @@ void SProd::BhagwatGhajar(double rhol, double rhog, double tensup, double alf, d
         fat = 1 / (den * den); // Colebrook.
         dif = abs(fat - valHalland);
         valHalland = fat;
-        if (dif >= 1e-3)
+        if (dif >= 1e-3 && III < kMaxColebrookIterations)
             goto repeat7;
     } else {                  // regime laminar
         fat = 64. / (reymix); // 16.
@@ -5169,7 +5265,7 @@ void SProd::BhagwatGhajarMod(double rhol, double rhog, double tensup, double alf
         fat = 1 / (den * den); // Colebrook.
         dif = abs(fat - valHalland);
         valHalland = fat;
-        if (dif >= 1e-3)
+        if (dif >= 1e-3 && III < kMaxColebrookIterations)
             goto repeat7;
     } else {                   // regime laminar
         fat = 64. / (reymixL); // 16.
@@ -6658,7 +6754,7 @@ void SProd::auxMiniTab(ProFlu &flui) {
     }
     if(titVec[3].first>1.-1e-3){
     	int busca=2;
-    	while(busca>=0 && titVec[busca].first>1.+1e-3)busca--;
+    	while(busca>=0 && titVec[busca].first>1.-1e-3)busca--;
     	if(busca>=0){
     		int jtroca;
     		int ktroca;
@@ -10036,7 +10132,7 @@ void SProd::renovaFracMol2(ProFlu fluiRev) {
                     fonteA *= (1 / (celula[i].acsr.injm.FluidoPro.BSW * 1000 * celula[i].acsr.injm.FluidoPro.Denag));
                 }
                 BSWF = celula[i].acsr.injm.FluidoPro.BSW;
-                denagF = celula[i].acsr.injl.FluidoPro.Denag;
+                denagF = celula[i].acsr.injm.FluidoPro.Denag;
                 viscLF = 0 * 30 + 1 * celula[i].acsr.injm.FluidoPro.VisOM(tL);
                 viscHF = 0 * 20 + 1 * celula[i].acsr.injm.FluidoPro.VisOM(tH);
             }
@@ -14745,7 +14841,7 @@ double SProd::marchaProdPerm1(double pchute) {
             celula[0].betI = celula[0].bet;
             celula[1].betLI = celula[0].bet;
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny))
                 return -1e10;
             else if ((celula[0].acsr.tipo == 3 &&
@@ -14772,7 +14868,7 @@ double SProd::marchaProdPerm1(double pchute) {
                 // teste para ver se ocorreu algum problema:
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
                     return 1e10;
-                if (celula[i].presaux <= 0.1 ||
+                if (marchPressureTooLow(celula[i].presaux) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -14803,7 +14899,7 @@ double SProd::marchaProdPerm1(double pchute) {
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
                     return 1e10;
                 }
-                if (celula[i].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -14876,7 +14972,7 @@ double SProd::marchaProdPerm1(double pchute) {
 
                 // teste para verificar se a pressao do centro de celula ficou acima
                 // da pressao estatica de uma eventual IPR
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 } else if ((celula[i - 1].acsr.tipo == 3 &&
@@ -15194,7 +15290,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
             celula[0].betI = celula[0].bet;
             celula[1].betLI = celula[0].bet;
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny))
                 return -1e10;
 
@@ -15209,7 +15305,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
                 // teste para ver se ocorreu algum problema:
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
                     return 1e10;
-                if (celula[i].presaux <= 0.1 ||
+                if (marchPressureTooLow(celula[i].presaux) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -15236,7 +15332,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
                     return 1e10;
                 }
-                if (celula[i].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -15271,7 +15367,7 @@ double SProd::marchaProdPerm1Rev(double pchute) {
 
                 i++;
 
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -15597,7 +15693,7 @@ double SProd::marchaProdPerm2(double pchute) {
             celula[1].betLI = celula[0].bet;
 
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].presaux) > (*vg1dSP).localtiny))
                 return -1e10;
             else if ((celula[0].acsr.tipo == 3 && (celula[0].acsr.ipr.Pres - celula[0].pres) < 1e-15)) {
@@ -15717,7 +15813,7 @@ double SProd::marchaProdPerm2(double pchute) {
                 i++;
                 // teste para verificar se a pressao do centro de celula ficou acima
                 // da pressao estatica de uma eventual IPR ou ficou baixa demais
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny))
                     return -1e10;
                 else if (celula[i - 1].acsr.tipo == 3 && ((celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) < 1e-15 && i == 1))
@@ -17815,7 +17911,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
             celula[1].betLI = celula[0].bet;
 
             // verifica se ja existe algum problema no inicio da marcha
-            if (celula[0].pres <= 0.1 ||
+            if (marchPressureTooLow(celula[0].pres) ||
                 (arq.usaTabela == 1 && (arq.tabent.pmin - celula[0].pres) > (*vg1dSP).localtiny))
                 return -1e10;
             else if ((celula[0].acsr.tipo == 3 &&
@@ -17845,7 +17941,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
                 // teste para ver se ocorreu algum problema:
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].presaux) < (*vg1dSP).localtiny)
                     return 1e10;
-                if (celula[i].presaux <= 0.1 ||
+                if (marchPressureTooLow(celula[i].presaux) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].presaux) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -17872,7 +17968,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
                 if (arq.usaTabela == 1 && (arq.tabent.pmax - celula[i].pres) < (*vg1dSP).localtiny) {
                     return 1e10;
                 }
-                if (celula[i].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 }
@@ -17924,7 +18020,7 @@ double SProd::buscaProdPfundoPerm3(double pentrada) {
 
                 // teste para verificar se a pressao do centro de celula ficou acima
                 // da pressao estatica de uma eventual IPR
-                if (celula[i - 1].pres <= 0.1 ||
+                if (marchPressureTooLow(celula[i - 1].pres) ||
                     (arq.usaTabela == 1 && (arq.tabent.pmin - celula[i - 1].pres) > (*vg1dSP).localtiny)) {
                     return -1e10;
                 } else if ((celula[i - 1].acsr.tipo == 3 &&
@@ -25300,6 +25396,10 @@ double SProd::marchaInjPerm1(double chute) {
         }
         if (i == ncel + 1)
             corrigechute = 0;
+        else if (!(celula[i - 1].pres >= 1.))
+            return -1e10; // stopped on the pressure, as the march's own pressure test
+        else
+            return 1e10; // stopped on the mass flow, as the march's own flow test
     }
     renovaFonte(ncel);
     masfim += (celula[ncel].fontemassCR + celula[ncel].fontemassLR + celula[ncel].fontemassGR);
@@ -26037,6 +26137,25 @@ double SProd::buscaInjPfundoPerm4() {
         }
         if (i == ncel + 1)
             corrigechute = 0;
+        else if (!(celula[i - 1].pres >= 1.)) { // stopped on the pressure
+            if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
+                NumError("pressao menor que 1");
+            else {
+                if ((*vg1dSP).iterRede > 0)
+                    return -1.1e10;
+                else
+                    return 1.1e10;
+            }
+        } else { // stopped on the mass flow
+            if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
+                NumError("Vazao massica de injeÃ§Ã£o menor que 0");
+            else {
+                if ((*vg1dSP).iterRede > 0)
+                    return -1.1e10;
+                else
+                    return 1.1e10;
+            }
+        }
     }
     renovaFonte(ncel);
     masfim += (celula[ncel].fontemassCR + celula[ncel].fontemassLR + celula[ncel].fontemassGR);
@@ -26471,6 +26590,7 @@ double SProd::zriddr(double x1, double x2, int prod, int tipoCC) {
             if (s == 0.0) {
                 fmin = multMarcha(xmin, prod, tipoCC);
                 if(j>minit)return xmin;
+                continue;
             }
             double xnew = xm + (xm - xl) * ((fl >= fh ? 1.0 : -1.0) * fm / s);
             if (fabs(xnew - ans) <= xacc) {
