@@ -53,9 +53,11 @@ def run_with_table(engine, directory, points, pressures, temperatures):
         capture_output=True, text=True, errors="replace", timeout=300,
     )
     assert process.returncode == 0, process.stdout[-3000:] + process.stderr[-3000:]
+    # The table file may start with a "#" line naming its quantity and axes.
     table = [
         [float(value) for value in line.split(";") if value.strip()]
-        for line in (directory / "perfilRSLivia").read_text().splitlines() if line.strip()
+        for line in (directory / "perfilRSLivia").read_text(encoding="utf-8", errors="replace").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
     ]
     lines = [
         line for line in (directory / "PERFISP-0.dat").read_text(encoding="utf-8", errors="replace").splitlines()
