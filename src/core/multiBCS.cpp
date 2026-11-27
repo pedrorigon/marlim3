@@ -85,7 +85,7 @@ multiBomCentSub::multiBomCentSub(const multiBomCentSub& bombaantiga){
 
     	dpB=bombaantiga.dpB;
     	potB=bombaantiga.potB;
-    	potBT=bombaantiga.dpB;
+    	potBT=bombaantiga.potBT;
     	potTermo=bombaantiga.potTermo;
        }
        else{
@@ -137,7 +137,7 @@ multiBomCentSub& multiBomCentSub::operator =(const multiBomCentSub& bombaantiga)
 
 			    	dpB=bombaantiga.dpB;
 			    	potB=bombaantiga.potB;
-			    	potBT=bombaantiga.dpB;
+			    	potBT=bombaantiga.potBT;
 			    	potTermo=bombaantiga.potTermo;
 			  }
 			  else{

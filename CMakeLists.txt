@@ -375,7 +375,8 @@ if(MARLIM_BUILD_TESTS)
     set_target_properties(test_multi_esp_power PROPERTIES
         Fortran_MODULE_DIRECTORY ${MODDIR}/test_multi_esp_power
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-    foreach(scenario IN ITEMS repeated_marches_without_motor_heat repeated_marches_with_motor_heat)
+    foreach(scenario IN ITEMS repeated_marches_without_motor_heat repeated_marches_with_motor_heat
+            copy_constructor_keeps_power assignment_keeps_power)
         add_test(NAME multi_esp_power_${scenario}
             COMMAND test_multi_esp_power ${CMAKE_SOURCE_DIR}/demos/MultiESP
                 ${CMAKE_BINARY_DIR}/test_runs/multi_esp_power ${scenario})

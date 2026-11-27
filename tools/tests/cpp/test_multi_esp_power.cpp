@@ -1,6 +1,8 @@
-// Regression checks of the multi-stage ESP (multiBomCentSub) on the public demos/MultiESP deck: marches repeated with
-// identical inputs must give the same pressure increment, power and heat to the cell, without motor heat
-// (motorHeatFraction 0, the demo's value) and with it (motorHeatFraction 0.5).
+// Regression checks of the multi-stage ESP (multiBomCentSub) on the public demos/MultiESP deck:
+//  - marches repeated with identical inputs must give the same pressure increment, power and heat to the cell,
+//    without motor heat (motorHeatFraction 0, the demo's value) and with it (motorHeatFraction 0.5);
+//  - a copy made with the copy constructor or the assignment operator right after a march must hold the results of
+//    that march before any new one.
 // Each scenario copies the deck and its PVTSim table into its own run directory, builds the system as Marlim3's
 // main() does and calls the march of the pump directly.
 //
@@ -52,15 +54,23 @@ constexpr int kPass = 0;
 constexpr int kFail = 1;
 constexpr int kSetupError = 2;
 
+enum class Check { RepeatedMarches, CopyConstructor, Assignment };
+
 struct Scenario {
     const char *name;
+    Check check;
     double motorHeatFraction; // < 0: as in the demo
     const char *expectation;
 };
 
 const Scenario kScenarios[] = {
-    {"repeated_marches_without_motor_heat", -1., "motorHeatFraction as in the demo (0): every march gives the same results"},
-    {"repeated_marches_with_motor_heat", 0.5, "motorHeatFraction 0.5: every march gives the same results"},
+    {"repeated_marches_without_motor_heat", Check::RepeatedMarches, -1.,
+     "motorHeatFraction as in the demo (0): every march gives the same results"},
+    {"repeated_marches_with_motor_heat", Check::RepeatedMarches, 0.5,
+     "motorHeatFraction 0.5: every march gives the same results"},
+    {"copy_constructor_keeps_power", Check::CopyConstructor, -1.,
+     "a copy-constructed pump holds the results of the last march"},
+    {"assignment_keeps_power", Check::Assignment, -1., "an assigned pump holds the results of the last march"},
 };
 
 // Inlet of the pump at the steady state of demos/MultiESP (resumoPermanente.dat and the 2000 m trend at 0 s):
@@ -195,6 +205,31 @@ bool repeatedMarches(Cel &cell, const Scenario &scenario) {
     return equal;
 }
 
+void printResults(const char *label, const multiBomCentSub &pump) {
+    std::printf("%s: dpB %.12g kgf/cm2, potB %.12g W, potBT %.12g W, potTermo %.12g W\n", label, pump.dpB, pump.potB,
+                pump.potBT, pump.potTermo);
+}
+
+bool sameResults(const multiBomCentSub &a, const multiBomCentSub &b) {
+    return a.dpB == b.dpB && a.potB == b.potB && a.potBT == b.potBT && a.potTermo == b.potTermo;
+}
+
+// One march, then a copy of the pump, compared with the pump before any new march.
+bool copyKeepsResults(Cel &cell, Check check) {
+    march(cell);
+    const multiBomCentSub &pump = cell.acsr.multibcs;
+    printResults("pump after one march", pump);
+    if (check == Check::CopyConstructor) {
+        const multiBomCentSub copy(pump);
+        printResults("copy-constructed pump", copy);
+        return sameResults(copy, pump);
+    }
+    multiBomCentSub copy;
+    copy = pump;
+    printResults("assigned pump", copy);
+    return sameResults(copy, pump);
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -229,7 +264,8 @@ int main(int argc, char **argv) {
     if (k < 0)
         setupError("no multi-stage ESP cell");
     std::printf("multi-stage ESP in cell %d\n", k);
-    const bool pass = repeatedMarches(system->celula[k], *scenario);
+    const bool pass = scenario->check == Check::RepeatedMarches ? repeatedMarches(system->celula[k], *scenario)
+                                                                 : copyKeepsResults(system->celula[k], scenario->check);
     unexpectedExitArmed = false;
     std::printf("%s\n", pass ? "PASS" : "FAIL");
     std::fflush(stdout);
