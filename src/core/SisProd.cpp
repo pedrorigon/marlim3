@@ -15374,8 +15374,8 @@ double SProd::marchaProdPerm2(double pchute) {
         celula[0].temp = celula[0].acsr.injg.temp;
         if (arq.flashCompleto == 2) {
             if (arq.tabelaDinamica == 0)
-                celula[0].flui.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
-            celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp);
+                celula[0].flui.atualizaPropComp(pchute, celula[0].temp);
+            celula[0].acsr.injg.FluidoPro.atualizaPropComp(pchute, celula[0].temp, -1, NULL, NULL, celula[0].acsr.injg.seco);
         }
         if (celula[0].acsr.injg.seco == 1) {
             alfini = 1.;
@@ -15546,7 +15546,7 @@ double SProd::marchaProdPerm2(double pchute) {
     // chute de pressao ou de vazao no inicio da tubulacao. O que a convergencia busca de fato e
     // determinar qual a pressao ou vazao de fundo que satisfaz as condicoes de contorno no fim
     // da tubulacao, esta busca e feita nos metodos de busca.
-    while ((fabs(masfim - masfim0) / masfim > arq.CriterioConvergPerm ||
+    while ((fabs(masfim - masfim0) / fabs(masfim) > arq.CriterioConvergPerm ||
             fabs(presteste - presteste0) / fabs(presteste) > arq.CriterioConvergPerm) &&
            (iterperm < limIter)) {
         masfim0 = masfim;
@@ -16446,6 +16446,22 @@ double SProd::buscaProdPfundoPerm(double chute, int kontaTenta) {
                 }
                 if (val > 0. && limpres == 1) {
                     int iterpres = 0;
+                    while (val > 0 && iterpres < 10) {
+                        pchute2 *= 1.001;
+                        val = marchaProdPerm1(pchute2);
+                        if (fabs(val) > 1.01e10) {
+                            if (kontaTenta < 0)
+                                logger.log(LOGGER_AVISO, LOG_ERR_PARSE_BUSINESS_RULE_VALIDATION,
+                                           "Busca de valores iniciais para calculo de zero de funcao em buscaProdPfundoPerm atingiu maximo de iteracoes",
+                                           "", "");
+                            cout << "#################PERMANENTE FALHOU EM SUA CONVERGÃŠNCIA##############################" << endl;
+                            if ((*vg1dSP).iterRede > 0)
+                                return -1.1e10;
+                            else
+                                return 1.1e10;
+                        }
+                        iterpres++;
+                    }
                     if (iterpres >= 10)
                         if (arq.transiente == 0 && chute < 0 && arq.AP == 0) {
                             NumError(
@@ -20702,6 +20718,13 @@ void SProd::RenovaMassPerm(int i) {
                 // calculo do novo RGO do separador modeificado pela fonte de liquido
                 if (fabs(qostd1 + qostd2) > (*vg1dSP).localtiny && mudaRGO == 1)
                     celula[i].flui.RGO = qgstd / (qostd1 + qostd2);
+                else if (mudaRGO == 1 && i == 1 && celula[0].MC == 0. && celula[0].Mliqini == 0. &&
+                         celula[0].MComp == 0. && celula[0].acsr.injl.QLiq > 0. &&
+                         qostd1 == 0. && qostd2 > 0. && std::isfinite(qostd2) &&
+                         celula[0].acsr.injl.FluidoPro.RGO >= 0. &&
+                         std::isfinite(celula[0].acsr.injl.FluidoPro.RGO))
+                    // the only stream is a liquid source below the oil cutoff: the cell keeps its GOR
+                    celula[i].flui.RGO = celula[0].acsr.injl.FluidoPro.RGO;
                 else if (mudaRGO == 1)
                     celula[i].flui.RGO = (*vg1dSP).RGOMax;
             }
@@ -25192,7 +25215,7 @@ double SProd::marchaInjPerm1(double chute) {
                 } else {
                     double masgas = celula[0].acsr.injg.VMas(pGSup, celula[0].acsr.injg.temp);
                     double tit;
-                    if (arq.flashCompleto < 2)
+                    if (arq.flashCompleto != 2)
                         tit = celula[0].acsr.injg.FluidoPro.FracMassHidra(1., 20.);
                     else
                         tit = celula[0].acsr.injg.FluidoPro.dStockTankVaporMassFraction;
@@ -25737,7 +25760,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 double rhol = celula[i].fluicol.MasEspFlu(celula[i].pres, taux);
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 celula[i - 1].pres = celula[i].pres + rhol * 9.81 * sin(celula[i].duto.teta) * dxmed / 98066.5;
-                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
+                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) > -(*vg1dSP).localtiny) {
                     if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -25750,7 +25773,8 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 if (celula[i - 1].acsr.tipo == 3) {
                     if (arq.condpocinj.tipoFlui < 2)
                         mchute -= (celula[i - 1].acsr.ipr.ij) * (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres);
-                    mchute -= (celula[i - 1].acsr.ipr.ij * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, 0.) / celula[ncel].fluicol.MasEspFlu(1.01, 15.)) * (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres);
+                    else
+                        mchute -= (celula[i - 1].acsr.ipr.ij * celula[i - 1].fluicol.MasEspFlu(celula[i - 1].pres, 0.) / celula[ncel].fluicol.MasEspFlu(1.01, 15.)) * (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres);
                 }
                 taux = celula[i].calor.Textern1;
             }
@@ -25766,7 +25790,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 double rhol = celula[i].flui.MasEspGas(celula[i].pres, taux);
                 double dxmed = 0.5 * (celula[i].dx + celula[i - 1].dx);
                 celula[i - 1].pres = celula[i].pres + rhol * 9.81 * sin(celula[i].duto.teta) * dxmed / 98066.5;
-                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
+                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) > -(*vg1dSP).localtiny) {
                     if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -25779,7 +25803,8 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 if (celula[i - 1].acsr.tipo == 3) {
                     if (arq.condpocinj.tipoFlui < 2)
                         mchute -= (celula[i - 1].acsr.ipr.ij) * (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres);
-                    mchute -= (celula[i - 1].acsr.ipr.ij * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, 0.) / (celula[0].flui.Deng * 1.225)) * (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres);
+                    else
+                        mchute -= (celula[i - 1].acsr.ipr.ij * celula[i - 1].flui.MasEspGas(celula[i - 1].pres, 0.) / (celula[0].flui.Deng * 1.225)) * (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres);
                 }
                 taux = celula[i].calor.Textern1;
             }
@@ -25822,7 +25847,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 mchute = -(celula[ncel].acsr.ipr.ij * celula[ncel].fluicol.MasEspFlu(celula[ncel].pres, celula[ncel].temp) / celula[ncel].fluicol.MasEspFlu(1.01, 15.)) * (celula[ncel].acsr.ipr.Pres - celula[ncel].pres);
             for (int i = ncel; i > 0; i--) {
                 celula[i - 1].pres = celula[i].pres + delpInjPerm(i);
-                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
+                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) > -(*vg1dSP).localtiny) {
                     if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
@@ -25846,7 +25871,7 @@ double SProd::buscaInjPfundoPerm3(double chute) {
                 mchute = -(celula[ncel].acsr.ipr.ij * celula[ncel].flui.MasEspGas(celula[ncel].pres, celula[ncel].temp) / (celula[0].flui.Deng * 1.225)) * (celula[ncel].acsr.ipr.Pres - celula[ncel].pres);
             for (int i = ncel; i > 0; i--) {
                 celula[i - 1].pres = celula[i].pres + delpInjPerm(i);
-                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i + 1].pres) > -(*vg1dSP).localtiny) {
+                if (celula[i - 1].acsr.tipo == 3 && (celula[i - 1].acsr.ipr.Pres - celula[i - 1].pres) > -(*vg1dSP).localtiny) {
                     if ((*vg1dSP).chaverede == 0 && arq.AP == 0)
                         NumError("Valor de pressao de fundo menor que a pressao de reservatÃ³rio");
                     else {
