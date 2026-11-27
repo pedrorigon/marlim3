@@ -1776,7 +1776,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                     lacoleitura = 18;
 
                 vector<double> presPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
-                                                          [](double value) { return value * 1.01971621e-5; });
+                                                          [](double value) { return value / 98066.5; }); // Pa to kgf/cm2
                 vector<double> tempPVTSim =
                     readPvtSimRow(lendoPVTSim, chave, "TEMPERATURE", dadosMR, [](double value) { return value; });
                 if (static_cast<int>(presPVTSim.size()) <= ndiv || static_cast<int>(tempPVTSim.size()) <= ndiv)
@@ -1842,9 +1842,9 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
             lendoPVTSim >> chave;
             // The file's own grid: its rows set the table sizes, apart from the input table's resolution.
             vector<double> PresPVTSim = readPvtSimRow(lendoPVTSim, chave, "PRESSURE", dadosMR,
-                                                      [](double value) { return value / 98068.059233; });
+                                                      [](double value) { return value / 98066.5; }); // Pa to kgf/cm2
             vector<double> bubblePressures = readPvtSimRow(lendoPVTSim, chave, "BUBBLEPRESSURES", dadosMR,
-                                                           [](double value) { return value * 0.00014503773800722; });
+                                                           [](double value) { return value / 6894.75729316836134; }); // Pa to psi
             vector<double> bubbleTemperatures = readPvtSimRow(lendoPVTSim, chave, "BUBBLETEMPERATURES", dadosMR,
                                                               [](double value) { return value; });
             if (bubblePressures.size() != bubbleTemperatures.size())
@@ -1982,7 +1982,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                             a2 = B0 * pow(Deng, B1) * pow(API, B2) * pow(TFa, B3) * pow(pbtemp, B4);
                             a3 = C0 * pow(Deng, C1) * pow(API, C2) * pow(TFa, C3) * pow(pbtemp, C4);
 
-                            double pcor = (RSLivia[i][0] * 0.9678411) * 14.69595 * multCor;
+                            double pcor = RSLivia[i][0] * (98066.5 / 6894.75729316836134) * multCor; // kgf/cm2 to psi
                             double pr = pcor / pbtemp;
 
                             a1 = A0 * pow(Deng, A1) * pow(API, A2) * pow(TFa, A3) * pow(pbtemp, A4);
@@ -1993,7 +1993,7 @@ void SProd::montasistema(double *compfonte, int *posicfonte, int nfontes) {
                             double rstemp = Rsr;
                             if (rstemp < 0.)
                                 rstemp = 0.;
-                            else if ((RSLivia[i][0] * 0.9678411) * 14.69595 > pbtemp)
+                            else if (RSLivia[i][0] * (98066.5 / 6894.75729316836134) > pbtemp)
                                 rstemp = 1.;
                             else if (rstemp > 1.)
                                 rstemp = 1.;
