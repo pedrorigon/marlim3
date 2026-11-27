@@ -173,6 +173,7 @@ void multiBomCentSub::marchaMultiBcs(double vazG, double vazL, double pres, doub
     double vismis;
     dpB=0.;
     double vpotB=0.;
+    potB=0.;
     potBT=0.;
     double coefdxT;
     double vazLIni=vazL;
